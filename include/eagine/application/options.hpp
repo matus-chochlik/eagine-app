@@ -11,6 +11,7 @@
 
 #include "fwd.hpp"
 #include "types.hpp"
+#include <eagine/application_config.hpp>
 #include <eagine/main_ctx_object.hpp>
 #include <eagine/string_span.hpp>
 #include <eagine/valid_if/between.hpp>
