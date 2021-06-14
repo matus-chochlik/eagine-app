@@ -1,0 +1,15 @@
+[submodule "submodules/eagine-core"]
+	path = submodules/eagine-core
+	url = https://github.com/matus-chochlik/eagine-core.git
+[submodule "submodules/eagine-shapes"]
+	path = submodules/eagine-shapes
+	url = https://github.com/matus-chochlik/eagine-shapes.git
+[submodule "submodules/eagine-eglplus"]
+	path = submodules/eagine-eglplus
+	url = https://github.com/matus-chochlik/eagine-eglplus.git
+[submodule "submodules/eagine-oglplus"]
+	path = submodules/eagine-oglplus
+	url = https://github.com/matus-chochlik/eagine-oglplus.git
+[submodule "submodules/eagine-oalplus"]
+	path = submodules/eagine-oalplus
+	url = https://github.com/matus-chochlik/eagine-oalplus.git
