@@ -540,7 +540,7 @@ private:
 //------------------------------------------------------------------------------
 } // namespace eagine::app
 
-#if !EAGINE_LINK_LIBRARY || defined(EAGINE_IMPLEMENTING_LIBRARY)
+#if !EAGINE_APP_LIBRARY || defined(EAGINE_IMPLEMENTING_LIBRARY)
 #include <eagine/app/options.inl>
 #endif
 

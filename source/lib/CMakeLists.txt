@@ -15,7 +15,7 @@ add_library(
 eagine_add_lib_analysis(eagine-app)
 
 target_compile_definitions(
-	eagine-app PUBLIC EAGINE_SHAPES_LIBRARY=1
+	eagine-app PUBLIC EAGINE_APP_LIBRARY=1
 )
 
 target_include_directories(
