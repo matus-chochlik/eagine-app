@@ -9,9 +9,9 @@
 // clang-format off
 #include "prologue.inl"
 #include <eagine/main_ctx.hpp>
-#include <eagine/application_config.hpp>
+#include <eagine/app_config.hpp>
 
 #include "implement.inl"
-#include <eagine/application/options.hpp>
+#include <eagine/app/options.hpp>
 #include "epilogue.inl"
 // clang-format on

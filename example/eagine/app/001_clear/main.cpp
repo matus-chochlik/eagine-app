@@ -5,14 +5,14 @@
 /// See accompanying file LICENSE_1_0.txt or copy at
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
-#include <eagine/application/main.hpp>
-#include <eagine/application_config.hpp>
+#include <eagine/app/main.hpp>
+#include <eagine/app_config.hpp>
 #include <eagine/timeout.hpp>
 
 #include <eagine/oglplus/gl.hpp>
 #include <eagine/oglplus/gl_api.hpp>
 
-namespace eagine::application {
+namespace eagine::app {
 //------------------------------------------------------------------------------
 class example_clear : public application {
 public:
@@ -90,4 +90,4 @@ auto establish(main_ctx&) -> std::unique_ptr<launchpad> {
     return {std::make_unique<example_launchpad>()};
 }
 //------------------------------------------------------------------------------
-} // namespace eagine::application
+} // namespace eagine::app

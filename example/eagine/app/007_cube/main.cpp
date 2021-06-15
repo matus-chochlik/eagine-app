@@ -1,27 +1,31 @@
-/// @example app/004_triangle/main.cpp
+/// @example app/007_cube/main.cpp
 ///
 /// Copyright Matus Chochlik.
 /// Distributed under the Boost Software License, Version 1.0.
 /// See accompanying file LICENSE_1_0.txt or copy at
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
-#include <eagine/app/main.hpp>
-#include <eagine/app_config.hpp>
-#include <eagine/embed.hpp>
-#include <eagine/timeout.hpp>
 
 #include <eagine/oglplus/gl.hpp>
 #include <eagine/oglplus/gl_api.hpp>
 
+#include <eagine/app/camera.hpp>
+#include <eagine/app/main.hpp>
+#include <eagine/app_config.hpp>
+#include <eagine/embed.hpp>
 #include <eagine/oglplus/glsl/string_ref.hpp>
+#include <eagine/oglplus/math/matrix.hpp>
 #include <eagine/oglplus/math/primitives.hpp>
 #include <eagine/oglplus/math/vector.hpp>
+#include <eagine/oglplus/shapes/generator.hpp>
+#include <eagine/shapes/cube.hpp>
+#include <eagine/timeout.hpp>
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-class example_triangle : public application {
+class example_cube : public application {
 public:
-    example_triangle(execution_context&, video_context&);
+    example_cube(execution_context&, video_context&);
 
     auto is_done() noexcept -> bool final {
         return _is_done.is_expired();
@@ -32,27 +36,28 @@ public:
     void clean_up() noexcept final;
 
 private:
+    execution_context& _ctx;
     video_context& _video;
-    timeout _is_done{std::chrono::seconds(10)};
+    timeout _is_done{std::chrono::seconds{30}};
 
-    oglp::triangle tri{
-      oglp::vec3{-0.2F, 0.5F, 0.0F},
-      oglp::vec3{-0.7F, -0.6F, 0.0F},
-      oglp::vec3{0.6F, 0.2F, 0.0F}};
-
+    std::vector<oglp::shape_draw_operation> _ops;
     oglp::owned_vertex_array_name vao;
 
     oglp::owned_buffer_name positions;
-    oglp::owned_buffer_name colors;
+    oglp::owned_buffer_name normals;
+    oglp::owned_buffer_name indices;
 
     oglp::owned_program_name prog;
+
+    orbiting_camera camera;
+    oglp::uniform_location camera_loc;
 };
 //------------------------------------------------------------------------------
-example_triangle::example_triangle(execution_context& ec, video_context& vc)
-  : _video{vc} {
-    auto& [gl, GL] = _video.gl_api();
-
-    gl.clear_color(0.4F, 0.4F, 0.4F, 0.0F);
+example_cube::example_cube(execution_context& ec, video_context& vc)
+  : _ctx{ec}
+  , _video{vc} {
+    auto& glapi = _video.gl_api();
+    auto& [gl, GL] = glapi;
 
     // vertex shader
     auto vs_source = embed(EAGINE_ID(VertShader), "vertex.glsl");
@@ -77,66 +82,96 @@ example_triangle::example_triangle(execution_context& ec, video_context& vc)
     gl.link_program(prog);
     gl.use_program(prog);
 
+    // geometry
+    oglp::shape_generator shape(
+      glapi,
+      shapes::unit_cube(
+        shapes::vertex_attrib_kind::position |
+        shapes::vertex_attrib_kind::normal));
+
+    _ops.resize(std_size(shape.operation_count()));
+    shape.instructions(glapi, cover(_ops));
+
     // vao
     gl.gen_vertex_arrays() >> vao;
     gl.bind_vertex_array(vao);
 
     // positions
-    const auto position_data = GL.float_.array(
-      tri.a().x(),
-      tri.a().y(),
-      tri.b().x(),
-      tri.b().y(),
-      tri.c().x(),
-      tri.c().y());
-
+    oglp::vertex_attrib_location position_loc{0};
     gl.gen_buffers() >> positions;
-    gl.bind_buffer(GL.array_buffer, positions);
-    gl.buffer_data(GL.array_buffer, view(position_data), GL.static_draw);
-    oglp::vertex_attrib_location position_loc;
-    gl.get_attrib_location(prog, "Position") >> position_loc;
+    shape.attrib_setup(
+      glapi,
+      vao,
+      positions,
+      position_loc,
+      eagine::shapes::vertex_attrib_kind::position,
+      _ctx.buffer());
+    gl.bind_attrib_location(prog, position_loc, "Position");
 
-    gl.vertex_attrib_pointer(position_loc, 2, GL.float_, GL.false_);
-    gl.enable_vertex_attrib_array(position_loc);
+    // normals
+    oglp::vertex_attrib_location normal_loc{1};
+    gl.gen_buffers() >> normals;
+    shape.attrib_setup(
+      glapi,
+      vao,
+      normals,
+      normal_loc,
+      eagine::shapes::vertex_attrib_kind::normal,
+      _ctx.buffer());
+    gl.bind_attrib_location(prog, normal_loc, "Normal");
 
-    // colors
-    const auto color_data =
-      GL.float_.array(1.0F, 0.1F, 0.1F, 0.1F, 1.0F, 0.1F, 0.1F, 0.1F, 1.0F);
+    // indices
+    gl.gen_buffers() >> indices;
+    shape.index_setup(glapi, indices, _ctx.buffer());
 
-    gl.gen_buffers() >> colors;
-    gl.bind_buffer(GL.array_buffer, colors);
-    gl.buffer_data(GL.array_buffer, view(color_data), GL.static_draw);
-    oglp::vertex_attrib_location color_loc;
-    gl.get_attrib_location(prog, "Color") >> color_loc;
+    // uniform
+    gl.get_uniform_location(prog, "Camera") >> camera_loc;
+    camera.set_near(0.1F)
+      .set_far(50.F)
+      .set_orbit_min(1.1F)
+      .set_orbit_max(3.5F)
+      .set_fov(right_angle_());
 
-    gl.vertex_attrib_pointer(color_loc, 3, GL.float_, GL.false_);
-    gl.enable_vertex_attrib_array(color_loc);
+    gl.clear_color(0.4F, 0.4F, 0.4F, 0.0F);
+    gl.enable(GL.depth_test);
 
-    gl.disable(GL.depth_test);
-
-    ec.connect_inputs().map_inputs().switch_input_mapping();
+    camera.connect_inputs(ec).basic_input_mapping(ec);
+    ec.setup_inputs().switch_input_mapping();
 }
 //------------------------------------------------------------------------------
-void example_triangle::on_video_resize() noexcept {
+void example_cube::on_video_resize() noexcept {
     auto& gl = _video.gl_api();
     gl.viewport(_video.surface_size());
 }
 //------------------------------------------------------------------------------
-void example_triangle::update() noexcept {
-    auto& [gl, GL] = _video.gl_api();
+void example_cube::update() noexcept {
+    auto& state = _ctx.state();
+    if(state.is_active()) {
+        _is_done.reset();
+    }
+    if(state.user_idle_too_long()) {
+        camera.idle_update(state);
+    }
 
-    gl.clear(GL.color_buffer_bit);
-    gl.draw_arrays(GL.triangles, 0, 3);
+    auto& glapi = _video.gl_api();
+    auto& [gl, GL] = glapi;
+
+    gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
+    if(camera.has_changed()) {
+        glapi.set_uniform(prog, camera_loc, camera.matrix(_video));
+    }
+    oglp::draw_using_instructions(glapi, view(_ops));
 
     _video.commit();
 }
 //------------------------------------------------------------------------------
-void example_triangle::clean_up() noexcept {
+void example_cube::clean_up() noexcept {
     auto& gl = _video.gl_api();
 
     gl.delete_program(std::move(prog));
+    gl.delete_buffers(std::move(indices));
+    gl.delete_buffers(std::move(normals));
     gl.delete_buffers(std::move(positions));
-    gl.delete_buffers(std::move(colors));
     gl.delete_vertex_arrays(std::move(vao));
 
     _video.end();
@@ -169,7 +204,7 @@ public:
             vc.begin();
             if(vc.init_gl_api()) {
                 if(check_requirements(vc)) {
-                    return {std::make_unique<example_triangle>(ec, vc)};
+                    return {std::make_unique<example_cube>(ec, vc)};
                 }
             }
         }

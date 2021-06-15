@@ -4,31 +4,31 @@
 #  http://www.boost.org/LICENSE_1_0.txt
 #
 set(HEADERS
-    eagine/application/camera.hpp
-    eagine/application/context.hpp
-    eagine/application/framedump_raw.hpp
-    eagine/application/fwd.hpp
-    eagine/application/input.hpp
-    eagine/application/interface.hpp
-    eagine/application/main.hpp
-    eagine/application/opengl_eglplus.hpp
-    eagine/application/opengl_glfw3.hpp
-    eagine/application/options.hpp
-    eagine/application/state.hpp
-    eagine/application/state_view.hpp
-    eagine/application/types.hpp
+    eagine/app/camera.hpp
+    eagine/app/context.hpp
+    eagine/app/framedump_raw.hpp
+    eagine/app/fwd.hpp
+    eagine/app/input.hpp
+    eagine/app/interface.hpp
+    eagine/app/main.hpp
+    eagine/app/opengl_eglplus.hpp
+    eagine/app/opengl_glfw3.hpp
+    eagine/app/options.hpp
+    eagine/app/state.hpp
+    eagine/app/state_view.hpp
+    eagine/app/types.hpp
 )
 
 set(PUB_INLS
-    eagine/application/state.inl
+    eagine/app/state.inl
 )
 
 set(LIB_INLS
-    eagine/application/camera.inl
-    eagine/application/context.inl
-    eagine/application/framedump_raw.inl
-    eagine/application/opengl_eglplus.inl
-    eagine/application/opengl_glfw3.inl
-    eagine/application/options.inl
+    eagine/app/camera.inl
+    eagine/app/context.inl
+    eagine/app/framedump_raw.inl
+    eagine/app/opengl_eglplus.inl
+    eagine/app/opengl_glfw3.inl
+    eagine/app/options.inl
 )
 
