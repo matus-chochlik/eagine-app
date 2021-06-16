@@ -21,6 +21,7 @@ add_subdirectory(submodules)
 include(EAGineCoreCommon)
 include(OGLplusBaking)
 
+add_subdirectory(assets)
 add_subdirectory(include)
 add_subdirectory(source)
 add_subdirectory(example)
