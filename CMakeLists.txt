@@ -9,12 +9,17 @@ project(EAGineApp)
 if(NOT EAGINE_CORE_ROOT)
 	set(EAGINE_CORE_ROOT ${PROJECT_SOURCE_DIR}/submodules/eagine-core)
 endif()
+if(NOT EAGINE_OGLPLUS_ROOT)
+	set(EAGINE_OGLPLUS_ROOT ${PROJECT_SOURCE_DIR}/submodules/eagine-oglplus)
+endif()
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/config)
 list(APPEND CMAKE_MODULE_PATH ${EAGINE_CORE_ROOT}/config)
+list(APPEND CMAKE_MODULE_PATH ${EAGINE_OGLPLUS_ROOT}/config)
 
 add_subdirectory(submodules)
 
 include(EAGineCoreCommon)
+include(OGLplusBaking)
 
 add_subdirectory(include)
 add_subdirectory(source)
