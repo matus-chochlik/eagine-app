@@ -27,19 +27,19 @@ public:
     void set_projection(video_context&, orbiting_camera& camera);
     void update(execution_context&, video_context&);
 
-    void bind_position_location(video_context&, oglp::vertex_attrib_location);
-    void bind_pivot_location(video_context&, oglp::vertex_attrib_location);
-    void bind_coord_location(video_context&, oglp::vertex_attrib_location);
+    void bind_position_location(video_context&, oglplus::vertex_attrib_location);
+    void bind_pivot_location(video_context&, oglplus::vertex_attrib_location);
+    void bind_coord_location(video_context&, oglplus::vertex_attrib_location);
 
     void drawing_surface(video_context&);
     void drawing_edges(video_context&);
 
 private:
-    oglp::owned_program_name prog;
-    oglp::uniform_location camera_loc;
-    oglp::uniform_location center_loc;
-    oglp::uniform_location time_loc;
-    oglp::uniform_location edges_loc;
+    oglplus::owned_program_name prog;
+    oglplus::uniform_location camera_loc;
+    oglplus::uniform_location center_loc;
+    oglplus::uniform_location time_loc;
+    oglplus::uniform_location edges_loc;
 };
 //------------------------------------------------------------------------------
 // geometry
@@ -52,27 +52,27 @@ public:
     void draw_edges(video_context&);
 
     static auto position_loc() noexcept {
-        return oglp::vertex_attrib_location{0};
+        return oglplus::vertex_attrib_location{0};
     }
 
     static auto pivot_loc() noexcept {
-        return oglp::vertex_attrib_location{1};
+        return oglplus::vertex_attrib_location{1};
     }
 
     static auto coord_loc() noexcept {
-        return oglp::vertex_attrib_location{2};
+        return oglplus::vertex_attrib_location{2};
     }
 
 private:
-    oglp::owned_vertex_array_name vao;
+    oglplus::owned_vertex_array_name vao;
 
-    oglp::owned_buffer_name positions;
-    oglp::owned_buffer_name pivots;
-    oglp::owned_buffer_name coords;
-    oglp::owned_buffer_name indices;
+    oglplus::owned_buffer_name positions;
+    oglplus::owned_buffer_name pivots;
+    oglplus::owned_buffer_name coords;
+    oglplus::owned_buffer_name indices;
 
-    std::vector<oglp::shape_draw_operation> ops{};
-    std::array<oglp::shape_draw_subset, 2> subs{};
+    std::vector<oglplus::shape_draw_operation> ops{};
+    std::array<oglplus::shape_draw_subset, 2> subs{};
 };
 //------------------------------------------------------------------------------
 } // namespace eagine::app

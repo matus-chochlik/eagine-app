@@ -30,20 +30,21 @@ class video_context_state {
 public:
     video_context_state(execution_context&, const video_options&) noexcept;
 
-    auto init_framebuffer(execution_context&, oglp::gl_api&) noexcept -> bool;
+    auto init_framebuffer(execution_context&, oglplus::gl_api&) noexcept
+      -> bool;
 
     auto doing_framedump() const noexcept;
 
-    auto commit(long frame_number, video_provider&, oglp::gl_api&) -> bool;
+    auto commit(long frame_number, video_provider&, oglplus::gl_api&) -> bool;
 
-    void clean_up(oglp::gl_api& api) noexcept;
+    void clean_up(oglplus::gl_api& api) noexcept;
 
 private:
     const video_options& _options;
-    oglp::owned_renderbuffer_name _color_rbo;
-    oglp::owned_renderbuffer_name _depth_rbo;
-    oglp::owned_renderbuffer_name _stencil_rbo;
-    oglp::owned_framebuffer_name _offscreen_fbo;
+    oglplus::owned_renderbuffer_name _color_rbo;
+    oglplus::owned_renderbuffer_name _depth_rbo;
+    oglplus::owned_renderbuffer_name _stencil_rbo;
+    oglplus::owned_framebuffer_name _offscreen_fbo;
     std::shared_ptr<framedump> _framedump_color{};
     std::shared_ptr<framedump> _framedump_depth{};
     std::shared_ptr<framedump> _framedump_stencil{};
@@ -73,7 +74,7 @@ inline video_context_state::video_context_state(
 EAGINE_LIB_FUNC
 inline auto video_context_state::init_framebuffer(
   execution_context&,
-  oglp::gl_api&) noexcept -> bool {
+  oglplus::gl_api&) noexcept -> bool {
     if(_options.needs_offscreen_framebuffer()) {
         // TODO: check options and make RBOs and FBO
     }
@@ -89,7 +90,7 @@ EAGINE_LIB_FUNC
 inline auto video_context_state::commit(
   long frame_number,
   video_provider& provider,
-  oglp::gl_api& api) -> bool {
+  oglplus::gl_api& api) -> bool {
     bool result = true;
     if(EAGINE_UNLIKELY(doing_framedump())) {
         auto& [gl, GL] = api;
@@ -112,8 +113,8 @@ inline auto video_context_state::commit(
                 api.operations().read_pixels(
                   0,
                   0,
-                  oglp::gl_types::sizei_type(width),
-                  oglp::gl_types::sizei_type(height),
+                  oglplus::gl_types::sizei_type(width),
+                  oglplus::gl_types::sizei_type(height),
                   gl_format,
                   gl_type,
                   buffer);
@@ -143,7 +144,7 @@ inline auto video_context_state::commit(
                           framedump_pixel_format::rgba,
                           framedump_data_type::float_type,
                           4,
-                          span_size_of<oglp::gl_types::float_type>());
+                          span_size_of<oglplus::gl_types::float_type>());
                         break;
                     case framedump_data_type::byte_type:
                         dump_frame(
@@ -153,7 +154,7 @@ inline auto video_context_state::commit(
                           framedump_pixel_format::rgba,
                           framedump_data_type::byte_type,
                           4,
-                          span_size_of<oglp::gl_types::ubyte_type>());
+                          span_size_of<oglplus::gl_types::ubyte_type>());
                         break;
                 }
             }
@@ -171,7 +172,7 @@ inline auto video_context_state::commit(
                           framedump_pixel_format::depth,
                           framedump_data_type::float_type,
                           1,
-                          span_size_of<oglp::gl_types::float_type>());
+                          span_size_of<oglplus::gl_types::float_type>());
                         break;
                 }
             }
@@ -189,7 +190,7 @@ inline auto video_context_state::commit(
                           framedump_pixel_format::stencil,
                           framedump_data_type::byte_type,
                           1,
-                          span_size_of<oglp::gl_types::ubyte_type>());
+                          span_size_of<oglplus::gl_types::ubyte_type>());
                         break;
                 }
             }
@@ -199,7 +200,7 @@ inline auto video_context_state::commit(
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
-inline void video_context_state::clean_up(oglp::gl_api& api) noexcept {
+inline void video_context_state::clean_up(oglplus::gl_api& api) noexcept {
     if(_offscreen_fbo) {
         api.delete_framebuffers(std::move(_offscreen_fbo));
     }
@@ -215,12 +216,12 @@ inline void video_context_state::clean_up(oglp::gl_api& api) noexcept {
 }
 //------------------------------------------------------------------------------
 static void video_context_debug_callback(
-  oglp::gl_types::enum_type source,
-  oglp::gl_types::enum_type type,
-  oglp::gl_types::uint_type id,
-  oglp::gl_types::enum_type severity,
-  oglp::gl_types::sizei_type length,
-  const oglp::gl_types::char_type* message,
+  oglplus::gl_types::enum_type source,
+  oglplus::gl_types::enum_type type,
+  oglplus::gl_types::uint_type id,
+  oglplus::gl_types::enum_type severity,
+  oglplus::gl_types::sizei_type length,
+  const oglplus::gl_types::char_type* message,
   const void* raw_pvc) {
     EAGINE_ASSERT(raw_pvc);
     const auto& vc = *static_cast<const video_context*>(raw_pvc);
@@ -244,7 +245,7 @@ static void video_context_debug_callback(
 EAGINE_LIB_FUNC
 auto video_context::init_gl_api() noexcept -> bool {
     try {
-        _gl_api = std::make_shared<oglp::gl_api>();
+        _gl_api = std::make_shared<oglplus::gl_api>();
         auto& [gl, GL] = extract(_gl_api);
 
         const auto pos = _parent.options().video_requirements().find(
@@ -333,7 +334,7 @@ void video_context::clean_up() noexcept {
 EAGINE_LIB_FUNC
 auto audio_context::init_al_api() noexcept -> bool {
     try {
-        _al_api = std::make_shared<oalp::al_api>();
+        _al_api = std::make_shared<oalplus::al_api>();
     } catch(...) {
     }
     return bool(_al_api);

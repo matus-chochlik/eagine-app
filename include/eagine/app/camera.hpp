@@ -17,10 +17,10 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 /// @brief Extension of orbiting camera wrapper.
 /// @ingroup application
-class orbiting_camera : public oglp::orbiting_camera {
+class orbiting_camera : public oglplus::orbiting_camera {
 
 public:
-    using base = oglp::orbiting_camera;
+    using base = oglplus::orbiting_camera;
     using base::matrix;
 
     /// @brief Construction from a reference to a video context.
@@ -144,9 +144,9 @@ public:
     }
 
 private:
-    oglp::sign _orbit_dir;
-    oglp::sign _turn_dir;
-    oglp::sign _pitch_dir;
+    oglplus::sign _orbit_dir;
+    oglplus::sign _turn_dir;
+    oglplus::sign _pitch_dir;
 
     bool _changed{true};
     bool _is_dragging{false};

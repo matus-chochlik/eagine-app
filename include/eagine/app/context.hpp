@@ -79,7 +79,7 @@ public:
     /// @brief Returns a reference to the GL rendering API in this context.
     /// @see init_gl_api
     /// @pre has_gl_api()
-    auto gl_api() const noexcept -> oglp::gl_api& {
+    auto gl_api() const noexcept -> oglplus::gl_api& {
         EAGINE_ASSERT(has_gl_api());
         return *_gl_api;
     }
@@ -107,7 +107,7 @@ private:
     execution_context& _parent;
     long _frame_no{0};
     std::shared_ptr<video_provider> _provider{};
-    std::shared_ptr<oglp::gl_api> _gl_api{};
+    std::shared_ptr<oglplus::gl_api> _gl_api{};
     std::shared_ptr<video_context_state> _state{};
 };
 //------------------------------------------------------------------------------
@@ -155,7 +155,7 @@ public:
 private:
     execution_context& _parent;
     std::shared_ptr<audio_provider> _provider{};
-    std::shared_ptr<oalp::al_api> _al_api{};
+    std::shared_ptr<oalplus::al_api> _al_api{};
 };
 //------------------------------------------------------------------------------
 /// @brief Class holding shared video/audio rendering application support objects.

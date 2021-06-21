@@ -27,11 +27,11 @@ void depth_program::init(
     const auto& [gl, GL] = vc.gl_api();
 
     // vertex shader
-    oglp::owned_shader_name vs;
+    oglplus::owned_shader_name vs;
     auto vs_src = embed(EAGINE_ID(VSDepth), "vertex_depth.glsl");
     gl.create_shader(GL.vertex_shader) >> vs;
     auto cleanup_vs = gl.delete_shader.raii(vs);
-    gl.shader_source(vs, oglp::glsl_string_ref(vs_src.unpack(ec)));
+    gl.shader_source(vs, oglplus::glsl_string_ref(vs_src.unpack(ec)));
     gl.compile_shader(vs);
 
     // program
@@ -57,7 +57,7 @@ void depth_program::update(video_context& vc) {
 //------------------------------------------------------------------------------
 void depth_program::bind_position_location(
   video_context& vc,
-  oglp::vertex_attrib_location loc) {
+  oglplus::vertex_attrib_location loc) {
     vc.gl_api().bind_attrib_location(prog, loc, "Position");
 }
 //------------------------------------------------------------------------------
@@ -68,19 +68,19 @@ void draw_program::init(
     const auto& [gl, GL] = vc.gl_api();
 
     // vertex shader
-    oglp::owned_shader_name vs;
+    oglplus::owned_shader_name vs;
     auto vs_src = embed(EAGINE_ID(VSDraw), "vertex_draw.glsl");
     gl.create_shader(GL.vertex_shader) >> vs;
     auto cleanup_vs = gl.delete_shader.raii(vs);
-    gl.shader_source(vs, oglp::glsl_string_ref(vs_src.unpack(ec)));
+    gl.shader_source(vs, oglplus::glsl_string_ref(vs_src.unpack(ec)));
     gl.compile_shader(vs);
 
     // fragment shader
-    oglp::owned_shader_name fs;
+    oglplus::owned_shader_name fs;
     auto fs_src = embed(EAGINE_ID(FSDraw), "fragment_draw.glsl");
     gl.create_shader(GL.fragment_shader) >> fs;
     auto cleanup_fs = gl.delete_shader.raii(fs);
-    gl.shader_source(fs, oglp::glsl_string_ref(fs_src.unpack(ec)));
+    gl.shader_source(fs, oglplus::glsl_string_ref(fs_src.unpack(ec)));
     gl.compile_shader(fs);
 
     // program
@@ -98,7 +98,7 @@ void draw_program::init(
 //------------------------------------------------------------------------------
 void draw_program::set_depth_texture(
   video_context& vc,
-  oglp::gl_types::int_type tex_unit) {
+  oglplus::gl_types::int_type tex_unit) {
     const auto& gl = vc.gl_api();
 
     gl.use_program(prog);
@@ -121,18 +121,18 @@ void draw_program::update(execution_context& ec, video_context& vc) {
     gl.set_uniform(
       prog,
       light_pos_loc,
-      oglp::vec3(cos(rad) * 5, sin(rad) * 7, sin(rad * 0.618F) * 8));
+      oglplus::vec3(cos(rad) * 5, sin(rad) * 7, sin(rad * 0.618F) * 8));
 }
 //------------------------------------------------------------------------------
 void draw_program::bind_position_location(
   video_context& vc,
-  oglp::vertex_attrib_location loc) {
+  oglplus::vertex_attrib_location loc) {
     vc.gl_api().bind_attrib_location(prog, loc, "Position");
 }
 //------------------------------------------------------------------------------
 void draw_program::bind_normal_location(
   video_context& vc,
-  oglp::vertex_attrib_location loc) {
+  oglplus::vertex_attrib_location loc) {
     vc.gl_api().bind_attrib_location(prog, loc, "Normal");
 }
 //------------------------------------------------------------------------------
@@ -150,7 +150,7 @@ void arrow_geometry::init(
           as_chars(embed(EAGINE_ID(ArrowJson), "arrow.json").unpack(ec)), ec);
     };
 
-    oglp::shape_generator shape(
+    oglplus::shape_generator shape(
       glapi, shapes::from_value_tree(load_shape_data(), ec));
 
     bound_sphere = shape.bounding_sphere();

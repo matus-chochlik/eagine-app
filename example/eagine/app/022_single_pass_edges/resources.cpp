@@ -43,12 +43,12 @@ void edges_program::set_projection(video_context& vc, orbiting_camera& camera) {
     const auto [width, height] = vc.surface_size();
     const auto& glapi = vc.gl_api();
     glapi.set_uniform(prog, camera_loc, camera.matrix(vc));
-    glapi.set_uniform(prog, vp_dim_loc, oglp::vec2(width, height));
+    glapi.set_uniform(prog, vp_dim_loc, oglplus::vec2(width, height));
 }
 //------------------------------------------------------------------------------
 void edges_program::bind_position_location(
   video_context& vc,
-  oglp::vertex_attrib_location loc) {
+  oglplus::vertex_attrib_location loc) {
     vc.gl_api().bind_attrib_location(prog, loc, "Position");
 }
 //------------------------------------------------------------------------------
@@ -58,7 +58,7 @@ void icosahedron_geometry::init(execution_context& ec, video_context& vc) {
     const auto& glapi = vc.gl_api();
     const auto& gl = glapi;
 
-    oglp::shape_generator shape(
+    oglplus::shape_generator shape(
       glapi,
       shapes::center(eagine::shapes::ortho_array_xyz(
         shapes::scale(

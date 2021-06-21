@@ -38,12 +38,12 @@ private:
     video_context& _video;
     timeout _is_done{std::chrono::seconds{30}};
 
-    oglp::owned_vertex_array_name vao;
+    oglplus::owned_vertex_array_name vao;
 
-    oglp::owned_buffer_name positions;
-    oglp::gl_types::sizei_type point_count{0};
+    oglplus::owned_buffer_name positions;
+    oglplus::gl_types::sizei_type point_count{0};
 
-    oglp::owned_program_name prog;
+    oglplus::owned_program_name prog;
 };
 //------------------------------------------------------------------------------
 example_writing::example_writing(execution_context& ec, video_context& vc)
@@ -54,26 +54,26 @@ example_writing::example_writing(execution_context& ec, video_context& vc)
 
     // vertex shader
     auto vs_source = embed(EAGINE_ID(VertShader), "vertex.glsl");
-    oglp::owned_shader_name vs;
+    oglplus::owned_shader_name vs;
     gl.create_shader(GL.vertex_shader) >> vs;
     auto cleanup_vs = gl.delete_shader.raii(vs);
-    gl.shader_source(vs, oglp::glsl_string_ref(vs_source));
+    gl.shader_source(vs, oglplus::glsl_string_ref(vs_source));
     gl.compile_shader(vs);
 
     // geometry shader
     auto gs_source = embed(EAGINE_ID(GeomShader), "geometry.glsl");
-    oglp::owned_shader_name gs;
+    oglplus::owned_shader_name gs;
     gl.create_shader(GL.geometry_shader) >> gs;
     auto cleanup_gs = gl.delete_shader.raii(gs);
-    gl.shader_source(gs, oglp::glsl_string_ref(gs_source));
+    gl.shader_source(gs, oglplus::glsl_string_ref(gs_source));
     gl.compile_shader(gs);
 
     // fragment shader
     auto fs_source = embed(EAGINE_ID(FragShader), "fragment.glsl");
-    oglp::owned_shader_name fs;
+    oglplus::owned_shader_name fs;
     gl.create_shader(GL.fragment_shader) >> fs;
     auto cleanup_fs = gl.delete_shader.raii(fs);
-    gl.shader_source(fs, oglp::glsl_string_ref(fs_source));
+    gl.shader_source(fs, oglplus::glsl_string_ref(fs_source));
     gl.compile_shader(fs);
 
     // program
@@ -85,7 +85,7 @@ example_writing::example_writing(execution_context& ec, video_context& vc)
     gl.use_program(prog);
 
     // geometry
-    const std::array<oglp::vec2, 34> control_points{
+    const std::array<oglplus::vec2, 34> control_points{
       {{-0.33F, +0.50F}, {-0.45F, +0.70F}, {-0.66F, +0.70F}, {-0.66F, +0.30F},
        {-0.66F, -0.20F}, {-0.35F, -0.15F}, {-0.30F, +0.05F}, {-0.20F, +0.50F},
        {-0.30F, +0.50F}, {-0.33F, +0.50F}, {-0.50F, +0.45F}, {-0.10F, +0.40F},
@@ -96,8 +96,8 @@ example_writing::example_writing(execution_context& ec, video_context& vc)
        {+0.35F, +0.90F}, {+0.10F, -0.10F}, {+0.55F, +0.00F}, {+0.90F, +0.10F},
        {+0.70F, +0.10F}, {+0.90F, +0.20F}}};
 
-    math::bezier_curves<oglp::vec2, float, 3> curve(view(control_points));
-    std::vector<oglp::vec2> curve_points;
+    math::bezier_curves<oglplus::vec2, float, 3> curve(view(control_points));
+    std::vector<oglplus::vec2> curve_points;
     curve.approximate(curve_points, 20);
     std::vector<float> position_data;
     memory::flatten(view(curve_points), position_data);
@@ -112,7 +112,7 @@ example_writing::example_writing(execution_context& ec, video_context& vc)
     gl.bind_buffer(GL.array_buffer, positions);
     gl.buffer_data(GL.array_buffer, view(position_data), GL.static_draw);
 
-    oglp::vertex_attrib_location position_loc;
+    oglplus::vertex_attrib_location position_loc;
     gl.get_attrib_location(prog, "Position") >> position_loc;
     gl.vertex_attrib_pointer(position_loc, 2, GL.float_, GL.false_);
     gl.enable_vertex_attrib_array(position_loc);

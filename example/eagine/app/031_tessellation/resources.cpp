@@ -45,18 +45,18 @@ void sphere_program::set_projection(video_context& vc, orbiting_camera& camera) 
     const auto& gl = vc.gl_api();
     gl.set_uniform(prog, camera_position_loc, camera.position());
     gl.set_uniform(prog, camera_matrix_loc, camera.matrix(vc));
-    gl.set_uniform(prog, viewport_dim_loc, oglp::vec2(width, height));
+    gl.set_uniform(prog, viewport_dim_loc, oglplus::vec2(width, height));
 }
 //------------------------------------------------------------------------------
 void sphere_program::bind_position_location(
   video_context& vc,
-  oglp::vertex_attrib_location loc) {
+  oglplus::vertex_attrib_location loc) {
     vc.gl_api().bind_attrib_location(prog, loc, "Position");
 }
 //------------------------------------------------------------------------------
 void sphere_program::bind_offsets_block(
   video_context& vc,
-  oglp::gl_types::uint_type binding) {
+  oglplus::gl_types::uint_type binding) {
     vc.gl_api().uniform_block_binding(prog, offset_blk_idx, binding);
 }
 //------------------------------------------------------------------------------
@@ -66,7 +66,7 @@ void icosahedron_geometry::init(execution_context& ec, video_context& vc) {
     const auto& glapi = vc.gl_api();
     const auto& [gl, GL] = glapi;
 
-    oglp::shape_generator shape(
+    oglplus::shape_generator shape(
       glapi,
       shapes::to_patches(
         shapes::unit_icosahedron(shapes::vertex_attrib_kind::position)));
@@ -96,7 +96,7 @@ void icosahedron_geometry::init(execution_context& ec, video_context& vc) {
     const float d = 4.2F;
     const float h = float(count - 1) * 0.5F;
 
-    std::vector<oglp::gl_types::float_type> offset_data;
+    std::vector<oglplus::gl_types::float_type> offset_data;
     offset_data.resize(std_size(count * count * count * 4));
     ec.random_normal(cover(offset_data));
     auto p = offset_data.begin();

@@ -48,14 +48,14 @@ void cel_program::set_modelview(execution_context& ec, video_context& vc) {
     vc.gl_api().set_uniform(
       prog,
       modelview_loc,
-      oglp::matrix_rotation_x(turns_(shp_turns) / 1) *
-        oglp::matrix_rotation_y(turns_(shp_turns) / 2) *
-        oglp::matrix_rotation_z(turns_(shp_turns) / 3));
+      oglplus::matrix_rotation_x(turns_(shp_turns) / 1) *
+        oglplus::matrix_rotation_y(turns_(shp_turns) / 2) *
+        oglplus::matrix_rotation_z(turns_(shp_turns) / 3));
 }
 //------------------------------------------------------------------------------
 void cel_program::bind_position_location(
   video_context& vc,
-  oglp::vertex_attrib_location loc) {
+  oglplus::vertex_attrib_location loc) {
     vc.gl_api().bind_attrib_location(prog, loc, "Position");
 }
 //------------------------------------------------------------------------------
@@ -65,7 +65,7 @@ void icosahedron_geometry::init(execution_context& ec, video_context& vc) {
     const auto& glapi = vc.gl_api();
     const auto& gl = glapi;
 
-    oglp::shape_generator shape(
+    oglplus::shape_generator shape(
       gl, shapes::unit_icosahedron(shapes::vertex_attrib_kind::position));
 
     ops.resize(std_size(shape.operation_count()));

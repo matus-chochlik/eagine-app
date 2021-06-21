@@ -84,22 +84,22 @@ void example_cube::update() noexcept {
 
     prog.set_projection(
       _video,
-      oglp::matrix_perspective(-0.5F, 0.5F, -0.5F, 0.5F, 1.0F, 5) *
-        oglp::matrix_translation(0, 0, -2));
+      oglplus::matrix_perspective(-0.5F, 0.5F, -0.5F, 0.5F, 1.0F, 5) *
+        oglplus::matrix_translation(0, 0, -2));
 
     gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
     cube.draw(_video);
 
     // draw on screen
-    gl.bind_framebuffer(GL.draw_framebuffer, oglp::framebuffer_name(0));
+    gl.bind_framebuffer(GL.draw_framebuffer, oglplus::framebuffer_name(0));
     gl.viewport(_video.surface_size());
 
     const float h = 0.55F;
     const float w = h * _video.surface_aspect();
     prog.set_projection(
       _video,
-      oglp::matrix_perspective(-w, +w, -h, +h, 1, 3) *
-        oglp::matrix_translation(0, 0, -2));
+      oglplus::matrix_perspective(-w, +w, -h, +h, 1, 3) *
+        oglplus::matrix_translation(0, 0, -2));
 
     gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
     cube.draw(_video);

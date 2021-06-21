@@ -62,7 +62,7 @@ private:
     video_context& _video;
     timeout _is_done{std::chrono::seconds{60}};
 
-    math::cubic_bezier_loop<oglp::vec3, float> _path;
+    math::cubic_bezier_loop<oglplus::vec3, float> _path;
 
     orbiting_camera _camera;
     emit_program _emit_prog;

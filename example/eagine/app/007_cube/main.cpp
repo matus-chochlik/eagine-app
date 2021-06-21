@@ -40,17 +40,17 @@ private:
     video_context& _video;
     timeout _is_done{std::chrono::seconds{30}};
 
-    std::vector<oglp::shape_draw_operation> _ops;
-    oglp::owned_vertex_array_name vao;
+    std::vector<oglplus::shape_draw_operation> _ops;
+    oglplus::owned_vertex_array_name vao;
 
-    oglp::owned_buffer_name positions;
-    oglp::owned_buffer_name normals;
-    oglp::owned_buffer_name indices;
+    oglplus::owned_buffer_name positions;
+    oglplus::owned_buffer_name normals;
+    oglplus::owned_buffer_name indices;
 
-    oglp::owned_program_name prog;
+    oglplus::owned_program_name prog;
 
     orbiting_camera camera;
-    oglp::uniform_location camera_loc;
+    oglplus::uniform_location camera_loc;
 };
 //------------------------------------------------------------------------------
 example_cube::example_cube(execution_context& ec, video_context& vc)
@@ -61,18 +61,18 @@ example_cube::example_cube(execution_context& ec, video_context& vc)
 
     // vertex shader
     auto vs_source = embed(EAGINE_ID(VertShader), "vertex.glsl");
-    oglp::owned_shader_name vs;
+    oglplus::owned_shader_name vs;
     gl.create_shader(GL.vertex_shader) >> vs;
     auto cleanup_vs = gl.delete_shader.raii(vs);
-    gl.shader_source(vs, oglp::glsl_string_ref(vs_source));
+    gl.shader_source(vs, oglplus::glsl_string_ref(vs_source));
     gl.compile_shader(vs);
 
     // fragment shader
     auto fs_source = embed(EAGINE_ID(FragShader), "fragment.glsl");
-    oglp::owned_shader_name fs;
+    oglplus::owned_shader_name fs;
     gl.create_shader(GL.fragment_shader) >> fs;
     auto cleanup_fs = gl.delete_shader.raii(fs);
-    gl.shader_source(fs, oglp::glsl_string_ref(fs_source));
+    gl.shader_source(fs, oglplus::glsl_string_ref(fs_source));
     gl.compile_shader(fs);
 
     // program
@@ -83,7 +83,7 @@ example_cube::example_cube(execution_context& ec, video_context& vc)
     gl.use_program(prog);
 
     // geometry
-    oglp::shape_generator shape(
+    oglplus::shape_generator shape(
       glapi,
       shapes::unit_cube(
         shapes::vertex_attrib_kind::position |
@@ -97,7 +97,7 @@ example_cube::example_cube(execution_context& ec, video_context& vc)
     gl.bind_vertex_array(vao);
 
     // positions
-    oglp::vertex_attrib_location position_loc{0};
+    oglplus::vertex_attrib_location position_loc{0};
     gl.gen_buffers() >> positions;
     shape.attrib_setup(
       glapi,
@@ -109,7 +109,7 @@ example_cube::example_cube(execution_context& ec, video_context& vc)
     gl.bind_attrib_location(prog, position_loc, "Position");
 
     // normals
-    oglp::vertex_attrib_location normal_loc{1};
+    oglplus::vertex_attrib_location normal_loc{1};
     gl.gen_buffers() >> normals;
     shape.attrib_setup(
       glapi,
@@ -160,7 +160,7 @@ void example_cube::update() noexcept {
     if(camera.has_changed()) {
         glapi.set_uniform(prog, camera_loc, camera.matrix(_video));
     }
-    oglp::draw_using_instructions(glapi, view(_ops));
+    oglplus::draw_using_instructions(glapi, view(_ops));
 
     _video.commit();
 }

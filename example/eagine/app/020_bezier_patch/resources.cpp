@@ -47,17 +47,17 @@ void patch_program::set_projection(video_context& vc, orbiting_camera& camera) {
 //------------------------------------------------------------------------------
 void patch_program::set_wireframe_color(video_context& vc) {
     vc.gl_api().set_uniform(
-      prog, color_loc, oglp::vec4(0.1F, 0.1F, 0.1F, 1.0F));
+      prog, color_loc, oglplus::vec4(0.1F, 0.1F, 0.1F, 1.0F));
 }
 //------------------------------------------------------------------------------
 void patch_program::set_surface_color(video_context& vc) {
     vc.gl_api().set_uniform(
-      prog, color_loc, oglp::vec4(1.0F, 1.0F, 1.0F, 0.4F));
+      prog, color_loc, oglplus::vec4(1.0F, 1.0F, 1.0F, 0.4F));
 }
 //------------------------------------------------------------------------------
 void patch_program::bind_position_location(
   video_context& vc,
-  oglp::vertex_attrib_location loc) {
+  oglplus::vertex_attrib_location loc) {
     vc.gl_api().bind_attrib_location(prog, loc, "Position");
 }
 //------------------------------------------------------------------------------

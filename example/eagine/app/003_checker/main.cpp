@@ -34,7 +34,7 @@ private:
     video_context& _video;
     timeout _is_done{std::chrono::seconds(8)};
 
-    oglp::owned_program_name prog;
+    oglplus::owned_program_name prog;
 };
 //------------------------------------------------------------------------------
 example_checker::example_checker(execution_context& ec, video_context& vc)
@@ -45,10 +45,10 @@ example_checker::example_checker(execution_context& ec, video_context& vc)
 
     // fragment shader
     auto fs_source = embed(EAGINE_ID(FragShader), "fragment.glsl");
-    oglp::owned_shader_name fs;
+    oglplus::owned_shader_name fs;
     gl.create_shader(GL.fragment_shader) >> fs;
     const auto cleanup_fs = gl.delete_shader.raii(fs);
-    gl.shader_source(fs, oglp::glsl_string_ref(fs_source));
+    gl.shader_source(fs, oglplus::glsl_string_ref(fs_source));
     gl.compile_shader(fs);
 
     // program

@@ -26,13 +26,13 @@ public:
     void set_wireframe_color(video_context&);
     void set_surface_color(video_context&);
 
-    void bind_position_location(video_context&, oglp::vertex_attrib_location);
+    void bind_position_location(video_context&, oglplus::vertex_attrib_location);
 
 private:
-    oglp::owned_program_name prog;
-    oglp::uniform_location camera_matrix_loc;
-    oglp::uniform_location perspective_matrix_loc;
-    oglp::uniform_location color_loc;
+    oglplus::owned_program_name prog;
+    oglplus::uniform_location camera_matrix_loc;
+    oglplus::uniform_location perspective_matrix_loc;
+    oglplus::uniform_location color_loc;
 };
 //------------------------------------------------------------------------------
 // geometry
@@ -44,13 +44,13 @@ public:
     void draw(video_context&);
 
     static auto position_loc() noexcept {
-        return oglp::vertex_attrib_location{0};
+        return oglplus::vertex_attrib_location{0};
     }
 
 private:
-    oglp::owned_vertex_array_name _vao;
+    oglplus::owned_vertex_array_name _vao;
 
-    oglp::owned_buffer_name _positions;
+    oglplus::owned_buffer_name _positions;
 };
 //------------------------------------------------------------------------------
 } // namespace eagine::app

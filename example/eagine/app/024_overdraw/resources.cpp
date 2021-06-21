@@ -41,7 +41,7 @@ void draw_program::set_projection(example& e) {
 //------------------------------------------------------------------------------
 void draw_program::bind_position_location(
   example& e,
-  oglp::vertex_attrib_location loc) {
+  oglplus::vertex_attrib_location loc) {
     e.video().gl_api().bind_attrib_location(_prog, loc, "Position");
 }
 //------------------------------------------------------------------------------
@@ -69,19 +69,20 @@ void screen_program::init(example& e) {
 //------------------------------------------------------------------------------
 void screen_program::bind_position_location(
   example& e,
-  oglp::vertex_attrib_location loc) {
+  oglplus::vertex_attrib_location loc) {
     e.video().gl_api().bind_attrib_location(_prog, loc, "Position");
 }
 //------------------------------------------------------------------------------
 void screen_program::bind_tex_coord_location(
   example& e,
-  oglp::vertex_attrib_location loc) {
+  oglplus::vertex_attrib_location loc) {
     e.video().gl_api().bind_attrib_location(_prog, loc, "TexCoord");
 }
 //------------------------------------------------------------------------------
 void screen_program::set_screen_size(example& e) {
     const auto [w, h] = e.video().surface_size();
-    e.video().gl_api().set_uniform(_prog, _screen_size_loc, oglp::vec2(w, h));
+    e.video().gl_api().set_uniform(
+      _prog, _screen_size_loc, oglplus::vec2(w, h));
 }
 //------------------------------------------------------------------------------
 void screen_program::use(example& e) {
@@ -94,7 +95,7 @@ void shape_geometry::init(example& e) {
     const auto& glapi = e.video().gl_api();
     const auto& [gl, GL] = glapi;
 
-    oglp::shape_generator shape(
+    oglplus::shape_generator shape(
       glapi, shapes::unit_cube(shapes::vertex_attrib_kind::position));
 
     _ops.resize(std_size(shape.operation_count()));
@@ -125,7 +126,7 @@ void shape_geometry::init(example& e) {
     const float d = 1.414F;
     const float h = float(count - 1) * 0.5F;
 
-    std::vector<oglp::gl_types::float_type> offset_data;
+    std::vector<oglplus::gl_types::float_type> offset_data;
     offset_data.resize(std_size(count * count * count * 4));
     auto p = offset_data.begin();
 
@@ -164,7 +165,7 @@ void screen_geometry::init(example& e) {
     const auto& glapi = e.video().gl_api();
     const auto& [gl, GL] = glapi;
 
-    oglp::shape_generator shape(
+    oglplus::shape_generator shape(
       glapi,
       shapes::unit_screen(
         shapes::vertex_attrib_kind::position |
@@ -249,7 +250,7 @@ void draw_buffers::init(example& e) {
     gl.framebuffer_renderbuffer(
       GL.draw_framebuffer, GL.depth_attachment, GL.renderbuffer, _rbo);
 
-    gl.bind_framebuffer(GL.draw_framebuffer, oglp::framebuffer_name(0));
+    gl.bind_framebuffer(GL.draw_framebuffer, oglplus::framebuffer_name(0));
 }
 //------------------------------------------------------------------------------
 void draw_buffers::resize(example& e) {
@@ -283,7 +284,7 @@ void draw_buffers::draw_offscreen(example& e) {
 //------------------------------------------------------------------------------
 void draw_buffers::draw_onscreen(example& e) {
     const auto& [gl, GL] = e.video().gl_api();
-    gl.bind_framebuffer(GL.draw_framebuffer, oglp::framebuffer_name(0));
+    gl.bind_framebuffer(GL.draw_framebuffer, oglplus::framebuffer_name(0));
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

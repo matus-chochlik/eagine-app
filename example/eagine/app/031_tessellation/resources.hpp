@@ -25,15 +25,15 @@ public:
     void clean_up(video_context&);
     void set_projection(video_context&, orbiting_camera&);
 
-    void bind_position_location(video_context&, oglp::vertex_attrib_location);
-    void bind_offsets_block(video_context&, oglp::gl_types::uint_type);
+    void bind_position_location(video_context&, oglplus::vertex_attrib_location);
+    void bind_offsets_block(video_context&, oglplus::gl_types::uint_type);
 
 private:
-    oglp::owned_program_name prog;
-    oglp::uniform_location camera_matrix_loc;
-    oglp::uniform_location camera_position_loc;
-    oglp::uniform_location viewport_dim_loc;
-    oglp::uniform_block_index offset_blk_idx{0U};
+    oglplus::owned_program_name prog;
+    oglplus::uniform_location camera_matrix_loc;
+    oglplus::uniform_location camera_position_loc;
+    oglplus::uniform_location viewport_dim_loc;
+    oglplus::uniform_block_index offset_blk_idx{0U};
 };
 //------------------------------------------------------------------------------
 // geometry
@@ -45,7 +45,7 @@ public:
     void draw(video_context&);
 
     static auto position_loc() noexcept {
-        return oglp::vertex_attrib_location{0};
+        return oglplus::vertex_attrib_location{0};
     }
 
     static auto offsets_binding() noexcept {
@@ -55,13 +55,13 @@ public:
 private:
     const int count = 4;
 
-    oglp::owned_vertex_array_name vao;
+    oglplus::owned_vertex_array_name vao;
 
-    oglp::owned_buffer_name positions;
-    oglp::owned_buffer_name indices;
-    oglp::owned_buffer_name offsets;
+    oglplus::owned_buffer_name positions;
+    oglplus::owned_buffer_name indices;
+    oglplus::owned_buffer_name offsets;
 
-    std::vector<oglp::shape_draw_operation> ops;
+    std::vector<oglplus::shape_draw_operation> ops;
 };
 //------------------------------------------------------------------------------
 } // namespace eagine::app

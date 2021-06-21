@@ -56,28 +56,29 @@ void cubes_program::update(execution_context& ec, video_context& vc) {
     glapi.set_uniform(
       prog,
       center_loc,
-      oglp::to_cartesian(oglp::unit_spherical_coordinate(
+      oglplus::to_cartesian(oglplus::unit_spherical_coordinate(
         turns_(t / 3.F),
-        oglp::smooth_lerp(right_angles_(1.F), right_angles_(-1.F), t / 5.F))) *
-        oglp::smooth_lerp(0.F, 10.F, t / 7.F));
+        oglplus::smooth_lerp(
+          right_angles_(1.F), right_angles_(-1.F), t / 5.F))) *
+        oglplus::smooth_lerp(0.F, 10.F, t / 7.F));
     glapi.set_uniform(prog, time_loc, t);
 }
 //------------------------------------------------------------------------------
 void cubes_program::bind_position_location(
   video_context& vc,
-  oglp::vertex_attrib_location loc) {
+  oglplus::vertex_attrib_location loc) {
     vc.gl_api().bind_attrib_location(prog, loc, "Position");
 }
 //------------------------------------------------------------------------------
 void cubes_program::bind_pivot_location(
   video_context& vc,
-  oglp::vertex_attrib_location loc) {
+  oglplus::vertex_attrib_location loc) {
     vc.gl_api().bind_attrib_location(prog, loc, "Pivot");
 }
 //------------------------------------------------------------------------------
 void cubes_program::bind_coord_location(
   video_context& vc,
-  oglp::vertex_attrib_location loc) {
+  oglplus::vertex_attrib_location loc) {
     vc.gl_api().bind_attrib_location(prog, loc, "Coord");
 }
 //------------------------------------------------------------------------------
@@ -95,7 +96,7 @@ void cubes_geometry::init(execution_context& ec, video_context& vc) {
     const auto& glapi = vc.gl_api();
     const auto& gl = glapi;
 
-    oglp::shape_generator shape(
+    oglplus::shape_generator shape(
       glapi,
       shapes::rebox(shapes::center(eagine::shapes::ortho_array_xyz(
         shapes::unit_cube(

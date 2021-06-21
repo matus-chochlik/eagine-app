@@ -45,7 +45,7 @@ void surface_program::prepare_frame(
     auto& gl = vc.gl_api();
     gl.use_program(_prog);
     gl.set_uniform(
-      _prog, _model_loc, oglp::matrix_rotation_x(right_angles_(t))());
+      _prog, _model_loc, oglplus::matrix_rotation_x(right_angles_(t))());
     gl.set_uniform(_prog, _view_loc, camera.transform_matrix());
     gl.set_uniform(
       _prog, _projection_loc, camera.perspective_matrix(vc.surface_aspect()));
@@ -53,14 +53,14 @@ void surface_program::prepare_frame(
 //------------------------------------------------------------------------------
 void surface_program::bind_position_location(
   video_context& vc,
-  oglp::vertex_attrib_location loc) {
+  oglplus::vertex_attrib_location loc) {
     auto& gl = vc.gl_api();
     gl.bind_attrib_location(_prog, loc, "Position");
 }
 //------------------------------------------------------------------------------
 void surface_program::bind_normal_location(
   video_context& vc,
-  oglp::vertex_attrib_location loc) {
+  oglplus::vertex_attrib_location loc) {
     auto& gl = vc.gl_api();
     gl.bind_attrib_location(_prog, loc, "Normal");
 }
@@ -95,7 +95,7 @@ void halo_program::prepare_frame(
     gl.use_program(_prog);
 
     gl.set_uniform(
-      _prog, _model_loc, oglp::matrix_rotation_x(right_angles_(t))());
+      _prog, _model_loc, oglplus::matrix_rotation_x(right_angles_(t))());
     gl.set_uniform(_prog, _view_loc, camera.transform_matrix());
     gl.set_uniform(
       _prog, _projection_loc, camera.perspective_matrix(vc.surface_aspect()));
@@ -104,14 +104,14 @@ void halo_program::prepare_frame(
 //------------------------------------------------------------------------------
 void halo_program::bind_position_location(
   video_context& vc,
-  oglp::vertex_attrib_location loc) {
+  oglplus::vertex_attrib_location loc) {
     auto& gl = vc.gl_api();
     gl.bind_attrib_location(_prog, loc, "Position");
 }
 //------------------------------------------------------------------------------
 void halo_program::bind_normal_location(
   video_context& vc,
-  oglp::vertex_attrib_location loc) {
+  oglplus::vertex_attrib_location loc) {
     auto& gl = vc.gl_api();
     gl.bind_attrib_location(_prog, loc, "Normal");
 }
@@ -122,7 +122,7 @@ void shape_geometry::init(execution_context& ec, video_context& vc) {
     const auto& glapi = vc.gl_api();
     const auto& gl = glapi;
 
-    oglp::shape_generator shape(glapi, _gen);
+    oglplus::shape_generator shape(glapi, _gen);
 
     auto draw_var = shape.draw_variant(0);
     _ops.resize(std_size(shape.operation_count(draw_var)));

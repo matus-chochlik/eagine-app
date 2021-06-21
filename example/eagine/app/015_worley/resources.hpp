@@ -24,40 +24,40 @@ public:
     void clean_up(execution_context&, video_context&);
 
 private:
-    oglp::owned_texture_name random;
+    oglplus::owned_texture_name random;
 };
 //------------------------------------------------------------------------------
 // voronoi program
 //------------------------------------------------------------------------------
 class voronoi_program {
 public:
-    oglp::owned_program_name prog;
-    oglp::uniform_location offset_loc;
-    oglp::uniform_location scale_loc;
+    oglplus::owned_program_name prog;
+    oglplus::uniform_location offset_loc;
+    oglplus::uniform_location scale_loc;
 
     void init(execution_context&, video_context&);
     void clean_up(execution_context&, video_context&);
 
 private:
-    oglp::owned_shader_name vs;
-    oglp::owned_shader_name fs;
+    oglplus::owned_shader_name vs;
+    oglplus::owned_shader_name fs;
 };
 //------------------------------------------------------------------------------
 // screen geometry
 //------------------------------------------------------------------------------
 class screen_geometry {
 public:
-    oglp::vertex_attrib_location position_loc{0};
-    oglp::vertex_attrib_location tex_coord_loc{1};
+    oglplus::vertex_attrib_location position_loc{0};
+    oglplus::vertex_attrib_location tex_coord_loc{1};
 
     void init(execution_context&, video_context&);
     void clean_up(execution_context&, video_context&);
 
 private:
-    oglp::owned_vertex_array_name vao;
+    oglplus::owned_vertex_array_name vao;
 
-    oglp::owned_buffer_name positions;
-    oglp::owned_buffer_name tex_coords;
+    oglplus::owned_buffer_name positions;
+    oglplus::owned_buffer_name tex_coords;
 };
 //------------------------------------------------------------------------------
 } // namespace eagine::app

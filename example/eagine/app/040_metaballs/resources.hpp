@@ -43,7 +43,7 @@ public:
     }
 
     static auto corner_loc() noexcept {
-        return oglp::vertex_attrib_location{0};
+        return oglplus::vertex_attrib_location{0};
     }
 
     static auto field_binding() noexcept {
@@ -59,13 +59,13 @@ public:
     }
 
 private:
-    oglp::owned_vertex_array_name _tetrahedrons;
-    oglp::owned_buffer_name _corners;
-    oglp::owned_buffer_name _indices;
+    oglplus::owned_vertex_array_name _tetrahedrons;
+    oglplus::owned_buffer_name _corners;
+    oglplus::owned_buffer_name _indices;
 
-    oglp::owned_buffer_name _field;
-    oglp::owned_buffer_name _metaballs;
-    oglp::owned_buffer_name _configs;
+    oglplus::owned_buffer_name _field;
+    oglplus::owned_buffer_name _metaballs;
+    oglplus::owned_buffer_name _configs;
 };
 //------------------------------------------------------------------------------
 // programs
@@ -76,10 +76,10 @@ public:
     void prepare_frame(example&);
     void use(example&);
 
-    void bind_metaballs(example&, oglp::gl_types::uint_type);
+    void bind_metaballs(example&, oglplus::gl_types::uint_type);
 
 private:
-    oglp::owned_program_name _prog;
+    oglplus::owned_program_name _prog;
 };
 //------------------------------------------------------------------------------
 class field_program {
@@ -88,33 +88,33 @@ public:
     void prepare_frame(example&);
     void use(example&);
 
-    void bind_field(example&, oglp::gl_types::uint_type);
-    void bind_metaballs(example&, oglp::gl_types::uint_type);
-    void set_plane_count(example&, oglp::gl_types::int_type);
+    void bind_field(example&, oglplus::gl_types::uint_type);
+    void bind_metaballs(example&, oglplus::gl_types::uint_type);
+    void set_plane_count(example&, oglplus::gl_types::int_type);
 
 private:
-    oglp::owned_program_name _prog;
-    oglp::uniform_location _plane_count_loc;
+    oglplus::owned_program_name _prog;
+    oglplus::uniform_location _plane_count_loc;
 };
 //------------------------------------------------------------------------------
 class surface_program {
 public:
     void init(example&);
     void prepare_frame(example&);
-    void bind_corner_location(example&, oglp::vertex_attrib_location);
+    void bind_corner_location(example&, oglplus::vertex_attrib_location);
     void use(example&);
 
-    void bind_field(example&, oglp::gl_types::uint_type);
-    void bind_configs(example&, oglp::gl_types::uint_type);
-    void set_plane_count(example&, oglp::gl_types::int_type);
-    void set_div_count(example&, oglp::gl_types::int_type);
+    void bind_field(example&, oglplus::gl_types::uint_type);
+    void bind_configs(example&, oglplus::gl_types::uint_type);
+    void set_plane_count(example&, oglplus::gl_types::int_type);
+    void set_div_count(example&, oglplus::gl_types::int_type);
 
 private:
-    oglp::owned_program_name _prog;
-    oglp::uniform_location _camera_mat_loc;
-    oglp::uniform_location _perspective_mat_loc;
-    oglp::uniform_location _plane_count_loc;
-    oglp::uniform_location _div_count_loc;
+    oglplus::owned_program_name _prog;
+    oglplus::uniform_location _camera_mat_loc;
+    oglplus::uniform_location _perspective_mat_loc;
+    oglplus::uniform_location _plane_count_loc;
+    oglplus::uniform_location _div_count_loc;
 };
 //------------------------------------------------------------------------------
 } // namespace eagine::app

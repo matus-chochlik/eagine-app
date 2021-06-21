@@ -26,14 +26,14 @@ public:
     void clean_up(video_context&);
     void prepare_frame(video_context&, orbiting_camera& camera, float t);
 
-    void bind_position_location(video_context&, oglp::vertex_attrib_location);
-    void bind_normal_location(video_context&, oglp::vertex_attrib_location);
+    void bind_position_location(video_context&, oglplus::vertex_attrib_location);
+    void bind_normal_location(video_context&, oglplus::vertex_attrib_location);
 
 private:
-    oglp::owned_program_name _prog;
-    oglp::uniform_location _model_loc;
-    oglp::uniform_location _view_loc;
-    oglp::uniform_location _projection_loc;
+    oglplus::owned_program_name _prog;
+    oglplus::uniform_location _model_loc;
+    oglplus::uniform_location _view_loc;
+    oglplus::uniform_location _projection_loc;
 };
 //------------------------------------------------------------------------------
 class halo_program {
@@ -42,15 +42,15 @@ public:
     void clean_up(video_context&);
     void prepare_frame(video_context&, orbiting_camera& camera, float t);
 
-    void bind_position_location(video_context&, oglp::vertex_attrib_location);
-    void bind_normal_location(video_context&, oglp::vertex_attrib_location);
+    void bind_position_location(video_context&, oglplus::vertex_attrib_location);
+    void bind_normal_location(video_context&, oglplus::vertex_attrib_location);
 
 private:
-    oglp::owned_program_name _prog;
-    oglp::uniform_location _model_loc;
-    oglp::uniform_location _view_loc;
-    oglp::uniform_location _projection_loc;
-    oglp::uniform_location _camera_pos_loc;
+    oglplus::owned_program_name _prog;
+    oglplus::uniform_location _model_loc;
+    oglplus::uniform_location _view_loc;
+    oglplus::uniform_location _projection_loc;
+    oglplus::uniform_location _camera_pos_loc;
 };
 //------------------------------------------------------------------------------
 // geometry
@@ -65,22 +65,22 @@ public:
     void draw(execution_context&, video_context&);
 
     static auto position_loc() noexcept {
-        return oglp::vertex_attrib_location{0};
+        return oglplus::vertex_attrib_location{0};
     }
 
     static auto normal_loc() noexcept {
-        return oglp::vertex_attrib_location{1};
+        return oglplus::vertex_attrib_location{1};
     }
 
 private:
     std::shared_ptr<shapes::generator> _gen;
-    oglp::owned_vertex_array_name _vao;
+    oglplus::owned_vertex_array_name _vao;
 
-    oglp::owned_buffer_name _positions;
-    oglp::owned_buffer_name _normals;
-    oglp::owned_buffer_name _indices;
+    oglplus::owned_buffer_name _positions;
+    oglplus::owned_buffer_name _normals;
+    oglplus::owned_buffer_name _indices;
 
-    std::vector<oglp::shape_draw_operation> _ops;
+    std::vector<oglplus::shape_draw_operation> _ops;
 };
 //------------------------------------------------------------------------------
 } // namespace eagine::app

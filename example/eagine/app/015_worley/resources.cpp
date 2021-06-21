@@ -53,13 +53,13 @@ void voronoi_program::init(execution_context&, video_context& vc) {
     // vertex shader
     auto vs_source = embed(EAGINE_ID(VertShader), "vertex.glsl");
     gl.create_shader(GL.vertex_shader) >> vs;
-    gl.shader_source(vs, oglp::glsl_string_ref(vs_source));
+    gl.shader_source(vs, oglplus::glsl_string_ref(vs_source));
     gl.compile_shader(vs);
 
     // fragment shader
     auto fs_source = embed(EAGINE_ID(FragShader), "fragment.glsl");
     gl.create_shader(GL.fragment_shader) >> fs;
-    gl.shader_source(fs, oglp::glsl_string_ref(fs_source));
+    gl.shader_source(fs, oglplus::glsl_string_ref(fs_source));
     gl.compile_shader(fs);
 
     // program

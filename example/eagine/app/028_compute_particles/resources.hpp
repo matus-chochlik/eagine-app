@@ -27,7 +27,7 @@ public:
     void draw(example&);
 
     static auto origin_loc() noexcept {
-        return oglp::vertex_attrib_location{0};
+        return oglplus::vertex_attrib_location{0};
     }
 
     static auto cursors_binding() noexcept {
@@ -53,14 +53,14 @@ public:
 private:
     const unsigned _count{4096U};
 
-    oglp::owned_vertex_array_name _vao;
+    oglplus::owned_vertex_array_name _vao;
 
-    oglp::owned_buffer_name _origin;
-    oglp::owned_buffer_name _cursors;
-    oglp::owned_buffer_name _random;
-    oglp::owned_buffer_name _offsets;
-    oglp::owned_buffer_name _velocities;
-    oglp::owned_buffer_name _ages;
+    oglplus::owned_buffer_name _origin;
+    oglplus::owned_buffer_name _cursors;
+    oglplus::owned_buffer_name _random;
+    oglplus::owned_buffer_name _offsets;
+    oglplus::owned_buffer_name _velocities;
+    oglplus::owned_buffer_name _ages;
 };
 //------------------------------------------------------------------------------
 // programs
@@ -69,31 +69,31 @@ class emit_program {
 public:
     void init(example&);
     void prepare_frame(example&);
-    void bind_random(example&, oglp::gl_types::uint_type);
-    void bind_offsets(example&, oglp::gl_types::uint_type);
-    void bind_velocities(example&, oglp::gl_types::uint_type);
-    void bind_ages(example&, oglp::gl_types::uint_type);
+    void bind_random(example&, oglplus::gl_types::uint_type);
+    void bind_offsets(example&, oglplus::gl_types::uint_type);
+    void bind_velocities(example&, oglplus::gl_types::uint_type);
+    void bind_ages(example&, oglplus::gl_types::uint_type);
     void use(example&);
 
 private:
-    oglp::owned_program_name _prog;
-    oglp::uniform_location _emit_position_loc;
-    oglp::uniform_location _delta_time_loc;
+    oglplus::owned_program_name _prog;
+    oglplus::uniform_location _emit_position_loc;
+    oglplus::uniform_location _delta_time_loc;
 };
 //------------------------------------------------------------------------------
 class draw_program {
 public:
     void init(example&);
     void prepare_frame(example&);
-    void bind_origin_location(example&, oglp::vertex_attrib_location);
-    void bind_offsets(example&, oglp::gl_types::uint_type);
-    void bind_ages(example&, oglp::gl_types::uint_type);
+    void bind_origin_location(example&, oglplus::vertex_attrib_location);
+    void bind_offsets(example&, oglplus::gl_types::uint_type);
+    void bind_ages(example&, oglplus::gl_types::uint_type);
     void use(example&);
 
 private:
-    oglp::owned_program_name _prog;
-    oglp::uniform_location _camera_mat_loc;
-    oglp::uniform_location _perspective_mat_loc;
+    oglplus::owned_program_name _prog;
+    oglplus::uniform_location _camera_mat_loc;
+    oglplus::uniform_location _perspective_mat_loc;
 };
 //------------------------------------------------------------------------------
 } // namespace eagine::app

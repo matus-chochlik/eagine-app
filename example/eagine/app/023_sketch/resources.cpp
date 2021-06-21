@@ -49,30 +49,32 @@ void sketch_program::prepare_frame(
     auto& gl = vc.gl_api();
     gl.use_program(_prog);
     gl.set_uniform(
-      _prog, _model_loc, oglp::matrix_rotation_x(right_angles_(t * 0.125F))());
+      _prog,
+      _model_loc,
+      oglplus::matrix_rotation_x(right_angles_(t * 0.125F))());
     gl.set_uniform(_prog, _view_loc, camera.transform_matrix());
     gl.set_uniform(
       _prog, _projection_loc, camera.perspective_matrix(vc.surface_aspect()));
-    gl.set_uniform(_prog, _vp_dim_loc, oglp::vec2(width, height));
+    gl.set_uniform(_prog, _vp_dim_loc, oglplus::vec2(width, height));
 }
 //------------------------------------------------------------------------------
 void sketch_program::bind_position_location(
   video_context& vc,
-  oglp::vertex_attrib_location loc) {
+  oglplus::vertex_attrib_location loc) {
     auto& gl = vc.gl_api();
     gl.bind_attrib_location(_prog, loc, "Position");
 }
 //------------------------------------------------------------------------------
 void sketch_program::bind_normal_location(
   video_context& vc,
-  oglp::vertex_attrib_location loc) {
+  oglplus::vertex_attrib_location loc) {
     auto& gl = vc.gl_api();
     gl.bind_attrib_location(_prog, loc, "Normal");
 }
 //------------------------------------------------------------------------------
 void sketch_program::bind_coord_location(
   video_context& vc,
-  oglp::vertex_attrib_location loc) {
+  oglplus::vertex_attrib_location loc) {
     auto& gl = vc.gl_api();
     gl.bind_attrib_location(_prog, loc, "Coord");
 }
@@ -83,7 +85,7 @@ void shape_geometry::init(execution_context& ec, video_context& vc) {
     const auto& glapi = vc.gl_api();
     const auto& gl = glapi;
 
-    oglp::shape_generator shape(
+    oglplus::shape_generator shape(
       glapi,
       shapes::add_triangle_adjacency(shapes::unit_twisted_torus(
         shapes::vertex_attrib_kind::position |

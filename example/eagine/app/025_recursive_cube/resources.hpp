@@ -25,20 +25,21 @@ class cube_program {
 public:
     void init(execution_context&, video_context&);
     void clean_up(video_context&);
-    void set_texture(video_context&, oglp::gl_types::int_type);
-    void set_projection(video_context&, const oglp::tmat<float, 4, 4, true>&);
+    void set_texture(video_context&, oglplus::gl_types::int_type);
+    void set_projection(video_context&, const oglplus::tmat<float, 4, 4, true>&);
     void update(execution_context&, video_context&);
 
-    void bind_position_location(video_context&, oglp::vertex_attrib_location);
-    void bind_normal_location(video_context&, oglp::vertex_attrib_location);
-    void bind_tex_coord_location(video_context&, oglp::vertex_attrib_location);
+    void bind_position_location(video_context&, oglplus::vertex_attrib_location);
+    void bind_normal_location(video_context&, oglplus::vertex_attrib_location);
+    void
+    bind_tex_coord_location(video_context&, oglplus::vertex_attrib_location);
 
 private:
-    oglp::owned_program_name prog;
-    oglp::uniform_location projection_loc;
-    oglp::uniform_location modelview_loc;
-    oglp::uniform_location light_pos_loc;
-    oglp::uniform_location cube_tex_loc;
+    oglplus::owned_program_name prog;
+    oglplus::uniform_location projection_loc;
+    oglplus::uniform_location modelview_loc;
+    oglplus::uniform_location light_pos_loc;
+    oglplus::uniform_location cube_tex_loc;
 
     radians_t<float> rad{0.F};
 };
@@ -52,26 +53,26 @@ public:
     void draw(video_context&);
 
     static auto position_loc() noexcept {
-        return oglp::vertex_attrib_location{0};
+        return oglplus::vertex_attrib_location{0};
     }
 
     static auto normal_loc() noexcept {
-        return oglp::vertex_attrib_location{1};
+        return oglplus::vertex_attrib_location{1};
     }
 
     static auto tex_coord_loc() noexcept {
-        return oglp::vertex_attrib_location{2};
+        return oglplus::vertex_attrib_location{2};
     }
 
 private:
-    oglp::owned_vertex_array_name vao;
+    oglplus::owned_vertex_array_name vao;
 
-    oglp::owned_buffer_name positions;
-    oglp::owned_buffer_name normals;
-    oglp::owned_buffer_name tex_coords;
-    oglp::owned_buffer_name indices;
+    oglplus::owned_buffer_name positions;
+    oglplus::owned_buffer_name normals;
+    oglplus::owned_buffer_name tex_coords;
+    oglplus::owned_buffer_name indices;
 
-    std::vector<oglp::shape_draw_operation> ops;
+    std::vector<oglplus::shape_draw_operation> ops;
 };
 //------------------------------------------------------------------------------
 // draw buffers
@@ -82,7 +83,7 @@ public:
     void clean_up(video_context&);
 
     auto back_fbo() const noexcept {
-        return oglp::framebuffer_name{objs.back().fbo};
+        return oglplus::framebuffer_name{objs.back().fbo};
     }
 
     auto front_tex_unit() const noexcept {
@@ -98,13 +99,13 @@ public:
     }
 
 private:
-    const oglp::gl_types::sizei_type tex_side{512};
+    const oglplus::gl_types::sizei_type tex_side{512};
 
     struct _buffer_objects {
-        oglp::gl_types::int_type tex_unit{};
-        oglp::owned_texture_name tex{};
-        oglp::owned_renderbuffer_name rbo{};
-        oglp::owned_framebuffer_name fbo{};
+        oglplus::gl_types::int_type tex_unit{};
+        oglplus::owned_texture_name tex{};
+        oglplus::owned_renderbuffer_name rbo{};
+        oglplus::owned_framebuffer_name fbo{};
     };
 
     double_buffer<_buffer_objects> objs{};

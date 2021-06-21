@@ -36,12 +36,12 @@ private:
     video_context& _video;
     timeout _is_done{std::chrono::seconds(20)};
 
-    oglp::owned_vertex_array_name vao;
+    oglplus::owned_vertex_array_name vao;
 
-    oglp::owned_buffer_name positions;
-    oglp::owned_buffer_name counters;
+    oglplus::owned_buffer_name positions;
+    oglplus::owned_buffer_name counters;
 
-    oglp::owned_program_name prog;
+    oglplus::owned_program_name prog;
 };
 //------------------------------------------------------------------------------
 example_atomics::example_atomics(execution_context& ec, video_context& vc)
@@ -50,27 +50,27 @@ example_atomics::example_atomics(execution_context& ec, video_context& vc)
     auto& [gl, GL] = _video.gl_api();
 
     // vertex shader
-    oglp::owned_shader_name vs;
+    oglplus::owned_shader_name vs;
     auto vs_cleanup = gl.delete_shader.raii(vs);
     auto vs_source = embed(EAGINE_ID(VertShader), "vertex.glsl");
     gl.create_shader(GL.vertex_shader) >> vs;
-    gl.shader_source(vs, oglp::glsl_string_ref(vs_source.unpack(ec)));
+    gl.shader_source(vs, oglplus::glsl_string_ref(vs_source.unpack(ec)));
     gl.compile_shader(vs);
 
     // geometry shader
-    oglp::owned_shader_name gs;
+    oglplus::owned_shader_name gs;
     auto gs_cleanup = gl.delete_shader.raii(gs);
     auto gs_source = embed(EAGINE_ID(GeomShader), "geometry.glsl");
     gl.create_shader(GL.geometry_shader) >> gs;
-    gl.shader_source(gs, oglp::glsl_string_ref(gs_source.unpack(ec)));
+    gl.shader_source(gs, oglplus::glsl_string_ref(gs_source.unpack(ec)));
     gl.compile_shader(gs);
 
     // fragment shader
-    oglp::owned_shader_name fs;
+    oglplus::owned_shader_name fs;
     auto fs_cleanup = gl.delete_shader.raii(fs);
     auto fs_source = embed(EAGINE_ID(FragShader), "fragment.glsl");
     gl.create_shader(GL.fragment_shader) >> fs;
-    gl.shader_source(fs, oglp::glsl_string_ref(fs_source.unpack(ec)));
+    gl.shader_source(fs, oglplus::glsl_string_ref(fs_source.unpack(ec)));
     gl.compile_shader(fs);
 
     // program
@@ -92,7 +92,7 @@ example_atomics::example_atomics(execution_context& ec, video_context& vc)
     gl.gen_buffers() >> positions;
     gl.bind_buffer(GL.array_buffer, positions);
     gl.buffer_data(GL.array_buffer, view(position_data), GL.static_draw);
-    oglp::vertex_attrib_location position_loc;
+    oglplus::vertex_attrib_location position_loc;
     gl.get_attrib_location(prog, "Position") >> position_loc;
 
     gl.vertex_attrib_pointer(position_loc, 2, GL.float_, GL.false_);

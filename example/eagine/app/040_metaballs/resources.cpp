@@ -84,7 +84,7 @@ void volume_domain::init(example& e) {
       GL.shader_storage_buffer, metaballs_binding(), _metaballs);
     gl.buffer_storage(GL.shader_storage_buffer, 2048);
     gl.clear_buffer_sub_data(
-      GL.shader_storage_buffer, 0, 1, oglp::gl_types::uint_type(0U));
+      GL.shader_storage_buffer, 0, 1, oglplus::gl_types::uint_type(0U));
 
     // tetrahedron cut configurations
     // clang-format off
@@ -141,9 +141,9 @@ void metaball_program::init(example& e) {
 //------------------------------------------------------------------------------
 void metaball_program::bind_metaballs(
   example& e,
-  oglp::gl_types::uint_type binding) {
+  oglplus::gl_types::uint_type binding) {
     auto& gl = e.video().gl_api();
-    oglp::shader_storage_block_index blk_idx;
+    oglplus::shader_storage_block_index blk_idx;
     gl.get_shader_storage_block_index(_prog, "MetaballBlock") >> blk_idx;
     gl.shader_storage_block_binding(_prog, blk_idx, binding);
 }
@@ -170,23 +170,27 @@ void field_program::init(example& e) {
     gl.get_uniform_location(_prog, "PlaneCount") >> _plane_count_loc;
 }
 //------------------------------------------------------------------------------
-void field_program::bind_field(example& e, oglp::gl_types::uint_type binding) {
+void field_program::bind_field(
+  example& e,
+  oglplus::gl_types::uint_type binding) {
     auto& gl = e.video().gl_api();
-    oglp::shader_storage_block_index blk_idx;
+    oglplus::shader_storage_block_index blk_idx;
     gl.get_shader_storage_block_index(_prog, "FieldBlock") >> blk_idx;
     gl.shader_storage_block_binding(_prog, blk_idx, binding);
 }
 //------------------------------------------------------------------------------
 void field_program::bind_metaballs(
   example& e,
-  oglp::gl_types::uint_type binding) {
+  oglplus::gl_types::uint_type binding) {
     auto& gl = e.video().gl_api();
-    oglp::shader_storage_block_index blk_idx;
+    oglplus::shader_storage_block_index blk_idx;
     gl.get_shader_storage_block_index(_prog, "MetaballBlock") >> blk_idx;
     gl.shader_storage_block_binding(_prog, blk_idx, binding);
 }
 //------------------------------------------------------------------------------
-void field_program::set_plane_count(example& e, oglp::gl_types::int_type count) {
+void field_program::set_plane_count(
+  example& e,
+  oglplus::gl_types::int_type count) {
     e.video().gl_api().set_uniform(_prog, _plane_count_loc, count);
 }
 //------------------------------------------------------------------------------
@@ -224,35 +228,39 @@ void surface_program::prepare_frame(example& e) {
       e.camera().perspective_matrix(e.video().surface_aspect()));
 }
 //------------------------------------------------------------------------------
-void surface_program::bind_field(example& e, oglp::gl_types::uint_type binding) {
+void surface_program::bind_field(
+  example& e,
+  oglplus::gl_types::uint_type binding) {
     auto& gl = e.video().gl_api();
-    oglp::shader_storage_block_index blk_idx;
+    oglplus::shader_storage_block_index blk_idx;
     gl.get_shader_storage_block_index(_prog, "FieldBlock") >> blk_idx;
     gl.shader_storage_block_binding(_prog, blk_idx, binding);
 }
 //------------------------------------------------------------------------------
 void surface_program::bind_configs(
   example& e,
-  oglp::gl_types::uint_type binding) {
+  oglplus::gl_types::uint_type binding) {
     auto& gl = e.video().gl_api();
-    oglp::shader_storage_block_index blk_idx;
+    oglplus::shader_storage_block_index blk_idx;
     gl.get_shader_storage_block_index(_prog, "ConfigsBlock") >> blk_idx;
     gl.shader_storage_block_binding(_prog, blk_idx, binding);
 }
 //------------------------------------------------------------------------------
 void surface_program::set_plane_count(
   example& e,
-  oglp::gl_types::int_type count) {
+  oglplus::gl_types::int_type count) {
     e.video().gl_api().set_uniform(_prog, _plane_count_loc, count);
 }
 //------------------------------------------------------------------------------
-void surface_program::set_div_count(example& e, oglp::gl_types::int_type count) {
+void surface_program::set_div_count(
+  example& e,
+  oglplus::gl_types::int_type count) {
     e.video().gl_api().set_uniform(_prog, _div_count_loc, count);
 }
 //------------------------------------------------------------------------------
 void surface_program::bind_corner_location(
   example& e,
-  oglp::vertex_attrib_location loc) {
+  oglplus::vertex_attrib_location loc) {
     e.video().gl_api().bind_attrib_location(_prog, loc, "Corner");
 }
 //------------------------------------------------------------------------------

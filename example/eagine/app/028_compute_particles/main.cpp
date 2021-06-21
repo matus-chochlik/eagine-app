@@ -20,7 +20,7 @@ namespace eagine::app {
 example::example(execution_context& ec, video_context& vc)
   : _ctx{ec}
   , _video{vc}
-  , _path{view(std::array<oglp::vec3, 4>{
+  , _path{view(std::array<oglplus::vec3, 4>{
       {{-20.F, -10.F, -10.F},
        {20.F, -10.F, -10.F},
        {0.F, 10.F, 0.F},

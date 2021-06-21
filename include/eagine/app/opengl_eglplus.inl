@@ -25,7 +25,7 @@ class eglplus_opengl_surface
   : public main_ctx_object
   , public video_provider {
 public:
-    eglplus_opengl_surface(main_ctx_parent parent, eglp::egl_api& egl)
+    eglplus_opengl_surface(main_ctx_parent parent, eglplus::egl_api& egl)
       : main_ctx_object{EAGINE_ID(EGLPbuffer), parent}
       , _egl_api{egl} {}
 
@@ -33,18 +33,18 @@ public:
       execution_context&,
       bool gl_otherwise_gles,
       const launch_options&,
-      const video_options&) const -> std::vector<eglp::egl_types::int_type>;
+      const video_options&) const -> std::vector<eglplus::egl_types::int_type>;
 
     auto initialize(
       execution_context&,
-      eglp::display_handle,
-      eglp::egl_types::config_type,
+      eglplus::display_handle,
+      eglplus::egl_types::config_type,
       const launch_options&,
       const video_options&) -> bool;
 
     auto initialize(
       execution_context&,
-      eglp::display_handle,
+      eglplus::display_handle,
       valid_if_nonnegative<span_size_t> device_idx,
       const launch_options&,
       const video_options&) -> bool;
@@ -70,11 +70,11 @@ public:
     void video_commit(execution_context&) final;
 
 private:
-    eglp::egl_api& _egl_api;
+    eglplus::egl_api& _egl_api;
     identifier _instance_id;
-    eglp::display_handle _display{};
-    eglp::surface_handle _surface{};
-    eglp::context_handle _context{};
+    eglplus::display_handle _display{};
+    eglplus::surface_handle _surface{};
+    eglplus::context_handle _context{};
 
     int _width{1};
     int _height{1};
@@ -86,7 +86,7 @@ auto eglplus_opengl_surface::get_context_attribs(
   bool gl_otherwise_gles,
   const launch_options&,
   const video_options& video_opts) const
-  -> std::vector<eglp::egl_types::int_type> {
+  -> std::vector<eglplus::egl_types::int_type> {
     const auto& EGL = _egl_api.constants();
 
     auto add_major_version = [&](auto attribs) {
@@ -95,7 +95,7 @@ auto eglplus_opengl_surface::get_context_attribs(
     };
 
     auto add_minor_version = [&](auto attribs) {
-        eglp::context_attrib_traits::value_type fallback = 0;
+        eglplus::context_attrib_traits::value_type fallback = 0;
         if(gl_otherwise_gles) {
             if(!video_opts.gl_compatibility_context()) {
                 fallback = 3;
@@ -128,15 +128,15 @@ auto eglplus_opengl_surface::get_context_attribs(
 
     return add_robustness(
              add_debugging(add_profile_mask(add_minor_version(
-               add_major_version(eglp::context_attribute_base())))))
+               add_major_version(eglplus::context_attribute_base())))))
       .copy();
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
 auto eglplus_opengl_surface::initialize(
   execution_context& exec_ctx,
-  eglp::display_handle display,
-  eglp::egl_types::config_type config,
+  eglplus::display_handle display,
+  eglplus::egl_types::config_type config,
   const launch_options& opts,
   const video_options& video_opts) -> bool {
     const auto& [egl, EGL] = _egl_api;
@@ -166,8 +166,8 @@ auto eglplus_opengl_surface::initialize(
         _surface = surface;
 
         const auto gl_api = gl_otherwise_gles
-                              ? eglp::client_api(EGL.opengl_api)
-                              : eglp::client_api(EGL.opengl_es_api);
+                              ? eglplus::client_api(EGL.opengl_api)
+                              : eglplus::client_api(EGL.opengl_es_api);
 
         if(ok bound{egl.bind_api(gl_api)}) {
             const auto context_attribs = get_context_attribs(
@@ -176,7 +176,7 @@ auto eglplus_opengl_surface::initialize(
             if(ok ctxt{egl.create_context(
                  display,
                  config,
-                 eglp::context_handle{},
+                 eglplus::context_handle{},
                  view(context_attribs))}) {
                 _context = ctxt;
                 return true;
@@ -200,7 +200,7 @@ auto eglplus_opengl_surface::initialize(
 EAGINE_LIB_FUNC
 auto eglplus_opengl_surface::initialize(
   execution_context& exec_ctx,
-  eglp::display_handle display,
+  eglplus::display_handle display,
   valid_if_nonnegative<span_size_t> device_idx,
   const launch_options& opts,
   const video_options& video_opts) -> bool {
@@ -339,12 +339,12 @@ auto eglplus_opengl_surface::initialize(
     if(select_device && egl.EXT_device_enumeration) {
         if(ok dev_count{egl.query_devices.count()}) {
             const auto n = std_size(extract(dev_count));
-            std::vector<eglp::egl_types::device_type> devices;
+            std::vector<eglplus::egl_types::device_type> devices;
             devices.resize(n);
             if(egl.query_devices(cover(devices))) {
                 for(const auto cur_dev_idx : integer_range(n)) {
                     bool matching_device = true;
-                    auto device = eglp::device_handle(devices[cur_dev_idx]);
+                    auto device = eglplus::device_handle(devices[cur_dev_idx]);
 
                     if(device_idx) {
                         if(std_size(extract(device_idx)) == cur_dev_idx) {
@@ -543,7 +543,7 @@ public:
       callable_ref<void(std::shared_ptr<audio_provider>)>) final;
 
 private:
-    eglp::egl_api _egl_api;
+    eglplus::egl_api _egl_api;
 
     std::map<identifier, std::shared_ptr<eglplus_opengl_surface>> _surfaces;
 };

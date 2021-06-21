@@ -49,7 +49,7 @@ void particles::init(example& e) {
       GL.atomic_counter_buffer, view(cursor_values), GL.dynamic_draw);
 
     //
-    std::vector<oglp::gl_types::float_type> init_data;
+    std::vector<oglplus::gl_types::float_type> init_data;
     // random
     init_data.resize(std_size(_count * 16));
     e.ctx().random_uniform_01(cover(init_data));
@@ -125,32 +125,36 @@ void emit_program::prepare_frame(example& e) {
     gl.set_uniform(_prog, _delta_time_loc, e.frame_duration());
 }
 //------------------------------------------------------------------------------
-void emit_program::bind_random(example& e, oglp::gl_types::uint_type binding) {
+void emit_program::bind_random(
+  example& e,
+  oglplus::gl_types::uint_type binding) {
     auto& gl = e.video().gl_api();
-    oglp::shader_storage_block_index blk_idx;
+    oglplus::shader_storage_block_index blk_idx;
     gl.get_shader_storage_block_index(_prog, "RandomBlock") >> blk_idx;
     gl.shader_storage_block_binding(_prog, blk_idx, binding);
 }
 //------------------------------------------------------------------------------
-void emit_program::bind_offsets(example& e, oglp::gl_types::uint_type binding) {
+void emit_program::bind_offsets(
+  example& e,
+  oglplus::gl_types::uint_type binding) {
     auto& gl = e.video().gl_api();
-    oglp::shader_storage_block_index blk_idx;
+    oglplus::shader_storage_block_index blk_idx;
     gl.get_shader_storage_block_index(_prog, "OffsetBlock") >> blk_idx;
     gl.shader_storage_block_binding(_prog, blk_idx, binding);
 }
 //------------------------------------------------------------------------------
 void emit_program::bind_velocities(
   example& e,
-  oglp::gl_types::uint_type binding) {
+  oglplus::gl_types::uint_type binding) {
     auto& gl = e.video().gl_api();
-    oglp::shader_storage_block_index blk_idx;
+    oglplus::shader_storage_block_index blk_idx;
     gl.get_shader_storage_block_index(_prog, "VelocityBlock") >> blk_idx;
     gl.shader_storage_block_binding(_prog, blk_idx, binding);
 }
 //------------------------------------------------------------------------------
-void emit_program::bind_ages(example& e, oglp::gl_types::uint_type binding) {
+void emit_program::bind_ages(example& e, oglplus::gl_types::uint_type binding) {
     auto& gl = e.video().gl_api();
-    oglp::shader_storage_block_index blk_idx;
+    oglplus::shader_storage_block_index blk_idx;
     gl.get_shader_storage_block_index(_prog, "AgeBlock") >> blk_idx;
     gl.shader_storage_block_binding(_prog, blk_idx, binding);
 }
@@ -187,20 +191,22 @@ void draw_program::prepare_frame(example& e) {
 //------------------------------------------------------------------------------
 void draw_program::bind_origin_location(
   example& e,
-  oglp::vertex_attrib_location loc) {
+  oglplus::vertex_attrib_location loc) {
     e.video().gl_api().bind_attrib_location(_prog, loc, "Origin");
 }
 //------------------------------------------------------------------------------
-void draw_program::bind_offsets(example& e, oglp::gl_types::uint_type binding) {
+void draw_program::bind_offsets(
+  example& e,
+  oglplus::gl_types::uint_type binding) {
     auto& gl = e.video().gl_api();
-    oglp::shader_storage_block_index blk_idx;
+    oglplus::shader_storage_block_index blk_idx;
     gl.get_shader_storage_block_index(_prog, "OffsetBlock") >> blk_idx;
     gl.shader_storage_block_binding(_prog, blk_idx, binding);
 }
 //------------------------------------------------------------------------------
-void draw_program::bind_ages(example& e, oglp::gl_types::uint_type binding) {
+void draw_program::bind_ages(example& e, oglplus::gl_types::uint_type binding) {
     auto& gl = e.video().gl_api();
-    oglp::shader_storage_block_index blk_idx;
+    oglplus::shader_storage_block_index blk_idx;
     gl.get_shader_storage_block_index(_prog, "AgeBlock") >> blk_idx;
     gl.shader_storage_block_binding(_prog, blk_idx, binding);
 }

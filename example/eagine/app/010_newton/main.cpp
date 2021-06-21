@@ -42,20 +42,20 @@ private:
     video_context& _video;
     timeout _is_done{std::chrono::seconds(10)};
 
-    oglp::owned_vertex_array_name vao;
+    oglplus::owned_vertex_array_name vao;
 
-    oglp::owned_buffer_name positions;
-    oglp::owned_buffer_name coords;
+    oglplus::owned_buffer_name positions;
+    oglplus::owned_buffer_name coords;
 
-    oglp::owned_shader_name vs;
-    oglp::owned_shader_name fs;
+    oglplus::owned_shader_name vs;
+    oglplus::owned_shader_name fs;
 
-    oglp::owned_program_name prog;
+    oglplus::owned_program_name prog;
 
-    oglp::uniform_location offset_loc;
-    oglp::uniform_location scale_loc;
+    oglplus::uniform_location offset_loc;
+    oglplus::uniform_location scale_loc;
 
-    oglp::owned_texture_name gradient;
+    oglplus::owned_texture_name gradient;
 
     float offset_x{-0.5F};
     float offset_y{0.0F};
@@ -83,13 +83,13 @@ example_newton::example_newton(execution_context& ec, video_context& vc)
     // vertex shader
     auto vs_source = embed(EAGINE_ID(VertShader), "vertex.glsl");
     gl.create_shader(GL.vertex_shader) >> vs;
-    gl.shader_source(vs, oglp::glsl_string_ref(vs_source));
+    gl.shader_source(vs, oglplus::glsl_string_ref(vs_source));
     gl.compile_shader(vs);
 
     // fragment shader
     auto fs_source = embed(EAGINE_ID(FragShader), "fragment.glsl");
     gl.create_shader(GL.fragment_shader) >> fs;
-    gl.shader_source(fs, oglp::glsl_string_ref(fs_source));
+    gl.shader_source(fs, oglplus::glsl_string_ref(fs_source));
     gl.compile_shader(fs);
 
     // program
@@ -115,7 +115,7 @@ example_newton::example_newton(execution_context& ec, video_context& vc)
     gl.gen_buffers() >> positions;
     gl.bind_buffer(GL.array_buffer, positions);
     gl.buffer_data(GL.array_buffer, view(position_data), GL.static_draw);
-    oglp::vertex_attrib_location position_loc;
+    oglplus::vertex_attrib_location position_loc;
     gl.get_attrib_location(prog, "Position") >> position_loc;
 
     gl.vertex_attrib_pointer(position_loc, 2, GL.float_, GL.false_);
@@ -127,7 +127,7 @@ example_newton::example_newton(execution_context& ec, video_context& vc)
     gl.gen_buffers() >> coords;
     gl.bind_buffer(GL.array_buffer, coords);
     gl.buffer_data(GL.array_buffer, view(coord_data), GL.static_draw);
-    oglp::vertex_attrib_location coord_loc;
+    oglplus::vertex_attrib_location coord_loc;
     gl.get_attrib_location(prog, "Coord") >> coord_loc;
 
     gl.vertex_attrib_pointer(coord_loc, 2, GL.float_, GL.false_);

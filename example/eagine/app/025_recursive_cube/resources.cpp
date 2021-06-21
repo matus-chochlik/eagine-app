@@ -41,13 +41,13 @@ void cube_program::clean_up(video_context& vc) {
 //------------------------------------------------------------------------------
 void cube_program::set_texture(
   video_context& vc,
-  oglp::gl_types::int_type tex_unit) {
+  oglplus::gl_types::int_type tex_unit) {
     vc.gl_api().set_uniform(prog, cube_tex_loc, tex_unit);
 }
 //------------------------------------------------------------------------------
 void cube_program::set_projection(
   video_context& vc,
-  const oglp::tmat<float, 4, 4, true>& proj_mat) {
+  const oglplus::tmat<float, 4, 4, true>& proj_mat) {
     vc.gl_api().set_uniform(prog, projection_loc, proj_mat);
 }
 //------------------------------------------------------------------------------
@@ -57,27 +57,28 @@ void cube_program::update(execution_context& ec, video_context& vc) {
     glapi.set_uniform(
       prog,
       modelview_loc,
-      oglp::matrix_rotation_x(rad * 1) * oglp::matrix_rotation_y(rad * 2) *
-        oglp::matrix_rotation_z(rad * 3));
+      oglplus::matrix_rotation_x(rad * 1) *
+        oglplus::matrix_rotation_y(rad * 2) *
+        oglplus::matrix_rotation_z(rad * 3));
     glapi.set_uniform(
-      prog, light_pos_loc, oglp::vec3(cos(rad) * 4, sin(rad) * 4, 8));
+      prog, light_pos_loc, oglplus::vec3(cos(rad) * 4, sin(rad) * 4, 8));
 }
 //------------------------------------------------------------------------------
 void cube_program::bind_position_location(
   video_context& vc,
-  oglp::vertex_attrib_location loc) {
+  oglplus::vertex_attrib_location loc) {
     vc.gl_api().bind_attrib_location(prog, loc, "Position");
 }
 //------------------------------------------------------------------------------
 void cube_program::bind_normal_location(
   video_context& vc,
-  oglp::vertex_attrib_location loc) {
+  oglplus::vertex_attrib_location loc) {
     vc.gl_api().bind_attrib_location(prog, loc, "Normal");
 }
 //------------------------------------------------------------------------------
 void cube_program::bind_tex_coord_location(
   video_context& vc,
-  oglp::vertex_attrib_location loc) {
+  oglplus::vertex_attrib_location loc) {
     vc.gl_api().bind_attrib_location(prog, loc, "TexCoord");
 }
 //------------------------------------------------------------------------------
@@ -87,7 +88,7 @@ void cube_geometry::init(execution_context& ec, video_context& vc) {
     const auto& glapi = vc.gl_api();
     const auto& gl = glapi;
 
-    oglp::shape_generator shape(
+    oglplus::shape_generator shape(
       glapi,
       shapes::unit_cube(
         shapes::vertex_attrib_kind::position |
@@ -191,8 +192,8 @@ void cube_draw_buffers::init(execution_context&, video_context& vc) {
         objs.swap();
     }
 
-    gl.bind_framebuffer(GL.draw_framebuffer, oglp::framebuffer_name(0));
-    gl.bind_renderbuffer(GL.renderbuffer, oglp::renderbuffer_name(0));
+    gl.bind_framebuffer(GL.draw_framebuffer, oglplus::framebuffer_name(0));
+    gl.bind_renderbuffer(GL.renderbuffer, oglplus::renderbuffer_name(0));
 }
 //------------------------------------------------------------------------------
 void cube_draw_buffers::clean_up(video_context& vc) {

@@ -45,21 +45,21 @@ void torus_program::set_projection(video_context& vc, orbiting_camera& camera) {
 //------------------------------------------------------------------------------
 void torus_program::bind_position_location(
   video_context& vc,
-  oglp::vertex_attrib_location loc) {
+  oglplus::vertex_attrib_location loc) {
     auto& gl = vc.gl_api();
     gl.bind_attrib_location(prog, loc, "Position");
 }
 //------------------------------------------------------------------------------
 void torus_program::bind_normal_location(
   video_context& vc,
-  oglp::vertex_attrib_location loc) {
+  oglplus::vertex_attrib_location loc) {
     auto& gl = vc.gl_api();
     gl.bind_attrib_location(prog, loc, "Normal");
 }
 //------------------------------------------------------------------------------
 void torus_program::bind_texcoord_location(
   video_context& vc,
-  oglp::vertex_attrib_location loc) {
+  oglplus::vertex_attrib_location loc) {
     auto& gl = vc.gl_api();
     gl.bind_attrib_location(prog, loc, "TexCoord");
 }
@@ -70,7 +70,7 @@ void torus_geometry::init(execution_context& ec, video_context& vc) {
     const auto& glapi = vc.gl_api();
     const auto& gl = glapi;
 
-    oglp::shape_generator shape(
+    oglplus::shape_generator shape(
       glapi,
       shapes::unit_torus(
         shapes::vertex_attrib_kind::position |

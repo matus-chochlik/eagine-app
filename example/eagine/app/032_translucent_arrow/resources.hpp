@@ -28,30 +28,31 @@ public:
     void set_camera(video_context& ctx, orbiting_camera& camera);
     void update(video_context&);
 
-    void bind_position_location(video_context&, oglp::vertex_attrib_location);
+    void bind_position_location(video_context&, oglplus::vertex_attrib_location);
 
 private:
-    oglp::owned_program_name prog;
+    oglplus::owned_program_name prog;
 
-    oglp::uniform_location camera_loc;
+    oglplus::uniform_location camera_loc;
 };
 //------------------------------------------------------------------------------
 class draw_program {
 public:
     void init(execution_context&, video_context&, cleanup_group&);
-    void set_depth_texture(video_context& ctx, oglp::gl_types::int_type);
+    void set_depth_texture(video_context& ctx, oglplus::gl_types::int_type);
     void set_camera(video_context&, orbiting_camera& camera);
     void update(execution_context&, video_context&);
 
-    void bind_position_location(video_context&, oglp::vertex_attrib_location);
-    void bind_normal_location(video_context& ctx, oglp::vertex_attrib_location);
+    void bind_position_location(video_context&, oglplus::vertex_attrib_location);
+    void
+    bind_normal_location(video_context& ctx, oglplus::vertex_attrib_location);
 
 private:
-    oglp::owned_program_name prog;
+    oglplus::owned_program_name prog;
 
-    oglp::uniform_location camera_loc;
-    oglp::uniform_location light_pos_loc;
-    oglp::uniform_location depth_tex_loc;
+    oglplus::uniform_location camera_loc;
+    oglplus::uniform_location light_pos_loc;
+    oglplus::uniform_location depth_tex_loc;
 
     radians_t<float> rad{0.F};
 };
@@ -68,23 +69,23 @@ public:
     }
 
     static auto position_loc() noexcept {
-        return oglp::vertex_attrib_location{0};
+        return oglplus::vertex_attrib_location{0};
     }
 
     static auto normal_loc() noexcept {
-        return oglp::vertex_attrib_location{1};
+        return oglplus::vertex_attrib_location{1};
     }
 
 private:
-    oglp::owned_vertex_array_name vao;
+    oglplus::owned_vertex_array_name vao;
 
-    oglp::owned_buffer_name positions;
-    oglp::owned_buffer_name normals;
-    oglp::owned_buffer_name indices;
+    oglplus::owned_buffer_name positions;
+    oglplus::owned_buffer_name normals;
+    oglplus::owned_buffer_name indices;
 
-    std::vector<oglp::shape_draw_operation> ops;
+    std::vector<oglplus::shape_draw_operation> ops;
 
-    oglp::sphere bound_sphere;
+    oglplus::sphere bound_sphere;
 };
 //------------------------------------------------------------------------------
 class depth_texture {
@@ -98,8 +99,8 @@ public:
     }
 
 private:
-    oglp::gl_types::int_type tex_unit{0};
-    oglp::owned_texture_name tex{};
+    oglplus::gl_types::int_type tex_unit{0};
+    oglplus::owned_texture_name tex{};
 };
 //------------------------------------------------------------------------------
 } // namespace eagine::app

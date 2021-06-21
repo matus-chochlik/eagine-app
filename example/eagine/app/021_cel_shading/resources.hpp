@@ -26,12 +26,12 @@ public:
     void set_projection(video_context&, orbiting_camera& camera);
     void set_modelview(execution_context&, video_context&);
 
-    void bind_position_location(video_context&, oglp::vertex_attrib_location);
+    void bind_position_location(video_context&, oglplus::vertex_attrib_location);
 
 private:
-    oglp::owned_program_name prog;
-    oglp::uniform_location projection_loc;
-    oglp::uniform_location modelview_loc;
+    oglplus::owned_program_name prog;
+    oglplus::uniform_location projection_loc;
+    oglplus::uniform_location modelview_loc;
     float shp_turns{0.F};
 };
 //------------------------------------------------------------------------------
@@ -44,16 +44,16 @@ public:
     void draw(video_context& ctx);
 
     static auto position_loc() noexcept {
-        return oglp::vertex_attrib_location{0};
+        return oglplus::vertex_attrib_location{0};
     }
 
 private:
-    oglp::owned_vertex_array_name vao;
+    oglplus::owned_vertex_array_name vao;
 
-    oglp::owned_buffer_name positions;
-    oglp::owned_buffer_name indices;
+    oglplus::owned_buffer_name positions;
+    oglplus::owned_buffer_name indices;
 
-    std::vector<oglp::shape_draw_operation> ops;
+    std::vector<oglplus::shape_draw_operation> ops;
 };
 //------------------------------------------------------------------------------
 } // namespace eagine::app

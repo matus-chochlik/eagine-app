@@ -40,10 +40,10 @@ private:
     video_context& _video;
     timeout _is_done{std::chrono::seconds(10)};
 
-    oglp::triangle tri{
-      oglp::vec3{-0.2F, 0.5F, 0.0F},
-      oglp::vec3{-0.7F, -0.6F, 0.0F},
-      oglp::vec3{0.6F, 0.2F, 0.0F}};
+    oglplus::triangle tri{
+      oglplus::vec3{-0.2F, 0.5F, 0.0F},
+      oglplus::vec3{-0.7F, -0.6F, 0.0F},
+      oglplus::vec3{0.6F, 0.2F, 0.0F}};
 
     float x_pos{0.F};
     float y_pos{0.F};
@@ -51,13 +51,13 @@ private:
     bool is_inside{false};
     bool has_moved{false};
 
-    oglp::owned_vertex_array_name vao;
+    oglplus::owned_vertex_array_name vao;
 
-    oglp::owned_buffer_name positions;
+    oglplus::owned_buffer_name positions;
 
-    oglp::owned_program_name prog;
+    oglplus::owned_program_name prog;
 
-    oglp::uniform_location highlight_loc;
+    oglplus::uniform_location highlight_loc;
 };
 //------------------------------------------------------------------------------
 example_picking::example_picking(execution_context& ec, video_context& vc)
@@ -71,18 +71,18 @@ example_picking::example_picking(execution_context& ec, video_context& vc)
 
     // vertex shader
     auto vs_source = embed(EAGINE_ID(VertShader), "vertex.glsl");
-    oglp::owned_shader_name vs;
+    oglplus::owned_shader_name vs;
     gl.create_shader(GL.vertex_shader) >> vs;
     auto cleanup_vs = gl.delete_shader.raii(vs);
-    gl.shader_source(vs, oglp::glsl_string_ref(vs_source));
+    gl.shader_source(vs, oglplus::glsl_string_ref(vs_source));
     gl.compile_shader(vs);
 
     // fragment shader
     auto fs_source = embed(EAGINE_ID(FragShader), "fragment.glsl");
-    oglp::owned_shader_name fs;
+    oglplus::owned_shader_name fs;
     gl.create_shader(GL.fragment_shader) >> fs;
     auto cleanup_fs = gl.delete_shader.raii(fs);
-    gl.shader_source(fs, oglp::glsl_string_ref(fs_source));
+    gl.shader_source(fs, oglplus::glsl_string_ref(fs_source));
     gl.compile_shader(fs);
 
     // program
@@ -108,7 +108,7 @@ example_picking::example_picking(execution_context& ec, video_context& vc)
     gl.gen_buffers() >> positions;
     gl.bind_buffer(GL.array_buffer, positions);
     gl.buffer_data(GL.array_buffer, view(position_data), GL.static_draw);
-    oglp::vertex_attrib_location position_loc;
+    oglplus::vertex_attrib_location position_loc;
     gl.get_attrib_location(prog, "Position") >> position_loc;
 
     gl.vertex_attrib_pointer(position_loc, 2, GL.float_, GL.false_);
@@ -147,8 +147,8 @@ void example_picking::update() noexcept {
     auto& [gl, GL] = glapi;
 
     if(has_moved) {
-        oglp::line ray(
-          oglp::vec3(x_pos, y_pos, 1.F), oglp::vec3(0.F, 0.F, -1.F));
+        oglplus::line ray(
+          oglplus::vec3(x_pos, y_pos, 1.F), oglplus::vec3(0.F, 0.F, -1.F));
 
         is_inside = bool(math::line_triangle_intersection(ray, tri));
         has_moved = false;
