@@ -13,8 +13,6 @@
 #include <eagine/embed.hpp>
 #include <eagine/oglplus/glsl/string_ref.hpp>
 #include <eagine/oglplus/shapes/generator.hpp>
-#include <eagine/shapes/value_tree.hpp>
-#include <eagine/value_tree/json.hpp>
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
@@ -138,20 +136,14 @@ void draw_program::bind_normal_location(
 //------------------------------------------------------------------------------
 // geometry
 //------------------------------------------------------------------------------
-void arrow_geometry::init(
+void shape_geometry::init(
   execution_context& ec,
   video_context& vc,
   cleanup_group& cleanup) {
     const auto& glapi = vc.gl_api();
     const auto& [gl, GL] = glapi;
 
-    auto load_shape_data = [&]() {
-        return valtree::from_json_text(
-          as_chars(embed(EAGINE_ID(ArrowJson), "arrow.json").unpack(ec)), ec);
-    };
-
-    oglplus::shape_generator shape(
-      glapi, shapes::from_value_tree(load_shape_data(), ec));
+    oglplus::shape_generator shape(glapi, _gen);
 
     bound_sphere = shape.bounding_sphere();
 
@@ -195,7 +187,7 @@ void arrow_geometry::init(
     gl.cull_face(GL.back);
 }
 //------------------------------------------------------------------------------
-void arrow_geometry::draw(video_context& vc) {
+void shape_geometry::draw(video_context& vc) {
     draw_using_instructions(vc.gl_api(), view(ops));
 }
 //------------------------------------------------------------------------------

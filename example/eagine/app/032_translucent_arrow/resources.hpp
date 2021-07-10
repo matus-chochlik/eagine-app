@@ -16,6 +16,7 @@
 #include <eagine/cleanup_group.hpp>
 #include <eagine/oglplus/math/primitives.hpp>
 #include <eagine/oglplus/shapes/drawing.hpp>
+#include <eagine/oglplus/shapes/generator.hpp>
 #include <eagine/quantities.hpp>
 
 namespace eagine::app {
@@ -59,8 +60,11 @@ private:
 //------------------------------------------------------------------------------
 // geometry
 //------------------------------------------------------------------------------
-class arrow_geometry {
+class shape_geometry {
 public:
+    shape_geometry(std::shared_ptr<shapes::generator> gen)
+      : _gen{std::move(gen)} {}
+
     void init(execution_context&, video_context&, cleanup_group&);
     void draw(video_context&);
 
@@ -77,6 +81,7 @@ public:
     }
 
 private:
+    std::shared_ptr<shapes::generator> _gen;
     oglplus::owned_vertex_array_name vao;
 
     oglplus::owned_buffer_name positions;
