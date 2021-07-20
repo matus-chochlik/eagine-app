@@ -97,12 +97,17 @@ system_include_dirs = scan_for_system_include_dirs()
 #------------------------------------------------------------------------------#
 project_include_dirs = [
     os.path.join(binaryDir(), "include"),
-    'include',
-    'submodules/eagine-core/include',
-    'submodules/eagine-shapes/include',
-    'submodules/eagine-eglplus/include',
-    'submodules/eagine-oglplus/include',
-    'submodules/eagine-oalplus/include'
+    os.path.join(os.path.pardir, "eagine-core", "include"),
+    os.path.join(os.path.pardir, "eagine-shapes", "include"),
+    os.path.join(os.path.pardir, "eagine-eglplus", "include"),
+    os.path.join(os.path.pardir, "eagine-oglplus", "include"),
+    os.path.join(os.path.pardir, "eagine-oalplus", "include"),
+    os.path.join("submodules", "eagine-core", "include"),
+    os.path.join("submodules", "eagine-shapes", "include"),
+    os.path.join("submodules", "eagine-eglplus", "include"),
+    os.path.join("submodules", "eagine-oglplus", "include"),
+    os.path.join("submodules", "eagine-oalplus", "include"),
+    'include'
 ]
 #------------------------------------------------------------------------------#
 def FlagsForFile(filename, ** kwargs):

@@ -57,8 +57,8 @@ example_torus::example_torus(execution_context& ec, video_context& vc)
     // camera
     camera.set_near(0.1F)
       .set_far(50.F)
-      .set_orbit_min(1.1F)
-      .set_orbit_max(3.5F)
+      .set_orbit_min(0.6F)
+      .set_orbit_max(1.7F)
       .set_fov(right_angle_());
     prog.set_projection(vc, camera);
 

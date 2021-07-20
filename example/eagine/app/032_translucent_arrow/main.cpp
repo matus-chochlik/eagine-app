@@ -12,9 +12,15 @@
 #include <eagine/app/camera.hpp>
 #include <eagine/app/main.hpp>
 #include <eagine/cleanup_group.hpp>
+#include <eagine/embed.hpp>
 #include <eagine/oglplus/math/matrix.hpp>
 #include <eagine/oglplus/math/vector.hpp>
+#include <eagine/oglplus/shapes/generator.hpp>
+#include <eagine/shapes/torus.hpp>
+#include <eagine/shapes/twisted_torus.hpp>
+#include <eagine/shapes/value_tree.hpp>
 #include <eagine/timeout.hpp>
+#include <eagine/value_tree/json.hpp>
 
 #include "resources.hpp"
 
@@ -22,7 +28,10 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 class example_arrow : public application {
 public:
-    example_arrow(execution_context&, video_context&);
+    example_arrow(
+      execution_context&,
+      video_context&,
+      std::shared_ptr<shapes::generator>);
 
     auto is_done() noexcept -> bool final {
         return _is_done.is_expired();
@@ -42,29 +51,33 @@ private:
 
     depth_program depth_prog;
     draw_program draw_prog;
-    arrow_geometry arrow;
+    shape_geometry shape;
     depth_texture depth_tex;
 };
 //------------------------------------------------------------------------------
-example_arrow::example_arrow(execution_context& ec, video_context& vc)
+example_arrow::example_arrow(
+  execution_context& ec,
+  video_context& vc,
+  std::shared_ptr<shapes::generator> gen)
   : _ctx{ec}
-  , _video{vc} {
+  , _video{vc}
+  , shape{std::move(gen)} {
     auto& glapi = _video.gl_api();
     auto& [gl, GL] = glapi;
 
-    arrow.init(ec, vc, _cleanup);
+    shape.init(ec, vc, _cleanup);
     depth_tex.init(ec, vc, _cleanup);
 
     depth_prog.init(ec, vc, _cleanup);
-    depth_prog.bind_position_location(vc, arrow.position_loc());
+    depth_prog.bind_position_location(vc, shape.position_loc());
 
     draw_prog.init(ec, vc, _cleanup);
-    draw_prog.bind_position_location(vc, arrow.position_loc());
-    draw_prog.bind_normal_location(vc, arrow.normal_loc());
+    draw_prog.bind_position_location(vc, shape.position_loc());
+    draw_prog.bind_normal_location(vc, shape.normal_loc());
     draw_prog.set_depth_texture(vc, depth_tex.texture_unit());
 
     // camera
-    const auto sr = arrow.bounding_sphere().radius();
+    const auto sr = shape.bounding_sphere().radius();
     camera.set_near(sr * 0.1F)
       .set_far(sr * 4.0F)
       .set_orbit_min(sr * 1.2F)
@@ -93,7 +106,7 @@ void example_arrow::update() noexcept {
         _is_done.reset();
     }
     if(state.user_idle_too_long()) {
-        camera.idle_update(state, 2);
+        camera.idle_update(state, 5);
     }
 
     auto& glapi = _video.gl_api();
@@ -105,7 +118,7 @@ void example_arrow::update() noexcept {
     gl.cull_face(GL.front);
     depth_prog.update(_video);
     depth_prog.set_camera(_video, camera);
-    arrow.draw(_video);
+    shape.draw(_video);
 
     depth_tex.copy_from_fb(_video);
 
@@ -115,7 +128,7 @@ void example_arrow::update() noexcept {
     gl.cull_face(GL.back);
     draw_prog.update(_ctx, _video);
     draw_prog.set_camera(_video, camera);
-    arrow.draw(_video);
+    shape.draw(_video);
 
     _video.commit();
 }
@@ -128,8 +141,32 @@ void example_arrow::clean_up() noexcept {
 //------------------------------------------------------------------------------
 class example_launchpad : public launchpad {
 public:
-    auto setup(main_ctx&, launch_options& opts) -> bool final {
+    auto setup(main_ctx& ctx, launch_options& opts) -> bool final {
         opts.no_audio().require_input().require_video();
+
+        if(ctx.args().find("--twisted-torus")) {
+            _gen = shapes::unit_twisted_torus(
+              shapes::vertex_attrib_kind::position |
+                shapes::vertex_attrib_kind::normal,
+              7,
+              48,
+              5,
+              0.5F);
+        } else if(ctx.args().find("--torus")) {
+            _gen = shapes::unit_torus(
+              shapes::vertex_attrib_kind::position |
+              shapes::vertex_attrib_kind::normal);
+        }
+
+        if(!_gen) {
+            auto load_shape_data = [&]() {
+                return valtree::from_json_text(
+                  as_chars(
+                    embed(EAGINE_ID(ArrowJson), "arrow.json").unpack(ctx)),
+                  ctx);
+            };
+            _gen = shapes::from_value_tree(load_shape_data(), ctx);
+        }
         return true;
     }
 
@@ -153,12 +190,15 @@ public:
             vc.begin();
             if(vc.init_gl_api()) {
                 if(check_requirements(vc)) {
-                    return {std::make_unique<example_arrow>(ec, vc)};
+                    return {std::make_unique<example_arrow>(ec, vc, _gen)};
                 }
             }
         }
         return {};
     }
+
+private:
+    std::shared_ptr<shapes::generator> _gen;
 };
 //------------------------------------------------------------------------------
 auto establish(main_ctx&) -> std::unique_ptr<launchpad> {

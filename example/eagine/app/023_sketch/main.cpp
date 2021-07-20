@@ -61,8 +61,8 @@ example_sketch::example_sketch(execution_context& ec, video_context& vc)
     // camera
     _camera.set_near(0.1F)
       .set_far(50.F)
-      .set_orbit_min(1.1F)
-      .set_orbit_max(2.5F)
+      .set_orbit_min(0.53F)
+      .set_orbit_max(1.75F)
       .set_fov(degrees_(50.F));
 
     gl.clear_color(0.85F, 0.85F, 0.85F, 0.0F);
