@@ -29,25 +29,25 @@ float dist(vec2 tc, vec2 ofs) {
 }
 
 vec3 worley(vec2 tc) {
-	float ds[9];
+    float ds[9];
     for(int c = 0; c < 9; ++c) {
-		ds[c] = dist(tc, offs[c]);
+        ds[c] = dist(tc, offs[c]);
     }
-	float md = ds[0];
-	int mc = 0;
+    float md = ds[0];
+    int mc = 0;
     for(int c = 1; c < 9; ++c) {
-		if(md > ds[c]) {
-			md = ds[c];
-			mc = c;
-		}
+        if(md > ds[c]) {
+            md = ds[c];
+            mc = c;
+        }
     }
-	float nd = 4;
+    float nd = 4;
     for(int c = 0; c < 9; ++c) {
-		if(c != mc) {
-			nd = min(nd, ds[c]);
-		}
+        if(c != mc) {
+            nd = min(nd, ds[c]);
+        }
     }
-    return vec3(nd-md);
+    return vec3(nd - md);
 }
 
 void main() {

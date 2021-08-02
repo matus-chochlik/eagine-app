@@ -99,7 +99,7 @@ void particles::emit(example& e) {
 //------------------------------------------------------------------------------
 void particles::draw(example& e) {
     auto& [gl, GL] = e.video().gl_api();
-    gl.draw_arrays_instanced(GL.points, 0, 1, _count);
+    gl.draw_arrays_instanced(GL.points, 0, 1, signedness_cast(_count));
 }
 //------------------------------------------------------------------------------
 // emit program

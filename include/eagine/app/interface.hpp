@@ -22,22 +22,26 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 struct input_sink : interface<input_sink> {
 
-    virtual void
-    consume(const input_info&, const input_value<bool>&) noexcept = 0;
-    virtual void
-    consume(const input_info&, const input_value<int>&) noexcept = 0;
-    virtual void
-    consume(const input_info&, const input_value<float>&) noexcept = 0;
-    virtual void
-    consume(const input_info&, const input_value<double>&) noexcept = 0;
+    virtual void consume(
+      const input_info&,
+      const input_value<bool>&) noexcept = 0;
+    virtual void consume(
+      const input_info&,
+      const input_value<int>&) noexcept = 0;
+    virtual void consume(
+      const input_info&,
+      const input_value<float>&) noexcept = 0;
+    virtual void consume(
+      const input_info&,
+      const input_value<double>&) noexcept = 0;
 };
 //------------------------------------------------------------------------------
 struct input_provider : interface<input_provider> {
 
     virtual auto instance_id() const noexcept -> identifier = 0;
 
-    virtual void
-      input_enumerate(callable_ref<void(message_id, input_value_kinds)>) = 0;
+    virtual void input_enumerate(
+      callable_ref<void(message_id, input_value_kinds)>) = 0;
 
     virtual void input_connect(input_sink&) = 0;
     virtual void input_disconnect() = 0;
@@ -79,12 +83,12 @@ struct hmi_provider : interface<hmi_provider> {
     virtual void update(execution_context&) = 0;
     virtual void clean_up(execution_context&) = 0;
 
-    virtual void
-      input_enumerate(callable_ref<void(std::shared_ptr<input_provider>)>) = 0;
-    virtual void
-      video_enumerate(callable_ref<void(std::shared_ptr<video_provider>)>) = 0;
-    virtual void
-      audio_enumerate(callable_ref<void(std::shared_ptr<audio_provider>)>) = 0;
+    virtual void input_enumerate(
+      callable_ref<void(std::shared_ptr<input_provider>)>) = 0;
+    virtual void video_enumerate(
+      callable_ref<void(std::shared_ptr<video_provider>)>) = 0;
+    virtual void audio_enumerate(
+      callable_ref<void(std::shared_ptr<audio_provider>)>) = 0;
 };
 //------------------------------------------------------------------------------
 struct framedump : interface<framedump> {

@@ -436,7 +436,7 @@ auto eglplus_opengl_surface::initialize(
                             if(initialize(
                                  exec_ctx,
                                  display,
-                                 cur_dev_idx,
+                                 signedness_cast(cur_dev_idx),
                                  opts,
                                  video_opts)) {
                                 return true;

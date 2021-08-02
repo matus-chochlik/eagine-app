@@ -8,7 +8,6 @@ in vec2 TexCoord;
 out vec2 vertTexCoord;
 
 void main() {
-	gl_Position = Position;
-   	vertTexCoord = TexCoord * ScreenSize;
+    gl_Position = Position;
+    vertTexCoord = TexCoord * ScreenSize;
 }
-

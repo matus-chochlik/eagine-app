@@ -60,9 +60,9 @@ auto raw_framedump::get_buffer(span_size_t size) -> memory::block {
     return head(cover(_pixeldata.ensure(size)), size);
 }
 //------------------------------------------------------------------------------
-inline auto
-raw_framedump::_write_to_file(const std::string& path, memory::const_block data)
-  -> bool {
+inline auto raw_framedump::_write_to_file(
+  const std::string& path,
+  memory::const_block data) -> bool {
     std::ofstream out{path};
     if(!write_to_stream(out, data).flush().good()) {
         return false;
@@ -106,4 +106,3 @@ auto make_raw_framedump(main_ctx_parent parent) -> std::shared_ptr<framedump> {
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app
-

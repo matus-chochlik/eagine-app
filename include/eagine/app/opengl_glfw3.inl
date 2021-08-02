@@ -55,8 +55,8 @@ public:
     void video_end(execution_context&) final;
     void video_commit(execution_context&) final;
 
-    void
-      input_enumerate(callable_ref<void(message_id, input_value_kinds)>) final;
+    void input_enumerate(
+      callable_ref<void(message_id, input_value_kinds)>) final;
 
     void input_connect(input_sink&) final;
     void input_disconnect() final;

@@ -185,7 +185,7 @@ void sketch_texture::init(execution_context& ec, video_context& vc) {
                 for(auto x : integer_range(w)) {
                     const float c = l * float(x + 1) / float(w);
                     scratch(
-                      int(x + xmin * side) + i,
+                      int(float(x) + xmin * side) + i,
                       int(float(h + t) * c + ymin * side),
                       layer);
                 }
@@ -195,7 +195,7 @@ void sketch_texture::init(execution_context& ec, video_context& vc) {
                     const float c = l * float(y + 1) / float(h);
                     scratch(
                       int(float(w + t) * c + xmin * side),
-                      int(y + ymin * side) + i,
+                      int(float(y) + ymin * side) + i,
                       layer);
                 }
             }

@@ -13,7 +13,7 @@ out vec2 vertCoord;
 
 void main() {
     gl_Position = Projection * View * Model * vec4(Position, 1.0);
-	vertPosition = Position;
+    vertPosition = Position;
     vertNormal = mat3(View * Model) * Normal;
-	vertCoord = Coord * 4.0;
+    vertCoord = Coord * 4.0;
 }
