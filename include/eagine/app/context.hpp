@@ -217,7 +217,7 @@ public:
     auto enough_run_time() const noexcept -> bool;
 
     /// @brief Indicates if the application rendered enough frames.
-    auto enough_frames(span_size_t frame_no) const noexcept -> bool;
+    auto enough_frames(const span_size_t frame_no) const noexcept -> bool;
 
     /// @brief Returns the count of created video contexts.
     auto video_ctx_count() const noexcept {
@@ -225,7 +225,8 @@ public:
     }
 
     /// @brief Returns the video context at the specified index.
-    auto video_ctx(span_size_t index = 0) const noexcept -> video_context* {
+    auto video_ctx(const span_size_t index = 0) const noexcept
+      -> video_context* {
         if((index >= 0) && (index < video_ctx_count())) {
             return _video_contexts[std_size(index)].get();
         }
@@ -238,7 +239,8 @@ public:
     }
 
     /// @brief Returns the audio context at the specified index.
-    auto audio_ctx(span_size_t index = 0) const noexcept -> audio_context* {
+    auto audio_ctx(const span_size_t index = 0) const noexcept
+      -> audio_context* {
         if((index >= 0) && (index < audio_ctx_count())) {
             return _audio_contexts[std_size(index)].get();
         }
@@ -246,7 +248,7 @@ public:
     }
 
     /// @brief Connect the specified logical input to a callable handler reference.
-    auto connect_input(message_id input_id, input_handler handler)
+    auto connect_input(const message_id input_id, const input_handler handler)
       -> execution_context&;
 
     /// @brief Connect the specified input slot.
@@ -260,19 +262,21 @@ public:
 
     /// @brief Map a specified logical input to a physical input signal.
     auto map_input(
-      message_id input_id,
-      identifier mapping_id,
-      message_id signal_id,
-      input_setup setup) -> execution_context&;
+      const message_id input_id,
+      const identifier mapping_id,
+      const message_id signal_id,
+      const input_setup setup) -> execution_context&;
 
     /// @brief Map a specified logical input to a physical input signal.
-    auto map_input(message_id input_id, message_id signal_id, input_setup setup)
-      -> execution_context& {
+    auto map_input(
+      const message_id input_id,
+      const message_id signal_id,
+      const input_setup setup) -> execution_context& {
         return map_input(input_id, {}, signal_id, setup);
     }
 
     /// @brief Binds generic application inputs to default physical input signals.
-    auto map_inputs(identifier mapping_id) -> execution_context&;
+    auto map_inputs(const identifier mapping_id) -> execution_context&;
 
     /// @brief Binds generic application inputs to default physical input signals.
     auto map_inputs() -> execution_context& {
@@ -280,7 +284,7 @@ public:
     }
 
     /// @brief Sets-up (connects handlers and binds to signals) default inputs.
-    auto setup_inputs(identifier mapping_id) -> execution_context& {
+    auto setup_inputs(const identifier mapping_id) -> execution_context& {
         return connect_inputs().map_inputs(mapping_id);
     }
 
@@ -290,7 +294,8 @@ public:
     }
 
     /// @brief Switches to the input mapping with the specified id.
-    auto switch_input_mapping(identifier mapping_id) -> execution_context&;
+    auto switch_input_mapping(const identifier mapping_id)
+      -> execution_context&;
 
     /// @brief Switches to the default input mapping.
     auto switch_input_mapping() -> auto& {

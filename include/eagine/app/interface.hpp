@@ -41,14 +41,14 @@ struct input_provider : interface<input_provider> {
     virtual auto instance_id() const noexcept -> identifier = 0;
 
     virtual void input_enumerate(
-      callable_ref<void(message_id, input_value_kinds)>) = 0;
+      const callable_ref<void(message_id, input_value_kinds)>) = 0;
 
     virtual void input_connect(input_sink&) = 0;
     virtual void input_disconnect() = 0;
 
-    virtual void mapping_begin(identifier setup_id) = 0;
-    virtual void mapping_enable(message_id signal_id) = 0;
-    virtual void mapping_commit(identifier setup_id) = 0;
+    virtual void mapping_begin(const identifier setup_id) = 0;
+    virtual void mapping_enable(const message_id signal_id) = 0;
+    virtual void mapping_commit(const identifier setup_id) = 0;
 };
 //------------------------------------------------------------------------------
 struct video_provider : interface<video_provider> {
@@ -96,16 +96,16 @@ struct framedump : interface<framedump> {
     virtual auto initialize(execution_context&, const video_options&)
       -> bool = 0;
 
-    virtual auto get_buffer(span_size_t size) -> memory::block = 0;
+    virtual auto get_buffer(const span_size_t size) -> memory::block = 0;
 
     virtual auto dump_frame(
-      long frame_number,
-      int width,
-      int height,
-      int elements,
-      span_size_t element_size,
-      framedump_pixel_format,
-      framedump_data_type,
+      const long frame_number,
+      const int width,
+      const int height,
+      const int elements,
+      const span_size_t element_size,
+      const framedump_pixel_format,
+      const framedump_data_type,
       memory::block data) -> bool = 0;
 };
 //------------------------------------------------------------------------------

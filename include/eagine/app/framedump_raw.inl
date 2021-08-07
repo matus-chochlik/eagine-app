@@ -25,20 +25,20 @@ public:
 
     auto initialize(execution_context&, const video_options&) -> bool final;
 
-    auto get_buffer(span_size_t size) -> memory::block final;
+    auto get_buffer(const span_size_t size) -> memory::block final;
 
     auto dump_frame(
-      long frame_number,
-      int width,
-      int height,
-      int elements,
-      span_size_t element_size,
-      framedump_pixel_format,
-      framedump_data_type,
+      const long frame_number,
+      const int width,
+      const int height,
+      const int elements,
+      const span_size_t element_size,
+      const framedump_pixel_format,
+      const framedump_data_type,
       memory::block data) -> bool final;
 
 private:
-    auto _write_to_file(const std::string&, memory::const_block) -> bool;
+    auto _write_to_file(const std::string&, const memory::const_block) -> bool;
 
     string_view _prefix;
     std::string _feedback;
@@ -56,13 +56,13 @@ auto raw_framedump::initialize(execution_context&, const video_options& opts)
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
-auto raw_framedump::get_buffer(span_size_t size) -> memory::block {
+auto raw_framedump::get_buffer(const span_size_t size) -> memory::block {
     return head(cover(_pixeldata.ensure(size)), size);
 }
 //------------------------------------------------------------------------------
 inline auto raw_framedump::_write_to_file(
   const std::string& path,
-  memory::const_block data) -> bool {
+  const memory::const_block data) -> bool {
     std::ofstream out{path};
     if(!write_to_stream(out, data).flush().good()) {
         return false;
@@ -73,13 +73,13 @@ inline auto raw_framedump::_write_to_file(
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
 auto raw_framedump::dump_frame(
-  long frame_number,
-  int width,
-  int height,
-  int elements,
-  span_size_t element_size,
-  framedump_pixel_format format,
-  framedump_data_type type,
+  const long frame_number,
+  const int width,
+  const int height,
+  const int elements,
+  const span_size_t element_size,
+  const framedump_pixel_format format,
+  const framedump_data_type type,
   memory::block data) -> bool {
     EAGINE_MAYBE_UNUSED(element_size);
     EAGINE_MAYBE_UNUSED(data);

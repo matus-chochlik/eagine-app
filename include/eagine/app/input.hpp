@@ -33,8 +33,9 @@ enum class input_value_kind : unsigned {
 /// @see input_value_kinds
 using input_value_kinds = bitfield<input_value_kind>;
 
-static inline auto operator|(input_value_kind l, input_value_kind r) noexcept
-  -> input_value_kinds {
+static inline auto operator|(
+  const input_value_kind l,
+  const input_value_kind r) noexcept -> input_value_kinds {
     return {l, r};
 }
 
@@ -63,8 +64,10 @@ struct input_info {
     message_id signal_id{};
     input_value_kind value_kind{};
 
-    constexpr input_info(message_id sig_id, input_value_kind kind) noexcept
-      : signal_id{std::move(sig_id)}
+    constexpr input_info(
+      const message_id sig_id,
+      const input_value_kind kind) noexcept
+      : signal_id{sig_id}
       , value_kind{kind} {}
 };
 //------------------------------------------------------------------------------
@@ -73,7 +76,7 @@ struct input_info {
 class input_setup {
 public:
     /// @brief Constructor with input kinds specification.
-    auto value_kinds(input_value_kinds init) noexcept -> auto& {
+    auto value_kinds(const input_value_kinds init) noexcept -> auto& {
         _value_kinds = init;
         return *this;
     }
@@ -115,7 +118,7 @@ public:
     }
 
     /// @brief Indicates if values of the specified kind are tracked.
-    auto has(input_value_kind kind) const noexcept -> bool {
+    auto has(const input_value_kind kind) const noexcept -> bool {
         return _value_kinds.has(kind);
     }
 
@@ -127,13 +130,13 @@ public:
     }
 
     /// @brief Specifies that the raw value from the input source should be inverted.
-    auto invert(bool init = true) noexcept -> auto& {
+    auto invert(const bool init = true) noexcept -> auto& {
         _invert = init;
         return *this;
     }
 
     /// @brief Specifies the multiplier for the raw value from the input source.
-    auto multiply(double mult) noexcept -> auto& {
+    auto multiply(const double mult) noexcept -> auto& {
         _multiplier = mult;
         return *this;
     }

@@ -9,7 +9,8 @@
 namespace eagine::app {
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
-auto orbiting_camera::update_orbit(float inc) noexcept -> orbiting_camera& {
+auto orbiting_camera::update_orbit(const float inc) noexcept
+  -> orbiting_camera& {
     _orbit_factor += (inc * _orbit_dir);
     if(_orbit_factor > 1.F) {
         _orbit_factor = 1.F;
@@ -24,14 +25,16 @@ auto orbiting_camera::update_orbit(float inc) noexcept -> orbiting_camera& {
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
-auto orbiting_camera::update_turns(float inc) noexcept -> orbiting_camera& {
+auto orbiting_camera::update_turns(const float inc) noexcept
+  -> orbiting_camera& {
     _turns += turns_(inc * _turn_dir);
     _changed = true;
     return *this;
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
-auto orbiting_camera::update_pitch(float inc) noexcept -> orbiting_camera& {
+auto orbiting_camera::update_pitch(const float inc) noexcept
+  -> orbiting_camera& {
     const auto max = right_angles_(1.F);
     _pitch += right_angles_(inc * _pitch_dir);
     if(_pitch > max) {
@@ -118,7 +121,7 @@ auto orbiting_camera::connect_inputs(execution_context& ec)
 EAGINE_LIB_FUNC
 auto orbiting_camera::basic_input_mapping(
   execution_context& ec,
-  identifier mapping_id) -> orbiting_camera& {
+  const identifier mapping_id) -> orbiting_camera& {
     ec.map_input(
         pressure_input_id(),
         mapping_id,
