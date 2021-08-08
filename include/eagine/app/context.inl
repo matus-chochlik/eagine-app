@@ -93,18 +93,18 @@ inline auto video_context_state::commit(
   oglplus::gl_api& api) -> bool {
     bool result = true;
     if(EAGINE_UNLIKELY(doing_framedump())) {
-        auto& [gl, GL] = api;
+        const auto& [gl, GL] = api;
 
         if(EAGINE_LIKELY(gl.read_pixels)) {
 
-            auto dump_frame = [&](
-                                framedump& target,
-                                auto gl_format,
-                                auto gl_type,
-                                framedump_pixel_format format,
-                                framedump_data_type type,
-                                int elements,
-                                span_size_t element_size) {
+            const auto dump_frame = [&](
+                                      framedump& target,
+                                      const auto gl_format,
+                                      const auto gl_type,
+                                      const framedump_pixel_format format,
+                                      const framedump_data_type type,
+                                      const int elements,
+                                      const span_size_t element_size) {
                 const auto [width, height] = provider.surface_size();
                 const auto size =
                   span_size(width * height * elements * element_size);
@@ -246,7 +246,7 @@ EAGINE_LIB_FUNC
 auto video_context::init_gl_api() noexcept -> bool {
     try {
         _gl_api = std::make_shared<oglplus::gl_api>();
-        auto& [gl, GL] = extract(_gl_api);
+        const auto& [gl, GL] = extract(_gl_api);
 
         const auto pos = _parent.options().video_requirements().find(
           extract(_provider).instance_id());

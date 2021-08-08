@@ -40,7 +40,7 @@ private:
 example_checker::example_checker(execution_context& ec, video_context& vc)
   : _ec{ec}
   , _video{vc} {
-    auto& [gl, GL] = _video.gl_api();
+    const auto& [gl, GL] = _video.gl_api();
     gl.clear_color(0.4F, 0.4F, 0.4F, 0.0F);
 
     // fragment shader
@@ -61,7 +61,7 @@ example_checker::example_checker(execution_context& ec, video_context& vc)
 }
 //------------------------------------------------------------------------------
 void example_checker::on_video_resize() noexcept {
-    auto& [gl, GL] = _video.gl_api();
+    const auto& [gl, GL] = _video.gl_api();
 
     gl.viewport(_video.surface_size());
 
@@ -74,7 +74,7 @@ void example_checker::on_video_resize() noexcept {
 }
 //------------------------------------------------------------------------------
 void example_checker::update() noexcept {
-    auto& [gl, GL] = _video.gl_api();
+    const auto& [gl, GL] = _video.gl_api();
 
     gl.clear(GL.color_buffer_bit);
 
@@ -106,7 +106,7 @@ void example_checker::update() noexcept {
 }
 //------------------------------------------------------------------------------
 void example_checker::clean_up() noexcept {
-    auto& gl = _video.gl_api();
+    const auto& gl = _video.gl_api();
 
     gl.delete_program(std::move(prog));
     _video.end();
@@ -120,7 +120,7 @@ public:
     }
 
     auto check_requirements(video_context& vc) -> bool {
-        auto& [gl, GL] = vc.gl_api();
+        const auto& [gl, GL] = vc.gl_api();
 
         return gl.viewport && gl.clear_color && gl.clear &&
                GL.color_buffer_bit && gl.load_identity && gl.ortho &&

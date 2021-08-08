@@ -23,7 +23,7 @@ namespace eagine::app {
 // volume domain
 //------------------------------------------------------------------------------
 void volume_domain::init(example& e) {
-    auto& [gl, GL] = e.video().gl_api();
+    const auto& [gl, GL] = e.video().gl_api();
 
     // vao
     gl.delete_vertex_arrays.later_by(e, _tetrahedrons);
@@ -114,13 +114,13 @@ void volume_domain::init(example& e) {
 }
 //------------------------------------------------------------------------------
 void volume_domain::compute(example& e) {
-    auto& gl = e.video().gl_api();
+    const auto& gl = e.video().gl_api();
     const auto groups = plane_count() / 4;
     gl.dispatch_compute(groups, groups, groups);
 }
 //------------------------------------------------------------------------------
 void volume_domain::draw(example& e) {
-    auto& [gl, GL] = e.video().gl_api();
+    const auto& [gl, GL] = e.video().gl_api();
     gl.draw_elements_instanced(
       GL.lines_adjacency, 4 * 6, GL.unsigned_int_, nullptr, cube_count());
 }
@@ -128,7 +128,7 @@ void volume_domain::draw(example& e) {
 // metaball program
 //------------------------------------------------------------------------------
 void metaball_program::init(example& e) {
-    auto& gl = e.video().gl_api();
+    const auto& gl = e.video().gl_api();
 
     gl.delete_program.later_by(e, _prog);
     gl.create_program() >> _prog;
@@ -142,7 +142,7 @@ void metaball_program::init(example& e) {
 void metaball_program::bind_metaballs(
   example& e,
   oglplus::gl_types::uint_type binding) {
-    auto& gl = e.video().gl_api();
+    const auto& gl = e.video().gl_api();
     oglplus::shader_storage_block_index blk_idx;
     gl.get_shader_storage_block_index(_prog, "MetaballBlock") >> blk_idx;
     gl.shader_storage_block_binding(_prog, blk_idx, binding);
@@ -157,7 +157,7 @@ void metaball_program::use(example& e) {
 // field program
 //------------------------------------------------------------------------------
 void field_program::init(example& e) {
-    auto& gl = e.video().gl_api();
+    const auto& gl = e.video().gl_api();
 
     gl.delete_program.later_by(e, _prog);
     gl.create_program() >> _prog;
@@ -173,7 +173,7 @@ void field_program::init(example& e) {
 void field_program::bind_field(
   example& e,
   oglplus::gl_types::uint_type binding) {
-    auto& gl = e.video().gl_api();
+    const auto& gl = e.video().gl_api();
     oglplus::shader_storage_block_index blk_idx;
     gl.get_shader_storage_block_index(_prog, "FieldBlock") >> blk_idx;
     gl.shader_storage_block_binding(_prog, blk_idx, binding);
@@ -182,7 +182,7 @@ void field_program::bind_field(
 void field_program::bind_metaballs(
   example& e,
   oglplus::gl_types::uint_type binding) {
-    auto& gl = e.video().gl_api();
+    const auto& gl = e.video().gl_api();
     oglplus::shader_storage_block_index blk_idx;
     gl.get_shader_storage_block_index(_prog, "MetaballBlock") >> blk_idx;
     gl.shader_storage_block_binding(_prog, blk_idx, binding);
@@ -203,7 +203,7 @@ void field_program::use(example& e) {
 // surface program
 //------------------------------------------------------------------------------
 void surface_program::init(example& e) {
-    auto& gl = e.video().gl_api();
+    const auto& gl = e.video().gl_api();
 
     gl.delete_program.later_by(e, _prog);
     gl.create_program() >> _prog;
@@ -231,7 +231,7 @@ void surface_program::prepare_frame(example& e) {
 void surface_program::bind_field(
   example& e,
   oglplus::gl_types::uint_type binding) {
-    auto& gl = e.video().gl_api();
+    const auto& gl = e.video().gl_api();
     oglplus::shader_storage_block_index blk_idx;
     gl.get_shader_storage_block_index(_prog, "FieldBlock") >> blk_idx;
     gl.shader_storage_block_binding(_prog, blk_idx, binding);
@@ -240,7 +240,7 @@ void surface_program::bind_field(
 void surface_program::bind_configs(
   example& e,
   oglplus::gl_types::uint_type binding) {
-    auto& gl = e.video().gl_api();
+    const auto& gl = e.video().gl_api();
     oglplus::shader_storage_block_index blk_idx;
     gl.get_shader_storage_block_index(_prog, "ConfigsBlock") >> blk_idx;
     gl.shader_storage_block_binding(_prog, blk_idx, binding);

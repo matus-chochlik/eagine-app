@@ -61,8 +61,8 @@ private:
 example_uv_map::example_uv_map(execution_context& ec, video_context& vc)
   : _ctx{ec}
   , _video{vc} {
-    auto& glapi = _video.gl_api();
-    auto& [gl, GL] = glapi;
+    const auto& glapi = _video.gl_api();
+    const auto& [gl, GL] = glapi;
 
     // vertex shader
     auto vs_source = embed(EAGINE_ID(VertShader), "vertex.glsl");
@@ -201,7 +201,7 @@ example_uv_map::example_uv_map(execution_context& ec, video_context& vc)
 }
 //------------------------------------------------------------------------------
 void example_uv_map::on_video_resize() noexcept {
-    auto& gl = _video.gl_api();
+    const auto& gl = _video.gl_api();
     gl.viewport(_video.surface_size());
 }
 //------------------------------------------------------------------------------
@@ -214,8 +214,8 @@ void example_uv_map::update() noexcept {
         camera.idle_update(state, 3.F);
     }
 
-    auto& glapi = _video.gl_api();
-    auto& [gl, GL] = glapi;
+    const auto& glapi = _video.gl_api();
+    const auto& [gl, GL] = glapi;
 
     gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
     if(camera.has_changed()) {
@@ -227,7 +227,7 @@ void example_uv_map::update() noexcept {
 }
 //------------------------------------------------------------------------------
 void example_uv_map::clean_up() noexcept {
-    auto& gl = _video.gl_api();
+    const auto& gl = _video.gl_api();
 
     gl.delete_textures(std::move(light_tex));
     gl.delete_textures(std::move(color_tex));
@@ -249,7 +249,7 @@ public:
     }
 
     auto check_requirements(video_context& vc) -> bool {
-        auto& [gl, GL] = vc.gl_api();
+        const auto& [gl, GL] = vc.gl_api();
 
         return gl.disable && gl.clear_color && gl.create_shader &&
                gl.shader_source && gl.compile_shader && gl.create_program &&

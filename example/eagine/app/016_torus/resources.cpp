@@ -20,7 +20,7 @@ namespace eagine::app {
 // program
 //------------------------------------------------------------------------------
 void torus_program::init(execution_context& ec, video_context& vc) {
-    auto& gl = vc.gl_api();
+    const auto& gl = vc.gl_api();
 
     gl.create_program() >> prog;
 
@@ -32,13 +32,13 @@ void torus_program::init(execution_context& ec, video_context& vc) {
 }
 //------------------------------------------------------------------------------
 void torus_program::clean_up(video_context& vc) {
-    auto& gl = vc.gl_api();
+    const auto& gl = vc.gl_api();
     gl.delete_program(std::move(prog));
 }
 //------------------------------------------------------------------------------
 void torus_program::set_projection(video_context& vc, orbiting_camera& camera) {
     if(camera.has_changed()) {
-        auto& gl = vc.gl_api();
+        const auto& gl = vc.gl_api();
         gl.set_uniform(prog, camera_loc, camera.matrix(vc.surface_aspect()));
     }
 }
@@ -46,21 +46,21 @@ void torus_program::set_projection(video_context& vc, orbiting_camera& camera) {
 void torus_program::bind_position_location(
   video_context& vc,
   oglplus::vertex_attrib_location loc) {
-    auto& gl = vc.gl_api();
+    const auto& gl = vc.gl_api();
     gl.bind_attrib_location(prog, loc, "Position");
 }
 //------------------------------------------------------------------------------
 void torus_program::bind_normal_location(
   video_context& vc,
   oglplus::vertex_attrib_location loc) {
-    auto& gl = vc.gl_api();
+    const auto& gl = vc.gl_api();
     gl.bind_attrib_location(prog, loc, "Normal");
 }
 //------------------------------------------------------------------------------
 void torus_program::bind_texcoord_location(
   video_context& vc,
   oglplus::vertex_attrib_location loc) {
-    auto& gl = vc.gl_api();
+    const auto& gl = vc.gl_api();
     gl.bind_attrib_location(prog, loc, "TexCoord");
 }
 //------------------------------------------------------------------------------

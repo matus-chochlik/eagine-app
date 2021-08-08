@@ -31,7 +31,7 @@ public:
 
     void on_video_resize() noexcept final {
         const auto [width, height] = _video.surface_size();
-        auto& [gl, GL] = _video.gl_api();
+        const auto& [gl, GL] = _video.gl_api();
 
         gl.viewport(width, height);
 
@@ -44,7 +44,7 @@ public:
     }
 
     void update() noexcept final {
-        auto& [gl, GL] = _video.gl_api();
+        const auto& [gl, GL] = _video.gl_api();
 
         gl.clear(GL.color_buffer_bit);
 
@@ -112,7 +112,7 @@ public:
 private:
     execution_context& _ec;
     video_context& _video;
-    timeout _is_done{std::chrono::seconds(8)};
+    timeout _is_done{std::chrono::seconds{8}};
 };
 //------------------------------------------------------------------------------
 class example_launchpad : public launchpad {
@@ -123,7 +123,7 @@ public:
     }
 
     auto check_requirements(video_context& vc) -> bool {
-        auto& [gl, GL] = vc.gl_api();
+        const auto& [gl, GL] = vc.gl_api();
 
         return gl.viewport && gl.clear_color && gl.clear &&
                GL.color_buffer_bit && gl.load_identity && gl.ortho &&

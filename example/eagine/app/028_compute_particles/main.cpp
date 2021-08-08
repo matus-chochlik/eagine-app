@@ -26,8 +26,8 @@ example::example(execution_context& ec, video_context& vc)
        {0.F, 10.F, 0.F},
        {0.F, -10.F, 10.F}}})} {
 
-    auto& glapi = _video.gl_api();
-    auto& [gl, GL] = glapi;
+    const auto& glapi = _video.gl_api();
+    const auto& [gl, GL] = glapi;
 
     _particles.init(*this);
 
@@ -59,7 +59,7 @@ example::example(execution_context& ec, video_context& vc)
 }
 //------------------------------------------------------------------------------
 void example::on_video_resize() noexcept {
-    auto& gl = _video.gl_api();
+    const auto& gl = _video.gl_api();
     gl.viewport(_video.surface_size());
 }
 //------------------------------------------------------------------------------
@@ -72,8 +72,8 @@ void example::update() noexcept {
         _camera.idle_update(state, 7.F);
     }
 
-    auto& glapi = _video.gl_api();
-    auto& [gl, GL] = glapi;
+    const auto& glapi = _video.gl_api();
+    const auto& [gl, GL] = glapi;
 
     gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
 
@@ -101,7 +101,7 @@ public:
     }
 
     auto check_requirements(video_context& vc) -> bool {
-        auto& [gl, GL] = vc.gl_api();
+        const auto& [gl, GL] = vc.gl_api();
 
         return gl.disable && gl.clear_color && gl.create_shader &&
                gl.shader_source && gl.compile_shader && gl.create_program &&

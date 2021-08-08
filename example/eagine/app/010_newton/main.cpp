@@ -76,7 +76,7 @@ example_newton::example_newton(execution_context& ec, video_context& vc)
   : _ctx{ec}
   , _video{vc} {
 
-    auto& [gl, GL] = _video.gl_api();
+    const auto& [gl, GL] = _video.gl_api();
 
     gl.clear_color(0.4F, 0.4F, 0.4F, 0.0F);
 
@@ -212,7 +212,7 @@ example_newton::example_newton(execution_context& ec, video_context& vc)
 }
 //------------------------------------------------------------------------------
 void example_newton::on_video_resize() noexcept {
-    auto& gl = _video.gl_api();
+    const auto& gl = _video.gl_api();
 
     aspect = _video.surface_aspect();
     gl.viewport(_video.surface_size());
@@ -236,21 +236,21 @@ void example_newton::zoom(const input& i) {
         scale = max_scale;
     }
 
-    auto& gl = _video.gl_api();
+    const auto& gl = _video.gl_api();
     gl.uniform2f(scale_loc, scale * aspect, scale);
 }
 //------------------------------------------------------------------------------
 void example_newton::pan_x(const input& i) {
     offset_x -= float(i.get() * scale * motion_adjust());
 
-    auto& gl = _video.gl_api();
+    const auto& gl = _video.gl_api();
     gl.uniform2f(offset_loc, offset_x, offset_y);
 }
 //------------------------------------------------------------------------------
 void example_newton::pan_y(const input& i) {
     offset_y -= float(i.get() * scale * motion_adjust());
 
-    auto& gl = _video.gl_api();
+    const auto& gl = _video.gl_api();
     gl.uniform2f(offset_loc, offset_x, offset_y);
 }
 //------------------------------------------------------------------------------
@@ -259,7 +259,7 @@ void example_newton::update() noexcept {
         _is_done.reset();
     }
 
-    auto& [gl, GL] = _video.gl_api();
+    const auto& [gl, GL] = _video.gl_api();
 
     gl.clear(GL.color_buffer_bit);
     gl.draw_arrays(GL.triangle_strip, 0, 4);
@@ -268,7 +268,7 @@ void example_newton::update() noexcept {
 }
 //------------------------------------------------------------------------------
 void example_newton::clean_up() noexcept {
-    auto& gl = _video.gl_api();
+    const auto& gl = _video.gl_api();
 
     gl.delete_shader(std::move(vs));
     gl.delete_shader(std::move(fs));
@@ -289,7 +289,7 @@ public:
     }
 
     auto check_requirements(video_context& vc) -> bool {
-        auto& [gl, GL] = vc.gl_api();
+        const auto& [gl, GL] = vc.gl_api();
 
         return gl.disable && gl.clear_color && gl.create_shader &&
                gl.shader_source && gl.compile_shader && gl.create_program &&

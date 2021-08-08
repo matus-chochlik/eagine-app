@@ -44,8 +44,8 @@ private:
 example_cube::example_cube(execution_context& ec, video_context& vc)
   : _ctx{ec}
   , _video{vc} {
-    auto& glapi = _video.gl_api();
-    auto& [gl, GL] = glapi;
+    const auto& glapi = _video.gl_api();
+    const auto& [gl, GL] = glapi;
 
     prog.init(ec, vc);
     cube.init(ec, vc);
@@ -72,8 +72,8 @@ void example_cube::update() noexcept {
         _is_done.reset();
     }
 
-    auto& glapi = _video.gl_api();
-    auto& [gl, GL] = glapi;
+    const auto& glapi = _video.gl_api();
+    const auto& [gl, GL] = glapi;
 
     prog.update(_ctx, _video);
     prog.set_texture(_video, bufs.front_tex_unit());
@@ -126,7 +126,7 @@ public:
     }
 
     auto check_requirements(video_context& vc) -> bool {
-        auto& [gl, GL] = vc.gl_api();
+        const auto& [gl, GL] = vc.gl_api();
 
         return gl.disable && gl.clear_color && gl.create_shader &&
                gl.shader_source && gl.compile_shader && gl.create_program &&

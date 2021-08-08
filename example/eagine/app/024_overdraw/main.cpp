@@ -18,8 +18,8 @@ namespace eagine::app {
 example::example(execution_context& ec, video_context& vc)
   : _ctx{ec}
   , _video{vc} {
-    auto& glapi = _video.gl_api();
-    auto& [gl, GL] = glapi;
+    const auto& glapi = _video.gl_api();
+    const auto& [gl, GL] = glapi;
 
     _draw_prog.init(*this);
     _shape.init(*this);
@@ -50,7 +50,7 @@ example::example(execution_context& ec, video_context& vc)
 }
 //------------------------------------------------------------------------------
 void example::on_video_resize() noexcept {
-    auto& gl = _video.gl_api();
+    const auto& gl = _video.gl_api();
     gl.viewport(_video.surface_size());
     _draw_bufs.resize(*this);
 }
@@ -64,8 +64,8 @@ void example::update() noexcept {
         _camera.idle_update(state);
     }
 
-    auto& glapi = _video.gl_api();
-    auto& [gl, GL] = glapi;
+    const auto& glapi = _video.gl_api();
+    const auto& [gl, GL] = glapi;
 
     // draw offscreen
     _draw_bufs.draw_offscreen(*this);
@@ -112,7 +112,7 @@ auto example_launchpad::setup(main_ctx&, launch_options& opts) -> bool {
 }
 //------------------------------------------------------------------------------
 auto example_launchpad::check_requirements(video_context& vc) -> bool {
-    auto& [gl, GL] = vc.gl_api();
+    const auto& [gl, GL] = vc.gl_api();
 
     return gl.disable && gl.clear_color && gl.create_shader &&
            gl.shader_source && gl.compile_shader && gl.create_program &&

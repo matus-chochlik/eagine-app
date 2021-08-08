@@ -44,8 +44,8 @@ private:
 example_sphere::example_sphere(execution_context& ec, video_context& vc)
   : _ctx{ec}
   , _video{vc} {
-    auto& glapi = _video.gl_api();
-    auto& [gl, GL] = glapi;
+    const auto& glapi = _video.gl_api();
+    const auto& [gl, GL] = glapi;
 
     prog.init(ec, vc);
     shape.init(ec, vc);
@@ -72,7 +72,7 @@ example_sphere::example_sphere(execution_context& ec, video_context& vc)
 }
 //------------------------------------------------------------------------------
 void example_sphere::on_video_resize() noexcept {
-    auto& gl = _video.gl_api();
+    const auto& gl = _video.gl_api();
     gl.viewport(_video.surface_size());
 }
 //------------------------------------------------------------------------------
@@ -85,8 +85,8 @@ void example_sphere::update() noexcept {
         camera.idle_update(state, 7.F);
     }
 
-    auto& glapi = _video.gl_api();
-    auto& [gl, GL] = glapi;
+    const auto& glapi = _video.gl_api();
+    const auto& [gl, GL] = glapi;
 
     gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
 
@@ -112,7 +112,7 @@ public:
     }
 
     auto check_requirements(video_context& vc) -> bool {
-        auto& [gl, GL] = vc.gl_api();
+        const auto& [gl, GL] = vc.gl_api();
 
         return gl.disable && gl.clear_color && gl.create_shader &&
                gl.shader_source && gl.compile_shader && gl.create_program &&

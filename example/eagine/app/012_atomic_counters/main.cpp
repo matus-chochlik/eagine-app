@@ -47,7 +47,7 @@ private:
 example_atomics::example_atomics(execution_context& ec, video_context& vc)
   : _ctx{ec}
   , _video{vc} {
-    auto& [gl, GL] = _video.gl_api();
+    const auto& [gl, GL] = _video.gl_api();
 
     // vertex shader
     oglplus::owned_shader_name vs;
@@ -113,13 +113,13 @@ example_atomics::example_atomics(execution_context& ec, video_context& vc)
 }
 //------------------------------------------------------------------------------
 void example_atomics::on_video_resize() noexcept {
-    auto& gl = _video.gl_api();
+    const auto& gl = _video.gl_api();
     gl.viewport(_video.surface_size());
 }
 //------------------------------------------------------------------------------
 void example_atomics::update() noexcept {
     auto& state = _ctx.state();
-    auto& [gl, GL] = _video.gl_api();
+    const auto& [gl, GL] = _video.gl_api();
 
     if(state.is_active()) {
         _is_done.reset();
@@ -136,7 +136,7 @@ void example_atomics::update() noexcept {
 }
 //------------------------------------------------------------------------------
 void example_atomics::clean_up() noexcept {
-    auto& gl = _video.gl_api();
+    const auto& gl = _video.gl_api();
 
     gl.delete_program(std::move(prog));
     gl.delete_buffers(std::move(counters));
@@ -154,7 +154,7 @@ public:
     }
 
     auto check_requirements(video_context& vc) -> bool {
-        auto& [gl, GL] = vc.gl_api();
+        const auto& [gl, GL] = vc.gl_api();
 
         return gl.disable && gl.clear_color && gl.create_shader &&
                gl.shader_source && gl.compile_shader && gl.create_program &&

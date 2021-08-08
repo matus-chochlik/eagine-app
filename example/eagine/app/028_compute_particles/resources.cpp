@@ -22,7 +22,7 @@ namespace eagine::app {
 // particles
 //------------------------------------------------------------------------------
 void particles::init(example& e) {
-    auto& [gl, GL] = e.video().gl_api();
+    const auto& [gl, GL] = e.video().gl_api();
 
     // vao
     gl.delete_vertex_arrays.later_by(e, _vao);
@@ -90,7 +90,7 @@ void particles::init(example& e) {
 }
 //------------------------------------------------------------------------------
 void particles::emit(example& e) {
-    auto& [gl, GL] = e.video().gl_api();
+    const auto& [gl, GL] = e.video().gl_api();
 
     const auto cursor_values = GL.unsigned_int_.array(0U);
     gl.buffer_sub_data(GL.atomic_counter_buffer, 0, view(cursor_values));
@@ -98,14 +98,14 @@ void particles::emit(example& e) {
 }
 //------------------------------------------------------------------------------
 void particles::draw(example& e) {
-    auto& [gl, GL] = e.video().gl_api();
+    const auto& [gl, GL] = e.video().gl_api();
     gl.draw_arrays_instanced(GL.points, 0, 1, signedness_cast(_count));
 }
 //------------------------------------------------------------------------------
 // emit program
 //------------------------------------------------------------------------------
 void emit_program::init(example& e) {
-    auto& gl = e.video().gl_api();
+    const auto& gl = e.video().gl_api();
 
     gl.delete_program.later_by(e, _prog);
     gl.create_program() >> _prog;
@@ -120,7 +120,7 @@ void emit_program::init(example& e) {
 }
 //------------------------------------------------------------------------------
 void emit_program::prepare_frame(example& e) {
-    auto& gl = e.video().gl_api();
+    const auto& gl = e.video().gl_api();
     gl.set_uniform(_prog, _emit_position_loc, e.emit_position());
     gl.set_uniform(_prog, _delta_time_loc, e.frame_duration());
 }
@@ -128,7 +128,7 @@ void emit_program::prepare_frame(example& e) {
 void emit_program::bind_random(
   example& e,
   oglplus::gl_types::uint_type binding) {
-    auto& gl = e.video().gl_api();
+    const auto& gl = e.video().gl_api();
     oglplus::shader_storage_block_index blk_idx;
     gl.get_shader_storage_block_index(_prog, "RandomBlock") >> blk_idx;
     gl.shader_storage_block_binding(_prog, blk_idx, binding);
@@ -137,7 +137,7 @@ void emit_program::bind_random(
 void emit_program::bind_offsets(
   example& e,
   oglplus::gl_types::uint_type binding) {
-    auto& gl = e.video().gl_api();
+    const auto& gl = e.video().gl_api();
     oglplus::shader_storage_block_index blk_idx;
     gl.get_shader_storage_block_index(_prog, "OffsetBlock") >> blk_idx;
     gl.shader_storage_block_binding(_prog, blk_idx, binding);
@@ -146,14 +146,14 @@ void emit_program::bind_offsets(
 void emit_program::bind_velocities(
   example& e,
   oglplus::gl_types::uint_type binding) {
-    auto& gl = e.video().gl_api();
+    const auto& gl = e.video().gl_api();
     oglplus::shader_storage_block_index blk_idx;
     gl.get_shader_storage_block_index(_prog, "VelocityBlock") >> blk_idx;
     gl.shader_storage_block_binding(_prog, blk_idx, binding);
 }
 //------------------------------------------------------------------------------
 void emit_program::bind_ages(example& e, oglplus::gl_types::uint_type binding) {
-    auto& gl = e.video().gl_api();
+    const auto& gl = e.video().gl_api();
     oglplus::shader_storage_block_index blk_idx;
     gl.get_shader_storage_block_index(_prog, "AgeBlock") >> blk_idx;
     gl.shader_storage_block_binding(_prog, blk_idx, binding);
@@ -205,7 +205,7 @@ void draw_program::bind_offsets(
 }
 //------------------------------------------------------------------------------
 void draw_program::bind_ages(example& e, oglplus::gl_types::uint_type binding) {
-    auto& gl = e.video().gl_api();
+    const auto& gl = e.video().gl_api();
     oglplus::shader_storage_block_index blk_idx;
     gl.get_shader_storage_block_index(_prog, "AgeBlock") >> blk_idx;
     gl.shader_storage_block_binding(_prog, blk_idx, binding);

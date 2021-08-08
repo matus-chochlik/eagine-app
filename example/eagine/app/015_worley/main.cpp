@@ -74,7 +74,7 @@ example_voronoi::example_voronoi(execution_context& ec, video_context& vc)
     voi_prog.init(ec, vc);
     rand_tex.init(ec, vc);
 
-    auto& [gl, GL] = _video.gl_api();
+    const auto& [gl, GL] = _video.gl_api();
 
     gl.clear_color(0.4F, 0.4F, 0.4F, 0.0F);
     gl.disable(GL.depth_test);
@@ -136,7 +136,7 @@ example_voronoi::example_voronoi(execution_context& ec, video_context& vc)
 }
 //------------------------------------------------------------------------------
 void example_voronoi::on_video_resize() noexcept {
-    auto& gl = _video.gl_api();
+    const auto& gl = _video.gl_api();
 
     aspect = _video.surface_aspect();
     gl.viewport(_video.surface_size());
@@ -160,27 +160,27 @@ void example_voronoi::zoom(const input& i) {
         scale = max_scale;
     }
 
-    auto& gl = _video.gl_api();
+    const auto& gl = _video.gl_api();
     gl.uniform2f(voi_prog.scale_loc, scale * aspect, scale);
 }
 //------------------------------------------------------------------------------
 void example_voronoi::pan_x(const input& i) {
     offset_x -= float(i.get() * scale * motion_adjust());
 
-    auto& gl = _video.gl_api();
+    const auto& gl = _video.gl_api();
     gl.uniform2f(voi_prog.offset_loc, offset_x, offset_y);
 }
 //------------------------------------------------------------------------------
 void example_voronoi::pan_y(const input& i) {
     offset_y -= float(i.get() * scale * motion_adjust());
 
-    auto& gl = _video.gl_api();
+    const auto& gl = _video.gl_api();
     gl.uniform2f(voi_prog.offset_loc, offset_x, offset_y);
 }
 //------------------------------------------------------------------------------
 void example_voronoi::update() noexcept {
     auto& state = _ctx.state();
-    auto& [gl, GL] = _video.gl_api();
+    const auto& [gl, GL] = _video.gl_api();
 
     if(state.is_active()) {
         _is_done.reset();
@@ -229,7 +229,7 @@ public:
     }
 
     auto check_requirements(video_context& vc) -> bool {
-        auto& [gl, GL] = vc.gl_api();
+        const auto& [gl, GL] = vc.gl_api();
 
         return gl.disable && gl.clear_color && gl.create_shader &&
                gl.shader_source && gl.compile_shader && gl.create_program &&
