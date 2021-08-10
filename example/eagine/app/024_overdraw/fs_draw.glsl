@@ -2,6 +2,5 @@
 out vec2 fragData;
 
 void main() {
-	fragData = vec2(1.0/12.0, 1.0);
+    fragData = vec2(1.0 / 12.0, 1.0);
 }
-

@@ -62,8 +62,8 @@ example_arrow::example_arrow(
   : _ctx{ec}
   , _video{vc}
   , shape{std::move(gen)} {
-    auto& glapi = _video.gl_api();
-    auto& [gl, GL] = glapi;
+    const auto& glapi = _video.gl_api();
+    const auto& [gl, GL] = glapi;
 
     shape.init(ec, vc, _cleanup);
     depth_tex.init(ec, vc, _cleanup);
@@ -96,7 +96,7 @@ example_arrow::example_arrow(
 }
 //------------------------------------------------------------------------------
 void example_arrow::on_video_resize() noexcept {
-    auto& gl = _video.gl_api();
+    const auto& gl = _video.gl_api();
     gl.viewport(_video.surface_size());
 }
 //------------------------------------------------------------------------------
@@ -109,7 +109,7 @@ void example_arrow::update() noexcept {
         camera.idle_update(state, 5);
     }
 
-    auto& glapi = _video.gl_api();
+    const auto& glapi = _video.gl_api();
     auto& [gl, GL] = glapi;
 
     gl.clear_depth(0);
@@ -171,7 +171,7 @@ public:
     }
 
     auto check_requirements(video_context& vc) -> bool {
-        auto& [gl, GL] = vc.gl_api();
+        const auto& [gl, GL] = vc.gl_api();
 
         return gl.disable && gl.clear_color && gl.create_shader &&
                gl.shader_source && gl.compile_shader && gl.create_program &&

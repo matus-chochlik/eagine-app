@@ -36,10 +36,10 @@ public:
     glfw3_opengl_window(main_ctx_parent parent);
 
     auto initialize(
-      identifier id,
+      const identifier id,
       const launch_options&,
       const video_options&,
-      span<GLFWmonitor* const>) -> bool;
+      const span<GLFWmonitor* const>) -> bool;
     void update(execution_context& exec_ctx);
     void clean_up();
 
@@ -55,17 +55,17 @@ public:
     void video_end(execution_context&) final;
     void video_commit(execution_context&) final;
 
-    void
-      input_enumerate(callable_ref<void(message_id, input_value_kinds)>) final;
+    void input_enumerate(
+      const callable_ref<void(message_id, input_value_kinds)>) final;
 
     void input_connect(input_sink&) final;
     void input_disconnect() final;
 
-    void mapping_begin(identifier setup_id) final;
-    void mapping_enable(message_id signal_id) final;
-    void mapping_commit(identifier setup_id) final;
+    void mapping_begin(const identifier setup_id) final;
+    void mapping_enable(const message_id signal_id) final;
+    void mapping_commit(const identifier setup_id) final;
 
-    void on_scroll(double x, double y) {
+    void on_scroll(const double x, const double y) {
         _wheel_change_x += x;
         _wheel_change_y += y;
     }
@@ -245,10 +245,10 @@ glfw3_opengl_window::glfw3_opengl_window(main_ctx_parent parent)
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC auto glfw3_opengl_window::initialize(
-  identifier id,
+  const identifier id,
   const launch_options& options,
   const video_options& video_opts,
-  span<GLFWmonitor* const> monitors) -> bool {
+  const span<GLFWmonitor* const> monitors) -> bool {
     _instance_id = id;
 
     glfwWindowHint(
@@ -380,7 +380,7 @@ void glfw3_opengl_window::video_commit(execution_context&) {
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
 void glfw3_opengl_window::input_enumerate(
-  callable_ref<void(message_id, input_value_kinds)> callback) {
+  const callable_ref<void(message_id, input_value_kinds)> callback) {
     // Keyboard inputs
     for(auto& ks : _key_states) {
         callback(
@@ -421,18 +421,18 @@ void glfw3_opengl_window::input_disconnect() {
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
-void glfw3_opengl_window::mapping_begin(identifier setup_id) {
+void glfw3_opengl_window::mapping_begin(const identifier setup_id) {
     EAGINE_MAYBE_UNUSED(setup_id);
     _enabled_signals.clear();
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
-void glfw3_opengl_window::mapping_enable(message_id signal_id) {
+void glfw3_opengl_window::mapping_enable(const message_id signal_id) {
     _enabled_signals.insert(signal_id);
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
-void glfw3_opengl_window::mapping_commit(identifier setup_id) {
+void glfw3_opengl_window::mapping_commit(const identifier setup_id) {
     EAGINE_MAYBE_UNUSED(setup_id);
 
     for(auto& ks : _key_states) {

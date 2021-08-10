@@ -20,7 +20,7 @@ namespace eagine::app {
 // surface program
 //------------------------------------------------------------------------------
 void surface_program::init(execution_context& ec, video_context& vc) {
-    auto& gl = vc.gl_api();
+    const auto& gl = vc.gl_api();
 
     gl.create_program() >> _prog;
 
@@ -34,7 +34,7 @@ void surface_program::init(execution_context& ec, video_context& vc) {
 }
 //------------------------------------------------------------------------------
 void surface_program::clean_up(video_context& vc) {
-    auto& gl = vc.gl_api();
+    const auto& gl = vc.gl_api();
     gl.delete_program(std::move(_prog));
 }
 //------------------------------------------------------------------------------
@@ -42,7 +42,7 @@ void surface_program::prepare_frame(
   video_context& vc,
   orbiting_camera& camera,
   float t) {
-    auto& gl = vc.gl_api();
+    const auto& gl = vc.gl_api();
     gl.use_program(_prog);
     gl.set_uniform(
       _prog, _model_loc, oglplus::matrix_rotation_x(right_angles_(t))());
@@ -54,21 +54,21 @@ void surface_program::prepare_frame(
 void surface_program::bind_position_location(
   video_context& vc,
   oglplus::vertex_attrib_location loc) {
-    auto& gl = vc.gl_api();
+    const auto& gl = vc.gl_api();
     gl.bind_attrib_location(_prog, loc, "Position");
 }
 //------------------------------------------------------------------------------
 void surface_program::bind_normal_location(
   video_context& vc,
   oglplus::vertex_attrib_location loc) {
-    auto& gl = vc.gl_api();
+    const auto& gl = vc.gl_api();
     gl.bind_attrib_location(_prog, loc, "Normal");
 }
 //------------------------------------------------------------------------------
 // halo program
 //------------------------------------------------------------------------------
 void halo_program::init(execution_context& ec, video_context& vc) {
-    auto& gl = vc.gl_api();
+    const auto& gl = vc.gl_api();
 
     gl.create_program() >> _prog;
 
@@ -83,7 +83,7 @@ void halo_program::init(execution_context& ec, video_context& vc) {
 }
 //------------------------------------------------------------------------------
 void halo_program::clean_up(video_context& vc) {
-    auto& gl = vc.gl_api();
+    const auto& gl = vc.gl_api();
     gl.delete_program(std::move(_prog));
 }
 //------------------------------------------------------------------------------
@@ -91,7 +91,7 @@ void halo_program::prepare_frame(
   video_context& vc,
   orbiting_camera& camera,
   float t) {
-    auto& gl = vc.gl_api();
+    const auto& gl = vc.gl_api();
     gl.use_program(_prog);
 
     gl.set_uniform(
@@ -105,14 +105,14 @@ void halo_program::prepare_frame(
 void halo_program::bind_position_location(
   video_context& vc,
   oglplus::vertex_attrib_location loc) {
-    auto& gl = vc.gl_api();
+    const auto& gl = vc.gl_api();
     gl.bind_attrib_location(_prog, loc, "Position");
 }
 //------------------------------------------------------------------------------
 void halo_program::bind_normal_location(
   video_context& vc,
   oglplus::vertex_attrib_location loc) {
-    auto& gl = vc.gl_api();
+    const auto& gl = vc.gl_api();
     gl.bind_attrib_location(_prog, loc, "Normal");
 }
 //------------------------------------------------------------------------------

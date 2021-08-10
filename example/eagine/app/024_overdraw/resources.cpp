@@ -22,7 +22,7 @@ namespace eagine::app {
 // draw program
 //------------------------------------------------------------------------------
 void draw_program::init(example& e) {
-    auto& gl = e.video().gl_api();
+    const auto& gl = e.video().gl_api();
 
     gl.create_program() >> _prog;
     gl.delete_program.later_by(e.cleanup(), _prog);
@@ -52,7 +52,7 @@ void draw_program::use(example& e) {
 // screen program
 //------------------------------------------------------------------------------
 void screen_program::init(example& e) {
-    auto& gl = e.video().gl_api();
+    const auto& gl = e.video().gl_api();
 
     gl.create_program() >> _prog;
     gl.delete_program.later_by(e.cleanup(), _prog);

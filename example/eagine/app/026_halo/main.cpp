@@ -61,8 +61,8 @@ example_halo::example_halo(
   : _ctx{ec}
   , _video{vc}
   , _shape{std::move(gen)} {
-    auto& glapi = _video.gl_api();
-    auto& [gl, GL] = glapi;
+    const auto& glapi = _video.gl_api();
+    const auto& [gl, GL] = glapi;
 
     _shape.init(ec, vc);
 
@@ -92,7 +92,7 @@ example_halo::example_halo(
 }
 //------------------------------------------------------------------------------
 void example_halo::on_video_resize() noexcept {
-    auto& gl = _video.gl_api();
+    const auto& gl = _video.gl_api();
     gl.viewport(_video.surface_size());
 }
 //------------------------------------------------------------------------------
@@ -105,8 +105,8 @@ void example_halo::update() noexcept {
         _camera.idle_update(state, 11.F);
     }
 
-    auto& glapi = _video.gl_api();
-    auto& [gl, GL] = glapi;
+    const auto& glapi = _video.gl_api();
+    const auto& [gl, GL] = glapi;
 
     gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
 
@@ -166,7 +166,7 @@ public:
     }
 
     auto check_requirements(video_context& vc) -> bool {
-        auto& [gl, GL] = vc.gl_api();
+        const auto& [gl, GL] = vc.gl_api();
 
         return gl.disable && gl.clear_color && gl.create_shader &&
                gl.shader_source && gl.compile_shader && gl.create_program &&

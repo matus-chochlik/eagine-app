@@ -19,7 +19,7 @@ namespace eagine::app {
 // program
 //------------------------------------------------------------------------------
 void cel_program::init(execution_context& ec, video_context& vc) {
-    auto& gl = vc.gl_api();
+    const auto& gl = vc.gl_api();
 
     gl.create_program() >> prog;
 
@@ -32,7 +32,7 @@ void cel_program::init(execution_context& ec, video_context& vc) {
 }
 //------------------------------------------------------------------------------
 void cel_program::clean_up(video_context& vc) {
-    auto& gl = vc.gl_api();
+    const auto& gl = vc.gl_api();
     gl.delete_program(std::move(prog));
 }
 //------------------------------------------------------------------------------
@@ -91,7 +91,7 @@ void icosahedron_geometry::init(execution_context& ec, video_context& vc) {
 }
 //------------------------------------------------------------------------------
 void icosahedron_geometry::clean_up(video_context& vc) {
-    auto& gl = vc.gl_api();
+    const auto& gl = vc.gl_api();
     gl.delete_buffers(std::move(indices));
     gl.delete_buffers(std::move(positions));
     gl.delete_vertex_arrays(std::move(vao));

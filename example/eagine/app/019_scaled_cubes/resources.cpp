@@ -24,7 +24,7 @@ namespace eagine::app {
 // program
 //------------------------------------------------------------------------------
 void cubes_program::init(execution_context& ec, video_context& vc) {
-    auto& gl = vc.gl_api();
+    const auto& gl = vc.gl_api();
 
     gl.create_program() >> prog;
 
@@ -39,7 +39,7 @@ void cubes_program::init(execution_context& ec, video_context& vc) {
 }
 //------------------------------------------------------------------------------
 void cubes_program::clean_up(video_context& vc) {
-    auto& gl = vc.gl_api();
+    const auto& gl = vc.gl_api();
     gl.delete_program(std::move(prog));
 }
 //------------------------------------------------------------------------------
@@ -152,7 +152,7 @@ void cubes_geometry::init(execution_context& ec, video_context& vc) {
 }
 //------------------------------------------------------------------------------
 void cubes_geometry::clean_up(video_context& vc) {
-    auto& gl = vc.gl_api();
+    const auto& gl = vc.gl_api();
     gl.delete_buffers(std::move(indices));
     gl.delete_buffers(std::move(coords));
     gl.delete_buffers(std::move(pivots));

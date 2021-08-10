@@ -36,13 +36,13 @@ class video_options {
 public:
     video_options(
       application_config&,
-      video_context_kind kind,
-      string_view instance);
+      const video_context_kind kind,
+      const string_view instance);
 
     video_options(
       main_ctx_object& obj,
-      video_context_kind kind,
-      identifier instance);
+      const video_context_kind kind,
+      const identifier instance);
 
     /// @brief Returns the requested video rendering context kind.
     auto video_kind() const noexcept -> video_context_kind {
@@ -64,7 +64,7 @@ public:
 
     /// @brief Indicates if video provider name is the same as the argument.
     /// @see set_provider
-    auto has_provider(string_view name) const noexcept -> bool {
+    auto has_provider(const string_view name) const noexcept -> bool {
         return are_equal(string_view(_provider_name), name);
     }
 
@@ -164,8 +164,9 @@ public:
     using valid_surface_size = valid_if_positive<int>;
 
     /// @brief Sets the rendering surface size.
-    auto surface_size(valid_surface_size width, valid_surface_size height)
-      -> auto& {
+    auto surface_size(
+      const valid_surface_size& width,
+      const valid_surface_size& height) -> auto& {
         _surface_width = extract(width);
         _surface_height = extract(height);
         return *this;
@@ -300,7 +301,7 @@ public:
 
     /// @brief Requests an off-screen rendering surface.
     /// @see fullscreen
-    auto offscreen(bool value) noexcept -> auto& {
+    auto offscreen(const bool value) noexcept -> auto& {
         if((_offscreen = value)) {
             _surface_width = 0;
             _surface_height = 0;
@@ -319,7 +320,7 @@ public:
 
     /// @brief Requests an full-screen rendering surface.
     /// @see offscreen
-    auto fullscreen(bool value) noexcept -> auto& {
+    auto fullscreen(const bool value) noexcept -> auto& {
         if((_fullscreen = value)) {
             _surface_width = 0;
             _surface_height = 0;
@@ -453,8 +454,8 @@ public:
     /// @see require_audio
     /// @see video_requirements
     auto require_video(
-      video_context_kind kind = video_context_kind::opengl,
-      identifier instance = {}) -> video_options&;
+      const video_context_kind kind = video_context_kind::opengl,
+      const identifier instance = {}) -> video_options&;
 
     /// @brief Returns all current video rendering context options.
     /// @see require_video
@@ -480,8 +481,8 @@ public:
     /// @see require_video
     /// @see audio_requirements
     auto require_audio(
-      audio_context_kind kind = audio_context_kind::openal,
-      identifier instance = {}) -> audio_options&;
+      const audio_context_kind kind = audio_context_kind::openal,
+      const identifier instance = {}) -> audio_options&;
 
     /// @brief Returns all current audio rendering context options.
     /// @see require_audio
@@ -515,13 +516,13 @@ public:
 
     /// @brief Says if the application ran long enough according to the configuration.
     template <typename R, typename P>
-    auto enough_run_time(std::chrono::duration<R, P> run_time) const noexcept
-      -> bool {
+    auto enough_run_time(
+      const std::chrono::duration<R, P> run_time) const noexcept -> bool {
         return _max_run_time && extract(_max_run_time) <= run_time;
     }
 
     /// @brief Says if the application rendered enough frames according to the configuration.
-    auto enough_frames(span_size_t frame_no) const noexcept -> bool {
+    auto enough_frames(const span_size_t frame_no) const noexcept -> bool {
         return _max_frames && extract(_max_frames) <= frame_no;
     }
 

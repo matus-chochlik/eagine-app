@@ -10,8 +10,8 @@ uniform sampler2D LightTex;
 const vec3 lightDir = normalize(vec3(7.0, 8.0, 9.0));
 
 void main() {
-	vec3 color = texture(ColorTex, vertWrapCoord).rgb;
-	float occl = texture(LightTex, vertWrapCoord).r;
+    vec3 color = texture(ColorTex, vertWrapCoord).rgb;
+    float occl = texture(LightTex, vertWrapCoord).r;
 
     float ambient = occl;
     float diffuse = max(dot(lightDir, vertNormal), 0.0) * pow(occl, 4.0);

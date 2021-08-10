@@ -1,7 +1,7 @@
 #version 400
 
-layout (std140) uniform OffsetBlock {
-	vec4 offset[16*16*16];
+layout(std140) uniform OffsetBlock {
+    vec4 offset[16 * 16 * 16];
 };
 uniform vec3 CameraPosition;
 
@@ -13,7 +13,7 @@ flat out int vertInstanceId;
 
 void main() {
     vertPosition = Position;
-    vertDistance = length(
-		CameraPosition - (vertPosition + offset[gl_InstanceID].xyz));
-	vertInstanceId = gl_InstanceID;
+    vertDistance =
+      length(CameraPosition - (vertPosition + offset[gl_InstanceID].xyz));
+    vertInstanceId = gl_InstanceID;
 }

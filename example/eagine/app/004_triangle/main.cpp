@@ -33,7 +33,7 @@ public:
 
 private:
     video_context& _video;
-    timeout _is_done{std::chrono::seconds(10)};
+    timeout _is_done{std::chrono::seconds{10}};
 
     oglplus::triangle tri{
       oglplus::vec3{-0.2F, 0.5F, 0.0F},
@@ -50,23 +50,23 @@ private:
 //------------------------------------------------------------------------------
 example_triangle::example_triangle(execution_context& ec, video_context& vc)
   : _video{vc} {
-    auto& [gl, GL] = _video.gl_api();
+    const auto& [gl, GL] = _video.gl_api();
 
     gl.clear_color(0.4F, 0.4F, 0.4F, 0.0F);
 
     // vertex shader
-    auto vs_source = embed(EAGINE_ID(VertShader), "vertex.glsl");
+    const auto vs_source = embed(EAGINE_ID(VertShader), "vertex.glsl");
     oglplus::owned_shader_name vs;
     gl.create_shader(GL.vertex_shader) >> vs;
-    auto cleanup_vs = gl.delete_shader.raii(vs);
+    const auto cleanup_vs = gl.delete_shader.raii(vs);
     gl.shader_source(vs, oglplus::glsl_string_ref(vs_source));
     gl.compile_shader(vs);
 
     // fragment shader
-    auto fs_source = embed(EAGINE_ID(FragShader), "fragment.glsl");
+    const auto fs_source = embed(EAGINE_ID(FragShader), "fragment.glsl");
     oglplus::owned_shader_name fs;
     gl.create_shader(GL.fragment_shader) >> fs;
-    auto cleanup_fs = gl.delete_shader.raii(fs);
+    const auto cleanup_fs = gl.delete_shader.raii(fs);
     gl.shader_source(fs, oglplus::glsl_string_ref(fs_source));
     gl.compile_shader(fs);
 
@@ -118,12 +118,12 @@ example_triangle::example_triangle(execution_context& ec, video_context& vc)
 }
 //------------------------------------------------------------------------------
 void example_triangle::on_video_resize() noexcept {
-    auto& gl = _video.gl_api();
+    const auto& gl = _video.gl_api();
     gl.viewport(_video.surface_size());
 }
 //------------------------------------------------------------------------------
 void example_triangle::update() noexcept {
-    auto& [gl, GL] = _video.gl_api();
+    const auto& [gl, GL] = _video.gl_api();
 
     gl.clear(GL.color_buffer_bit);
     gl.draw_arrays(GL.triangles, 0, 3);
@@ -132,7 +132,7 @@ void example_triangle::update() noexcept {
 }
 //------------------------------------------------------------------------------
 void example_triangle::clean_up() noexcept {
-    auto& gl = _video.gl_api();
+    const auto& gl = _video.gl_api();
 
     gl.delete_program(std::move(prog));
     gl.delete_buffers(std::move(positions));
@@ -150,7 +150,7 @@ public:
     }
 
     auto check_requirements(video_context& vc) -> bool {
-        auto& [gl, GL] = vc.gl_api();
+        const auto& [gl, GL] = vc.gl_api();
 
         return gl.disable && gl.clear_color && gl.create_shader &&
                gl.shader_source && gl.compile_shader && gl.create_program &&

@@ -31,27 +31,27 @@ public:
 
     auto get_context_attribs(
       execution_context&,
-      bool gl_otherwise_gles,
+      const bool gl_otherwise_gles,
       const launch_options&,
       const video_options&) const -> std::vector<eglplus::egl_types::int_type>;
 
     auto initialize(
       execution_context&,
-      eglplus::display_handle,
-      eglplus::egl_types::config_type,
+      const eglplus::display_handle,
+      const eglplus::egl_types::config_type,
       const launch_options&,
       const video_options&) -> bool;
 
     auto initialize(
       execution_context&,
-      eglplus::display_handle,
-      valid_if_nonnegative<span_size_t> device_idx,
+      const eglplus::display_handle,
+      const valid_if_nonnegative<span_size_t>& device_idx,
       const launch_options&,
       const video_options&) -> bool;
 
     auto initialize(
       execution_context&,
-      identifier instance,
+      const identifier instance,
       const launch_options&,
       const video_options&) -> bool;
 
@@ -83,7 +83,7 @@ private:
 EAGINE_LIB_FUNC
 auto eglplus_opengl_surface::get_context_attribs(
   execution_context&,
-  bool gl_otherwise_gles,
+  const bool gl_otherwise_gles,
   const launch_options&,
   const video_options& video_opts) const
   -> std::vector<eglplus::egl_types::int_type> {
@@ -135,8 +135,8 @@ auto eglplus_opengl_surface::get_context_attribs(
 EAGINE_LIB_FUNC
 auto eglplus_opengl_surface::initialize(
   execution_context& exec_ctx,
-  eglplus::display_handle display,
-  eglplus::egl_types::config_type config,
+  const eglplus::display_handle display,
+  const eglplus::egl_types::config_type config,
   const launch_options& opts,
   const video_options& video_opts) -> bool {
     const auto& [egl, EGL] = _egl_api;
@@ -200,8 +200,8 @@ auto eglplus_opengl_surface::initialize(
 EAGINE_LIB_FUNC
 auto eglplus_opengl_surface::initialize(
   execution_context& exec_ctx,
-  eglplus::display_handle display,
-  valid_if_nonnegative<span_size_t> device_idx,
+  const eglplus::display_handle display,
+  const valid_if_nonnegative<span_size_t>& device_idx,
   const launch_options& opts,
   const video_options& video_opts) -> bool {
     const auto& [egl, EGL] = _egl_api;
@@ -323,7 +323,7 @@ auto eglplus_opengl_surface::initialize(
 EAGINE_LIB_FUNC
 auto eglplus_opengl_surface::initialize(
   execution_context& exec_ctx,
-  identifier id,
+  const identifier id,
   const launch_options& opts,
   const video_options& video_opts) -> bool {
     _instance_id = id;
@@ -436,7 +436,7 @@ auto eglplus_opengl_surface::initialize(
                             if(initialize(
                                  exec_ctx,
                                  display,
-                                 cur_dev_idx,
+                                 signedness_cast(cur_dev_idx),
                                  opts,
                                  video_opts)) {
                                 return true;

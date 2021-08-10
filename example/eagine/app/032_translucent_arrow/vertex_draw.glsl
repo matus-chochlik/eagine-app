@@ -13,8 +13,8 @@ void main() {
     gl_Position = Camera * vec4(Position, 1.0);
     vertNormal = Normal;
     vertColor = normalize(vec3(1) - mix(Normal, Position, 0.5));
-	vec3 cameraLoc = (vec4(0.0, 0.0, 0.0, 1.0) * Camera).xyz;
-	vertViewDir = normalize(cameraLoc - Position);
+    vec3 cameraLoc = (vec4(0.0, 0.0, 0.0, 1.0) * Camera).xyz;
+    vertViewDir = normalize(cameraLoc - Position);
     vertLightDir = normalize(LightPosition - Position);
     viewLightDir = normalize((Camera * vec4(LightPosition, 1.0)).xyz);
 }

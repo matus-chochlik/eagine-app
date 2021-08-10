@@ -88,23 +88,23 @@ inline auto video_context_state::doing_framedump() const noexcept {
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
 inline auto video_context_state::commit(
-  long frame_number,
+  const long frame_number,
   video_provider& provider,
   oglplus::gl_api& api) -> bool {
     bool result = true;
     if(EAGINE_UNLIKELY(doing_framedump())) {
-        auto& [gl, GL] = api;
+        const auto& [gl, GL] = api;
 
         if(EAGINE_LIKELY(gl.read_pixels)) {
 
-            auto dump_frame = [&](
-                                framedump& target,
-                                auto gl_format,
-                                auto gl_type,
-                                framedump_pixel_format format,
-                                framedump_data_type type,
-                                int elements,
-                                span_size_t element_size) {
+            const auto dump_frame = [&](
+                                      framedump& target,
+                                      const auto gl_format,
+                                      const auto gl_type,
+                                      const framedump_pixel_format format,
+                                      const framedump_data_type type,
+                                      const int elements,
+                                      const span_size_t element_size) {
                 const auto [width, height] = provider.surface_size();
                 const auto size =
                   span_size(width * height * elements * element_size);
@@ -246,7 +246,7 @@ EAGINE_LIB_FUNC
 auto video_context::init_gl_api() noexcept -> bool {
     try {
         _gl_api = std::make_shared<oglplus::gl_api>();
-        auto& [gl, GL] = extract(_gl_api);
+        const auto& [gl, GL] = extract(_gl_api);
 
         const auto pos = _parent.options().video_requirements().find(
           extract(_provider).instance_id());
@@ -423,7 +423,7 @@ auto execution_context::enough_run_time() const noexcept -> bool {
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
-auto execution_context::enough_frames(span_size_t frame_no) const noexcept
+auto execution_context::enough_frames(const span_size_t frame_no) const noexcept
   -> bool {
     return options().enough_frames(frame_no);
 }
@@ -519,9 +519,10 @@ void execution_context::update() noexcept {
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
-auto execution_context::connect_input(message_id input_id, input_handler handler)
-  -> execution_context& {
-    _connected_inputs.emplace(input_id, std::move(handler));
+auto execution_context::connect_input(
+  const message_id input_id,
+  const input_handler handler) -> execution_context& {
+    _connected_inputs.emplace(input_id, handler);
     return *this;
 }
 //------------------------------------------------------------------------------
@@ -533,16 +534,16 @@ auto execution_context::connect_inputs() -> execution_context& {
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
 auto execution_context::map_input(
-  message_id input_id,
-  identifier mapping_id,
-  message_id signal_id,
-  input_setup setup) -> execution_context& {
+  const message_id input_id,
+  const identifier mapping_id,
+  const message_id signal_id,
+  const input_setup setup) -> execution_context& {
     _input_mappings[mapping_id].emplace(signal_id, input_id, setup);
     return *this;
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
-auto execution_context::map_inputs(identifier mapping_id)
+auto execution_context::map_inputs(const identifier mapping_id)
   -> execution_context& {
     map_input(
       EAGINE_MSG_ID(App, Stop),
@@ -553,7 +554,7 @@ auto execution_context::map_inputs(identifier mapping_id)
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
-auto execution_context::switch_input_mapping(identifier mapping_id)
+auto execution_context::switch_input_mapping(const identifier mapping_id)
   -> execution_context& {
     if(_input_mapping != mapping_id) {
         _mapped_inputs.clear();

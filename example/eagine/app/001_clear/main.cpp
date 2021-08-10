@@ -28,12 +28,12 @@ public:
 
     void on_video_resize() noexcept final {
         const auto [width, height] = _video.surface_size();
-        auto& gl = _video.gl_api();
+        const auto& gl = _video.gl_api();
         gl.viewport(width, height);
     }
 
     void update() noexcept final {
-        auto& [gl, GL] = _video.gl_api();
+        const auto& [gl, GL] = _video.gl_api();
 
         const auto sec = int(_ec.state().frame_time());
 
@@ -66,7 +66,7 @@ public:
     }
 
     auto check_requirements(video_context& vc) -> bool {
-        auto& [gl, GL] = vc.gl_api();
+        const auto& [gl, GL] = vc.gl_api();
 
         return gl.clear_color && gl.clear && GL.color_buffer_bit;
     }

@@ -22,7 +22,7 @@ namespace eagine::app {
 // sketch program
 //------------------------------------------------------------------------------
 void sketch_program::init(execution_context& ec, video_context& vc) {
-    auto& gl = vc.gl_api();
+    const auto& gl = vc.gl_api();
 
     gl.create_program() >> _prog;
 
@@ -37,7 +37,7 @@ void sketch_program::init(execution_context& ec, video_context& vc) {
 }
 //------------------------------------------------------------------------------
 void sketch_program::clean_up(video_context& vc) {
-    auto& gl = vc.gl_api();
+    const auto& gl = vc.gl_api();
     gl.delete_program(std::move(_prog));
 }
 //------------------------------------------------------------------------------
@@ -46,7 +46,7 @@ void sketch_program::prepare_frame(
   orbiting_camera& camera,
   float t) {
     const auto [width, height] = vc.surface_size();
-    auto& gl = vc.gl_api();
+    const auto& gl = vc.gl_api();
     gl.use_program(_prog);
     gl.set_uniform(
       _prog,
@@ -61,21 +61,21 @@ void sketch_program::prepare_frame(
 void sketch_program::bind_position_location(
   video_context& vc,
   oglplus::vertex_attrib_location loc) {
-    auto& gl = vc.gl_api();
+    const auto& gl = vc.gl_api();
     gl.bind_attrib_location(_prog, loc, "Position");
 }
 //------------------------------------------------------------------------------
 void sketch_program::bind_normal_location(
   video_context& vc,
   oglplus::vertex_attrib_location loc) {
-    auto& gl = vc.gl_api();
+    const auto& gl = vc.gl_api();
     gl.bind_attrib_location(_prog, loc, "Normal");
 }
 //------------------------------------------------------------------------------
 void sketch_program::bind_coord_location(
   video_context& vc,
   oglplus::vertex_attrib_location loc) {
-    auto& gl = vc.gl_api();
+    const auto& gl = vc.gl_api();
     gl.bind_attrib_location(_prog, loc, "Coord");
 }
 //------------------------------------------------------------------------------
@@ -185,7 +185,7 @@ void sketch_texture::init(execution_context& ec, video_context& vc) {
                 for(auto x : integer_range(w)) {
                     const float c = l * float(x + 1) / float(w);
                     scratch(
-                      int(x + xmin * side) + i,
+                      int(float(x) + xmin * side) + i,
                       int(float(h + t) * c + ymin * side),
                       layer);
                 }
@@ -195,7 +195,7 @@ void sketch_texture::init(execution_context& ec, video_context& vc) {
                     const float c = l * float(y + 1) / float(h);
                     scratch(
                       int(float(w + t) * c + xmin * side),
-                      int(y + ymin * side) + i,
+                      int(float(y) + ymin * side) + i,
                       layer);
                 }
             }

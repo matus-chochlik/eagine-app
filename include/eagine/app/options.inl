@@ -14,15 +14,15 @@ namespace eagine::app {
 EAGINE_LIB_FUNC
 video_options::video_options(
   main_ctx_object& obj,
-  video_context_kind kind,
-  identifier instance)
+  const video_context_kind kind,
+  const identifier instance)
   : video_options{obj.main_context().config(), kind, instance.name()} {}
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
 video_options::video_options(
   application_config& c,
-  video_context_kind kind,
-  string_view instance)
+  const video_context_kind kind,
+  const string_view instance)
   : _video_kind{kind}
   , _provider_name{c, "application.video.provider", instance}
   , _display_name{c, "application.video.display", instance}
@@ -60,8 +60,8 @@ video_options::video_options(
 EAGINE_LIB_FUNC
 audio_options::audio_options(
   main_ctx_object&,
-  audio_context_kind kind,
-  identifier)
+  const audio_context_kind kind,
+  const identifier)
   : _audio_kind{kind} {}
 //------------------------------------------------------------------------------
 // launch_options
@@ -83,8 +83,9 @@ auto launch_options::application_title() const noexcept -> string_view {
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
-auto launch_options::require_video(video_context_kind kind, identifier instance)
-  -> video_options& {
+auto launch_options::require_video(
+  const video_context_kind kind,
+  const identifier instance) -> video_options& {
     auto pos = _video_opts.find(instance);
     if(pos == _video_opts.end()) {
         pos = _video_opts
@@ -95,8 +96,9 @@ auto launch_options::require_video(video_context_kind kind, identifier instance)
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
-auto launch_options::require_audio(audio_context_kind kind, identifier instance)
-  -> audio_options& {
+auto launch_options::require_audio(
+  const audio_context_kind kind,
+  const identifier instance) -> audio_options& {
     auto pos = _audio_opts.find(instance);
     if(pos == _audio_opts.end()) {
         pos = _audio_opts

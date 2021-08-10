@@ -45,8 +45,9 @@ public:
     void update(execution_context&, video_context&);
 
     void bind_position_location(video_context&, oglplus::vertex_attrib_location);
-    void
-    bind_normal_location(video_context& ctx, oglplus::vertex_attrib_location);
+    void bind_normal_location(
+      video_context& ctx,
+      oglplus::vertex_attrib_location);
 
 private:
     oglplus::owned_program_name prog;

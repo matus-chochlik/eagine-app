@@ -34,13 +34,13 @@ public:
     }
 
     /// @brief Does a generic orbit update with given increment.
-    auto update_orbit(float inc) noexcept -> orbiting_camera&;
+    auto update_orbit(const float inc) noexcept -> orbiting_camera&;
 
     /// @brief Does a generic azimuth update with given increment.
-    auto update_turns(float inc) noexcept -> orbiting_camera&;
+    auto update_turns(const float inc) noexcept -> orbiting_camera&;
 
     /// @brief Does a generic elevation update with given increment.
-    auto update_pitch(float inc) noexcept -> orbiting_camera&;
+    auto update_pitch(const float inc) noexcept -> orbiting_camera&;
 
     /// @brief Does a generic combined update when the user does not provide input.
     /// @see update_orbit
@@ -134,7 +134,7 @@ public:
 
     /// @brief Specifies a named key binding for the camera input slots.
     /// @see connect_inputs
-    auto basic_input_mapping(execution_context& ec, identifier mapping_id)
+    auto basic_input_mapping(execution_context& ec, const identifier mapping_id)
       -> orbiting_camera&;
 
     /// @brief Specifies the default key binding for the camera input slots.

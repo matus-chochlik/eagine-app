@@ -53,7 +53,7 @@ void cube_program::set_projection(
 //------------------------------------------------------------------------------
 void cube_program::update(execution_context& ec, video_context& vc) {
     rad += radians_(0.5F * ec.state().frame_duration().value());
-    auto& glapi = vc.gl_api();
+    const auto& glapi = vc.gl_api();
     glapi.set_uniform(
       prog,
       modelview_loc,

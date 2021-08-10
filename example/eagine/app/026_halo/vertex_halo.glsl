@@ -10,6 +10,6 @@ out vec3 vertNormal;
 
 void main() {
     gl_Position = Model * vec4(Position, 1.0);
-	vertCameraDir = normalize(CameraPos - gl_Position.xyz);
+    vertCameraDir = normalize(CameraPos - gl_Position.xyz);
     vertNormal = mat3(Model) * Normal;
 }
