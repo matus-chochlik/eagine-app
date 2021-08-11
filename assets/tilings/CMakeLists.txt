@@ -4,4 +4,5 @@
 #  http://www.boost.org/LICENSE_1_0.txt
 
 oglplus_add_texture(tiles_r4_s256_a6)
+oglplus_add_texture(tiles_r4_s256_a16)
 
