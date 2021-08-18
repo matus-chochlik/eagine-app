@@ -192,8 +192,8 @@ void cube_draw_buffers::init(execution_context&, video_context& vc) {
         objs.swap();
     }
 
-    gl.bind_framebuffer(GL.draw_framebuffer, oglplus::framebuffer_name(0));
-    gl.bind_renderbuffer(GL.renderbuffer, oglplus::renderbuffer_name(0));
+    gl.bind_framebuffer(GL.draw_framebuffer, oglplus::default_framebuffer);
+    gl.bind_renderbuffer(GL.renderbuffer, oglplus::no_renderbuffer);
 }
 //------------------------------------------------------------------------------
 void cube_draw_buffers::clean_up(video_context& vc) {

@@ -91,7 +91,7 @@ void example_cube::update() noexcept {
     cube.draw(_video);
 
     // draw on screen
-    gl.bind_framebuffer(GL.draw_framebuffer, oglplus::framebuffer_name(0));
+    gl.bind_framebuffer(GL.draw_framebuffer, oglplus::default_framebuffer);
     gl.viewport(_video.surface_size());
 
     const float h = 0.55F;
