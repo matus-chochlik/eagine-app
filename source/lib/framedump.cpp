@@ -8,9 +8,6 @@
 
 // clang-format off
 #include "prologue.inl"
-#include <eagine/main_ctx.hpp>
-#include <eagine/compression.hpp>
-#include <eagine/app_config.hpp>
 #include <eagine/app/options.hpp>
 
 #include "implement.inl"

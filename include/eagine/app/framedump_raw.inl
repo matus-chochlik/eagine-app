@@ -6,6 +6,7 @@
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
 #include <eagine/compression.hpp>
+#include <eagine/main_ctx.hpp>
 #include <eagine/main_ctx_object.hpp>
 #include <eagine/memory/buffer.hpp>
 #include <eagine/span.hpp>

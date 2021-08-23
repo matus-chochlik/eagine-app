@@ -20,7 +20,7 @@ auto make_eglplus_opengl_provider(main_ctx_parent)
 
 } // namespace eagine::app
 
-#if !EAGINE_APP_LIBRARY || defined(EAGINE_IMPLEMENTING_LIBRARY)
+#if !EAGINE_APP_LIBRARY || defined(EAGINE_IMPLEMENTING_APP_LIBRARY)
 #include <eagine/app/opengl_eglplus.inl>
 #endif
 
