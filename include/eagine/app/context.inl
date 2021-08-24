@@ -19,6 +19,7 @@
 #include <eagine/app/opengl_glfw3.hpp>
 #include <eagine/app/state.hpp>
 #include <eagine/branch_predict.hpp>
+#include <eagine/main_ctx.hpp>
 #include <eagine/memory/buffer.hpp>
 #include <eagine/span.hpp>
 

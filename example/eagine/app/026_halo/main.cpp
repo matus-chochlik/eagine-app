@@ -161,7 +161,7 @@ public:
               ctx);
         }
 
-        _gen = shapes::add_triangle_adjacency(std::move(gen));
+        _gen = shapes::add_triangle_adjacency(ctx, std::move(gen));
         return true;
     }
 

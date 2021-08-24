@@ -20,7 +20,7 @@ auto make_glfw3_opengl_provider(main_ctx_parent)
 
 } // namespace eagine::app
 
-#if !EAGINE_APP_LIBRARY || defined(EAGINE_IMPLEMENTING_LIBRARY)
+#if !EAGINE_APP_LIBRARY || defined(EAGINE_IMPLEMENTING_APP_LIBRARY)
 #include <eagine/app/opengl_glfw3.inl>
 #endif
 

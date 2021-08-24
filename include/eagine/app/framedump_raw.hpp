@@ -19,7 +19,7 @@ auto make_raw_framedump(main_ctx_parent) -> std::shared_ptr<framedump>;
 
 } // namespace eagine::app
 
-#if !EAGINE_APP_LIBRARY || defined(EAGINE_IMPLEMENTING_LIBRARY)
+#if !EAGINE_APP_LIBRARY || defined(EAGINE_IMPLEMENTING_APP_LIBRARY)
 #include <eagine/app/framedump_raw.inl>
 #endif
 

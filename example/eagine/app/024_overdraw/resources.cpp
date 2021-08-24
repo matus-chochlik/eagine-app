@@ -250,7 +250,7 @@ void draw_buffers::init(example& e) {
     gl.framebuffer_renderbuffer(
       GL.draw_framebuffer, GL.depth_attachment, GL.renderbuffer, _rbo);
 
-    gl.bind_framebuffer(GL.draw_framebuffer, oglplus::framebuffer_name(0));
+    gl.bind_framebuffer(GL.draw_framebuffer, oglplus::default_framebuffer);
 }
 //------------------------------------------------------------------------------
 void draw_buffers::resize(example& e) {
@@ -284,7 +284,7 @@ void draw_buffers::draw_offscreen(example& e) {
 //------------------------------------------------------------------------------
 void draw_buffers::draw_onscreen(example& e) {
     const auto& [gl, GL] = e.video().gl_api();
-    gl.bind_framebuffer(GL.draw_framebuffer, oglplus::framebuffer_name(0));
+    gl.bind_framebuffer(GL.draw_framebuffer, oglplus::default_framebuffer);
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app
