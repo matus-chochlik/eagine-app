@@ -23,6 +23,7 @@ void surface_program::init(execution_context& ec, video_context& vc) {
     const auto& gl = vc.gl_api();
 
     gl.create_program() >> _prog;
+    gl.object_label(_prog, "surface program");
 
     const auto prog_src{embed(EAGINE_ID(SurfProg), "halo_surface.oglpprog")};
     gl.build_program(_prog, prog_src.unpack(ec));
@@ -71,6 +72,7 @@ void halo_program::init(execution_context& ec, video_context& vc) {
     const auto& gl = vc.gl_api();
 
     gl.create_program() >> _prog;
+    gl.object_label(_prog, "halo program");
 
     const auto prog_src{embed(EAGINE_ID(HaloProg), "halo_halo.oglpprog")};
     gl.build_program(_prog, prog_src.unpack(ec));
@@ -140,6 +142,7 @@ void shape_geometry::init(execution_context& ec, video_context& vc) {
       _positions,
       position_loc(),
       eagine::shapes::vertex_attrib_kind::position,
+      "positions",
       ec.buffer());
 
     // normals
@@ -150,11 +153,12 @@ void shape_geometry::init(execution_context& ec, video_context& vc) {
       _normals,
       normal_loc(),
       eagine::shapes::vertex_attrib_kind::normal,
+      "normals",
       ec.buffer());
 
     // indices
     gl.gen_buffers() >> _indices;
-    shape.index_setup(glapi, _indices, draw_var, ec.buffer());
+    shape.index_setup(glapi, _indices, draw_var, "indices", ec.buffer());
 }
 //------------------------------------------------------------------------------
 void shape_geometry::clean_up(video_context& vc) {

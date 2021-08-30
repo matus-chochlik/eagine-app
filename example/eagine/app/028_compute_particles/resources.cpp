@@ -35,6 +35,7 @@ void particles::init(example& e) {
     gl.delete_buffers.later_by(e, _origin);
     gl.gen_buffers() >> _origin;
     gl.bind_buffer(GL.array_buffer, _origin);
+    gl.object_label(_origin, "origin");
     gl.buffer_data(GL.array_buffer, view(origin_data), GL.static_draw);
     gl.vertex_attrib_pointer(origin_loc(), 3, GL.float_, GL.false_);
     gl.enable_vertex_attrib_array(origin_loc());
@@ -44,6 +45,7 @@ void particles::init(example& e) {
 
     gl.gen_buffers() >> _cursors;
     gl.bind_buffer(GL.atomic_counter_buffer, _cursors);
+    gl.object_label(_cursors, "cursors");
     gl.bind_buffer_base(GL.atomic_counter_buffer, cursors_binding(), _cursors);
     gl.buffer_data(
       GL.atomic_counter_buffer, view(cursor_values), GL.dynamic_draw);
@@ -57,6 +59,7 @@ void particles::init(example& e) {
     gl.delete_buffers.later_by(e, _random);
     gl.gen_buffers() >> _random;
     gl.bind_buffer(GL.shader_storage_buffer, _random);
+    gl.object_label(_random, "random");
     gl.bind_buffer_base(GL.shader_storage_buffer, random_binding(), _random);
     gl.buffer_data(GL.shader_storage_buffer, view(init_data), GL.static_draw);
 
@@ -66,6 +69,7 @@ void particles::init(example& e) {
     gl.delete_buffers.later_by(e, _offsets);
     gl.gen_buffers() >> _offsets;
     gl.bind_buffer(GL.shader_storage_buffer, _offsets);
+    gl.object_label(_offsets, "offsets");
     gl.bind_buffer_base(GL.shader_storage_buffer, offsets_binding(), _offsets);
     gl.buffer_data(GL.shader_storage_buffer, view(init_data), GL.dynamic_draw);
 
@@ -75,6 +79,7 @@ void particles::init(example& e) {
     gl.delete_buffers.later_by(e, _velocities);
     gl.gen_buffers() >> _velocities;
     gl.bind_buffer(GL.shader_storage_buffer, _velocities);
+    gl.object_label(_velocities, "velocities");
     gl.bind_buffer_base(
       GL.shader_storage_buffer, velocities_binding(), _velocities);
     gl.buffer_data(GL.shader_storage_buffer, view(init_data), GL.dynamic_draw);
@@ -85,6 +90,7 @@ void particles::init(example& e) {
     gl.delete_buffers.later_by(e, _ages);
     gl.gen_buffers() >> _ages;
     gl.bind_buffer(GL.shader_storage_buffer, _ages);
+    gl.object_label(_ages, "ages");
     gl.bind_buffer_base(GL.shader_storage_buffer, ages_binding(), _ages);
     gl.buffer_data(GL.shader_storage_buffer, view(init_data), GL.dynamic_draw);
 }
@@ -109,6 +115,7 @@ void emit_program::init(example& e) {
 
     gl.delete_program.later_by(e, _prog);
     gl.create_program() >> _prog;
+    gl.object_label(_prog, "emit program");
 
     const auto prog_src{
       embed(EAGINE_ID(EmitProg), "compute_particles_emit.oglpprog")};
@@ -170,6 +177,7 @@ void draw_program::init(example& e) {
 
     gl.delete_program.later_by(e, _prog);
     gl.create_program() >> _prog;
+    gl.object_label(_prog, "draw program");
 
     const auto prog_src{
       embed(EAGINE_ID(DrawProg), "compute_particles_draw.oglpprog")};
