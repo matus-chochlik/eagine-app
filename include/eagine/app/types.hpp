@@ -24,6 +24,7 @@ enum class video_context_kind : std::uint8_t {
     openvg
 };
 
+#if !EAGINE_CXX_REFLECTION
 template <typename Selector>
 constexpr auto enumerator_mapping(
   const type_identity<video_context_kind>,
@@ -32,6 +33,7 @@ constexpr auto enumerator_mapping(
       {{"opengl", video_context_kind::opengl},
        {"openvg", video_context_kind::openvg}}};
 }
+#endif
 //------------------------------------------------------------------------------
 /// @brief Audio / sound playback and recodring context kind.
 /// @ingroup application
@@ -40,6 +42,7 @@ enum class audio_context_kind : std::uint8_t {
     openal
 };
 
+#if !EAGINE_CXX_REFLECTION
 template <typename Selector>
 constexpr auto enumerator_mapping(
   const type_identity<audio_context_kind>,
@@ -47,6 +50,7 @@ constexpr auto enumerator_mapping(
     return enumerator_map_type<audio_context_kind, 1>{
       {{"openal", audio_context_kind::openal}}};
 }
+#endif
 //------------------------------------------------------------------------------
 /// @brief Video rendering device kind.
 /// @ingroup application
@@ -59,6 +63,7 @@ enum class video_device_kind : std::uint8_t {
     software
 };
 
+#if !EAGINE_CXX_REFLECTION
 template <typename Selector>
 constexpr auto enumerator_mapping(
   const type_identity<video_device_kind>,
@@ -68,6 +73,7 @@ constexpr auto enumerator_mapping(
        {"hardware", video_device_kind::hardware},
        {"software", video_device_kind::software}}};
 }
+#endif
 //------------------------------------------------------------------------------
 /// @brief Pixel data type used to store frame dump image data.
 /// @ingroup application
@@ -81,6 +87,7 @@ enum class framedump_data_type : std::uint8_t {
     byte_type
 };
 
+#if !EAGINE_CXX_REFLECTION
 template <typename Selector>
 constexpr auto enumerator_mapping(
   const type_identity<framedump_data_type>,
@@ -90,6 +97,7 @@ constexpr auto enumerator_mapping(
        {"float_type", framedump_data_type::float_type},
        {"byte_type", framedump_data_type::byte_type}}};
 }
+#endif
 
 constexpr auto enumerator_mapping(
   const type_identity<framedump_data_type>,
@@ -114,6 +122,7 @@ enum class framedump_pixel_format : std::uint8_t {
     stencil
 };
 
+#if !EAGINE_CXX_REFLECTION
 template <typename Selector>
 constexpr auto enumerator_mapping(
   const type_identity<framedump_pixel_format>,
@@ -124,6 +133,7 @@ constexpr auto enumerator_mapping(
        {"depth", framedump_pixel_format::depth},
        {"stencil", framedump_pixel_format::stencil}}};
 }
+#endif
 //------------------------------------------------------------------------------
 } // namespace eagine::app
 #endif

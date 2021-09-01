@@ -57,9 +57,9 @@ void cube_program::update(execution_context& ec, video_context& vc) {
     glapi.set_uniform(
       prog,
       modelview_loc,
-      oglplus::matrix_rotation_x(rad * 1) *
-        oglplus::matrix_rotation_y(rad * 2) *
-        oglplus::matrix_rotation_z(rad * 3));
+      oglplus::matrix_rotation_x(rad * 1.F) *
+        oglplus::matrix_rotation_y(rad * 2.F) *
+        oglplus::matrix_rotation_z(rad * 3.F));
     glapi.set_uniform(
       prog, light_pos_loc, oglplus::vec3(cos(rad) * 4, sin(rad) * 4, 8));
 }

@@ -88,7 +88,6 @@ void shape_geometry::init(execution_context& ec, video_context& vc) {
     oglplus::shape_generator shape(
       glapi,
       shapes::add_triangle_adjacency(
-        ec,
         shapes::unit_twisted_torus(
           shapes::vertex_attrib_kind::position |
             shapes::vertex_attrib_kind::normal |
@@ -96,7 +95,8 @@ void shape_geometry::init(execution_context& ec, video_context& vc) {
           9,
           13,
           9,
-          0.5F)));
+          0.5F),
+        ec));
 
     auto draw_var = shape.draw_variant(0);
     _ops.resize(std_size(shape.operation_count(draw_var)));

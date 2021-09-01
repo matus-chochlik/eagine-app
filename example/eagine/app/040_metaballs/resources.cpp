@@ -29,6 +29,7 @@ void volume_domain::init(example& e) {
     gl.delete_vertex_arrays.later_by(e, _tetrahedrons);
     gl.gen_vertex_arrays() >> _tetrahedrons;
     gl.bind_vertex_array(_tetrahedrons);
+    gl.object_label(_tetrahedrons, "domain VAO");
 
     // corner positions
     // clang-format off
@@ -46,6 +47,7 @@ void volume_domain::init(example& e) {
     gl.delete_buffers.later_by(e, _corners);
     gl.gen_buffers() >> _corners;
     gl.bind_buffer(GL.array_buffer, _corners);
+    gl.object_label(_configs, "domain grid corners");
     gl.buffer_data(GL.array_buffer, view(corner_data), GL.static_draw);
     gl.vertex_attrib_ipointer(corner_loc(), 3, GL.int_);
     gl.enable_vertex_attrib_array(corner_loc());
@@ -67,12 +69,14 @@ void volume_domain::init(example& e) {
     gl.delete_buffers.later_by(e, _indices);
     gl.gen_buffers() >> _indices;
     gl.bind_buffer(GL.element_array_buffer, _indices);
+    gl.object_label(_indices, "domain grid indices");
     gl.buffer_data(GL.element_array_buffer, view(index_data), GL.static_draw);
 
     // field sample values
     gl.delete_buffers.later_by(e, _field);
     gl.gen_buffers() >> _field;
     gl.bind_buffer(GL.shader_storage_buffer, _field);
+    gl.object_label(_field, "domain field values");
     gl.bind_buffer_base(GL.shader_storage_buffer, field_binding(), _field);
     gl.buffer_storage(GL.shader_storage_buffer, vertex_count() * 32);
 
@@ -80,6 +84,7 @@ void volume_domain::init(example& e) {
     gl.delete_buffers.later_by(e, _metaballs);
     gl.gen_buffers() >> _metaballs;
     gl.bind_buffer(GL.shader_storage_buffer, _metaballs);
+    gl.object_label(_metaballs, "domain metaball parameters");
     gl.bind_buffer_base(
       GL.shader_storage_buffer, metaballs_binding(), _metaballs);
     gl.buffer_storage(GL.shader_storage_buffer, 2048);
@@ -109,6 +114,7 @@ void volume_domain::init(example& e) {
     gl.delete_buffers.later_by(e, _configs);
     gl.gen_buffers() >> _configs;
     gl.bind_buffer(GL.shader_storage_buffer, _configs);
+    gl.object_label(_configs, "polygonization configurations");
     gl.bind_buffer_base(GL.shader_storage_buffer, configs_binding(), _configs);
     gl.buffer_data(GL.shader_storage_buffer, view(config_data), GL.static_draw);
 }
@@ -132,6 +138,7 @@ void metaball_program::init(example& e) {
 
     gl.delete_program.later_by(e, _prog);
     gl.create_program() >> _prog;
+    gl.object_label(_prog, "metaball program");
 
     const auto prog_src{
       embed(EAGINE_ID(MBallProg), "metaballs_metaball.oglpprog")};
@@ -161,6 +168,7 @@ void field_program::init(example& e) {
 
     gl.delete_program.later_by(e, _prog);
     gl.create_program() >> _prog;
+    gl.object_label(_prog, "field program");
 
     const auto prog_src{
       embed(EAGINE_ID(FieldProg), "metaballs_field.oglpprog")};
@@ -207,6 +215,7 @@ void surface_program::init(example& e) {
 
     gl.delete_program.later_by(e, _prog);
     gl.create_program() >> _prog;
+    gl.object_label(_prog, "surface program");
 
     const auto prog_src{
       embed(EAGINE_ID(SurfProg), "metaballs_surface.oglpprog")};

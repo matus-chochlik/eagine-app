@@ -29,12 +29,14 @@ void depth_program::init(
     auto vs_src = embed(EAGINE_ID(VSDepth), "vertex_depth.glsl");
     gl.create_shader(GL.vertex_shader) >> vs;
     auto cleanup_vs = gl.delete_shader.raii(vs);
+    gl.object_label(vs, "depth vertex shader");
     gl.shader_source(vs, oglplus::glsl_string_ref(vs_src.unpack(ec)));
     gl.compile_shader(vs);
 
     // program
     gl.create_program() >> prog;
     gl.delete_program.later_by(cleanup, prog);
+    gl.object_label(prog, "depth program");
     gl.attach_shader(prog, vs);
     gl.link_program(prog);
     gl.use_program(prog);
@@ -70,6 +72,7 @@ void draw_program::init(
     auto vs_src = embed(EAGINE_ID(VSDraw), "vertex_draw.glsl");
     gl.create_shader(GL.vertex_shader) >> vs;
     auto cleanup_vs = gl.delete_shader.raii(vs);
+    gl.object_label(vs, "draw vertex shader");
     gl.shader_source(vs, oglplus::glsl_string_ref(vs_src.unpack(ec)));
     gl.compile_shader(vs);
 
@@ -78,12 +81,14 @@ void draw_program::init(
     auto fs_src = embed(EAGINE_ID(FSDraw), "fragment_draw.glsl");
     gl.create_shader(GL.fragment_shader) >> fs;
     auto cleanup_fs = gl.delete_shader.raii(fs);
+    gl.object_label(fs, "draw fragment shader");
     gl.shader_source(fs, oglplus::glsl_string_ref(fs_src.unpack(ec)));
     gl.compile_shader(fs);
 
     // program
     gl.create_program() >> prog;
     gl.delete_program.later_by(cleanup, prog);
+    gl.object_label(prog, "draw program");
     gl.attach_shader(prog, vs);
     gl.attach_shader(prog, fs);
     gl.link_program(prog);
@@ -164,6 +169,7 @@ void shape_geometry::init(
       positions,
       position_loc(),
       eagine::shapes::vertex_attrib_kind::position,
+      "positions",
       ec.buffer());
 
     // normals
@@ -175,12 +181,13 @@ void shape_geometry::init(
       normals,
       normal_loc(),
       eagine::shapes::vertex_attrib_kind::normal,
+      "normals",
       ec.buffer());
 
     // indices
     gl.gen_buffers() >> indices;
     gl.delete_buffers.later_by(cleanup, indices);
-    shape.index_setup(glapi, indices, ec.buffer());
+    shape.index_setup(glapi, indices, "indices", ec.buffer());
 
     gl.enable(GL.depth_test);
     gl.enable(GL.cull_face);

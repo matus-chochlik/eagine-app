@@ -24,6 +24,7 @@ void sphere_program::init(execution_context& ec, video_context& vc) {
     const auto& gl = glapi;
 
     gl.create_program() >> prog;
+    gl.object_label(prog, "sphere program");
 
     const auto prog_src{
       embed(EAGINE_ID(TessProg), "sphere_tessellation.oglpprog")};
@@ -86,11 +87,12 @@ void icosahedron_geometry::init(execution_context& ec, video_context& vc) {
       positions,
       position_loc(),
       eagine::shapes::vertex_attrib_kind::position,
+      "positions",
       ec.buffer());
 
     // indices
     gl.gen_buffers() >> indices;
-    shape.index_setup(glapi, indices, ec.buffer());
+    shape.index_setup(glapi, indices, "indices", ec.buffer());
 
     // offsets
     const float d = 4.2F;
@@ -117,6 +119,7 @@ void icosahedron_geometry::init(execution_context& ec, video_context& vc) {
 
     gl.gen_buffers() >> offsets;
     gl.bind_buffer(GL.uniform_buffer, offsets);
+    gl.object_label(offsets, "offsets");
     gl.bind_buffer_base(GL.uniform_buffer, 0, offsets);
     gl.buffer_data(GL.uniform_buffer, view(offset_data), GL.static_draw);
 }
