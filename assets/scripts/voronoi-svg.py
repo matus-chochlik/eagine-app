@@ -916,7 +916,7 @@ def make_gradients(renderer):
 
     grad_fmt = """<linearGradient gradientUnits="userSpaceOnUse" id="%(gref)s" """+\
                 """x1="%(x1)f" y1="%(y1)f" x2="%(x2)f" y2="%(y2)f">\n"""
-    stop_fmt = """<stop offset="%(soffs)d%%" style="stop-color:%(color)s"/>\n"""
+    stop_fmt = """<stop offset="%(soffs)d%%" style="stop-color:%(color)s;stop-opacity:%(opacity)s"/>\n"""
 
     offsets = []
     for j in range(-2, 3):
@@ -941,20 +941,20 @@ def make_gradients(renderer):
                 if renderer.cell_mode == "worley":
                     renderer.output.write(stop_fmt % {
                         "soffs": 0.0,
-                        "color": "#%(r)02x%(g)02x%(b)02x%(a)02x" % {
-                            "r": int(255*float((x+w) % w)/w),
-                            "g": int(255*float((y+h) % h)/h),
-                            "a": int(255*renderer.cell_value(x, y)),
-                            "b": 255
+                        "opacity": "1.0",
+                        "color": "#%(cx)02x%(cy)02x%(cv)02x" % {
+                            "cx": int(255*float((x+w) % w)/w),
+                            "cy": int(255*float((y+h) % h)/h),
+                            "cv": int(255*renderer.cell_value(x, y))
                         }
                     })
                     renderer.output.write(stop_fmt % {
                         "soffs": 50.0,
-                        "color": "#%(r)02x%(g)02x%(b)02x%(a)02x" % {
-                            "r": int(255*float((x+w) % w)/w),
-                            "g": int(255*float((y+h) % h)/h),
-                            "a": int(255*renderer.cell_value(x, y)),
-                            "b": 0
+                        "opacity": "0.0",
+                        "color": "#%(cx)02x%(cy)02x%(cv)02x" % {
+                            "cx": int(255*float((x+w) % w)/w),
+                            "cy": int(255*float((y+h) % h)/h),
+                            "cv": int(255*renderer.cell_value(x, y))
                         }
                     })
                 renderer.output.write("""</linearGradient>\n""")
@@ -988,21 +988,23 @@ def print_svg(renderer):
                 do_make_cell(renderer, job, output_lock)
             except Exception:
                 sys.stderr.write("failed to generate SVG, please retry\n")
-                raise SystemExit
+                raise SystemExit(1)
+        if renderer.job_count > 1:
+            tasks = []
+            for job in range(renderer.job_count):
+                t = multiprocessing.Process(
+                    target=call_do_make_cell,
+                    args=(renderer, job, output_lock)
+                )
+                t.start()
+                tasks.append(t)
 
-        tasks = []
-        for job in range(renderer.job_count):
-            t = multiprocessing.Process(
-                target=call_do_make_cell,
-                args=(renderer, job, output_lock)
-            )
-            t.start()
-            tasks.append(t)
-
-        for t in tasks:
-            t.join()
-            if t.exitcode is not None and t.exitcode != 0:
-                return 1
+            for t in tasks:
+                t.join()
+                if t.exitcode is not None and t.exitcode != 0:
+                    return 1
+        else:
+            call_do_make_cell(renderer, 0, output_lock)
     except KeyboardInterrupt:
         pass
 
