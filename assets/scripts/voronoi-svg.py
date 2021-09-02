@@ -499,7 +499,15 @@ class VoronoiArgumentParser(argparse.ArgumentParser):
         self.add_argument(
             '--cell-mode', '-C',
             type=str,
-            choices=["full", "scaled", "flagstone","pebble", "worley"],
+            choices=[
+                "full",
+                "scaled",
+                "flagstone"
+                "pebble",
+                "worley-nmap",
+                "worley-hmap",
+                "worley-cvh"
+            ],
             action="store",
             default="full"
         )
@@ -551,7 +559,7 @@ class VoronoiArgumentParser(argparse.ArgumentParser):
             if options.y_cells is None:
                 options.y_cells = 32
 
-        if options.cell_mode in ["worley"]:
+        if options.cell_mode in ["worley-nmap", "worley-hmap", "worley-cvh"]:
             options.need_neighbors = True
             options.job_count = 1
         else:
@@ -718,7 +726,7 @@ class Renderer(object):
             self.cell_element_str = self.flagstone_cell_element_str
         elif self.cell_mode == "pebble":
             self.cell_element_str = self.pebble_cell_element_str
-        elif self.cell_mode == "worley":
+        elif self.cell_mode in ["worley-nmap", "worley-hmap", "worley-cvh"]:
             self.cell_element_str = self.worley_cell_element_str
 
         self.cell_values = RandomCellValues(
@@ -916,7 +924,7 @@ def make_gradients(renderer):
 
     grad_fmt = """<linearGradient gradientUnits="userSpaceOnUse" id="%(gref)s" """+\
                 """x1="%(x1)f" y1="%(y1)f" x2="%(x2)f" y2="%(y2)f">\n"""
-    stop_fmt = """<stop offset="%(soffs)d%%" style="stop-color:%(color)s;stop-opacity:%(opacity)s"/>\n"""
+    stop_fmt = """<stop offset="%(soffs)d%%" stop-color="%(color)s" stop-opacity="%(opacity)s"/>\n"""
 
     offsets = []
     for j in range(-2, 3):
@@ -924,12 +932,13 @@ def make_gradients(renderer):
             if j != 0 or i != 0:
                 offsets.append((i, j))
 
+    cell_size = math.sqrt(pow(renderer.width / w, 2)+pow(renderer.height / h, 2))
+
     for y in range(-1, h+2):
         for x in range(-1, w+2):
             for i, j in offsets:
                 cwc = cell_world_coord(renderer, x, y)
                 owc = cell_world_coord(renderer, x+i, y+j)
-                vec = cwc - owc
 
                 renderer.output.write(grad_fmt % {
                         "gref": renderer.cell_gradient_id(x, y, i, j),
@@ -938,7 +947,52 @@ def make_gradients(renderer):
                         "x2": owc[0],
                         "y2": owc[1] 
                 })
-                if renderer.cell_mode == "worley":
+                if renderer.cell_mode == "worley-nmap":
+                    val = renderer.cell_value(x, y)
+                    vec = cwc - owc
+                    vec = (
+                        math.sqrt(val)*vec[0],
+                        math.sqrt(val)*vec[1],
+                        -cell_size*math.sqrt(1.0-val*0.5)
+                    )
+                    vln = math.sqrt(sum(pow(v, 2) for v in vec))
+                    vec = [v / vln for v in vec]
+                    vec = [0.5 - 0.5*v for v in vec]
+                    renderer.output.write(stop_fmt % {
+                        "soffs": 0.0,
+                        "opacity": "1.0",
+                        "color": "#%(cx)02x%(cy)02x%(cz)02x" % {
+                            "cx": int(255*vec[0]),
+                            "cy": int(255*vec[1]),
+                            "cz": int(255*vec[2])
+                        }
+                    })
+                    renderer.output.write(stop_fmt % {
+                        "soffs": 50.0,
+                        "opacity": "1.0",
+                        "color": "#%(cx)02x%(cy)02x%(cz)02x" % {
+                            "cx": int(255*vec[0]),
+                            "cy": int(255*vec[1]),
+                            "cz": int(255*vec[2])
+                        }
+                    })
+                if renderer.cell_mode == "worley-hmap":
+                    val = renderer.cell_value(x, y)
+                    renderer.output.write(stop_fmt % {
+                        "soffs": 0.0,
+                        "opacity": "1.0",
+                        "color": "#%(cx)02x%(cy)02x%(cz)02x" % {
+                            "cx": int(255*val),
+                            "cy": int(255*val),
+                            "cz": int(255*val)
+                        }
+                    })
+                    renderer.output.write(stop_fmt % {
+                        "soffs": 50.0,
+                        "opacity": "1.0",
+                        "color": "black"
+                    })
+                if renderer.cell_mode == "worley-cvh":
                     renderer.output.write(stop_fmt % {
                         "soffs": 0.0,
                         "opacity": "1.0",
@@ -975,7 +1029,7 @@ def print_svg(renderer):
     )
 
     renderer.output.write("<defs>\n")
-    if renderer.cell_mode in ["worley"]:
+    if renderer.cell_mode in ["worley-nmap", "worley-hmap", "worley-cvh"]:
         make_gradients(renderer)
     renderer.output.write("</defs>\n")
     renderer.output.flush()
@@ -986,7 +1040,7 @@ def print_svg(renderer):
         def call_do_make_cell(renderer, job, output_lock):
             try:
                 do_make_cell(renderer, job, output_lock)
-            except Exception:
+            except AssertionError:
                 sys.stderr.write("failed to generate SVG, please retry\n")
                 raise SystemExit(1)
         if renderer.job_count > 1:
