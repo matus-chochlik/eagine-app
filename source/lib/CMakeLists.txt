@@ -9,6 +9,7 @@ add_library(
 	context.cpp
 	camera.cpp
 	framedump.cpp
+	oalplus.cpp
 	eglplus.cpp
 	glfw3.cpp
 )

@@ -407,19 +407,45 @@ private:
 class audio_options {
 public:
     audio_options(
-      main_ctx_object&,
+      application_config&,
       audio_context_kind kind,
-      identifier instance);
+      const string_view instance);
+
+    audio_options(
+      main_ctx_object& obj,
+      const audio_context_kind kind,
+      const identifier instance);
 
     /// @brief Returns the requested audio rendering context kind.
     auto audio_kind() const noexcept {
         return _audio_kind;
     }
 
+    /// @brief Sets the audio provider identifier name.
+    /// @see has_provider
+    auto set_provider(std::string name) -> auto& {
+        _provider_name = std::move(name);
+        return *this;
+    }
+
+    /// @brief Indicates if audio provider name is set (not empty).
+    /// @see set_provider
+    auto has_provider() const noexcept -> bool {
+        return !extract(_provider_name).empty();
+    }
+
+    /// @brief Indicates if video provider name is the same as the argument.
+    /// @see set_provider
+    auto has_provider(const string_view name) const noexcept -> bool {
+        return are_equal(string_view(_provider_name), name);
+    }
+
 private:
     friend class execution_context;
 
     audio_context_kind _audio_kind;
+
+    application_config_value<std::string, string_view> _provider_name;
 };
 //------------------------------------------------------------------------------
 /// @brief Class managing options for an application with video / audio rendering.

@@ -129,6 +129,21 @@ public:
         EAGINE_MAYBE_UNUSED(_parent);
     }
 
+    /// @brief Start working in this audio context (make it current).
+    /// @see end
+    /// @see commit
+    void begin();
+
+    /// @brief Stop working with this audio context.
+    /// @see begin
+    /// @see commit
+    void end();
+
+    /// @brief Apply the rendering commands done since the last commit.
+    /// @see begin
+    /// @see end
+    void commit();
+
     /// @brief Tries to intialize the AL sound API in this video context.
     /// @see has_al_api
     /// @see al_api
