@@ -400,6 +400,13 @@ inline auto execution_context::_setup_providers() -> bool {
         }
     }
 
+    for(auto& audio_opts : _options._audio_opts) {
+        // TODO: proper provider selection
+        if(!audio_opts.second.has_provider()) {
+            audio_opts.second.set_provider("oalplus");
+        }
+    }
+
     for(auto& provider : _hmi_providers) {
         if(try_init(provider)) {
             auto add_input = [&](std::shared_ptr<input_provider> input) {

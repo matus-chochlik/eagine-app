@@ -37,6 +37,7 @@ public:
 
     auto initialize(
       execution_context&,
+      const oalplus::device_handle,
       const identifier instance,
       const launch_options&,
       const audio_options&) -> bool;
@@ -78,20 +79,24 @@ auto oalplus_openal_player::get_context_attribs(
 EAGINE_LIB_FUNC
 auto oalplus_openal_player::initialize(
   execution_context& exec_ctx,
+  const oalplus::device_handle device,
   const identifier id,
   const launch_options& opts,
   const audio_options& audio_opts) -> bool {
     _instance_id = id;
+    _device = device;
     const auto& [alc, ALC] = _alc_api;
 
     // TODO
-    EAGINE_MAYBE_UNUSED(exec_ctx);
     EAGINE_MAYBE_UNUSED(opts);
     EAGINE_MAYBE_UNUSED(audio_opts);
 
-    if(const ok device{alc.open_device()}) {
-        _device = device;
+    if(const ok context{alc.create_context(_device)}) {
+        _context = context;
+        return true;
     } else {
+        exec_ctx.log_error("failed to create AL context")
+          .arg(EAGINE_ID(message), (!context).message());
     }
 
     return false;
@@ -195,7 +200,7 @@ auto oalplus_openal_provider::should_initialize(execution_context& exec_ctx)
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
 auto oalplus_openal_provider::initialize(execution_context& exec_ctx) -> bool {
-    if(_alc_api.open_device()) {
+    if(const ok device{_alc_api.open_device()}) {
         auto& options = exec_ctx.options();
         for(auto& [inst, audio_opts] : options.audio_requirements()) {
             const bool should_create_player =
@@ -206,7 +211,7 @@ auto oalplus_openal_provider::initialize(execution_context& exec_ctx) -> bool {
                 if(auto player{std::make_shared<oalplus_openal_player>(
                      *this, _alc_api)}) {
                     if(extract(player).initialize(
-                         exec_ctx, inst, options, audio_opts)) {
+                         exec_ctx, device, inst, options, audio_opts)) {
                         _players[inst] = std::move(player);
                     } else {
                         extract(player).clean_up();
