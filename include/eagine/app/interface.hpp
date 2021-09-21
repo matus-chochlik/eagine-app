@@ -70,6 +70,10 @@ struct audio_provider : interface<audio_provider> {
 
     virtual auto audio_kind() const noexcept -> audio_context_kind = 0;
     virtual auto instance_id() const noexcept -> identifier = 0;
+
+    virtual void audio_begin(execution_context&) = 0;
+    virtual void audio_end(execution_context&) = 0;
+    virtual void audio_commit(execution_context&) = 0;
 };
 //------------------------------------------------------------------------------
 struct hmi_provider : interface<hmi_provider> {

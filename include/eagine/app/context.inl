@@ -15,6 +15,7 @@
 //
 #include <eagine/app/framedump_raw.hpp>
 #include <eagine/app/input.hpp>
+#include <eagine/app/openal_oalplus.hpp>
 #include <eagine/app/opengl_eglplus.hpp>
 #include <eagine/app/opengl_glfw3.hpp>
 #include <eagine/app/state.hpp>
@@ -333,6 +334,21 @@ void video_context::clean_up() noexcept {
 // audio_context
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
+void audio_context::begin() {
+    extract(_provider).audio_begin(_parent);
+}
+//------------------------------------------------------------------------------
+EAGINE_LIB_FUNC
+void audio_context::end() {
+    extract(_provider).audio_end(_parent);
+}
+//------------------------------------------------------------------------------
+EAGINE_LIB_FUNC
+void audio_context::commit() {
+    extract(_provider).audio_commit(_parent);
+}
+//------------------------------------------------------------------------------
+EAGINE_LIB_FUNC
 auto audio_context::init_al_api() noexcept -> bool {
     try {
         _al_api = std::make_shared<oalplus::al_api>();
@@ -347,10 +363,11 @@ void audio_context::clean_up() noexcept {}
 // providers
 //------------------------------------------------------------------------------
 inline auto make_all_hmi_providers(main_ctx_parent parent)
-  -> std::array<std::shared_ptr<hmi_provider>, 2> {
+  -> std::array<std::shared_ptr<hmi_provider>, 3> {
     return {
       {make_glfw3_opengl_provider(parent),
-       make_eglplus_opengl_provider(parent)}};
+       make_eglplus_opengl_provider(parent),
+       make_oalplus_openal_provider(parent)}};
 }
 //------------------------------------------------------------------------------
 // execution_context
@@ -380,6 +397,13 @@ inline auto execution_context::_setup_providers() -> bool {
         // TODO: proper provider selection
         if(!video_opts.second.has_provider()) {
             video_opts.second.set_provider("glfw3");
+        }
+    }
+
+    for(auto& audio_opts : _options._audio_opts) {
+        // TODO: proper provider selection
+        if(!audio_opts.second.has_provider()) {
+            audio_opts.second.set_provider("oalplus");
         }
     }
 

@@ -15,6 +15,7 @@ endif()
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/config)
 list(APPEND CMAKE_MODULE_PATH ${EAGINE_CORE_ROOT}/config)
 list(APPEND CMAKE_MODULE_PATH ${EAGINE_OGLPLUS_ROOT}/config)
+file(STRINGS "${EAGINE_CORE_ROOT}/VERSION" EAGINE_VERSION)
 
 add_subdirectory(submodules)
 
@@ -25,3 +26,4 @@ add_subdirectory(assets)
 add_subdirectory(include)
 add_subdirectory(source)
 add_subdirectory(example)
+add_subdirectory(deploy)

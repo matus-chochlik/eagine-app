@@ -59,10 +59,18 @@ video_options::video_options(
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
 audio_options::audio_options(
-  main_ctx_object&,
+  main_ctx_object& obj,
   const audio_context_kind kind,
-  const identifier)
-  : _audio_kind{kind} {}
+  const identifier instance)
+  : audio_options{obj.main_context().config(), kind, instance.name()} {}
+//------------------------------------------------------------------------------
+EAGINE_LIB_FUNC
+audio_options::audio_options(
+  application_config& c,
+  const audio_context_kind kind,
+  const string_view instance)
+  : _audio_kind{kind}
+  , _provider_name{c, "application.audio.provider", instance} {}
 //------------------------------------------------------------------------------
 // launch_options
 //------------------------------------------------------------------------------
