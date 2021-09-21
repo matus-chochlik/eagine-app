@@ -11,7 +11,7 @@ const vec3 lightColor = vec3(1.0);
 void main() {
     float diffuse = 0.25 + max(dot(vertLightDir, vertNormal), 0.0) * 0.65;
     float specular =
-      0.5 *
+      0.3 *
       pow(
         clamp(
           dot(vertLightDir, reflect(vertViewDir, vertNormal)) + 0.02, 0.0, 1.0),

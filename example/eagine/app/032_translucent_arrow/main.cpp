@@ -148,9 +148,9 @@ public:
             _gen = shapes::unit_twisted_torus(
               shapes::vertex_attrib_kind::position |
                 shapes::vertex_attrib_kind::normal,
-              7,
+              6,
               48,
-              5,
+              4,
               0.5F);
         } else if(ctx.args().find("--torus")) {
             _gen = shapes::unit_torus(
