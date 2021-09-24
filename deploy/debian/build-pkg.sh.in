@@ -74,6 +74,10 @@ target_link_libraries(
 )
 EOD
 # ------------------------------------------------------------------------------
+cat << EOD > "${cmk_prefix}/EAGineAppDeps.cmake"
+set(EAGineAppDeps Core Shapes EGLplus OGLplus OALplus)
+EOD
+# ------------------------------------------------------------------------------
 mkdir -p "${pkg_dir}/DEBIAN"
 cat << EOD > "${pkg_dir}/DEBIAN/control"
 Package: eagine-app-dev
