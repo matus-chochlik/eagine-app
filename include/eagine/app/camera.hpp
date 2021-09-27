@@ -33,6 +33,11 @@ public:
         return std::exchange(_changed, false);
     }
 
+    auto mark_changed() noexcept -> orbiting_camera& {
+        _changed = true;
+        return *this;
+    }
+
     /// @brief Does a generic orbit update with given increment.
     auto update_orbit(const float inc) noexcept -> orbiting_camera&;
 
