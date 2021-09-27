@@ -11,8 +11,6 @@ set_target_properties(
 	PROPERTIES FOLDER "Example/App"
 )
 
-add_subdirectory(000_tiling)
-
 add_subdirectory(001_basic_info)
 add_subdirectory(001_clear)
 add_subdirectory(002_spectrum)
@@ -26,6 +24,7 @@ add_subdirectory(009_json_shape)
 add_subdirectory(010_newton)
 add_subdirectory(011_mandelbrot)
 add_subdirectory(012_atomic_counters)
+add_subdirectory(013_tiling)
 add_subdirectory(014_voronoi)
 add_subdirectory(015_worley)
 add_subdirectory(016_torus)
