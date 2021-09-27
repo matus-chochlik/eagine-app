@@ -3,6 +3,4 @@
 # See accompanying file LICENSE_1_0.txt or copy at
 #  http://www.boost.org/LICENSE_1_0.txt
 
-add_subdirectory(textures)
-add_subdirectory(tilesets)
-add_subdirectory(tilings)
+add_subdirectory(blocks16)
