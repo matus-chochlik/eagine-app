@@ -2,7 +2,5 @@
 # Distributed under the Boost Software License, Version 1.0.
 # See accompanying file LICENSE_1_0.txt or copy at
 #  http://www.boost.org/LICENSE_1_0.txt
+oglplus_add_texture(tileset_blocks16)
 
-add_subdirectory(textures)
-add_subdirectory(tilesets)
-add_subdirectory(tilings)

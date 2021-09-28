@@ -616,6 +616,16 @@ void execution_context::random_uniform_01(span<float> dest) {
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
+auto execution_context::random_uniform_01() -> float {
+    return extract(_state).random_uniform_01();
+}
+//------------------------------------------------------------------------------
+EAGINE_LIB_FUNC
+auto execution_context::random_uniform_11() -> float {
+    return extract(_state).random_uniform_11();
+}
+//------------------------------------------------------------------------------
+EAGINE_LIB_FUNC
 void execution_context::random_normal(span<float> dest) {
     extract(_state).random_normal(dest);
 }

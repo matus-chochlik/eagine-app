@@ -56,6 +56,16 @@ public:
         generate(dest, [this] { return _dist_uniform_float_01(_rand_eng); });
     }
 
+    /// @brief Generates random uniformly-distributed float in range <0, 1>.
+    auto random_uniform_01() -> float {
+        return _dist_uniform_float_01(_rand_eng);
+    }
+
+    /// @brief Generates random uniformly-distributed float in range <-1, 1>.
+    auto random_uniform_11() -> float {
+        return _dist_uniform_float_11(_rand_eng);
+    }
+
     /// @brief Generates random normally-distributed floats.
     void random_normal(span<float> dest) {
         generate(dest, [this] { return _dist_normal_float(_rand_eng); });
@@ -72,6 +82,7 @@ private:
     std::default_random_engine _rand_eng;
     std::uniform_int_distribution<byte> _dist_uniform_byte{0x00, 0xFF};
     std::uniform_real_distribution<float> _dist_uniform_float_01{0.F, 1.F};
+    std::uniform_real_distribution<float> _dist_uniform_float_11{-1.F, 1.F};
     std::normal_distribution<float> _dist_normal_float{0.F, 1.F};
 };
 //------------------------------------------------------------------------------

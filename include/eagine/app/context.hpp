@@ -329,6 +329,12 @@ public:
     /// @brief Generates random uniformly-distributed floats in <0, 1> into @p dest.
     void random_uniform_01(span<float> dest);
 
+    /// @brief Generates random uniformly-distributed float in <0, 1>.
+    auto random_uniform_01() -> float;
+
+    /// @brief Generates random uniformly-distributed float in <-1, 1>.
+    auto random_uniform_11() -> float;
+
     /// @brief Generates random normally-distributed floats into @p dest.
     void random_normal(span<float> dest);
 
