@@ -57,7 +57,7 @@ private:
     animated_value<std::tuple<radians_t<float>, radians_t<float>, float>, float>
       geo_coord;
     enum class animation_status { zoom_in, zoom_out, relocate };
-    animation_status camera_status{animation_status::relocate};
+    animation_status camera_status{animation_status::zoom_in};
 
     orbiting_camera camera;
     oglplus::uniform_location camera_loc;
