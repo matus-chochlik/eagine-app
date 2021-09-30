@@ -9,7 +9,9 @@ add_executable(app-013_tiling main.cpp)
 eagine_embed_target_resources(
 	TARGET app-013_tiling
 	INPUT_TARGETS
-	tiles_r4_s256_a6
+	tiles_r4_s512_a6
+	tileset_thicket16
+	tileset_blocks16
 	tileset_nodes16
 	PACKED
 )
