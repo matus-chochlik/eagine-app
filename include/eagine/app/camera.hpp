@@ -29,10 +29,13 @@ public:
     }
 
     /// @brief Inddicates if the camera has changed and resets the flag.
+    /// @see mark_changed
     auto has_changed() noexcept {
         return std::exchange(_changed, false);
     }
 
+    /// @brief Inddicates that the camera has changed.
+    /// @see has_changed
     auto mark_changed() noexcept -> orbiting_camera& {
         _changed = true;
         return *this;
@@ -46,6 +49,20 @@ public:
 
     /// @brief Does a generic elevation update with given increment.
     auto update_pitch(const float inc) noexcept -> orbiting_camera&;
+
+    /// @brief Sets the maximum value for the pitch (elevation) angle.
+    /// @see set_pitch_min
+    auto set_pitch_max(const radians_t<float> max) noexcept -> auto& {
+        _pitch_max = max;
+        return *this;
+    }
+
+    /// @brief Sets the minimum value for the pitch (elevation) angle.
+    /// @see set_pitch_max
+    auto set_pitch_min(const radians_t<float> min) noexcept -> auto& {
+        _pitch_min = min;
+        return *this;
+    }
 
     /// @brief Does a generic combined update when the user does not provide input.
     /// @see update_orbit
@@ -149,6 +166,8 @@ public:
     }
 
 private:
+    radians_t<float> _pitch_max{radians_(1.F)};
+    radians_t<float> _pitch_min{radians_(-1.F)};
     oglplus::sign _orbit_dir;
     oglplus::sign _turn_dir;
     oglplus::sign _pitch_dir;
