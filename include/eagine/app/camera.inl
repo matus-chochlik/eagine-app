@@ -35,14 +35,13 @@ auto orbiting_camera::update_turns(const float inc) noexcept
 EAGINE_LIB_FUNC
 auto orbiting_camera::update_pitch(const float inc) noexcept
   -> orbiting_camera& {
-    const auto max = right_angles_(1.F);
     _pitch += right_angles_(inc * _pitch_dir);
-    if(_pitch > max) {
-        _pitch = max;
+    if(_pitch > _pitch_max) {
+        _pitch = _pitch_max;
         _pitch_dir.flip();
     }
-    if(_pitch < -max) {
-        _pitch = -max;
+    if(_pitch < _pitch_min) {
+        _pitch = _pitch_min;
         _pitch_dir.flip();
     }
     _changed = true;

@@ -389,6 +389,8 @@ class Framedump(object):
 
         cmd_line = [
             options.application_path,
+            "--log-backend", "none",
+            "--application-user-idle-interval", "10ms",
             "--application-video-surface-width",
             self.options.frame_width * self.options.render_scale,
             "--application-video-surface-height",

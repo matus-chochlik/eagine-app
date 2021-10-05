@@ -57,7 +57,7 @@ private:
     animated_value<std::tuple<radians_t<float>, radians_t<float>, float>, float>
       geo_coord;
     enum class animation_status { zoom_in, zoom_out, relocate };
-    animation_status camera_status{animation_status::relocate};
+    animation_status camera_status{animation_status::zoom_in};
 
     orbiting_camera camera;
     oglplus::uniform_location camera_loc;
@@ -149,7 +149,7 @@ example_tiling::example_tiling(execution_context& ec, video_context& vc)
     shape.index_setup(glapi, indices, _ctx.buffer());
 
     // tiling texture
-    const auto tiling_tex_src{embed(EAGINE_ID(TilingTex), "tiles_r4_s256_a6")};
+    const auto tiling_tex_src{embed(EAGINE_ID(TilingTex), "tiles_r4_s512_a6")};
     const auto tiling_img{
       oglplus::texture_image_block(tiling_tex_src.unpack(ec))};
 
@@ -166,7 +166,15 @@ example_tiling::example_tiling(execution_context& ec, video_context& vc)
     glapi.set_uniform(prog, tiling_tex_loc, 0);
 
     // tile-set texture
-    const auto tileset_tex_src{embed(EAGINE_ID(TilesetTex), "tileset_nodes16")};
+    const auto tileset_tex_src{[&] {
+        if(ec.main_context().args().find("--blocks")) {
+            return embed(EAGINE_ID(Blocks512), "tileset_blocks16");
+        }
+        if(ec.main_context().args().find("--thicket")) {
+            return embed(EAGINE_ID(Thicket512), "tileset_thicket16");
+        }
+        return embed(EAGINE_ID(Nodes512), "tileset_nodes16");
+    }()};
     const auto tileset_img{
       oglplus::texture_image_block(tileset_tex_src.unpack(ec))};
 

@@ -53,6 +53,12 @@ class BakeLightArgParser(argparse.ArgumentParser):
         )
 
         self.add_argument(
+            '--only-image', '-O',
+            action="store_false",
+            default=True
+        )
+
+        self.add_argument(
             '--path', '-P',
             type=os.path.realpath,
             action="store",
@@ -201,7 +207,7 @@ def do_bake(options):
                 bake_image.file_format = 'PNG'
                 bake_image.filepath = os.path.join(
                     options.prefix,
-                    "%s-%s" % (bake_mat.name, os.path.basename(options.prefix))
+                    "%s-%s.png" % (bake_mat.name, os.path.basename(options.bake_type))
                 )
 
         bpy.ops.object.bake(
@@ -245,26 +251,27 @@ def do_bake(options):
 
         uvcoords = mesh.uv_layers.active
 
-        for bake_mat, bake_node, bake_image in mat_info:
-            for meshface in mesh.polygons:
-                face_mat = target.material_slots[meshface.material_index].material
-                if bake_mat == face_mat:
-                    nc = bake_image.channels
-                    for loop_index in meshface.loop_indices:
-                        meshloop = mesh.loops[loop_index]
-                        vertex_index = meshloop.vertex_index
-                        try:
-                            uv = uvcoords.data[loop_index].uv
-                            w, h = uv * options.size
-                        except IndexError:
-                            w = 0.5
-                            h = 0.5
-                        idx = (options.size * int(h) + int(w)) * nc
-                        pixel = tuple(
-                            bake_image.pixels[idx + c] if c < nc else 1.0
-                            for c in range(4)
-                        )
-                        _store_vertex_color(vertex_index, loop_index, pixel)
+        if options.only_image:
+            for bake_mat, bake_node, bake_image in mat_info:
+                for meshface in mesh.polygons:
+                    face_mat = target.material_slots[meshface.material_index].material
+                    if bake_mat == face_mat:
+                        nc = bake_image.channels
+                        for loop_index in meshface.loop_indices:
+                            meshloop = mesh.loops[loop_index]
+                            vertex_index = meshloop.vertex_index
+                            try:
+                                uv = uvcoords.data[loop_index].uv
+                                w, h = uv * options.size
+                            except IndexError:
+                                w = 0.5
+                                h = 0.5
+                            idx = (options.size * int(h) + int(w)) * nc
+                            pixel = tuple(
+                                bake_image.pixels[idx + c] if c < nc else 1.0
+                                for c in range(4)
+                            )
+                            _store_vertex_color(vertex_index, loop_index, pixel)
 
         for bake_mat, bake_node, bake_image in mat_info:
             if options.keep_image:

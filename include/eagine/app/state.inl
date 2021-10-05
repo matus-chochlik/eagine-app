@@ -22,6 +22,11 @@ inline context_state::context_state(main_ctx_parent parent)
       std::default_random_engine::result_type{0U})}
   , _rand_init{extract_or(_rand_seed, std::random_device{}())}
   , _rand_eng{_rand_init} {
+    if(app_config().fetch(
+         "application.user_idle_interval", _user_idle_interval)) {
+        log_info("user idle interval set to ${interval}")
+          .arg(EAGINE_ID(interval), _user_idle_interval);
+    }
     log_info("using ${init} to initialize random generator")
       .arg(EAGINE_ID(init), _rand_init);
     if(_fixed_fps) {

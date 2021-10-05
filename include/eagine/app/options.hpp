@@ -113,7 +113,7 @@ public:
     /// @see device_path
     /// @see device_kind
     auto device_index() const noexcept -> valid_if_nonnegative<span_size_t> {
-        return _device_idx;
+        return {_device_idx};
     }
 
     /// @brief Indicates that if both GL and GL|ES is available, ES should be used.

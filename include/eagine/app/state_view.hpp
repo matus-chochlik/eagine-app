@@ -92,13 +92,13 @@ public:
 
     /// @brief Indicates that the user became idle for too long (may depend on config).
     auto user_idle_too_long() const noexcept -> bool {
-        // TODO: configurable interval?
-        return user_idle_time() > std::chrono::seconds{1};
+        return user_idle_time() > _user_idle_interval;
     }
 
 protected:
     const clock_type::time_point _start_time{clock_type::now()};
     clock_type::time_point _user_active_time{clock_type::now()};
+    clock_type::duration _user_idle_interval{std::chrono::seconds{1}};
     state_variable<float> _frame_time{0.0F};
 
     bool _has_activity{false};
