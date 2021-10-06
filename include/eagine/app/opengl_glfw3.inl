@@ -9,6 +9,7 @@
 #include <eagine/app/context.hpp>
 #include <eagine/diagnostic.hpp>
 #include <eagine/flat_set.hpp>
+#include <eagine/main_ctx.hpp>
 #include <eagine/maybe_unused.hpp>
 #include <eagine/oglplus/config/basic.hpp>
 
@@ -35,6 +36,7 @@ class glfw3_opengl_window
 public:
     glfw3_opengl_window(main_ctx_parent parent);
 
+    auto get_progress_callback() noexcept -> callable_ref<bool()>;
     auto initialize(
       const identifier id,
       const launch_options&,
@@ -71,6 +73,8 @@ public:
     }
 
 private:
+    auto _handle_progress() -> bool;
+
     identifier _instance_id;
     GLFWwindow* _window{nullptr};
     input_sink* _input_sink{nullptr};
@@ -242,6 +246,21 @@ glfw3_opengl_window::glfw3_opengl_window(main_ctx_parent parent)
     _mouse_states.emplace_back(EAGINE_ID(Button5), GLFW_MOUSE_BUTTON_6);
     _mouse_states.emplace_back(EAGINE_ID(Button6), GLFW_MOUSE_BUTTON_7);
     _mouse_states.emplace_back(EAGINE_ID(Button7), GLFW_MOUSE_BUTTON_8);
+}
+//------------------------------------------------------------------------------
+EAGINE_LIB_FUNC
+auto glfw3_opengl_window::_handle_progress() -> bool {
+    if(_window) {
+        glfwPollEvents();
+        return glfwGetKey(_window, GLFW_KEY_ESCAPE) != GLFW_PRESS;
+    }
+    return false;
+}
+//------------------------------------------------------------------------------
+EAGINE_LIB_FUNC
+auto glfw3_opengl_window::get_progress_callback() noexcept
+  -> callable_ref<bool()> {
+    return EAGINE_THIS_MEM_FUNC_REF(_handle_progress);
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC auto glfw3_opengl_window::initialize(
@@ -651,6 +670,12 @@ auto glfw3_opengl_provider::initialize(execution_context& exec_ctx) -> bool {
                 if(auto new_win{std::make_shared<glfw3_opengl_window>(*this)}) {
                     if(extract(new_win).initialize(
                          inst, options, video_opts, monitors)) {
+                        if(_windows.empty()) {
+                            set_progress_update_callback(
+                              exec_ctx.main_context(),
+                              extract(new_win).get_progress_callback(),
+                              std::chrono::milliseconds{100});
+                        }
                         _windows[inst] = std::move(new_win);
                     } else {
                         extract(new_win).clean_up();
