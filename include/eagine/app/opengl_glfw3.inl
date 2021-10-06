@@ -36,7 +36,7 @@ class glfw3_opengl_window
 public:
     glfw3_opengl_window(main_ctx_parent parent);
 
-    auto get_progress_callback() noexcept -> callable_ref<bool()>;
+    auto get_progress_callback() noexcept -> callable_ref<bool() noexcept>;
     auto initialize(
       const identifier id,
       const launch_options&,
@@ -73,7 +73,7 @@ public:
     }
 
 private:
-    auto _handle_progress() -> bool;
+    auto _handle_progress() noexcept -> bool;
 
     identifier _instance_id;
     GLFWwindow* _window{nullptr};
@@ -249,7 +249,7 @@ glfw3_opengl_window::glfw3_opengl_window(main_ctx_parent parent)
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
-auto glfw3_opengl_window::_handle_progress() -> bool {
+auto glfw3_opengl_window::_handle_progress() noexcept -> bool {
     if(_window) {
         glfwPollEvents();
         return glfwGetKey(_window, GLFW_KEY_ESCAPE) != GLFW_PRESS;
@@ -259,7 +259,7 @@ auto glfw3_opengl_window::_handle_progress() -> bool {
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
 auto glfw3_opengl_window::get_progress_callback() noexcept
-  -> callable_ref<bool()> {
+  -> callable_ref<bool() noexcept> {
     return EAGINE_THIS_MEM_FUNC_REF(_handle_progress);
 }
 //------------------------------------------------------------------------------
