@@ -188,7 +188,7 @@ example_stencil_shadow::example_stencil_shadow(
     // camera
     camera.set_pitch_max(degrees_(89.F))
       .set_pitch_min(degrees_(10.F))
-      .set_orbit_max(8.0F)
+      .set_orbit_max(6.5F)
       .set_orbit_min(3.5F)
       .set_target(0.F)
       .set_fov(degrees_(70))
@@ -224,7 +224,7 @@ void example_stencil_shadow::update() noexcept {
     const auto ft = state.frame_time().value();
     const auto light_angle{turns_(ft * 0.1F)};
     const oglplus::vec3 light_dir{
-      20.F * cos(light_angle), 10.F, 20.F * sin(light_angle)};
+      10.F * cos(light_angle), 10.F, 10.F * sin(light_angle)};
 
     // first color pass (shadow)
     gl.color_mask(GL.true_, GL.true_, GL.true_, GL.true_);
@@ -233,7 +233,7 @@ void example_stencil_shadow::update() noexcept {
     gl.disable(GL.stencil_test);
 
     gl.use_program(draw_prog);
-    glapi.set_uniform(draw_prog, light_mult_loc, 0.5F);
+    glapi.set_uniform(draw_prog, light_mult_loc, 0.7F);
     glapi.set_uniform(draw_prog, light_dir_draw_loc, light_dir);
     glapi.set_uniform(draw_prog, camera_draw_loc, camera.matrix(_video));
     gl.cull_face(GL.back);
@@ -256,7 +256,7 @@ void example_stencil_shadow::update() noexcept {
     gl.cull_face(GL.front);
     oglplus::draw_using_instructions(glapi, view(_ops));
 
-    // first color pass (light)
+    // second color pass (light)
     gl.color_mask(GL.true_, GL.true_, GL.true_, GL.true_);
     gl.depth_mask(GL.true_);
     gl.clear(GL.depth_buffer_bit);
