@@ -18,7 +18,6 @@
 #include <eagine/oglplus/math/primitives.hpp>
 #include <eagine/oglplus/math/vector.hpp>
 #include <eagine/oglplus/shapes/generator.hpp>
-#include <eagine/shapes/adjacency.hpp>
 #include <eagine/shapes/value_tree.hpp>
 #include <eagine/timeout.hpp>
 #include <eagine/value_tree/json.hpp>
@@ -88,10 +87,8 @@ example_stencil_shadow::example_stencil_shadow(
       as_chars(embed(EAGINE_ID(ShapeJson), "wheelcart_1.json").unpack(ec));
     oglplus::shape_generator shape(
       glapi,
-      shapes::add_triangle_adjacency(
-        shapes::from_value_tree(
-          valtree::from_json_text(json_text, ec.as_parent()), ec.as_parent()),
-        ec.as_parent()));
+      shapes::from_value_tree(
+        valtree::from_json_text(json_text, ec.as_parent()), ec.as_parent()));
 
     _ops.resize(std_size(shape.operation_count()));
     shape.instructions(glapi, cover(_ops));
