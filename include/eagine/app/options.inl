@@ -42,7 +42,7 @@ video_options::video_options(
   , _prefer_gles{c, "application.opengl.prefer_es", instance, false}
   , _gl_debug_context{c, "application.opengl.debug_context", instance, false}
   , _gl_robust_access{c, "application.opengl.robust_access", instance, false}
-  , _gl_compat_context{c, "application.opengl.compatibility", instance, false}
+  , _gl_compat_context{c, "application.opengl.compatibility", instance, indeterminate}
   , _fullscreen{c, "application.video.fullscreen", instance, false}
   , _offscreen{c, "application.video.offscreen", instance, false}
   , _offscreen_framebuffer{c, "application.video.frambuffer", instance, false}

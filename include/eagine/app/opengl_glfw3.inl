@@ -270,14 +270,17 @@ EAGINE_LIB_FUNC auto glfw3_opengl_window::initialize(
   const span<GLFWmonitor* const> monitors) -> bool {
     _instance_id = id;
 
-    glfwWindowHint(
-      GLFW_CONTEXT_VERSION_MAJOR, video_opts.gl_version_major() / 3);
-    glfwWindowHint(
-      GLFW_CONTEXT_VERSION_MINOR, video_opts.gl_version_minor() / 3);
-    if(video_opts.gl_compatibility_context()) {
+    if(const auto ver_maj{video_opts.gl_version_major()}) {
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, extract(ver_maj));
+    }
+    if(const auto ver_min{video_opts.gl_version_minor()}) {
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, extract(ver_min));
+    }
+    const auto compat = video_opts.gl_compatibility_context();
+    if(compat) {
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
         log_debug("using compatibility GL context").arg(EAGINE_ID(instance), id);
-    } else {
+    } else if(!compat) {
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         log_debug("using core GL context").arg(EAGINE_ID(instance), id);
     }
