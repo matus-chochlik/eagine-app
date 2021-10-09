@@ -61,15 +61,17 @@ mat3x4 get_world_pos(int id) {
 }
 
 mat3x4 get_view_pos(mat3x4 pos) {
-	for(int v=0; v!=3; ++v)
+	for(int v=0; v!=3; ++v) {
 		pos[v] = Camera * pos[v];
+	}
 	return pos;
 }
 
 mat3 get_screen_pos(mat3x4 pos) {
 	mat3 res;
-	for(int v=0; v!=3; ++v)
+	for(int v=0; v!=3; ++v) {
 		res[v] = pos[v].xyz/pos[v].w;
+	}
 	return res;
 }
 
@@ -140,10 +142,11 @@ void main() {
 	int ft = gl_InvocationID/4+1;
 
 	mat3x4 world_pos_f = get_world_pos(ft);
-
 	mat3x4 view_pos_f = get_view_pos(world_pos_f);
 
-	if(!is_front_facing(view_pos_f)) return;
+	if(!is_front_facing(view_pos_f)) {
+		return;
+	}
 
 	int bt[2];
 	bt[0] = (gl_InvocationID%4)*2;

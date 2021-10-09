@@ -1,7 +1,7 @@
 #version 400
 
 const vec3 LightPosition = vec3(7.0, 8.0, 9.0);
-uniform sampler2D BricksMap;
+uniform sampler2DArray BricksMap;
 
 flat in mat3 geomPositionFront;
 flat in mat3 geomNormalFront;
@@ -23,7 +23,7 @@ vec3 vcdiv(vec3 a, vec3 b) {
 }
 
 void main() {
-	const vec3 one = vec3(1.0, 1.0, 1.0);
+	const vec3 one = vec3(1.0);
 
 	vec3 bzfv = vcdiv(geomBarycentric,geomWFront);
 	float idobzfv = 1.0/dot(one,bzfv);
@@ -40,7 +40,7 @@ void main() {
 	vec3 tc0 = geomTexCoord;
 	vec3 tc1 = (geomTexCoordFront*bzfv)*idobzfv;
 
-	float tl = textureQueryLod(BricksMap, vec3(tc1.xy, 0.0)).x;
+	float tl = textureQueryLod(BricksMap, tc1.xy).x;
 	ivec2 ts = textureSize(BricksMap, int(tl)).xy;
 	int mts = max(ts.x, ts.y);
 	vec2 dtc = tc1.xy - tc0.xy;

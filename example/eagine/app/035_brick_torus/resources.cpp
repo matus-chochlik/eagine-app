@@ -46,10 +46,8 @@ void torus_program::prepare_frame(
     const auto& gl = vc.gl_api();
     gl.set_uniform(
       prog, model_loc, oglplus::matrix_rotation_x(right_angles_(t))());
-    if(camera.has_changed()) {
-        gl.set_uniform(prog, camera_loc, camera.matrix(vc.surface_aspect()));
-        gl.set_uniform(prog, camera_pos_loc, camera.position());
-    }
+    gl.set_uniform(prog, camera_loc, camera.matrix(vc.surface_aspect()));
+    gl.set_uniform(prog, camera_pos_loc, camera.position());
 }
 //------------------------------------------------------------------------------
 void torus_program::set_bricks_map(
@@ -96,8 +94,12 @@ void torus_geometry::init(execution_context& ec, video_context& vc) {
       glapi,
       shapes::unit_torus(
         shapes::vertex_attrib_kind::position |
-        shapes::vertex_attrib_kind::normal |
-        shapes::vertex_attrib_kind::wrap_coord));
+          shapes::vertex_attrib_kind::normal |
+          shapes::vertex_attrib_kind::tangential |
+          shapes::vertex_attrib_kind::wrap_coord,
+        48,
+        72,
+        0.5F));
 
     auto draw_var = shape.draw_variant(0);
     ops.resize(std_size(shape.operation_count(draw_var)));
@@ -181,10 +183,8 @@ void torus_textures::init(execution_context& ec, video_context& vc) {
     gl.tex_parameter_i(GL.texture_2d_array, GL.texture_mag_filter, GL.linear);
     gl.tex_parameter_i(
       GL.texture_2d_array, GL.texture_min_filter, GL.linear_mipmap_linear);
-    gl.tex_parameter_i(
-      GL.texture_2d_array, GL.texture_wrap_s, GL.clamp_to_border);
-    gl.tex_parameter_i(
-      GL.texture_2d_array, GL.texture_wrap_t, GL.clamp_to_border);
+    gl.tex_parameter_i(GL.texture_2d_array, GL.texture_wrap_s, GL.repeat);
+    gl.tex_parameter_i(GL.texture_2d_array, GL.texture_wrap_t, GL.repeat);
     glapi.spec_tex_image3d(
       GL.texture_2d_array,
       0,

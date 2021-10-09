@@ -67,8 +67,11 @@ example_parallax::example_parallax(execution_context& ec, video_context& vc)
       .set_fov(right_angle_());
     prog.prepare_frame(vc, camera, 0.F);
 
-    gl.clear_color(0.25F, 0.25F, 0.25F, 0.0F);
+    gl.clear_color(0.15F, 0.15F, 0.15F, 0.0F);
     gl.enable(GL.depth_test);
+    gl.enable(GL.clip_distance0 + 0);
+    gl.enable(GL.clip_distance0 + 1);
+    gl.enable(GL.clip_distance0 + 2);
 
     camera.connect_inputs(ec).basic_input_mapping(ec);
     ec.setup_inputs().switch_input_mapping();
@@ -85,7 +88,7 @@ void example_parallax::update() noexcept {
         _is_done.reset();
     }
     if(state.user_idle_too_long()) {
-        camera.idle_update(state);
+        camera.idle_update(state, 13.F);
     }
 
     const auto& glapi = _video.gl_api();
