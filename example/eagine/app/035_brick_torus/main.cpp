@@ -62,10 +62,9 @@ example_parallax::example_parallax(execution_context& ec, video_context& vc)
     // camera
     camera.set_near(0.1F)
       .set_far(50.F)
-      .set_orbit_min(0.55F)
-      .set_orbit_max(1.0F)
-      .set_fov(right_angle_());
-    prog.prepare_frame(vc, camera, 0.F);
+      .set_orbit_min(1.05F)
+      .set_orbit_max(1.35F)
+      .set_fov(degrees_(60));
 
     gl.clear_color(0.15F, 0.15F, 0.15F, 0.0F);
     gl.enable(GL.depth_test);
@@ -91,11 +90,26 @@ void example_parallax::update() noexcept {
         camera.idle_update(state, 13.F);
     }
 
+    const auto rad = radians_(state.frame_time().value());
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
 
     gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
-    prog.prepare_frame(_video, camera, state.frame_time().value());
+    prog.set_camera(_video, camera);
+    prog.set_light(
+      _video,
+      oglplus::vec3(cos(rad * -0.618F) * 8, cos(rad) * 6, sin(rad) * 7));
+
+    prog.set_model(
+      _video,
+      oglplus::matrix_translation(0.5F, 0.F, 0.F) *
+        oglplus::matrix_rotation_x(right_angles_(0.5F)));
+    torus.draw(_ctx, _video);
+
+    prog.set_model(
+      _video,
+      oglplus::matrix_translation(-0.5F, 0.F, 0.F) *
+        oglplus::matrix_rotation_x(right_angles_(-0.5F)));
     torus.draw(_ctx, _video);
 
     _video.commit();

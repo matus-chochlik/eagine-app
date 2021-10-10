@@ -1,6 +1,6 @@
 #version 400
 
-const vec3 LightPosition = vec3(7.0, 8.0, 9.0);
+uniform vec3 LightPosition;
 uniform sampler2DArray BricksMap;
 
 flat in mat3 geomPositionFront;
@@ -61,7 +61,7 @@ void main() {
 			vec3 nml = texture(BricksMap, vec3(tc.xy, 1.0)).rgb;
 			nml = vec3(2.0*(nml.x-0.5), 2.0*(nml.y-0.5), nml.z);
 			nml = normalize(t*nml.x+b*nml.y+n*nml.z);
-			float l = max(dot(ldir, nml), 0.0)*max(dot(ldir, n)+0.3, 0.0)+0.2;
+			float l = max(dot(ldir, nml), 0.0)*max(dot(ldir, n)+0.3, 0.0)+0.35;
 			fragColor = texture(BricksMap, vec3(tc.xy, 0.0)).rgb*l;
 			return;
 		}

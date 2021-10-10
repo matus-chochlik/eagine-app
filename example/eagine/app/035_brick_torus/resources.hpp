@@ -23,7 +23,9 @@ class torus_program {
 public:
     void init(execution_context&, video_context&);
     void clean_up(video_context&);
-    void prepare_frame(video_context&, orbiting_camera& camera, float);
+    void set_camera(video_context&, orbiting_camera& camera);
+    void set_model(video_context&, const oglplus::tmat<float, 4, 4, true>&);
+    void set_light(video_context&, const oglplus::vec3&);
     void set_bricks_map(video_context&, oglplus::gl_types::int_type unit);
 
     void bind_position_location(video_context&, oglplus::vertex_attrib_location);
@@ -33,6 +35,7 @@ public:
 
 private:
     oglplus::owned_program_name prog;
+    oglplus::uniform_location light_pos_loc;
     oglplus::uniform_location camera_pos_loc;
     oglplus::uniform_location camera_loc;
     oglplus::uniform_location model_loc;

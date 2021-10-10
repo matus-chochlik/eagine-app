@@ -28,6 +28,7 @@ void torus_program::init(execution_context& ec, video_context& vc) {
     gl.build_program(prog, prog_src.unpack(ec));
     gl.use_program(prog);
 
+    gl.get_uniform_location(prog, "LightPosition") >> light_pos_loc;
     gl.get_uniform_location(prog, "CameraPosition") >> camera_pos_loc;
     gl.get_uniform_location(prog, "Camera") >> camera_loc;
     gl.get_uniform_location(prog, "Model") >> model_loc;
@@ -39,15 +40,22 @@ void torus_program::clean_up(video_context& vc) {
     gl.delete_program(std::move(prog));
 }
 //------------------------------------------------------------------------------
-void torus_program::prepare_frame(
-  video_context& vc,
-  orbiting_camera& camera,
-  float t) {
+void torus_program::set_camera(video_context& vc, orbiting_camera& camera) {
     const auto& gl = vc.gl_api();
-    gl.set_uniform(
-      prog, model_loc, oglplus::matrix_rotation_x(right_angles_(t))());
     gl.set_uniform(prog, camera_loc, camera.matrix(vc.surface_aspect()));
     gl.set_uniform(prog, camera_pos_loc, camera.position());
+}
+//------------------------------------------------------------------------------
+void torus_program::set_model(
+  video_context& vc,
+  const oglplus::tmat<float, 4, 4, true>& model) {
+    const auto& gl = vc.gl_api();
+    gl.set_uniform(prog, model_loc, model);
+}
+//------------------------------------------------------------------------------
+void torus_program::set_light(video_context& vc, const oglplus::vec3& light) {
+    const auto& gl = vc.gl_api();
+    gl.set_uniform(prog, light_pos_loc, light);
 }
 //------------------------------------------------------------------------------
 void torus_program::set_bricks_map(
