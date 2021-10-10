@@ -64,7 +64,7 @@ example_parallax::example_parallax(execution_context& ec, video_context& vc)
       .set_far(50.F)
       .set_orbit_min(1.05F)
       .set_orbit_max(1.35F)
-      .set_fov(degrees_(60));
+      .set_fov(degrees_(45.F));
 
     gl.clear_color(0.15F, 0.15F, 0.15F, 0.0F);
     gl.enable(GL.depth_test);
@@ -98,7 +98,7 @@ void example_parallax::update() noexcept {
     prog.set_camera(_video, camera);
     prog.set_light(
       _video,
-      oglplus::vec3(cos(rad * -0.618F) * 8, cos(rad) * 6, sin(rad) * 7));
+      oglplus::vec3(cos(rad * -0.618F) * 8, sin(rad) * 7, cos(rad) * 6));
 
     prog.set_model(
       _video,
