@@ -15,5 +15,5 @@ void main() {
 	gl_Position = Model * Position;
 	vertNormal = mat3(Model) * Normal;
 	vertTangent = mat3(Model) * Tangent;
-	vertTexCoord = vec2(4.0*TexCoord.x, 2.0*TexCoord.y+TexCoord.x);
+	vertTexCoord = vec2(4.0*TexCoord.x, 2.0*TexCoord.y-TexCoord.x);
 }

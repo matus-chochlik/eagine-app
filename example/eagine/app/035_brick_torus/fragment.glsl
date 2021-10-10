@@ -61,8 +61,9 @@ void main() {
 			vec3 nml = texture(BricksMap, vec3(tc.xy, 1.0)).rgb;
 			nml = vec3(2.0*(nml.x-0.5), 2.0*(nml.y-0.5), nml.z);
 			nml = normalize(t*nml.x+b*nml.y+n*nml.z);
-			float l = max(dot(ldir, nml), 0.0)*max(dot(ldir, n)+0.3, 0.0)+0.35;
-			fragColor = texture(BricksMap, vec3(tc.xy, 0.0)).rgb*l;
+			float ambi = 0.55;
+			float diff = sqrt(max(dot(ldir, nml), 0.0)*max(dot(ldir, n)+0.3, 0.0));
+			fragColor = texture(BricksMap, vec3(tc.xy, 0.0)).rgb*(ambi + diff);
 			return;
 		}
 	}
