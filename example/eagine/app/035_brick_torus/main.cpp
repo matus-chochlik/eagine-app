@@ -57,7 +57,11 @@ example_parallax::example_parallax(execution_context& ec, video_context& vc)
     prog.bind_tangent_location(vc, torus.tangent_loc());
     prog.bind_texcoord_location(vc, torus.texcoord_loc());
 
-    prog.set_bricks_map(vc, textures.bricks_map_unit());
+    if(ec.main_context().args().find("--stones")) {
+        prog.set_texture_map(vc, textures.stones_map_unit());
+    } else {
+        prog.set_texture_map(vc, textures.bricks_map_unit());
+    }
 
     // camera
     camera.set_near(0.1F)

@@ -32,7 +32,7 @@ void torus_program::init(execution_context& ec, video_context& vc) {
     gl.get_uniform_location(prog, "CameraPosition") >> camera_pos_loc;
     gl.get_uniform_location(prog, "Camera") >> camera_loc;
     gl.get_uniform_location(prog, "Model") >> model_loc;
-    gl.get_uniform_location(prog, "BrickMap") >> bricks_map_loc;
+    gl.get_uniform_location(prog, "TextureMap") >> texture_map_loc;
 }
 //------------------------------------------------------------------------------
 void torus_program::clean_up(video_context& vc) {
@@ -58,10 +58,10 @@ void torus_program::set_light(video_context& vc, const oglplus::vec3& light) {
     gl.set_uniform(prog, light_pos_loc, light);
 }
 //------------------------------------------------------------------------------
-void torus_program::set_bricks_map(
+void torus_program::set_texture_map(
   video_context& vc,
   oglplus::gl_types::int_type unit) {
-    vc.gl_api().set_uniform(prog, bricks_map_loc, unit);
+    vc.gl_api().set_uniform(prog, texture_map_loc, unit);
 }
 //------------------------------------------------------------------------------
 void torus_program::bind_position_location(
@@ -182,12 +182,12 @@ void torus_textures::init(execution_context& ec, video_context& vc) {
     const auto& glapi = vc.gl_api();
     const auto& [gl, GL] = glapi;
 
-    // color texture
-    const auto tex_src{embed(EAGINE_ID(BricksTex), "bricks")};
+    // bricks texture
+    const auto brick_tex_src{embed(EAGINE_ID(BricksTex), "bricks")};
 
-    gl.gen_textures() >> color_hmap_nmap;
-    gl.active_texture(GL.texture0);
-    gl.bind_texture(GL.texture_2d_array, color_hmap_nmap);
+    gl.gen_textures() >> bricks;
+    gl.active_texture(GL.texture0 + bricks_map_unit());
+    gl.bind_texture(GL.texture_2d_array, bricks);
     gl.tex_parameter_i(GL.texture_2d_array, GL.texture_mag_filter, GL.linear);
     gl.tex_parameter_i(
       GL.texture_2d_array, GL.texture_min_filter, GL.linear_mipmap_linear);
@@ -197,13 +197,32 @@ void torus_textures::init(execution_context& ec, video_context& vc) {
       GL.texture_2d_array,
       0,
       0,
-      oglplus::texture_image_block(tex_src.unpack(ec)));
+      oglplus::texture_image_block(brick_tex_src.unpack(ec)));
+    gl.generate_mipmap(GL.texture_2d_array);
+
+    // stones texture
+    const auto stones_tex_src{embed(EAGINE_ID(StonesTex), "stones")};
+
+    gl.gen_textures() >> stones;
+    gl.active_texture(GL.texture0 + stones_map_unit());
+    gl.bind_texture(GL.texture_2d_array, stones);
+    gl.tex_parameter_i(GL.texture_2d_array, GL.texture_mag_filter, GL.linear);
+    gl.tex_parameter_i(
+      GL.texture_2d_array, GL.texture_min_filter, GL.linear_mipmap_linear);
+    gl.tex_parameter_i(GL.texture_2d_array, GL.texture_wrap_s, GL.repeat);
+    gl.tex_parameter_i(GL.texture_2d_array, GL.texture_wrap_t, GL.repeat);
+    glapi.spec_tex_image3d(
+      GL.texture_2d_array,
+      0,
+      0,
+      oglplus::texture_image_block(stones_tex_src.unpack(ec)));
     gl.generate_mipmap(GL.texture_2d_array);
 }
 //------------------------------------------------------------------------------
 void torus_textures::clean_up(video_context& vc) {
     const auto& gl = vc.gl_api();
-    gl.delete_textures(std::move(color_hmap_nmap));
+    gl.delete_textures(std::move(stones));
+    gl.delete_textures(std::move(bricks));
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

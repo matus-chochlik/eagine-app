@@ -1,7 +1,7 @@
 #version 400
 
 uniform vec3 LightPosition;
-uniform sampler2DArray BricksMap;
+uniform sampler2DArray TextureMap;
 
 flat in mat3 geomPositionFront;
 flat in mat3 geomNormalFront;
@@ -40,8 +40,8 @@ void main() {
 	vec3 tc0 = geomTexCoord;
 	vec3 tc1 = (geomTexCoordFront*bzfv)*idobzfv;
 
-	float tl = textureQueryLod(BricksMap, tc1.xy).x;
-	ivec2 ts = textureSize(BricksMap, int(tl)).xy;
+	float tl = textureQueryLod(TextureMap, tc1.xy).x;
+	ivec2 ts = textureSize(TextureMap, int(tl)).xy;
 	int mts = max(ts.x, ts.y);
 	vec2 dtc = tc1.xy - tc0.xy;
 	float mdtc = max(abs(dtc.x), abs(dtc.y));
@@ -50,7 +50,7 @@ void main() {
 	float step = 1.0 / nsam;
 	for(int s=0; s<=nsam; ++s) {
 		vec3 tc = mix(tc1, tc0, s*step);
-		float height = texture(BricksMap, vec3(tc.xy, 1.0)).a;
+		float height = texture(TextureMap, vec3(tc.xy, 1.0)).a;
 		if(tc.z <= height+0.01) {
 			vec3 p = mix(p1, p0, s*step);
 			vec3 n = mix(n1, n0, s*step);
@@ -58,12 +58,12 @@ void main() {
 			vec3 b = cross(n, t);
 
 			vec3 ldir = normalize(LightPosition - p);
-			vec3 nml = texture(BricksMap, vec3(tc.xy, 1.0)).rgb;
+			vec3 nml = texture(TextureMap, vec3(tc.xy, 1.0)).rgb;
 			nml = vec3(2.0*(nml.x-0.5), 2.0*(nml.y-0.5), nml.z);
 			nml = normalize(t*nml.x+b*nml.y+n*nml.z);
 			float ambi = 0.55;
 			float diff = sqrt(max(dot(ldir, nml), 0.0)*max(dot(ldir, n)+0.3, 0.0));
-			fragColor = texture(BricksMap, vec3(tc.xy, 0.0)).rgb*(ambi + diff);
+			fragColor = texture(TextureMap, vec3(tc.xy, 0.0)).rgb*(ambi + diff);
 			return;
 		}
 	}

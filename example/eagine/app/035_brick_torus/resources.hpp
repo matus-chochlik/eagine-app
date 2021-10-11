@@ -26,7 +26,7 @@ public:
     void set_camera(video_context&, orbiting_camera& camera);
     void set_model(video_context&, const oglplus::tmat<float, 4, 4, true>&);
     void set_light(video_context&, const oglplus::vec3&);
-    void set_bricks_map(video_context&, oglplus::gl_types::int_type unit);
+    void set_texture_map(video_context&, oglplus::gl_types::int_type unit);
 
     void bind_position_location(video_context&, oglplus::vertex_attrib_location);
     void bind_normal_location(video_context&, oglplus::vertex_attrib_location);
@@ -39,7 +39,7 @@ private:
     oglplus::uniform_location camera_pos_loc;
     oglplus::uniform_location camera_loc;
     oglplus::uniform_location model_loc;
-    oglplus::uniform_location bricks_map_loc;
+    oglplus::uniform_location texture_map_loc;
 };
 //------------------------------------------------------------------------------
 // geometry
@@ -89,8 +89,13 @@ public:
         return oglplus::gl_types::int_type(0);
     }
 
+    static auto stones_map_unit() noexcept {
+        return oglplus::gl_types::int_type(1);
+    }
+
 private:
-    oglplus::owned_texture_name color_hmap_nmap;
+    oglplus::owned_texture_name bricks;
+    oglplus::owned_texture_name stones;
 };
 //------------------------------------------------------------------------------
 } // namespace eagine::app

@@ -8,7 +8,7 @@ oglplus_add_glsl_program(brick_torus)
 add_executable(app-035_brick_torus main.cpp resources.cpp)
 eagine_embed_target_resources(
 	TARGET app-035_brick_torus
-	INPUT_TARGETS brick_torus bricks
+	INPUT_TARGETS brick_torus bricks stones
 	PACKED
 )
 eagine_add_exe_analysis(app-035_brick_torus)
