@@ -16,6 +16,7 @@ eagine_embed_target_resources(
 	barrel_1_color
 	barrel_1_aoccl
 	barrel_1_rough
+	PACKED
 )
 eagine_add_exe_analysis(app-018_uv_map_barrel)
 

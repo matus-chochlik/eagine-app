@@ -1,4 +1,4 @@
-/// @example app/018_uv_map_barrel/main.cpp
+/// @example app/018_uv_map_hydrant/main.cpp
 ///
 /// Copyright Matus Chochlik.
 /// Distributed under the Boost Software License, Version 1.0.
@@ -46,17 +46,18 @@ private:
 
     oglplus::owned_buffer_name positions;
     oglplus::owned_buffer_name normals;
+    oglplus::owned_buffer_name tangents;
+    oglplus::owned_buffer_name bitangents;
     oglplus::owned_buffer_name wrap_coords;
     oglplus::owned_buffer_name indices;
 
-    oglplus::owned_texture_name color_tex{};
-    oglplus::owned_texture_name aoccl_tex{};
-    oglplus::owned_texture_name rough_tex{};
+    oglplus::owned_texture_name tex{};
 
     oglplus::owned_program_name prog;
 
     orbiting_camera camera;
     oglplus::uniform_location camera_loc;
+    oglplus::uniform_location light_dir_loc;
 };
 //------------------------------------------------------------------------------
 example_uv_map::example_uv_map(execution_context& ec, video_context& vc)
@@ -90,7 +91,7 @@ example_uv_map::example_uv_map(execution_context& ec, video_context& vc)
 
     // geometry
     auto json_text =
-      as_chars(embed(EAGINE_ID(ShapeJson), "barrel_1.json").unpack(ec));
+      as_chars(embed(EAGINE_ID(ShapeJson), "hydrant_1.json").unpack(ec));
     oglplus::shape_generator shape(
       glapi,
       shapes::from_value_tree(
@@ -127,8 +128,32 @@ example_uv_map::example_uv_map(execution_context& ec, video_context& vc)
       _ctx.buffer());
     gl.bind_attrib_location(prog, normal_loc, "Normal");
 
+    // tangents
+    oglplus::vertex_attrib_location tangent_loc{2};
+    gl.gen_buffers() >> tangents;
+    shape.attrib_setup(
+      glapi,
+      vao,
+      tangents,
+      tangent_loc,
+      eagine::shapes::vertex_attrib_kind::tangential,
+      _ctx.buffer());
+    gl.bind_attrib_location(prog, tangent_loc, "Tangent");
+
+    // bitangents
+    oglplus::vertex_attrib_location bitangent_loc{3};
+    gl.gen_buffers() >> bitangents;
+    shape.attrib_setup(
+      glapi,
+      vao,
+      bitangents,
+      bitangent_loc,
+      eagine::shapes::vertex_attrib_kind::bitangential,
+      _ctx.buffer());
+    gl.bind_attrib_location(prog, bitangent_loc, "Bitangent");
+
     // wrap_coords
-    oglplus::vertex_attrib_location wrap_coord_loc{2};
+    oglplus::vertex_attrib_location wrap_coord_loc{4};
     gl.gen_buffers() >> wrap_coords;
     shape.attrib_setup(
       glapi,
@@ -143,67 +168,30 @@ example_uv_map::example_uv_map(execution_context& ec, video_context& vc)
     gl.gen_buffers() >> indices;
     shape.index_setup(glapi, indices, _ctx.buffer());
 
-    // color texture
-    const auto color_tex_src{embed(EAGINE_ID(ColorTex), "barrel_1_color")};
+    // textures
+    const auto tex_src{embed(EAGINE_ID(HydrantTex), "hydrant")};
 
-    gl.gen_textures() >> color_tex;
+    gl.gen_textures() >> tex;
     gl.active_texture(GL.texture0);
-    gl.bind_texture(GL.texture_2d, color_tex);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_min_filter, GL.linear);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_mag_filter, GL.linear);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_wrap_s, GL.clamp_to_border);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_wrap_t, GL.clamp_to_border);
-    glapi.spec_tex_image2d(
-      GL.texture_2d,
+    gl.bind_texture(GL.texture_2d_array, tex);
+    gl.tex_parameter_i(GL.texture_2d_array, GL.texture_min_filter, GL.linear);
+    gl.tex_parameter_i(GL.texture_2d_array, GL.texture_mag_filter, GL.linear);
+    gl.tex_parameter_i(
+      GL.texture_2d_array, GL.texture_wrap_s, GL.clamp_to_border);
+    gl.tex_parameter_i(
+      GL.texture_2d_array, GL.texture_wrap_t, GL.clamp_to_border);
+    glapi.spec_tex_image3d(
+      GL.texture_2d_array,
       0,
       0,
-      oglplus::texture_image_block(color_tex_src.unpack(ec)));
-    oglplus::uniform_location color_tex_loc;
-    gl.get_uniform_location(prog, "ColorTex") >> color_tex_loc;
-    glapi.set_uniform(prog, color_tex_loc, 0);
-
-    // light texture
-    const auto light_tex_src{embed(EAGINE_ID(LightTex), "barrel_1_aoccl")};
-
-    gl.gen_textures() >> aoccl_tex;
-    gl.active_texture(GL.texture0 + 1);
-    gl.bind_texture(GL.texture_2d, aoccl_tex);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_min_filter, GL.linear);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_mag_filter, GL.linear);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_wrap_s, GL.clamp_to_border);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_wrap_t, GL.clamp_to_border);
-    glapi.spec_tex_image2d(
-      GL.texture_2d,
-      0,
-      0,
-      oglplus::texture_image_block(light_tex_src.unpack(ec)));
-    oglplus::uniform_location light_tex_loc;
-    gl.get_uniform_location(prog, "LightTex") >> light_tex_loc;
-    glapi.set_uniform(prog, light_tex_loc, 1);
-
-    // roughness texture
-    const auto rough_tex_src{embed(EAGINE_ID(RoughTex), "barrel_1_rough")};
-
-    gl.gen_textures() >> rough_tex;
-    gl.active_texture(GL.texture0 + 2);
-    gl.bind_texture(GL.texture_2d, rough_tex);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_min_filter, GL.linear);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_mag_filter, GL.linear);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_wrap_s, GL.clamp_to_border);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_wrap_t, GL.clamp_to_border);
-    glapi.spec_tex_image2d(
-      GL.texture_2d,
-      0,
-      0,
-      oglplus::texture_image_block(rough_tex_src.unpack(ec)));
-    oglplus::uniform_location rough_tex_loc;
-    gl.get_uniform_location(prog, "RoughTex") >> rough_tex_loc;
-    glapi.set_uniform(prog, rough_tex_loc, 2);
+      oglplus::texture_image_block(tex_src.unpack(ec)));
+    oglplus::uniform_location tex_loc;
+    gl.get_uniform_location(prog, "Tex") >> tex_loc;
+    glapi.set_uniform(prog, tex_loc, 0);
 
     // camera
     const auto bs = shape.bounding_sphere();
     const auto sr = bs.radius();
-    gl.get_uniform_location(prog, "Camera") >> camera_loc;
     camera.set_target(bs.center())
       .set_near(sr * 0.1F)
       .set_far(sr * 5.0F)
@@ -211,10 +199,11 @@ example_uv_map::example_uv_map(execution_context& ec, video_context& vc)
       .set_orbit_max(sr * 2.4F)
       .set_fov(degrees_(70));
 
+    gl.get_uniform_location(prog, "Camera") >> camera_loc;
+    gl.get_uniform_location(prog, "LightDir") >> light_dir_loc;
+
     gl.clear_color(0.35F, 0.35F, 0.35F, 1.0F);
     gl.enable(GL.depth_test);
-    gl.enable(GL.cull_face);
-    gl.cull_face(GL.back);
 
     camera.connect_inputs(ec).basic_input_mapping(ec);
     ec.setup_inputs().switch_input_mapping();
@@ -234,6 +223,7 @@ void example_uv_map::update() noexcept {
         camera.idle_update(state, 5.F);
     }
 
+    const auto rad = radians_(state.frame_time().value());
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
 
@@ -241,6 +231,12 @@ void example_uv_map::update() noexcept {
     if(camera.has_changed()) {
         glapi.set_uniform(prog, camera_loc, camera.matrix(_video));
     }
+    glapi.set_uniform(
+      prog,
+      light_dir_loc,
+      math::normalized(
+        oglplus::vec3(cos(rad) * 6, sin(rad) * 7, sin(rad * 0.618F) * 8)));
+
     oglplus::draw_using_instructions(glapi, view(_ops));
 
     _video.commit();
@@ -249,12 +245,12 @@ void example_uv_map::update() noexcept {
 void example_uv_map::clean_up() noexcept {
     const auto& gl = _video.gl_api();
 
-    gl.delete_textures(std::move(rough_tex));
-    gl.delete_textures(std::move(aoccl_tex));
-    gl.delete_textures(std::move(color_tex));
+    gl.delete_textures(std::move(tex));
     gl.delete_program(std::move(prog));
     gl.delete_buffers(std::move(indices));
     gl.delete_buffers(std::move(wrap_coords));
+    gl.delete_buffers(std::move(bitangents));
+    gl.delete_buffers(std::move(tangents));
     gl.delete_buffers(std::move(normals));
     gl.delete_buffers(std::move(positions));
     gl.delete_vertex_arrays(std::move(vao));
