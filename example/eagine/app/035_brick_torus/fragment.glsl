@@ -63,7 +63,8 @@ void main() {
 			nml = normalize(t*nml.x+b*nml.y+n*nml.z);
 			float ambi = 0.55;
 			float diff = sqrt(max(dot(ldir, nml), 0.0)*max(dot(ldir, n)+0.3, 0.0));
-			fragColor = texture(TextureMap, vec3(tc.xy, 0.0)).rgb*(ambi + diff);
+			fragColor = texture(TextureMap, vec3(tc.xy, 0.0)).rgb*
+				max(ambi, diff);
 			return;
 		}
 	}
