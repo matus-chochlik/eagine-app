@@ -17,3 +17,4 @@ oglplus_add_texture(wheelcart_1_color)
 oglplus_add_texture(wheelcart_1_aoccl)
 
 oglplus_add_texture(bricks)
+oglplus_add_texture(stones)
