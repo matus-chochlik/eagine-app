@@ -31,11 +31,11 @@ public:
     void update() noexcept final;
     void clean_up() noexcept final;
 
-    void dampening(const input&);
-    void dragging(const input&);
-    void zoom(const input&);
-    void pan_x(const input&);
-    void pan_y(const input&);
+    void dampening(const input&) noexcept;
+    void dragging(const input&) noexcept;
+    void zoom(const input&) noexcept;
+    void pan_x(const input&) noexcept;
+    void pan_y(const input&) noexcept;
 
 private:
     execution_context& _ctx;
@@ -218,15 +218,15 @@ void example_mandelbrot::on_video_resize() noexcept {
     gl.uniform2f(scale_loc, scale * aspect, scale);
 }
 //------------------------------------------------------------------------------
-void example_mandelbrot::dampening(const input& i) {
+void example_mandelbrot::dampening(const input& i) noexcept {
     dampen_motion = bool(i);
 }
 //------------------------------------------------------------------------------
-void example_mandelbrot::dragging(const input& i) {
+void example_mandelbrot::dragging(const input& i) noexcept {
     is_dragging = bool(i);
 }
 //------------------------------------------------------------------------------
-void example_mandelbrot::zoom(const input& i) {
+void example_mandelbrot::zoom(const input& i) noexcept {
     scale *= float(std::pow(2, -i.get() * motion_adjust()));
     if(scale < min_scale) {
         scale = min_scale;
@@ -239,14 +239,14 @@ void example_mandelbrot::zoom(const input& i) {
     gl.uniform2f(scale_loc, scale * aspect, scale);
 }
 //------------------------------------------------------------------------------
-void example_mandelbrot::pan_x(const input& i) {
+void example_mandelbrot::pan_x(const input& i) noexcept {
     offset_x -= float(i.get() * scale * motion_adjust());
 
     const auto& gl = _video.gl_api();
     gl.uniform2f(offset_loc, offset_x, offset_y);
 }
 //------------------------------------------------------------------------------
-void example_mandelbrot::pan_y(const input& i) {
+void example_mandelbrot::pan_y(const input& i) noexcept {
     offset_y -= float(i.get() * scale * motion_adjust());
 
     const auto& gl = _video.gl_api();

@@ -187,7 +187,7 @@ public:
 //------------------------------------------------------------------------------
 /// @brief Alias for a input handler callable reference.
 /// @ingroup application
-using input_handler = callable_ref<void(const input&)>;
+using input_handler = callable_ref<void(const input&) noexcept>;
 
 /// @brief Class that allows binding of a user input device to a handler callable.
 /// @ingroup application

@@ -366,7 +366,7 @@ private:
     // signal id -> (setup, handler)
     flat_map<message_id, std::tuple<input_setup, input_handler>> _mapped_inputs;
 
-    void _handle_stop_running(const input& engaged) {
+    void _handle_stop_running(const input& engaged) noexcept {
         if(engaged) {
             stop_running();
         }

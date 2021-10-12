@@ -180,11 +180,11 @@ private:
         return _dampen_motion ? 0.2 : 1.0;
     }
 
-    void _handle_pressure(const input& i);
-    void _handle_dampening(const input& i);
-    void _change_altitude(const input& i);
-    void _change_longitude(const input& i);
-    void _change_latitude(const input& i);
+    void _handle_pressure(const input& i) noexcept;
+    void _handle_dampening(const input& i) noexcept;
+    void _change_altitude(const input& i) noexcept;
+    void _change_longitude(const input& i) noexcept;
+    void _change_latitude(const input& i) noexcept;
 };
 //------------------------------------------------------------------------------
 } // namespace eagine::app

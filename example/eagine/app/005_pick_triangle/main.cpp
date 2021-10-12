@@ -32,8 +32,8 @@ public:
     void update() noexcept final;
     void clean_up() noexcept final;
 
-    void motion_x(const input&);
-    void motion_y(const input&);
+    void motion_x(const input&) noexcept;
+    void motion_y(const input&) noexcept;
 
 private:
     execution_context& _ctx;
@@ -179,12 +179,12 @@ void example_picking::clean_up() noexcept {
     _video.end();
 }
 //------------------------------------------------------------------------------
-void example_picking::motion_x(const input& i) {
+void example_picking::motion_x(const input& i) noexcept {
     x_pos = float(2 * i.get());
     has_moved = true;
 }
 //------------------------------------------------------------------------------
-void example_picking::motion_y(const input& i) {
+void example_picking::motion_y(const input& i) noexcept {
     y_pos = float(2 * i.get());
     has_moved = true;
 }

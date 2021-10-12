@@ -64,19 +64,19 @@ auto orbiting_camera::idle_update(
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
-void orbiting_camera::_handle_pressure(const input& i) {
+void orbiting_camera::_handle_pressure(const input& i) noexcept {
     _is_dragging = bool(i);
     _changed = true;
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
-void orbiting_camera::_handle_dampening(const input& i) {
+void orbiting_camera::_handle_dampening(const input& i) noexcept {
     _dampen_motion = bool(i);
     _changed = true;
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
-void orbiting_camera::_change_altitude(const input& i) {
+void orbiting_camera::_change_altitude(const input& i) noexcept {
     _orbit_factor -= (float(i.get() * _motion_adjust()));
     if(_orbit_factor > 1.F) {
         _orbit_factor = 1.F;
@@ -88,13 +88,13 @@ void orbiting_camera::_change_altitude(const input& i) {
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
-void orbiting_camera::_change_longitude(const input& i) {
+void orbiting_camera::_change_longitude(const input& i) noexcept {
     _turns -= turns_(float(i.get() * 0.25 * _motion_adjust()));
     _changed = true;
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
-void orbiting_camera::_change_latitude(const input& i) {
+void orbiting_camera::_change_latitude(const input& i) noexcept {
     const auto max = right_angles_(1.F);
     _pitch -= right_angles_(float(i.get() * _motion_adjust()));
     if(_pitch > max) {
