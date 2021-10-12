@@ -648,7 +648,7 @@ EAGINE_LIB_FUNC
 auto glfw3_opengl_provider::initialize(execution_context& exec_ctx) -> bool {
 #if OGLPLUS_GLFW3_FOUND
     if(glfwInit()) {
-        auto monitors = []() {
+        const auto monitors = []() {
             int monitor_count = 0;
             auto* monitor_list = glfwGetMonitors(&monitor_count);
             return memory::view(monitor_list, monitor_count);

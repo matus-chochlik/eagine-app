@@ -350,7 +350,7 @@ private:
     std::vector<std::unique_ptr<video_context>> _video_contexts;
     std::vector<std::unique_ptr<audio_context>> _audio_contexts;
 
-    auto _setup_providers() -> bool;
+    auto _setup_providers() noexcept -> bool;
 
     identifier _input_mapping{EAGINE_ID(initial)};
 
