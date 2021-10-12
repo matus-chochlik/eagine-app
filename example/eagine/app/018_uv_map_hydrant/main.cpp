@@ -192,11 +192,13 @@ example_uv_map::example_uv_map(execution_context& ec, video_context& vc)
     // camera
     const auto bs = shape.bounding_sphere();
     const auto sr = bs.radius();
-    camera.set_target(bs.center())
-      .set_near(sr * 0.1F)
+    camera.set_pitch_max(degrees_(89.F))
+      .set_pitch_min(degrees_(-1.F))
+      .set_target(bs.center())
+      .set_near(sr * 0.01F)
       .set_far(sr * 5.0F)
       .set_orbit_min(sr * 1.2F)
-      .set_orbit_max(sr * 2.4F)
+      .set_orbit_max(sr * 2.9F)
       .set_fov(degrees_(70));
 
     gl.get_uniform_location(prog, "Camera") >> camera_loc;
