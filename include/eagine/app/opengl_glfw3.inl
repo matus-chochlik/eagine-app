@@ -9,6 +9,7 @@
 #include <eagine/app/context.hpp>
 #include <eagine/diagnostic.hpp>
 #include <eagine/flat_set.hpp>
+#include <eagine/main_ctx.hpp>
 #include <eagine/maybe_unused.hpp>
 #include <eagine/oglplus/config/basic.hpp>
 
@@ -35,6 +36,7 @@ class glfw3_opengl_window
 public:
     glfw3_opengl_window(main_ctx_parent parent);
 
+    auto get_progress_callback() noexcept -> callable_ref<bool() noexcept>;
     auto initialize(
       const identifier id,
       const launch_options&,
@@ -71,6 +73,8 @@ public:
     }
 
 private:
+    auto _handle_progress() noexcept -> bool;
+
     identifier _instance_id;
     GLFWwindow* _window{nullptr};
     input_sink* _input_sink{nullptr};
@@ -244,6 +248,21 @@ glfw3_opengl_window::glfw3_opengl_window(main_ctx_parent parent)
     _mouse_states.emplace_back(EAGINE_ID(Button7), GLFW_MOUSE_BUTTON_8);
 }
 //------------------------------------------------------------------------------
+EAGINE_LIB_FUNC
+auto glfw3_opengl_window::_handle_progress() noexcept -> bool {
+    if(_window) {
+        glfwPollEvents();
+        return glfwGetKey(_window, GLFW_KEY_ESCAPE) != GLFW_PRESS;
+    }
+    return false;
+}
+//------------------------------------------------------------------------------
+EAGINE_LIB_FUNC
+auto glfw3_opengl_window::get_progress_callback() noexcept
+  -> callable_ref<bool() noexcept> {
+    return EAGINE_THIS_MEM_FUNC_REF(_handle_progress);
+}
+//------------------------------------------------------------------------------
 EAGINE_LIB_FUNC auto glfw3_opengl_window::initialize(
   const identifier id,
   const launch_options& options,
@@ -251,14 +270,17 @@ EAGINE_LIB_FUNC auto glfw3_opengl_window::initialize(
   const span<GLFWmonitor* const> monitors) -> bool {
     _instance_id = id;
 
-    glfwWindowHint(
-      GLFW_CONTEXT_VERSION_MAJOR, video_opts.gl_version_major() / 3);
-    glfwWindowHint(
-      GLFW_CONTEXT_VERSION_MINOR, video_opts.gl_version_minor() / 3);
-    if(video_opts.gl_compatibility_context()) {
+    if(const auto ver_maj{video_opts.gl_version_major()}) {
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, extract(ver_maj));
+    }
+    if(const auto ver_min{video_opts.gl_version_minor()}) {
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, extract(ver_min));
+    }
+    const auto compat = video_opts.gl_compatibility_context();
+    if(compat) {
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
         log_debug("using compatibility GL context").arg(EAGINE_ID(instance), id);
-    } else {
+    } else if(!compat) {
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         log_debug("using core GL context").arg(EAGINE_ID(instance), id);
     }
@@ -651,6 +673,12 @@ auto glfw3_opengl_provider::initialize(execution_context& exec_ctx) -> bool {
                 if(auto new_win{std::make_shared<glfw3_opengl_window>(*this)}) {
                     if(extract(new_win).initialize(
                          inst, options, video_opts, monitors)) {
+                        if(_windows.empty()) {
+                            set_progress_update_callback(
+                              exec_ctx.main_context(),
+                              extract(new_win).get_progress_callback(),
+                              std::chrono::milliseconds{100});
+                        }
                         _windows[inst] = std::move(new_win);
                     } else {
                         extract(new_win).clean_up();

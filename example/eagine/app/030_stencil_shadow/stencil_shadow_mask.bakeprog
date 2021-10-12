@@ -1,0 +1,3 @@
+--vertex;mask_vertex.glsl;
+--geometry;mask_geometry.glsl;
+--fragment;mask_fragment.glsl;

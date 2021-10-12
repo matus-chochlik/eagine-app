@@ -106,10 +106,10 @@ auto eglplus_opengl_surface::get_context_attribs(
     };
 
     auto add_profile_mask = [&](auto attribs) {
-        if(video_opts.gl_compatibility_context()) {
+        const auto compat = video_opts.gl_compatibility_context();
+        if(compat) {
             return attribs + (EGL.context_opengl_profile_mask |
                               EGL.context_opengl_compatibility_profile_bit);
-
         } else {
             return attribs + (EGL.context_opengl_profile_mask |
                               EGL.context_opengl_core_profile_bit);

@@ -14,6 +14,7 @@
 #include <eagine/app_config.hpp>
 #include <eagine/main_ctx_object.hpp>
 #include <eagine/string_span.hpp>
+#include <eagine/tribool.hpp>
 #include <eagine/valid_if/between.hpp>
 #include <eagine/valid_if/nonnegative.hpp>
 #include <eagine/valid_if/not_empty.hpp>
@@ -144,8 +145,8 @@ public:
     /// @brief Returns the preferred GL minor version number.
     /// @see gl_version_major
     /// @see prefer_gles
-    auto gl_compatibility_context() const noexcept -> bool {
-        return _gl_compat_context;
+    auto gl_compatibility_context() const noexcept -> tribool {
+        return {_gl_compat_context};
     }
 
     /// @brief Indicates if a debug GL context should be created.
@@ -386,7 +387,7 @@ private:
     application_config_value<bool> _prefer_gles;
     application_config_value<bool> _gl_debug_context;
     application_config_value<bool> _gl_robust_access;
-    application_config_value<bool> _gl_compat_context;
+    application_config_value<tribool> _gl_compat_context;
     application_config_value<bool> _fullscreen;
     application_config_value<bool> _offscreen;
     application_config_value<bool> _offscreen_framebuffer;
