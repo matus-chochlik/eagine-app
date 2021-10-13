@@ -13,7 +13,6 @@
 #include <eagine/maybe_unused.hpp>
 #include <eagine/oglplus/config/basic.hpp>
 
-namespace eagine::app {
 //------------------------------------------------------------------------------
 #if OGLPLUS_GLFW3_FOUND
 
@@ -26,7 +25,26 @@ EAGINE_DIAG_OFF(documentation)
 EAGINE_DIAG_POP()
 #endif
 
+#ifndef EAGINE_APP_USE_IMGUI
+#define EAGINE_APP_USE_IMGUI 0
+#endif
+
+#ifdef EAGINE_APP_USE_IMGUI
+#ifdef __clang__
+EAGINE_DIAG_PUSH()
+EAGINE_DIAG_OFF(zero-as-null-pointer-constant)
+#endif
+#include <backends/imgui_impl_glfw.h>
+#include <backends/imgui_impl_opengl3.h>
+#include <imgui.h>
+#ifdef __clang__
+EAGINE_DIAG_POP()
+#endif
+#endif // EAGINE_APP_USE_IMGUI
+
 #endif // OGLPLUS_GLFW3_FOUND
+
+namespace eagine::app {
 //------------------------------------------------------------------------------
 #if OGLPLUS_GLFW3_FOUND
 class glfw3_opengl_window
@@ -110,7 +128,10 @@ private:
     float _aspect{1};
     float _wheel_change_x{0};
     float _wheel_change_y{0};
+    bool _backtick_was_pressed{false};
     bool _mouse_enabled{false};
+    bool _imgui_enabled{true};
+    bool _imgui_active{false};
 };
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
@@ -149,7 +170,6 @@ glfw3_opengl_window::glfw3_opengl_window(main_ctx_parent parent)
     _key_states.emplace_back(EAGINE_ID(Slash), GLFW_KEY_SLASH);
     _key_states.emplace_back(EAGINE_ID(LtBracket), GLFW_KEY_LEFT_BRACKET);
     _key_states.emplace_back(EAGINE_ID(RtBracket), GLFW_KEY_RIGHT_BRACKET);
-    _key_states.emplace_back(EAGINE_ID(Backtick), GLFW_KEY_GRAVE_ACCENT);
     _key_states.emplace_back(EAGINE_ID(CapsLock), GLFW_KEY_CAPS_LOCK);
     _key_states.emplace_back(EAGINE_ID(NumLock), GLFW_KEY_NUM_LOCK);
     _key_states.emplace_back(EAGINE_ID(ScrollLock), GLFW_KEY_SCROLL_LOCK);
@@ -340,6 +360,22 @@ EAGINE_LIB_FUNC auto glfw3_opengl_window::initialize(
             _norm_y_ndc = 1.F / float(_window_height);
             _aspect = _norm_y_ndc / _norm_x_ndc;
         }
+        if(_imgui_enabled) {
+#ifdef EAGINE_APP_USE_IMGUI
+            glfwMakeContextCurrent(_window);
+            IMGUI_CHECKVERSION();
+            ImGui::CreateContext();
+            ImGuiIO& io = ImGui::GetIO();
+            io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+
+            ImGui::StyleColorsDark();
+
+            ImGui_ImplGlfw_InitForOpenGL(_window, true);
+            ImGui_ImplOpenGL3_Init("#version 150");
+            glfwMakeContextCurrent(nullptr);
+#endif
+        }
+
         return true;
     } else {
         log_error("Failed to create GLFW window").arg(EAGINE_ID(instance), id);
@@ -397,6 +433,11 @@ void glfw3_opengl_window::video_end(execution_context&) {
 EAGINE_LIB_FUNC
 void glfw3_opengl_window::video_commit(execution_context&) {
     EAGINE_ASSERT(_window);
+    if(_imgui_enabled && _imgui_active) {
+        if(const auto draw_data{ImGui::GetDrawData()}) {
+            ImGui_ImplOpenGL3_RenderDrawData(draw_data);
+        }
+    }
     glfwSwapBuffers(_window);
 }
 //------------------------------------------------------------------------------
@@ -476,6 +517,23 @@ void glfw3_opengl_window::mapping_commit(const identifier setup_id) {
 EAGINE_LIB_FUNC
 void glfw3_opengl_window::update(execution_context& exec_ctx) {
 
+    if(_imgui_enabled && _imgui_active) {
+#ifdef EAGINE_APP_USE_IMGUI
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        ImGui::Begin("Application", nullptr, 0);
+        if(ImGui::Button("Quit")) {
+            glfwSetWindowShouldClose(_window, GLFW_TRUE);
+        }
+        ImGui::End();
+
+        ImGui::EndFrame();
+        ImGui::Render();
+#endif
+    }
+
     if(glfwWindowShouldClose(_window)) {
         exec_ctx.stop_running();
     } else {
@@ -544,31 +602,44 @@ void glfw3_opengl_window::update(execution_context& exec_ctx) {
                         }
                     }
                 }
-            }
 
-            for(auto& ks : _mouse_states) {
-                if(ks.enabled) {
-                    if(ks.pressed.assign(
-                         glfwGetMouseButton(_window, ks.key_code) ==
-                         GLFW_PRESS)) {
-                        sink.consume(
-                          {{EAGINE_ID(Cursor), ks.key_id},
-                           input_value_kind::absolute_norm},
-                          ks.pressed);
+                if(!_imgui_active) {
+                    for(auto& ks : _mouse_states) {
+                        if(ks.enabled) {
+                            if(ks.pressed.assign(
+                                 glfwGetMouseButton(_window, ks.key_code) ==
+                                 GLFW_PRESS)) {
+                                sink.consume(
+                                  {{EAGINE_ID(Cursor), ks.key_id},
+                                   input_value_kind::absolute_norm},
+                                  ks.pressed);
+                            }
+                        }
+                    }
+
+                    for(auto& ks : _key_states) {
+                        if(ks.enabled) {
+                            const auto state = glfwGetKey(_window, ks.key_code);
+                            const auto press = state == GLFW_PRESS;
+                            if(ks.pressed.assign(press) || press) {
+                                sink.consume(
+                                  {{EAGINE_ID(Keyboard), ks.key_id},
+                                   input_value_kind::absolute_norm},
+                                  ks.pressed);
+                            }
+                        }
                     }
                 }
             }
 
-            for(auto& ks : _key_states) {
-                if(ks.enabled) {
-                    const auto state = glfwGetKey(_window, ks.key_code);
-                    const auto press = state == GLFW_PRESS;
-                    if(ks.pressed.assign(press) || press) {
-                        sink.consume(
-                          {{EAGINE_ID(Keyboard), ks.key_id},
-                           input_value_kind::absolute_norm},
-                          ks.pressed);
+            if(_imgui_enabled) {
+                const auto backtick_is_pressed =
+                  glfwGetKey(_window, GLFW_KEY_GRAVE_ACCENT) == GLFW_PRESS;
+                if(_backtick_was_pressed != backtick_is_pressed) {
+                    if(_backtick_was_pressed) {
+                        _imgui_active = !_imgui_active;
                     }
+                    _backtick_was_pressed = backtick_is_pressed;
                 }
             }
         }
@@ -578,6 +649,13 @@ void glfw3_opengl_window::update(execution_context& exec_ctx) {
 EAGINE_LIB_FUNC
 void glfw3_opengl_window::clean_up() {
     if(_window) {
+        if(_imgui_enabled) {
+#ifdef EAGINE_APP_USE_IMGUI
+            ImGui_ImplOpenGL3_Shutdown();
+            ImGui_ImplGlfw_Shutdown();
+            ImGui::DestroyContext();
+#endif
+        }
         glfwDestroyWindow(_window);
     }
 }

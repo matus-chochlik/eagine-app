@@ -36,4 +36,5 @@ target_link_libraries(
 		eagine-app-headers
 	PRIVATE
 		eagine-app-private-headers
+		eagine-app-imgui
 )
