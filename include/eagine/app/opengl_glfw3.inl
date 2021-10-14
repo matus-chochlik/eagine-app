@@ -71,6 +71,7 @@ public:
     auto surface_size() noexcept -> std::tuple<int, int> final;
     auto surface_aspect() noexcept -> float final;
 
+    void parent_context_changed(const video_context&) final;
     void video_begin(execution_context&) final;
     void video_end(execution_context&) final;
     void video_commit(execution_context&) final;
@@ -96,6 +97,7 @@ private:
     identifier _instance_id;
     GLFWwindow* _window{nullptr};
     input_sink* _input_sink{nullptr};
+    const video_context* _parent_context{nullptr};
     int _window_width{1};
     int _window_height{1};
 
@@ -131,7 +133,7 @@ private:
     bool _backtick_was_pressed{false};
     bool _mouse_enabled{false};
     bool _imgui_enabled{true};
-    bool _imgui_active{false};
+    bool _imgui_visible{false};
 };
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
@@ -283,7 +285,8 @@ auto glfw3_opengl_window::get_progress_callback() noexcept
     return EAGINE_THIS_MEM_FUNC_REF(_handle_progress);
 }
 //------------------------------------------------------------------------------
-EAGINE_LIB_FUNC auto glfw3_opengl_window::initialize(
+EAGINE_LIB_FUNC
+auto glfw3_opengl_window::initialize(
   const identifier id,
   const launch_options& options,
   const video_options& video_opts,
@@ -416,10 +419,16 @@ auto glfw3_opengl_window::surface_size() noexcept -> std::tuple<int, int> {
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
 auto glfw3_opengl_window::surface_aspect() noexcept -> float {
-    return float(_aspect);
+    return _aspect;
 }
 //------------------------------------------------------------------------------
-EAGINE_LIB_FUNC void glfw3_opengl_window::video_begin(execution_context&) {
+EAGINE_LIB_FUNC
+void glfw3_opengl_window::parent_context_changed(const video_context& vctx) {
+    _parent_context = &vctx;
+}
+//------------------------------------------------------------------------------
+EAGINE_LIB_FUNC
+void glfw3_opengl_window::video_begin(execution_context&) {
 
     EAGINE_ASSERT(_window);
     glfwMakeContextCurrent(_window);
@@ -433,7 +442,7 @@ void glfw3_opengl_window::video_end(execution_context&) {
 EAGINE_LIB_FUNC
 void glfw3_opengl_window::video_commit(execution_context&) {
     EAGINE_ASSERT(_window);
-    if(_imgui_enabled && _imgui_active) {
+    if(_imgui_enabled && _imgui_visible) {
         if(const auto draw_data{ImGui::GetDrawData()}) {
             ImGui_ImplOpenGL3_RenderDrawData(draw_data);
         }
@@ -517,15 +526,29 @@ void glfw3_opengl_window::mapping_commit(const identifier setup_id) {
 EAGINE_LIB_FUNC
 void glfw3_opengl_window::update(execution_context& exec_ctx) {
 
-    if(_imgui_enabled && _imgui_active) {
+    if(_imgui_enabled && _imgui_visible) {
+        EAGINE_ASSERT(_parent_context);
 #ifdef EAGINE_APP_USE_IMGUI
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        ImGui::Begin("Application", nullptr, 0);
+        ImGuiWindowFlags window_flags = 0;
+        window_flags |= ImGuiWindowFlags_NoResize;
+        ImGui::Begin("Application", nullptr, window_flags);
+        ImGui::Text("Dimensions: %dx%d", _window_width, _window_height);
+        ImGui::Text("Frame number: %ld", _parent_context->frame_number());
+        if(ImGui::Button("Hide")) {
+            _imgui_visible = false;
+        }
+        ImGui::SameLine();
         if(ImGui::Button("Quit")) {
             glfwSetWindowShouldClose(_window, GLFW_TRUE);
+        }
+        if(ImGui::IsItemHovered()) {
+            ImGui::BeginTooltip();
+            ImGui::Text("Closes the application");
+            ImGui::EndTooltip();
         }
         ImGui::End();
 
@@ -603,7 +626,7 @@ void glfw3_opengl_window::update(execution_context& exec_ctx) {
                     }
                 }
 
-                if(!_imgui_active) {
+                if(!_imgui_visible) {
                     for(auto& ks : _mouse_states) {
                         if(ks.enabled) {
                             if(ks.pressed.assign(
@@ -637,7 +660,7 @@ void glfw3_opengl_window::update(execution_context& exec_ctx) {
                   glfwGetKey(_window, GLFW_KEY_GRAVE_ACCENT) == GLFW_PRESS;
                 if(_backtick_was_pressed != backtick_is_pressed) {
                     if(_backtick_was_pressed) {
-                        _imgui_active = !_imgui_active;
+                        _imgui_visible = !_imgui_visible;
                     }
                     _backtick_was_pressed = backtick_is_pressed;
                 }
