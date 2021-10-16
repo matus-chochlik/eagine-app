@@ -53,7 +53,7 @@ void surface_program::set_projection(
 //------------------------------------------------------------------------------
 void surface_program::set_model(
   video_context& vc,
-  const oglplus::tmat<float, 4, 4, true>& mat) {
+  const oglplus::trfmat<4>& mat) {
     const auto& gl = vc.gl_api();
     gl.set_uniform(prog, model_loc, mat);
 }
@@ -122,8 +122,8 @@ void hair_program::set_projection(video_context& vc, orbiting_camera& camera) {
 //------------------------------------------------------------------------------
 void hair_program::set_model(
   video_context& vc,
-  const oglplus::tmat<float, 4, 4, true>& prev,
-  const oglplus::tmat<float, 4, 4, true>& curr) {
+  const oglplus::trfmat<4>& prev,
+  const oglplus::trfmat<4>& curr) {
     const auto& gl = vc.gl_api();
     gl.set_uniform(prog, prev_model_loc, prev);
     gl.set_uniform(prog, curr_model_loc, curr);

@@ -47,7 +47,7 @@ void cube_program::set_texture(
 //------------------------------------------------------------------------------
 void cube_program::set_projection(
   video_context& vc,
-  const oglplus::tmat<float, 4, 4, true>& proj_mat) {
+  const oglplus::trfmat<4>& proj_mat) {
     vc.gl_api().set_uniform(prog, projection_loc, proj_mat);
 }
 //------------------------------------------------------------------------------

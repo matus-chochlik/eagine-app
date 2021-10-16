@@ -26,7 +26,7 @@ public:
     void clean_up(video_context&);
     void use(video_context&);
     void set_projection(video_context&, orbiting_camera& camera);
-    void set_model(video_context&, const oglplus::tmat<float, 4, 4, true>&);
+    void set_model(video_context&, const oglplus::trfmat<4>&);
     void set_texture(video_context&, oglplus::gl_types::int_type);
 
     void bind_position_location(video_context&, oglplus::vertex_attrib_location);
@@ -50,8 +50,8 @@ public:
     void set_projection(video_context&, orbiting_camera& camera);
     void set_model(
       video_context&,
-      const oglplus::tmat<float, 4, 4, true>& prev,
-      const oglplus::tmat<float, 4, 4, true>& curr);
+      const oglplus::trfmat<4>& prev,
+      const oglplus::trfmat<4>& curr);
     void set_texture(video_context&, oglplus::gl_types::int_type);
 
     void bind_position_location(video_context&, oglplus::vertex_attrib_location);
