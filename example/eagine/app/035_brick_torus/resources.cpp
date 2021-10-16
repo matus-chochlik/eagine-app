@@ -48,7 +48,7 @@ void torus_program::set_camera(video_context& vc, orbiting_camera& camera) {
 //------------------------------------------------------------------------------
 void torus_program::set_model(
   video_context& vc,
-  const oglplus::tmat<float, 4, 4, true>& model) {
+  const oglplus::trfmat<4>& model) {
     const auto& gl = vc.gl_api();
     gl.set_uniform(prog, model_loc, model);
 }

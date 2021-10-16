@@ -1,0 +1,4 @@
+--vertex;hair_vertex.glsl;
+--geometry;hair_geometry.glsl;
+--fragment;hair_fragment.glsl;
+

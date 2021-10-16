@@ -24,7 +24,7 @@ public:
     void init(execution_context&, video_context&);
     void clean_up(video_context&);
     void set_camera(video_context&, orbiting_camera& camera);
-    void set_model(video_context&, const oglplus::tmat<float, 4, 4, true>&);
+    void set_model(video_context&, const oglplus::trfmat<4>&);
     void set_light(video_context&, const oglplus::vec3&);
     void set_texture_map(video_context&, oglplus::gl_types::int_type unit);
 
