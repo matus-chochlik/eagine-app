@@ -35,7 +35,7 @@ public:
 private:
     execution_context& _ctx;
     video_context& _video;
-    timeout _is_done{std::chrono::seconds{60}};
+    timeout _is_done{std::chrono::seconds{120}};
 
     oglplus::tmat<float, 4, 4, true> prev_model;
 
@@ -87,9 +87,9 @@ example_fur::example_fur(execution_context& ec, video_context& vc)
     // camera
     camera.set_near(0.1F)
       .set_far(50.F)
-      .set_orbit_min(0.6F)
+      .set_orbit_min(0.7F)
       .set_orbit_max(1.4F)
-      .set_fov(degrees_(70));
+      .set_fov(degrees_(60));
 
     gl.clear_color(0.45F, 0.45F, 0.45F, 0.0F);
     gl.enable(GL.depth_test);
