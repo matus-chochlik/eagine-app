@@ -529,6 +529,11 @@ void glfw3_opengl_window::update(execution_context& exec_ctx) {
     if(_imgui_enabled && _imgui_visible) {
         EAGINE_ASSERT(_parent_context);
 #ifdef EAGINE_APP_USE_IMGUI
+        const auto& par_ctx = *_parent_context;
+        const auto& state = exec_ctx.state();
+        const auto frame_dur = state.frame_duration().value();
+        const auto frames_per_second = state.frames_per_second();
+
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
@@ -537,7 +542,10 @@ void glfw3_opengl_window::update(execution_context& exec_ctx) {
         window_flags |= ImGuiWindowFlags_NoResize;
         ImGui::Begin("Application", nullptr, window_flags);
         ImGui::Text("Dimensions: %dx%d", _window_width, _window_height);
-        ImGui::Text("Frame number: %ld", _parent_context->frame_number());
+        ImGui::Text("Frame number: %ld", par_ctx.frame_number());
+        ImGui::Text("Frame time: %.1f [ms]", frame_dur * 1000.F);
+        ImGui::Text("Frames per second: %.0f", frames_per_second);
+
         if(ImGui::Button("Hide")) {
             _imgui_visible = false;
         }
