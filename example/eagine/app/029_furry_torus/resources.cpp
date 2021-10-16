@@ -99,7 +99,8 @@ void hair_program::init(execution_context& ec, video_context& vc) {
     gl.build_program(prog, prog_src.unpack(ec));
     gl.use_program(prog);
 
-    gl.get_uniform_location(prog, "Model") >> model_loc;
+    gl.get_uniform_location(prog, "PrevModel") >> prev_model_loc;
+    gl.get_uniform_location(prog, "CurrModel") >> curr_model_loc;
     gl.get_uniform_location(prog, "Camera") >> camera_loc;
     gl.get_uniform_location(prog, "Tex") >> texture_loc;
 }
@@ -121,9 +122,11 @@ void hair_program::set_projection(video_context& vc, orbiting_camera& camera) {
 //------------------------------------------------------------------------------
 void hair_program::set_model(
   video_context& vc,
-  const oglplus::tmat<float, 4, 4, true>& mat) {
+  const oglplus::tmat<float, 4, 4, true>& prev,
+  const oglplus::tmat<float, 4, 4, true>& curr) {
     const auto& gl = vc.gl_api();
-    gl.set_uniform(prog, model_loc, mat);
+    gl.set_uniform(prog, prev_model_loc, prev);
+    gl.set_uniform(prog, curr_model_loc, curr);
 }
 //------------------------------------------------------------------------------
 void hair_program::set_texture(

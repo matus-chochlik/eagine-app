@@ -37,6 +37,8 @@ private:
     video_context& _video;
     timeout _is_done{std::chrono::seconds{60}};
 
+    oglplus::tmat<float, 4, 4, true> prev_model;
+
     orbiting_camera camera;
     shape_textures shape_tex;
     surface_program surf_prog;
@@ -79,12 +81,15 @@ example_fur::example_fur(execution_context& ec, video_context& vc)
     hair_prog.bind_occlusion_location(vc, hair.occlusion_loc());
     hair_prog.set_texture(vc, shape_tex.map_unit_zebra());
 
+    prev_model = oglplus::matrix_rotation_y(radians_(0.F)) *
+                 oglplus::matrix_rotation_x(radians_(0.F));
+
     // camera
     camera.set_near(0.1F)
       .set_far(50.F)
       .set_orbit_min(0.6F)
-      .set_orbit_max(1.7F)
-      .set_fov(right_angle_());
+      .set_orbit_max(1.4F)
+      .set_fov(degrees_(70));
 
     gl.clear_color(0.45F, 0.45F, 0.45F, 0.0F);
     gl.enable(GL.depth_test);
@@ -124,9 +129,11 @@ void example_fur::update() noexcept {
 
     hair_prog.use(_video);
     hair_prog.set_projection(_video, camera);
-    hair_prog.set_model(_video, model);
+    hair_prog.set_model(_video, prev_model, model);
     hair.use(_video);
     hair.draw(_ctx, _video);
+
+    prev_model = model;
 
     _video.commit();
 }
