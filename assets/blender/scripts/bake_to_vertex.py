@@ -6,6 +6,9 @@
 #  http://www.boost.org/LICENSE_1_0.txt
 #
 # usage: blender -b myfile.blend -P bake_to_vertex.py [-- [--help|options...]]
+#
+# in --keep-image mode, the resulting images can be combined with:
+# convert *.png -flatten result.png
 
 import os
 import sys
