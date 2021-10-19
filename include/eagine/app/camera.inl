@@ -135,77 +135,77 @@ auto orbiting_camera::basic_input_mapping(
         altitude_change_input_id(),
         mapping_id,
         EAGINE_MSG_ID(Keyboard, KpPlus),
-        input_setup().trigger().multiply(0.10))
+        input_setup().trigger().multiply(0.10F))
       .map_input(
         altitude_change_input_id(),
         mapping_id,
         EAGINE_MSG_ID(Keyboard, RtBracket),
-        input_setup().trigger().multiply(0.05))
+        input_setup().trigger().multiply(0.05F))
       .map_input(
         altitude_change_input_id(),
         mapping_id,
         EAGINE_MSG_ID(Keyboard, KpMinus),
-        input_setup().trigger().multiply(0.10).invert())
+        input_setup().trigger().multiply(0.10F).invert())
       .map_input(
         altitude_change_input_id(),
         mapping_id,
         EAGINE_MSG_ID(Keyboard, LtBracket),
-        input_setup().trigger().multiply(0.05).invert())
+        input_setup().trigger().multiply(0.05F).invert())
       .map_input(
         altitude_change_input_id(),
         mapping_id,
         EAGINE_MSG_ID(Wheel, ScrollY),
-        input_setup().relative().multiply(0.2))
+        input_setup().relative().multiply(0.2F))
       .map_input(
         longitude_change_input_id(),
         mapping_id,
         EAGINE_MSG_ID(Keyboard, Left),
-        input_setup().trigger().multiply(0.10))
+        input_setup().trigger().multiply(0.10F))
       .map_input(
         longitude_change_input_id(),
         mapping_id,
         EAGINE_MSG_ID(Keyboard, A),
-        input_setup().trigger().multiply(0.05))
+        input_setup().trigger().multiply(0.05F))
       .map_input(
         longitude_change_input_id(),
         mapping_id,
         EAGINE_MSG_ID(Keyboard, Right),
-        input_setup().trigger().multiply(0.10).invert())
+        input_setup().trigger().multiply(0.10F).invert())
       .map_input(
         longitude_change_input_id(),
         mapping_id,
         EAGINE_MSG_ID(Keyboard, D),
-        input_setup().trigger().multiply(0.05).invert())
+        input_setup().trigger().multiply(0.05F).invert())
       .map_input(
         longitude_change_input_id(),
         mapping_id,
         EAGINE_MSG_ID(Cursor, MotionX),
-        input_setup().relative().multiply(2).only_if(_is_dragging))
+        input_setup().relative().multiply(2.F).only_if(_is_dragging))
       .map_input(
         latitude_change_input_id(),
         mapping_id,
         EAGINE_MSG_ID(Keyboard, Down),
-        input_setup().trigger().multiply(0.10))
+        input_setup().trigger().multiply(0.10F))
       .map_input(
         latitude_change_input_id(),
         mapping_id,
         EAGINE_MSG_ID(Keyboard, S),
-        input_setup().trigger().multiply(0.05))
+        input_setup().trigger().multiply(0.05F))
       .map_input(
         latitude_change_input_id(),
         mapping_id,
         EAGINE_MSG_ID(Keyboard, Up),
-        input_setup().trigger().multiply(0.10).invert())
+        input_setup().trigger().multiply(0.10F).invert())
       .map_input(
         latitude_change_input_id(),
         mapping_id,
         EAGINE_MSG_ID(Keyboard, W),
-        input_setup().trigger().multiply(0.05).invert())
+        input_setup().trigger().multiply(0.05F).invert())
       .map_input(
         latitude_change_input_id(),
         mapping_id,
         EAGINE_MSG_ID(Cursor, MotionY),
-        input_setup().relative().multiply(2).only_if(_is_dragging));
+        input_setup().relative().multiply(2.F).only_if(_is_dragging));
     return *this;
 }
 //------------------------------------------------------------------------------
