@@ -176,7 +176,7 @@ public:
       const input_info&,
       const input_setup& setup) noexcept
       : input_value<float>{transform(
-          [&](auto elem) { return float(setup.multiplier() * elem); },
+          [&](auto elem) { return setup.multiplier() * float(elem); },
           value)} {}
 
     /// @brief Indicates if the current value is non-zero.
