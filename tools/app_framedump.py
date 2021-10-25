@@ -227,6 +227,14 @@ class FramedumpArgumentParser(argparse.ArgumentParser):
         )
 
         self.add_argument(
+            "--twitter-vid",
+            help="""Render a video for Twitter""",
+            default=False,
+            action="store_true",
+            dest="twitter_vid"
+        )
+
+        self.add_argument(
             "--args",
             dest="app_options",
             nargs=argparse.REMAINDER,
@@ -270,7 +278,14 @@ class FramedumpArgumentParser(argparse.ArgumentParser):
                             if self.sample_label.startswith(prefix):
                                 self.sample_label = self.sample_label[len(prefix):]
 
-                if self.twitter_gif:
+                if self.twitter_vid:
+                    self.gif_output = False
+                    self.frame_size[0] = 640
+                    self.frame_size[1] = 360
+                    self.fps = 30
+                    self.render_scale = 2
+                    self.max_bytes = "256000k"
+                elif self.twitter_gif:
                     self.gif_output = True
                     self.frame_size[0] = 420
                     self.frame_size[1] = 240
