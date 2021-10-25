@@ -37,8 +37,11 @@ private:
     video_context& _video;
     timeout _is_done{std::chrono::seconds{30}};
 
+    draw_buffers draw_bufs;
     pumpkin_geometry pumpkin;
+    screen_geometry screen;
     draw_program draw_prog;
+    screen_program screen_prog;
 
     orbiting_camera camera;
 };
@@ -49,19 +52,26 @@ example_lantern::example_lantern(execution_context& ec, video_context& vc)
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
 
+    draw_bufs.init(_video);
     pumpkin.init(_video);
-    draw_prog.init(_video);
+    screen.init(_video);
 
+    draw_prog.init(_video);
     draw_prog.bind_position_location(_video, pumpkin.position_loc());
     draw_prog.bind_normal_location(_video, pumpkin.normal_loc());
     draw_prog.bind_wrap_coord_location(_video, pumpkin.wrap_coord_loc());
     draw_prog.set_texture_unit(_video, pumpkin.tex_unit());
 
+    screen_prog.init(_video);
+    screen_prog.bind_position_location(_video, screen.position_loc());
+    screen_prog.bind_coord_location(_video, screen.coord_loc());
+    screen_prog.set_texture_unit(_video, draw_bufs.tex_unit());
+
     // camera
     const auto bs = pumpkin.bounding_sphere();
     const auto sr = bs.radius();
-    camera.set_pitch_max(degrees_(89.F))
-      .set_pitch_min(degrees_(-1.F))
+    camera.set_pitch_max(degrees_(35.F))
+      .set_pitch_min(degrees_(-25.F))
       .set_target(bs.center())
       .set_near(sr * 0.01F)
       .set_far(sr * 5.0F)
@@ -69,8 +79,8 @@ example_lantern::example_lantern(execution_context& ec, video_context& vc)
       .set_orbit_max(sr * 2.9F)
       .set_fov(degrees_(70));
 
-    gl.clear_color(0.05F, 0.05F, 0.05F, 1.0F);
-    gl.enable(GL.depth_test);
+    gl.clear_color(0.05F, 0.05F, 0.05F, 0.F);
+    gl.clear_depth(1.0);
 
     camera.connect_inputs(ec).basic_input_mapping(ec);
     ec.setup_inputs().switch_input_mapping();
@@ -79,6 +89,7 @@ example_lantern::example_lantern(execution_context& ec, video_context& vc)
 void example_lantern::on_video_resize() noexcept {
     const auto& gl = _video.gl_api();
     gl.viewport(_video.surface_size());
+    draw_bufs.resize(_video);
 }
 //------------------------------------------------------------------------------
 void example_lantern::update() noexcept {
@@ -94,23 +105,39 @@ void example_lantern::update() noexcept {
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
 
+    draw_bufs.draw_off_screen(_video);
+    gl.enable(GL.depth_test);
     gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
 
+    draw_prog.use(_video);
     draw_prog.set_camera(_video, camera);
     draw_prog.set_light_power(
       _video,
       std::sin(t * 0.618F * 11.F) * 0.1F + std::cos(t * 1.618F * 7.F) * 0.1F +
         0.9F);
 
+    pumpkin.use(_video);
     pumpkin.draw(_video);
+    gl.disable(GL.depth_test);
+
+    draw_bufs.draw_on_screen(_video);
+
+    screen_prog.use(_video);
+    screen_prog.set_screen_size(_video);
+
+    screen.use(_video);
+    screen.draw(_video);
 
     _video.commit();
 }
 //------------------------------------------------------------------------------
 void example_lantern::clean_up() noexcept {
 
+    screen_prog.clean_up(_video);
     draw_prog.clean_up(_video);
+    screen.clean_up(_video);
     pumpkin.clean_up(_video);
+    draw_bufs.clean_up(_video);
 
     _video.end();
 }
@@ -132,7 +159,9 @@ public:
                gl.gen_vertex_arrays && gl.bind_vertex_array &&
                gl.get_attrib_location && gl.vertex_attrib_pointer &&
                gl.enable_vertex_attrib_array && gl.draw_arrays &&
-               gl.tex_image2d && GL.vertex_shader && GL.fragment_shader;
+               gl.tex_image2d && gl.framebuffer_texture2d &&
+               gl.framebuffer_renderbuffer && GL.vertex_shader &&
+               GL.fragment_shader;
     }
 
     auto launch(execution_context& ec, const launch_options&)
