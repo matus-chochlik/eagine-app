@@ -35,7 +35,7 @@ public:
 private:
     execution_context& _ctx;
     video_context& _video;
-    timeout _is_done{std::chrono::seconds{30}};
+    timeout _is_done{std::chrono::seconds{60}};
 
     draw_buffers draw_bufs;
     pumpkin_geometry pumpkin;
@@ -70,16 +70,16 @@ example_lantern::example_lantern(execution_context& ec, video_context& vc)
     // camera
     const auto bs = pumpkin.bounding_sphere();
     const auto sr = bs.radius();
-    camera.set_pitch_max(degrees_(35.F))
+    camera.set_pitch_max(degrees_(30.F))
       .set_pitch_min(degrees_(-25.F))
       .set_target(bs.center())
       .set_near(sr * 0.01F)
-      .set_far(sr * 5.0F)
+      .set_far(sr * 50.0F)
       .set_orbit_min(sr * 1.2F)
-      .set_orbit_max(sr * 2.9F)
-      .set_fov(degrees_(70));
+      .set_orbit_max(sr * 2.4F)
+      .set_fov(degrees_(50))
+      .set_azimuth(degrees_(180));
 
-    gl.clear_color(0.05F, 0.05F, 0.05F, 0.F);
     gl.clear_depth(1.0);
 
     camera.connect_inputs(ec).basic_input_mapping(ec);
@@ -102,18 +102,22 @@ void example_lantern::update() noexcept {
     }
 
     const auto t = state.frame_time().value();
+    const auto ambient =
+      math::blend(0.05F, 0.30F, math::cosine_wave01(t / 5.F));
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
 
     draw_bufs.draw_off_screen(_video);
     gl.enable(GL.depth_test);
+    gl.clear_color(ambient, ambient, ambient, 0.F);
     gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
 
     draw_prog.use(_video);
     draw_prog.set_camera(_video, camera);
-    draw_prog.set_light_power(
+    draw_prog.set_ambient_light(_video, ambient);
+    draw_prog.set_candle_light(
       _video,
-      std::sin(t * 0.618F * 11.F) * 0.1F + std::cos(t * 1.618F * 7.F) * 0.1F +
+      std::sin(t * 0.618F * 11.F) * 0.2F + std::cos(t * 1.618F * 7.F) * 0.2F +
         0.9F);
 
     pumpkin.use(_video);

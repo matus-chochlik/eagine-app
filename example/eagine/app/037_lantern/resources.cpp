@@ -51,7 +51,8 @@ void draw_program::init(video_context& vc) {
     gl.use_program(_prog);
 
     gl.get_uniform_location(_prog, "Camera") >> _camera_loc;
-    gl.get_uniform_location(_prog, "LightPower") >> _light_power_loc;
+    gl.get_uniform_location(_prog, "CandleLight") >> _candle_light_loc;
+    gl.get_uniform_location(_prog, "AmbientLight") >> _ambient_light_loc;
     gl.get_uniform_location(_prog, "Tex") >> _tex_loc;
 }
 //------------------------------------------------------------------------------
@@ -67,10 +68,16 @@ void draw_program::set_camera(video_context& vc, const orbiting_camera& camera) 
     vc.gl_api().set_uniform(_prog, _camera_loc, camera.matrix(vc));
 }
 //------------------------------------------------------------------------------
-void draw_program::set_light_power(
+void draw_program::set_candle_light(
   video_context& vc,
   oglplus::gl_types::float_type value) {
-    vc.gl_api().set_uniform(_prog, _light_power_loc, value);
+    vc.gl_api().set_uniform(_prog, _candle_light_loc, value);
+}
+//------------------------------------------------------------------------------
+void draw_program::set_ambient_light(
+  video_context& vc,
+  oglplus::gl_types::float_type value) {
+    vc.gl_api().set_uniform(_prog, _ambient_light_loc, value);
 }
 //------------------------------------------------------------------------------
 void draw_program::set_texture_unit(

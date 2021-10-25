@@ -27,7 +27,8 @@ public:
     void use(video_context&);
     void clean_up(video_context&);
     void set_camera(video_context&, const orbiting_camera& camera);
-    void set_light_power(video_context&, oglplus::gl_types::float_type);
+    void set_candle_light(video_context&, oglplus::gl_types::float_type);
+    void set_ambient_light(video_context&, oglplus::gl_types::float_type);
     void set_texture_unit(video_context&, oglplus::gl_types::int_type);
 
     void bind_position_location(video_context&, oglplus::vertex_attrib_location);
@@ -39,7 +40,8 @@ public:
 private:
     oglplus::owned_program_name _prog;
     oglplus::uniform_location _camera_loc;
-    oglplus::uniform_location _light_power_loc;
+    oglplus::uniform_location _candle_light_loc;
+    oglplus::uniform_location _ambient_light_loc;
     oglplus::uniform_location _tex_loc;
 };
 //------------------------------------------------------------------------------

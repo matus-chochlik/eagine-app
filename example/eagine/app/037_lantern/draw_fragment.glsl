@@ -1,6 +1,7 @@
 #version 140
 uniform sampler2DArray Tex;
-uniform float LightPower;
+uniform float CandleLight;
+uniform float AmbientLight;
 
 in vec3 vertNormal;
 in vec3 vertLightDir;
@@ -15,10 +16,10 @@ void main() {
 	float ldot = dot(vertLightDir, vertNormal);
 
 	float ambient = light.r;
-	float diffuse = (light.g + light.b) * max(ldot, 0.0) * LightPower;
-	float scatter = light.g * max(-ldot, 0.0) * pow(LightPower, 2.0);
+	float diffuse = (light.g + light.b) * max(ldot, 0.0) * CandleLight;
+	float scatter = light.g * max(-ldot, 0.0) * pow(CandleLight, 2.0);
 
     fragColor = vec4(
-		color * (ambient * 0.05 + diffuse * 1.75 + scatter * 0.35),
-		light.b * LightPower);
+		color * (ambient * AmbientLight + diffuse * 1.75 + scatter * 0.35),
+		light.b * CandleLight);
 }
