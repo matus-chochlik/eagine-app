@@ -35,7 +35,7 @@ public:
 private:
     execution_context& _ctx;
     video_context& _video;
-    timeout _is_done{std::chrono::seconds{60}};
+    timeout _is_done{std::chrono::seconds{90}};
 
     draw_buffers draw_bufs;
     pumpkin_geometry pumpkin;
