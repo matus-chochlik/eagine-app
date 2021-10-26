@@ -67,7 +67,7 @@ public:
     void mapping_enable(const message_id signal_id) final;
     void mapping_commit(const identifier setup_id) final;
 
-    void on_scroll(const double x, const double y) {
+    void on_scroll(const float x, const float y) {
         _wheel_change_x += x;
         _wheel_change_y += y;
     }
@@ -97,19 +97,19 @@ private:
     std::vector<key_state> _key_states;
     std::vector<key_state> _mouse_states;
 
-    input_variable<double> _mouse_x_pix{0};
-    input_variable<double> _mouse_y_pix{0};
-    input_variable<double> _mouse_x_ndc{0};
-    input_variable<double> _mouse_y_ndc{0};
-    input_variable<double> _mouse_x_delta{0};
-    input_variable<double> _mouse_y_delta{0};
-    input_variable<double> _wheel_scroll_x{0};
-    input_variable<double> _wheel_scroll_y{0};
-    double _norm_x_ndc{1};
-    double _norm_y_ndc{1};
-    double _aspect{1};
-    double _wheel_change_x{0};
-    double _wheel_change_y{0};
+    input_variable<float> _mouse_x_pix{0};
+    input_variable<float> _mouse_y_pix{0};
+    input_variable<float> _mouse_x_ndc{0};
+    input_variable<float> _mouse_y_ndc{0};
+    input_variable<float> _mouse_x_delta{0};
+    input_variable<float> _mouse_y_delta{0};
+    input_variable<float> _wheel_scroll_x{0};
+    input_variable<float> _wheel_scroll_y{0};
+    float _norm_x_ndc{1};
+    float _norm_y_ndc{1};
+    float _aspect{1};
+    float _wheel_change_x{0};
+    float _wheel_change_y{0};
     bool _mouse_enabled{false};
 };
 //------------------------------------------------------------------------------
@@ -117,7 +117,7 @@ EAGINE_LIB_FUNC
 void glfw3_opengl_window_scroll_callback(GLFWwindow* window, double x, double y) {
     if(auto raw_that{glfwGetWindowUserPointer(window)}) {
         auto that = reinterpret_cast<glfw3_opengl_window*>(raw_that);
-        that->on_scroll(x, y);
+        that->on_scroll(float(x), float(y));
     }
 }
 //------------------------------------------------------------------------------
@@ -336,8 +336,8 @@ EAGINE_LIB_FUNC auto glfw3_opengl_window::initialize(
         glfwSetWindowTitle(_window, c_str(options.application_title()));
         glfwGetWindowSize(_window, &_window_width, &_window_height);
         if(_window_width > 0 && _window_height > 0) {
-            _norm_x_ndc = 1.0 / _window_width;
-            _norm_y_ndc = 1.0 / _window_height;
+            _norm_x_ndc = 1.F / float(_window_width);
+            _norm_y_ndc = 1.F / float(_window_height);
             _aspect = _norm_y_ndc / _norm_x_ndc;
         }
         return true;
@@ -504,18 +504,19 @@ void glfw3_opengl_window::update(execution_context& exec_ctx) {
                 glfwGetCursorPos(_window, &mouse_x_pix, &mouse_y_pix);
                 mouse_y_pix = _window_height - mouse_y_pix;
 
-                if(_mouse_x_pix.assign(mouse_x_pix)) {
+                if(_mouse_x_pix.assign(float(mouse_x_pix))) {
                     sink.consume(
                       {EAGINE_MSG_ID(Cursor, PositionX),
                        input_value_kind::absolute_free},
                       _mouse_x_pix);
-                    if(_mouse_x_ndc.assign((mouse_x_pix * _norm_x_ndc) - 0.5)) {
+                    if(_mouse_x_ndc.assign(
+                         float(mouse_x_pix * _norm_x_ndc) - 0.5F)) {
                         sink.consume(
                           {EAGINE_MSG_ID(Cursor, PositionX),
                            input_value_kind::absolute_norm},
                           _mouse_x_ndc);
-                        if(_mouse_x_delta.assign(
-                             _mouse_x_ndc.delta() * motion_adjust * _aspect)) {
+                        if(_mouse_x_delta.assign(float(
+                             _mouse_x_ndc.delta() * motion_adjust * _aspect))) {
                             sink.consume(
                               {EAGINE_MSG_ID(Cursor, MotionX),
                                input_value_kind::relative},
@@ -523,18 +524,19 @@ void glfw3_opengl_window::update(execution_context& exec_ctx) {
                         }
                     }
                 }
-                if(_mouse_y_pix.assign(mouse_y_pix)) {
+                if(_mouse_y_pix.assign(float(mouse_y_pix))) {
                     sink.consume(
                       {EAGINE_MSG_ID(Cursor, PositionY),
                        input_value_kind::absolute_free},
                       _mouse_y_pix);
-                    if(_mouse_y_ndc.assign((mouse_y_pix * _norm_y_ndc) - 0.5)) {
+                    if(_mouse_y_ndc.assign(
+                         float(mouse_y_pix * _norm_y_ndc) - 0.5F)) {
                         sink.consume(
                           {EAGINE_MSG_ID(Cursor, PositionY),
                            input_value_kind::absolute_norm},
                           _mouse_y_ndc);
                         if(_mouse_y_delta.assign(
-                             _mouse_y_ndc.delta() * motion_adjust)) {
+                             float(_mouse_y_ndc.delta() * motion_adjust))) {
                             sink.consume(
                               {EAGINE_MSG_ID(Cursor, MotionY),
                                input_value_kind::relative},
@@ -648,7 +650,7 @@ EAGINE_LIB_FUNC
 auto glfw3_opengl_provider::initialize(execution_context& exec_ctx) -> bool {
 #if OGLPLUS_GLFW3_FOUND
     if(glfwInit()) {
-        auto monitors = []() {
+        const auto monitors = []() {
             int monitor_count = 0;
             auto* monitor_list = glfwGetMonitors(&monitor_count);
             return memory::view(monitor_list, monitor_count);

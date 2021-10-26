@@ -32,8 +32,8 @@ public:
     void update() noexcept final;
     void clean_up() noexcept final;
 
-    void motion_x(const input&);
-    void motion_y(const input&);
+    void motion_x(const input&) noexcept;
+    void motion_y(const input&) noexcept;
 
 private:
     execution_context& _ctx;
@@ -127,13 +127,13 @@ example_picking::example_picking(execution_context& ec, video_context& vc)
       .map_input(
         EAGINE_MSG_ID(Example, MotionX),
         EAGINE_MSG_ID(Cursor, PositionX),
-        input_setup().absolute_norm())
+        input_setup().multiply(2).absolute_norm())
       .connect_input(
         EAGINE_MSG_ID(Example, MotionY), EAGINE_THIS_MEM_FUNC_REF(motion_y))
       .map_input(
         EAGINE_MSG_ID(Example, MotionY),
         EAGINE_MSG_ID(Cursor, PositionY),
-        input_setup().absolute_norm())
+        input_setup().multiply(2).absolute_norm())
       .switch_input_mapping();
 }
 //------------------------------------------------------------------------------
@@ -179,13 +179,13 @@ void example_picking::clean_up() noexcept {
     _video.end();
 }
 //------------------------------------------------------------------------------
-void example_picking::motion_x(const input& i) {
-    x_pos = float(2 * i.get());
+void example_picking::motion_x(const input& i) noexcept {
+    x_pos = float(i.get());
     has_moved = true;
 }
 //------------------------------------------------------------------------------
-void example_picking::motion_y(const input& i) {
-    y_pos = float(2 * i.get());
+void example_picking::motion_y(const input& i) noexcept {
+    y_pos = float(i.get());
     has_moved = true;
 }
 //------------------------------------------------------------------------------

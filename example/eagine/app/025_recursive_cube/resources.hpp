@@ -26,7 +26,7 @@ public:
     void init(execution_context&, video_context&);
     void clean_up(video_context&);
     void set_texture(video_context&, oglplus::gl_types::int_type);
-    void set_projection(video_context&, const oglplus::tmat<float, 4, 4, true>&);
+    void set_projection(video_context&, const oglplus::trfmat<4>&);
     void update(execution_context&, video_context&);
 
     void bind_position_location(video_context&, oglplus::vertex_attrib_location);

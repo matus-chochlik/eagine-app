@@ -372,8 +372,8 @@ inline auto make_all_hmi_providers(main_ctx_parent parent)
 //------------------------------------------------------------------------------
 // execution_context
 //------------------------------------------------------------------------------
-inline auto execution_context::_setup_providers() -> bool {
-    auto try_init = [&](auto provider) -> bool {
+inline auto execution_context::_setup_providers() noexcept -> bool {
+    const auto try_init = [&](auto provider) -> bool {
         if(extract(provider).is_initialized()) {
             return true;
         }
@@ -409,19 +409,19 @@ inline auto execution_context::_setup_providers() -> bool {
 
     for(auto& provider : _hmi_providers) {
         if(try_init(provider)) {
-            auto add_input = [&](std::shared_ptr<input_provider> input) {
+            const auto add_input = [&](std::shared_ptr<input_provider> input) {
                 extract(input).input_connect(*this);
                 _input_providers.emplace_back(std::move(input));
             };
             extract(provider).input_enumerate({construct_from, add_input});
 
-            auto add_video = [&](std::shared_ptr<video_provider> video) {
+            const auto add_video = [&](std::shared_ptr<video_provider> video) {
                 _video_contexts.emplace_back(
                   std::make_unique<video_context>(*this, std::move(video)));
             };
             extract(provider).video_enumerate({construct_from, add_video});
 
-            auto add_audio = [&](std::shared_ptr<audio_provider> audio) {
+            const auto add_audio = [&](std::shared_ptr<audio_provider> audio) {
                 _audio_contexts.emplace_back(
                   std::make_unique<audio_context>(*this, std::move(audio)));
             };

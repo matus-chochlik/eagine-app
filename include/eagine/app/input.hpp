@@ -136,7 +136,7 @@ public:
     }
 
     /// @brief Specifies the multiplier for the raw value from the input source.
-    auto multiply(const double mult) noexcept -> auto& {
+    auto multiply(const float mult) noexcept -> auto& {
         _multiplier = mult;
         return *this;
     }
@@ -160,7 +160,7 @@ public:
     }
 
 private:
-    double _multiplier{1.0};
+    float _multiplier{1.F};
     bool* _only_if{nullptr};
     input_value_kinds _value_kinds{};
     bool _invert{false};
@@ -168,26 +168,26 @@ private:
 //------------------------------------------------------------------------------
 /// @brief Class representing a user input.
 /// @ingroup application
-class input : public input_value<double> {
+class input : public input_value<float> {
 public:
     template <typename T>
     input(
       const input_value<T>& value,
       const input_info&,
       const input_setup& setup) noexcept
-      : input_value<double>{transform(
-          [&](auto elem) { return double(setup.multiplier() * elem); },
+      : input_value<float>{transform(
+          [&](auto elem) { return setup.multiplier() * float(elem); },
           value)} {}
 
     /// @brief Indicates if the current value is non-zero.
     explicit operator bool() const noexcept {
-        return !are_equal(this->get(), 0.0);
+        return !are_equal(this->get(), 0.F);
     }
 };
 //------------------------------------------------------------------------------
 /// @brief Alias for a input handler callable reference.
 /// @ingroup application
-using input_handler = callable_ref<void(const input&)>;
+using input_handler = callable_ref<void(const input&) noexcept>;
 
 /// @brief Class that allows binding of a user input device to a handler callable.
 /// @ingroup application

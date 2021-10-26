@@ -6,6 +6,12 @@
 #  http://www.boost.org/LICENSE_1_0.txt
 #
 # usage: blender -b myfile.blend -P bake_to_vertex.py [-- [--help|options...]]
+#
+# in --keep-image mode, the resulting images can be combined with:
+# convert *.png -flatten result.png
+#
+# grayscale channels can be combined in to RGBA with:
+# convert *.png -channel RGBA -combine result.png
 
 import os
 import sys
@@ -80,10 +86,13 @@ class BakeLightArgParser(argparse.ArgumentParser):
             choices=[
                 "COMBINED",
                 "AO",
+                "UV",
                 "SHADOW",
                 "EMIT",
                 "DIFFUSE",
+                "ROUGHNESS",
                 "GLOSSY",
+                "ENVIRONMENT",
                 "TRANSMISSION"
             ]
         )
@@ -100,6 +109,13 @@ class BakeLightArgParser(argparse.ArgumentParser):
             dest="bake_type",
             action="store_const",
             const="AO"
+        )
+
+        self.add_argument(
+            '--uv',
+            dest="bake_type",
+            action="store_const",
+            const="UV"
         )
 
         self.add_argument(
@@ -121,6 +137,27 @@ class BakeLightArgParser(argparse.ArgumentParser):
             dest="bake_type",
             action="store_const",
             const="DIFFUSE"
+        )
+
+        self.add_argument(
+            '--roughness',
+            dest="bake_type",
+            action="store_const",
+            const="ROUGHNESS"
+        )
+
+        self.add_argument(
+            '--glossy',
+            dest="bake_type",
+            action="store_const",
+            const="GLOSSY"
+        )
+
+        self.add_argument(
+            '--environment',
+            dest="bake_type",
+            action="store_const",
+            const="ENVIRONMENT"
         )
 
         self.add_argument(

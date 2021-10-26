@@ -89,12 +89,12 @@ auto eglplus_opengl_surface::get_context_attribs(
   -> std::vector<eglplus::egl_types::int_type> {
     const auto& EGL = _egl_api.constants();
 
-    auto add_major_version = [&](auto attribs) {
+    const auto add_major_version = [&](auto attribs) {
         return attribs + (EGL.context_major_version |
                           (video_opts.gl_version_major() / 3));
     };
 
-    auto add_minor_version = [&](auto attribs) {
+    const auto add_minor_version = [&](auto attribs) {
         eglplus::context_attrib_traits::value_type fallback = 0;
         if(gl_otherwise_gles) {
             if(!video_opts.gl_compatibility_context()) {
@@ -105,7 +105,7 @@ auto eglplus_opengl_surface::get_context_attribs(
                           (video_opts.gl_version_minor() / fallback));
     };
 
-    auto add_profile_mask = [&](auto attribs) {
+    const auto add_profile_mask = [&](auto attribs) {
         const auto compat = video_opts.gl_compatibility_context();
         if(compat) {
             return attribs + (EGL.context_opengl_profile_mask |
@@ -116,12 +116,12 @@ auto eglplus_opengl_surface::get_context_attribs(
         }
     };
 
-    auto add_debugging = [&](auto attribs) {
+    const auto add_debugging = [&](auto attribs) {
         return attribs +
                (EGL.context_opengl_debug | video_opts.gl_debug_context());
     };
 
-    auto add_robustness = [&](auto attribs) {
+    const auto add_robustness = [&](auto attribs) {
         return attribs + (EGL.context_opengl_robust_access |
                           video_opts.gl_robust_access());
     };
