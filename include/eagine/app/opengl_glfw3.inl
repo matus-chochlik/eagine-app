@@ -7,6 +7,7 @@
 ///
 
 #include <eagine/app/context.hpp>
+#include <eagine/app_config.hpp>
 #include <eagine/diagnostic.hpp>
 #include <eagine/flat_set.hpp>
 #include <eagine/main_ctx.hpp>
@@ -52,11 +53,19 @@ class glfw3_opengl_window
   , public video_provider
   , public input_provider {
 public:
-    glfw3_opengl_window(main_ctx_parent parent);
+    glfw3_opengl_window(
+      application_config&,
+      const identifier instance_id,
+      main_ctx_parent parent);
+
+    glfw3_opengl_window(
+      application_config&,
+      const identifier instance_id,
+      const string_view instance,
+      main_ctx_parent parent);
 
     auto get_progress_callback() noexcept -> callable_ref<bool() noexcept>;
     auto initialize(
-      const identifier id,
       const launch_options&,
       const video_options&,
       const span<GLFWmonitor* const>) -> bool;
@@ -95,6 +104,8 @@ private:
     auto _handle_progress() noexcept -> bool;
 
     identifier _instance_id;
+    application_config_value<bool> _imgui_enabled;
+
     GLFWwindow* _window{nullptr};
     input_sink* _input_sink{nullptr};
     const video_context* _parent_context{nullptr};
@@ -130,10 +141,9 @@ private:
     float _aspect{1};
     float _wheel_change_x{0};
     float _wheel_change_y{0};
-    bool _backtick_was_pressed{false};
-    bool _mouse_enabled{false};
-    bool _imgui_enabled{true};
     bool _imgui_visible{false};
+    bool _mouse_enabled{false};
+    bool _backtick_was_pressed{false};
 };
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
@@ -145,8 +155,14 @@ void glfw3_opengl_window_scroll_callback(GLFWwindow* window, double x, double y)
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
-glfw3_opengl_window::glfw3_opengl_window(main_ctx_parent parent)
-  : main_ctx_object{EAGINE_ID(GLFW3Wndow), parent} {
+glfw3_opengl_window::glfw3_opengl_window(
+  application_config& c,
+  const identifier instance_id,
+  const string_view instance,
+  main_ctx_parent parent)
+  : main_ctx_object{EAGINE_ID(GLFW3Wndow), parent}
+  , _instance_id{instance_id}
+  , _imgui_enabled{c, "application.imgui.enable", instance, false} {
 
     // keyboard keys/buttons
     _key_states.emplace_back(EAGINE_ID(Spacebar), GLFW_KEY_SPACE);
@@ -271,6 +287,13 @@ glfw3_opengl_window::glfw3_opengl_window(main_ctx_parent parent)
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
+glfw3_opengl_window::glfw3_opengl_window(
+  application_config& cfg,
+  const identifier instance_id,
+  main_ctx_parent parent)
+  : glfw3_opengl_window{cfg, instance_id, instance_id.name(), parent} {}
+//------------------------------------------------------------------------------
+EAGINE_LIB_FUNC
 auto glfw3_opengl_window::_handle_progress() noexcept -> bool {
     if(_window) {
         glfwPollEvents();
@@ -287,11 +310,9 @@ auto glfw3_opengl_window::get_progress_callback() noexcept
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
 auto glfw3_opengl_window::initialize(
-  const identifier id,
   const launch_options& options,
   const video_options& video_opts,
   const span<GLFWmonitor* const> monitors) -> bool {
-    _instance_id = id;
 
     if(const auto ver_maj{video_opts.gl_version_major()}) {
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, extract(ver_maj));
@@ -302,14 +323,17 @@ auto glfw3_opengl_window::initialize(
     const auto compat = video_opts.gl_compatibility_context();
     if(compat) {
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
-        log_debug("using compatibility GL context").arg(EAGINE_ID(instance), id);
+        log_debug("using compatibility GL context")
+          .arg(EAGINE_ID(instance), _instance_id);
     } else if(!compat) {
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-        log_debug("using core GL context").arg(EAGINE_ID(instance), id);
+        log_debug("using core GL context")
+          .arg(EAGINE_ID(instance), _instance_id);
     }
     if(video_opts.gl_debug_context()) {
         glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
-        log_debug("using debugging GL context").arg(EAGINE_ID(instance), id);
+        log_debug("using debugging GL context")
+          .arg(EAGINE_ID(instance), _instance_id);
     }
 
     glfwWindowHint(GLFW_DOUBLEBUFFER, GL_TRUE);
@@ -378,10 +402,10 @@ auto glfw3_opengl_window::initialize(
             glfwMakeContextCurrent(nullptr);
 #endif
         }
-
         return true;
     } else {
-        log_error("Failed to create GLFW window").arg(EAGINE_ID(instance), id);
+        log_error("Failed to create GLFW window")
+          .arg(EAGINE_ID(instance), _instance_id);
     }
     return false;
 }
@@ -781,9 +805,10 @@ auto glfw3_opengl_provider::initialize(execution_context& exec_ctx) -> bool {
               (video_opts.video_kind() == video_context_kind::opengl);
 
             if(should_create_window) {
-                if(auto new_win{std::make_shared<glfw3_opengl_window>(*this)}) {
+                if(auto new_win{std::make_shared<glfw3_opengl_window>(
+                     this->main_context().config(), inst, this->as_parent())}) {
                     if(extract(new_win).initialize(
-                         inst, options, video_opts, monitors)) {
+                         options, video_opts, monitors)) {
                         if(_windows.empty()) {
                             set_progress_update_callback(
                               exec_ctx.main_context(),
