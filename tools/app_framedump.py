@@ -547,7 +547,7 @@ class Framedump(object):
         if not self.options.gif_output:
             cmd_line += [
                 "-vcodec", "mpeg4",
-                "-b", "8000k"
+                "-b", "16000k"
             ]
         cmd_line += [
             self.options.output_path
