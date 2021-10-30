@@ -13,6 +13,7 @@
 #include <eagine/main_ctx.hpp>
 #include <eagine/maybe_unused.hpp>
 #include <eagine/oglplus/config/basic.hpp>
+#include <eagine/progress/backend.hpp>
 
 //------------------------------------------------------------------------------
 #if OGLPLUS_GLFW3_FOUND
@@ -64,7 +65,6 @@ public:
       const string_view instance,
       main_ctx_parent parent);
 
-    auto get_progress_callback() noexcept -> callable_ref<bool() noexcept>;
     auto initialize(
       const launch_options&,
       const video_options&,
@@ -100,9 +100,9 @@ public:
         _wheel_change_y += y;
     }
 
-private:
-    auto _handle_progress() noexcept -> bool;
+    auto handle_progress() noexcept -> bool;
 
+private:
     identifier _instance_id;
     application_config_value<bool> _imgui_enabled;
 
@@ -294,18 +294,11 @@ glfw3_opengl_window::glfw3_opengl_window(
   : glfw3_opengl_window{cfg, instance_id, instance_id.name(), parent} {}
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
-auto glfw3_opengl_window::_handle_progress() noexcept -> bool {
+auto glfw3_opengl_window::handle_progress() noexcept -> bool {
     if(_window) {
-        glfwPollEvents();
         return glfwGetKey(_window, GLFW_KEY_ESCAPE) != GLFW_PRESS;
     }
     return false;
-}
-//------------------------------------------------------------------------------
-EAGINE_LIB_FUNC
-auto glfw3_opengl_window::get_progress_callback() noexcept
-  -> callable_ref<bool() noexcept> {
-    return EAGINE_THIS_MEM_FUNC_REF(_handle_progress);
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
@@ -716,12 +709,17 @@ void glfw3_opengl_window::clean_up() {
 }
 #endif // OGLPLUS_GLFW3_FOUND
 //------------------------------------------------------------------------------
-class glfw3_opengl_provider
+class glfw3_opengl_provider final
   : public main_ctx_object
-  , public hmi_provider {
+  , public hmi_provider
+  , public progress_observer {
 public:
-    glfw3_opengl_provider(main_ctx_parent parent)
-      : main_ctx_object{EAGINE_ID(GLFW3Prvdr), parent} {}
+    glfw3_opengl_provider(main_ctx_parent parent);
+    glfw3_opengl_provider(glfw3_opengl_provider&&) = delete;
+    glfw3_opengl_provider(const glfw3_opengl_provider&) = delete;
+    auto operator=(glfw3_opengl_provider&&) = delete;
+    auto operator=(const glfw3_opengl_provider&) = delete;
+    ~glfw3_opengl_provider() noexcept final;
 
     auto is_implemented() const noexcept -> bool final;
     auto implementation_name() const noexcept -> string_view final;
@@ -739,11 +737,63 @@ public:
     void audio_enumerate(
       callable_ref<void(std::shared_ptr<audio_provider>)>) final;
 
+    void activity_begun(
+      const activity_progress_id_t parent_id,
+      const activity_progress_id_t activity_id,
+      const string_view title,
+      const span_size_t total_steps) noexcept final;
+
+    void activity_finished(
+      const activity_progress_id_t parent_id,
+      const activity_progress_id_t activity_id,
+      const string_view title,
+      span_size_t total_steps) noexcept final;
+
+    void activity_updated(
+      const activity_progress_id_t parent_id,
+      const activity_progress_id_t activity_id,
+      const span_size_t current,
+      const span_size_t total) noexcept final;
+
 private:
 #if OGLPLUS_GLFW3_FOUND
     std::map<identifier, std::shared_ptr<glfw3_opengl_window>> _windows;
 #endif
+    auto _get_progress_callback() noexcept -> callable_ref<bool() noexcept>;
+    auto _handle_progress() noexcept -> bool;
 };
+//------------------------------------------------------------------------------
+EAGINE_LIB_FUNC
+glfw3_opengl_provider::glfw3_opengl_provider(main_ctx_parent parent)
+  : main_ctx_object{EAGINE_ID(GLFW3Prvdr), parent} {
+    set_progress_update_callback(
+      main_context(), _get_progress_callback(), std::chrono::milliseconds{100});
+}
+//------------------------------------------------------------------------------
+EAGINE_LIB_FUNC
+glfw3_opengl_provider::~glfw3_opengl_provider() noexcept {
+    reset_progress_update_callback(main_context());
+}
+//------------------------------------------------------------------------------
+EAGINE_LIB_FUNC
+auto glfw3_opengl_provider::_get_progress_callback() noexcept
+  -> callable_ref<bool() noexcept> {
+    return EAGINE_THIS_MEM_FUNC_REF(_handle_progress);
+}
+//------------------------------------------------------------------------------
+EAGINE_LIB_FUNC
+auto glfw3_opengl_provider::_handle_progress() noexcept -> bool {
+#if OGLPLUS_GLFW3_FOUND
+    glfwPollEvents();
+    for(auto& entry : _windows) {
+        EAGINE_ASSERT(std::get<1>(entry));
+        if(!extract(std::get<1>(entry)).handle_progress()) {
+            return false;
+        }
+    }
+#endif
+    return true;
+}
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
 auto glfw3_opengl_provider::is_implemented() const noexcept -> bool {
@@ -809,12 +859,6 @@ auto glfw3_opengl_provider::initialize(execution_context& exec_ctx) -> bool {
                      this->main_context().config(), inst, this->as_parent())}) {
                     if(extract(new_win).initialize(
                          options, video_opts, monitors)) {
-                        if(_windows.empty()) {
-                            set_progress_update_callback(
-                              exec_ctx.main_context(),
-                              extract(new_win).get_progress_callback(),
-                              std::chrono::milliseconds{100});
-                        }
                         _windows[inst] = std::move(new_win);
                     } else {
                         extract(new_win).clean_up();
@@ -877,6 +921,42 @@ void glfw3_opengl_provider::video_enumerate(
 EAGINE_LIB_FUNC
 void glfw3_opengl_provider::audio_enumerate(
   callable_ref<void(std::shared_ptr<audio_provider>)>) {}
+//------------------------------------------------------------------------------
+EAGINE_LIB_FUNC
+void glfw3_opengl_provider::activity_begun(
+  const activity_progress_id_t parent_id,
+  const activity_progress_id_t activity_id,
+  const string_view title,
+  const span_size_t total_steps) noexcept {
+    EAGINE_MAYBE_UNUSED(parent_id);
+    EAGINE_MAYBE_UNUSED(activity_id);
+    EAGINE_MAYBE_UNUSED(title);
+    EAGINE_MAYBE_UNUSED(total_steps);
+}
+//------------------------------------------------------------------------------
+EAGINE_LIB_FUNC
+void glfw3_opengl_provider::activity_finished(
+  const activity_progress_id_t parent_id,
+  const activity_progress_id_t activity_id,
+  const string_view title,
+  span_size_t total_steps) noexcept {
+    EAGINE_MAYBE_UNUSED(parent_id);
+    EAGINE_MAYBE_UNUSED(activity_id);
+    EAGINE_MAYBE_UNUSED(title);
+    EAGINE_MAYBE_UNUSED(total_steps);
+}
+//------------------------------------------------------------------------------
+EAGINE_LIB_FUNC
+void glfw3_opengl_provider::activity_updated(
+  const activity_progress_id_t parent_id,
+  const activity_progress_id_t activity_id,
+  const span_size_t current,
+  const span_size_t total) noexcept {
+    EAGINE_MAYBE_UNUSED(parent_id);
+    EAGINE_MAYBE_UNUSED(activity_id);
+    EAGINE_MAYBE_UNUSED(current);
+    EAGINE_MAYBE_UNUSED(total);
+}
 //------------------------------------------------------------------------------
 auto make_glfw3_opengl_provider(main_ctx_parent parent)
   -> std::shared_ptr<hmi_provider> {
