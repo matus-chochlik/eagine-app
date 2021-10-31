@@ -28,10 +28,10 @@ EAGINE_DIAG_POP()
 #endif
 
 #ifndef EAGINE_APP_USE_IMGUI
-#define EAGINE_APP_USE_IMGUI 0
+#define EAGINE_APP_USE_IMGUI 1
 #endif
 
-#ifdef EAGINE_APP_USE_IMGUI
+#if EAGINE_APP_USE_IMGUI
 #ifdef __clang__
 EAGINE_DIAG_PUSH()
 EAGINE_DIAG_OFF(zero-as-null-pointer-constant)
@@ -39,6 +39,7 @@ EAGINE_DIAG_OFF(zero-as-null-pointer-constant)
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
 #include <imgui.h>
+#include <vector>
 #ifdef __clang__
 EAGINE_DIAG_POP()
 #endif
@@ -49,6 +50,22 @@ EAGINE_DIAG_POP()
 namespace eagine::app {
 //------------------------------------------------------------------------------
 #if OGLPLUS_GLFW3_FOUND
+#if EAGINE_APP_USE_IMGUI
+struct glfw3_activity_progress_info {
+    activity_progress_id_t activity_id{0};
+    activity_progress_id_t parent_id{0};
+    span_size_t current_steps{0};
+    span_size_t total_steps{0};
+    std::string title;
+};
+#endif
+//------------------------------------------------------------------------------
+struct glfw3_update_context {
+#if EAGINE_APP_USE_IMGUI
+    span<const glfw3_activity_progress_info> activities;
+#endif
+};
+//------------------------------------------------------------------------------
 class glfw3_opengl_window
   : public main_ctx_object
   , public video_provider
@@ -69,7 +86,9 @@ public:
       const launch_options&,
       const video_options&,
       const span<GLFWmonitor* const>) -> bool;
-    void update(execution_context& exec_ctx);
+
+    void update(execution_context&, const glfw3_update_context&);
+
     void clean_up();
 
     auto video_kind() const noexcept -> video_context_kind final;
@@ -100,7 +119,7 @@ public:
         _wheel_change_y += y;
     }
 
-    auto handle_progress() noexcept -> bool;
+    auto handle_progress(const glfw3_update_context&) noexcept -> bool;
 
 private:
     identifier _instance_id;
@@ -162,7 +181,11 @@ glfw3_opengl_window::glfw3_opengl_window(
   main_ctx_parent parent)
   : main_ctx_object{EAGINE_ID(GLFW3Wndow), parent}
   , _instance_id{instance_id}
-  , _imgui_enabled{c, "application.imgui.enable", instance, false} {
+  , _imgui_enabled{
+      c,
+      "application.imgui.enable",
+      instance,
+      EAGINE_APP_USE_IMGUI != 0} {
 
     // keyboard keys/buttons
     _key_states.emplace_back(EAGINE_ID(Spacebar), GLFW_KEY_SPACE);
@@ -294,11 +317,41 @@ glfw3_opengl_window::glfw3_opengl_window(
   : glfw3_opengl_window{cfg, instance_id, instance_id.name(), parent} {}
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
-auto glfw3_opengl_window::handle_progress() noexcept -> bool {
+auto glfw3_opengl_window::handle_progress(
+  const glfw3_update_context& upd_ctx) noexcept -> bool {
+    bool result = false;
+    EAGINE_MAYBE_UNUSED(upd_ctx);
     if(_window) {
-        return glfwGetKey(_window, GLFW_KEY_ESCAPE) != GLFW_PRESS;
+        result = glfwGetKey(_window, GLFW_KEY_ESCAPE) != GLFW_PRESS;
+        if(_imgui_enabled) {
+#ifdef EAGINE_APP_USE_IMGUI
+            if(!upd_ctx.activities.empty()) {
+                ImGui_ImplOpenGL3_NewFrame();
+                ImGui_ImplGlfw_NewFrame();
+                ImGui::NewFrame();
+
+                ImGuiWindowFlags window_flags = 0;
+                window_flags |= ImGuiWindowFlags_NoResize;
+                ImGui::SetNextWindowSize(ImVec2(_window_width * 0.8F, 0.F));
+                ImGui::Begin("Activities", nullptr, window_flags);
+                for(const auto& info : upd_ctx.activities) {
+                    const auto progress =
+                      float(info.current_steps) / float(info.total_steps);
+                    ImGui::TextUnformatted(info.title.c_str());
+                    ImGui::ProgressBar(progress, ImVec2(-1.F, 0.F));
+                }
+                ImGui::End();
+                ImGui::EndFrame();
+                ImGui::Render();
+                if(const auto draw_data{ImGui::GetDrawData()}) {
+                    ImGui_ImplOpenGL3_RenderDrawData(draw_data);
+                }
+            }
+#endif
+            glfwSwapBuffers(_window);
+        }
     }
-    return false;
+    return result;
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
@@ -381,7 +434,7 @@ auto glfw3_opengl_window::initialize(
             _aspect = _norm_y_ndc / _norm_x_ndc;
         }
         if(_imgui_enabled) {
-#ifdef EAGINE_APP_USE_IMGUI
+#if EAGINE_APP_USE_IMGUI
             glfwMakeContextCurrent(_window);
             IMGUI_CHECKVERSION();
             ImGui::CreateContext();
@@ -541,11 +594,14 @@ void glfw3_opengl_window::mapping_commit(const identifier setup_id) {
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
-void glfw3_opengl_window::update(execution_context& exec_ctx) {
+void glfw3_opengl_window::update(
+  execution_context& exec_ctx,
+  const glfw3_update_context& upd_ctx) {
+    EAGINE_MAYBE_UNUSED(upd_ctx);
 
     if(_imgui_enabled && _imgui_visible) {
         EAGINE_ASSERT(_parent_context);
-#ifdef EAGINE_APP_USE_IMGUI
+#if EAGINE_APP_USE_IMGUI
         const auto& par_ctx = *_parent_context;
         const auto& state = exec_ctx.state();
         const auto frame_dur = state.frame_duration().value();
@@ -562,6 +618,7 @@ void glfw3_opengl_window::update(execution_context& exec_ctx) {
         ImGui::Text("Frame number: %ld", par_ctx.frame_number());
         ImGui::Text("Frame time: %.1f [ms]", frame_dur * 1000.F);
         ImGui::Text("Frames per second: %.0f", frames_per_second);
+        ImGui::Text("Activities in progress: %ld", upd_ctx.activities.size());
 
         if(ImGui::Button("Hide")) {
             _imgui_visible = false;
@@ -698,7 +755,7 @@ EAGINE_LIB_FUNC
 void glfw3_opengl_window::clean_up() {
     if(_window) {
         if(_imgui_enabled) {
-#ifdef EAGINE_APP_USE_IMGUI
+#if EAGINE_APP_USE_IMGUI
             ImGui_ImplOpenGL3_Shutdown();
             ImGui_ImplGlfw_Shutdown();
             ImGui::DestroyContext();
@@ -758,6 +815,9 @@ public:
 private:
 #if OGLPLUS_GLFW3_FOUND
     std::map<identifier, std::shared_ptr<glfw3_opengl_window>> _windows;
+#if EAGINE_APP_USE_IMGUI
+    std::vector<glfw3_activity_progress_info> _activities;
+#endif
 #endif
     auto _get_progress_callback() noexcept -> callable_ref<bool() noexcept>;
     auto _handle_progress() noexcept -> bool;
@@ -768,10 +828,12 @@ glfw3_opengl_provider::glfw3_opengl_provider(main_ctx_parent parent)
   : main_ctx_object{EAGINE_ID(GLFW3Prvdr), parent} {
     set_progress_update_callback(
       main_context(), _get_progress_callback(), std::chrono::milliseconds{100});
+    register_progress_observer(main_context(), *this);
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
 glfw3_opengl_provider::~glfw3_opengl_provider() noexcept {
+    unregister_progress_observer(main_context(), *this);
     reset_progress_update_callback(main_context());
 }
 //------------------------------------------------------------------------------
@@ -784,10 +846,14 @@ auto glfw3_opengl_provider::_get_progress_callback() noexcept
 EAGINE_LIB_FUNC
 auto glfw3_opengl_provider::_handle_progress() noexcept -> bool {
 #if OGLPLUS_GLFW3_FOUND
+    glfw3_update_context upd_ctx{};
+#ifdef EAGINE_APP_USE_IMGUI
+    upd_ctx.activities = cover(_activities);
+#endif
     glfwPollEvents();
     for(auto& entry : _windows) {
         EAGINE_ASSERT(std::get<1>(entry));
-        if(!extract(std::get<1>(entry)).handle_progress()) {
+        if(!extract(std::get<1>(entry)).handle_progress(upd_ctx)) {
             return false;
         }
     }
@@ -879,9 +945,13 @@ EAGINE_LIB_FUNC
 void glfw3_opengl_provider::update(execution_context& exec_ctx) {
     EAGINE_MAYBE_UNUSED(exec_ctx);
 #if OGLPLUS_GLFW3_FOUND
+    glfw3_update_context upd_ctx{};
+#ifdef EAGINE_APP_USE_IMGUI
+    upd_ctx.activities = cover(_activities);
+#endif
     glfwPollEvents();
     for(auto& entry : _windows) {
-        entry.second->update(exec_ctx);
+        entry.second->update(exec_ctx, upd_ctx);
     }
 #endif // OGLPLUS_GLFW3_FOUND
 }
@@ -932,6 +1002,16 @@ void glfw3_opengl_provider::activity_begun(
     EAGINE_MAYBE_UNUSED(activity_id);
     EAGINE_MAYBE_UNUSED(title);
     EAGINE_MAYBE_UNUSED(total_steps);
+#if OGLPLUS_GLFW3_FOUND
+#if EAGINE_APP_USE_IMGUI
+    _activities.emplace_back();
+    auto& info = _activities.back();
+    info.activity_id = activity_id;
+    info.parent_id = parent_id;
+    info.total_steps = total_steps;
+    info.title = to_string(title);
+#endif
+#endif
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
@@ -940,6 +1020,13 @@ void glfw3_opengl_provider::activity_finished(
   const activity_progress_id_t activity_id,
   const string_view title,
   span_size_t total_steps) noexcept {
+#if OGLPLUS_GLFW3_FOUND
+#if EAGINE_APP_USE_IMGUI
+    std::erase_if(_activities, [activity_id](const auto& activity) -> bool {
+        return activity.activity_id == activity_id;
+    });
+#endif
+#endif
     EAGINE_MAYBE_UNUSED(parent_id);
     EAGINE_MAYBE_UNUSED(activity_id);
     EAGINE_MAYBE_UNUSED(title);
@@ -950,12 +1037,25 @@ EAGINE_LIB_FUNC
 void glfw3_opengl_provider::activity_updated(
   const activity_progress_id_t parent_id,
   const activity_progress_id_t activity_id,
-  const span_size_t current,
-  const span_size_t total) noexcept {
+  const span_size_t current_steps,
+  const span_size_t total_steps) noexcept {
+#if OGLPLUS_GLFW3_FOUND
+#if EAGINE_APP_USE_IMGUI
+    const auto pos = std::find_if(
+      _activities.begin(),
+      _activities.end(),
+      [activity_id](const auto& activity) -> bool {
+          return activity.activity_id == activity_id;
+      });
+    if(EAGINE_LIKELY(pos != _activities.end())) {
+        pos->current_steps = current_steps;
+    }
+#endif
+#endif
     EAGINE_MAYBE_UNUSED(parent_id);
     EAGINE_MAYBE_UNUSED(activity_id);
-    EAGINE_MAYBE_UNUSED(current);
-    EAGINE_MAYBE_UNUSED(total);
+    EAGINE_MAYBE_UNUSED(current_steps);
+    EAGINE_MAYBE_UNUSED(total_steps);
 }
 //------------------------------------------------------------------------------
 auto make_glfw3_opengl_provider(main_ctx_parent parent)
