@@ -332,7 +332,8 @@ auto glfw3_opengl_window::handle_progress(
 
                 ImGuiWindowFlags window_flags = 0;
                 window_flags |= ImGuiWindowFlags_NoResize;
-                ImGui::SetNextWindowSize(ImVec2(_window_width * 0.8F, 0.F));
+                ImGui::SetNextWindowSize(
+                  ImVec2(float(_window_width) * 0.8F, 0.F));
                 ImGui::Begin("Activities", nullptr, window_flags);
                 for(const auto& info : upd_ctx.activities) {
                     const auto progress =
