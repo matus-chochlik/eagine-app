@@ -14,6 +14,12 @@
 #include <eagine/oglplus/glsl/string_ref.hpp>
 #include <eagine/oglplus/math/matrix_ctrs.hpp>
 #include <eagine/oglplus/shapes/generator.hpp>
+#include <eagine/shapes/adjacency.hpp>
+#include <eagine/shapes/icosahedron.hpp>
+#include <eagine/shapes/torus.hpp>
+#include <eagine/shapes/twisted_torus.hpp>
+#include <eagine/shapes/value_tree.hpp>
+#include <eagine/value_tree/json.hpp>
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
@@ -124,7 +130,33 @@ void shape_geometry::init(execution_context& ec, video_context& vc) {
     const auto& glapi = vc.gl_api();
     const auto& gl = glapi;
 
-    oglplus::shape_generator shape(glapi, _gen);
+    auto& ctx = ec.main_context();
+    const auto& args = ctx.args();
+    std::shared_ptr<shapes::generator> gen;
+
+    if(args.find("--icosahedron")) {
+        gen = shapes::unit_icosahedron(
+          shapes::vertex_attrib_kind::position |
+          shapes::vertex_attrib_kind::normal);
+    } else if(args.find("--twisted-torus")) {
+        gen = shapes::unit_twisted_torus(
+          shapes::vertex_attrib_kind::position |
+          shapes::vertex_attrib_kind::normal);
+    } else if(args.find("--torus")) {
+        gen = shapes::unit_torus(
+          shapes::vertex_attrib_kind::position |
+          shapes::vertex_attrib_kind::normal);
+    }
+
+    if(!gen) {
+        const auto json_src{
+          embed(EAGINE_ID(SphereJson), "twisted_sphere.json")};
+        gen = shapes::from_value_tree(
+          valtree::from_json_text(as_chars(json_src.unpack(ctx)), ctx), ctx);
+    }
+
+    oglplus::shape_generator shape(
+      glapi, shapes::add_triangle_adjacency(std::move(gen), ctx));
 
     auto draw_var = shape.draw_variant(0);
     _ops.resize(std_size(shape.operation_count(draw_var)));

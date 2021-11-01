@@ -14,13 +14,7 @@
 #include <eagine/embed.hpp>
 #include <eagine/oglplus/math/matrix.hpp>
 #include <eagine/oglplus/math/vector.hpp>
-#include <eagine/shapes/adjacency.hpp>
-#include <eagine/shapes/icosahedron.hpp>
-#include <eagine/shapes/torus.hpp>
-#include <eagine/shapes/twisted_torus.hpp>
-#include <eagine/shapes/value_tree.hpp>
 #include <eagine/timeout.hpp>
-#include <eagine/value_tree/json.hpp>
 
 #include "resources.hpp"
 
@@ -30,10 +24,7 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 class example_halo : public application {
 public:
-    example_halo(
-      execution_context&,
-      video_context&,
-      std::shared_ptr<shapes::generator>);
+    example_halo(execution_context&, video_context&);
 
     auto is_done() noexcept -> bool final {
         return _is_done.is_expired();
@@ -54,13 +45,9 @@ private:
     shape_geometry _shape;
 };
 //------------------------------------------------------------------------------
-example_halo::example_halo(
-  execution_context& ec,
-  video_context& vc,
-  std::shared_ptr<shapes::generator> gen)
+example_halo::example_halo(execution_context& ec, video_context& vc)
   : _ctx{ec}
-  , _video{vc}
-  , _shape{std::move(gen)} {
+  , _video{vc} {
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
 
@@ -135,33 +122,8 @@ void example_halo::clean_up() noexcept {
 //------------------------------------------------------------------------------
 class example_launchpad : public launchpad {
 public:
-    auto setup(main_ctx& ctx, launch_options& opts) -> bool final {
+    auto setup(main_ctx&, launch_options& opts) -> bool final {
         opts.no_audio().require_input().require_video();
-        std::shared_ptr<shapes::generator> gen;
-
-        if(ctx.args().find("--icosahedron")) {
-            gen = shapes::unit_icosahedron(
-              shapes::vertex_attrib_kind::position |
-              shapes::vertex_attrib_kind::normal);
-        } else if(ctx.args().find("--twisted-torus")) {
-            gen = shapes::unit_twisted_torus(
-              shapes::vertex_attrib_kind::position |
-              shapes::vertex_attrib_kind::normal);
-        } else if(ctx.args().find("--torus")) {
-            gen = shapes::unit_torus(
-              shapes::vertex_attrib_kind::position |
-              shapes::vertex_attrib_kind::normal);
-        }
-
-        if(!gen) {
-            const auto json_src{
-              embed(EAGINE_ID(SphereJson), "twisted_sphere.json")};
-            gen = shapes::from_value_tree(
-              valtree::from_json_text(as_chars(json_src.unpack(ctx)), ctx),
-              ctx);
-        }
-
-        _gen = shapes::add_triangle_adjacency(std::move(gen), ctx);
         return true;
     }
 
@@ -185,15 +147,12 @@ public:
             vc.begin();
             if(vc.init_gl_api()) {
                 if(check_requirements(vc)) {
-                    return {std::make_unique<example_halo>(ec, vc, _gen)};
+                    return {std::make_unique<example_halo>(ec, vc)};
                 }
             }
         }
         return {};
     }
-
-private:
-    std::shared_ptr<shapes::generator> _gen;
 };
 //------------------------------------------------------------------------------
 auto establish(main_ctx&) -> std::unique_ptr<launchpad> {
