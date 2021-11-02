@@ -77,5 +77,5 @@ Architecture: @PKG_ARCH@
 Installed-Size: $(du -k -s ${pkg_dir} | cut -f1)
 Depends: libegl-dev,libglew-dev,libglfw3-dev,libopenal-dev,libalut-dev,eagine-core-dev,eagine-shapes-dev,eagine-eglplus-dev,eagine-oglplus-dev,eagine-oalplus-dev,eagine-app-dev
 Maintainer: Matus Chochlik <chochlik@gmail.com>
-Description: Shape geometry generators and loaders.
+Description: Collection of C++ libraries wrapping SSL, OpenGL, OpenAL and EGL including utilities for writing distributed applications with graphics and/or audio rendering. 
 EOD
