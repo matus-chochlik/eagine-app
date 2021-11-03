@@ -75,7 +75,7 @@ Package: eagine-app-dev
 Version: @PKG_VERSION@
 Architecture: @PKG_ARCH@
 Installed-Size: $(du -k -s ${pkg_dir} | cut -f1)
-Depends: libegl-dev,libglew-dev,libglfw3-dev,libopenal-dev,libalut-dev,eagine-core-dev,eagine-shapes-dev,eagine-eglplus-dev,eagine-oglplus-dev,eagine-oalplus-dev,eagine-app-dev
+Depends: libegl-dev,libglew-dev,libglfw3-dev,libopenal-dev,libalut-dev,eagine-core-dev (>= @PKG_VERSION@),eagine-shapes-dev (>= @PKG_VERSION@),eagine-eglplus-dev (>= @PKG_VERSION@),eagine-oglplus-dev (>= @PKG_VERSION@),eagine-oalplus-dev (>= @PKG_VERSION@),eagine-app-dev (>= @PKG_VERSION@)
 Maintainer: Matus Chochlik <chochlik@gmail.com>
 Description: Collection of C++ libraries wrapping SSL, OpenGL, OpenAL and EGL including utilities for writing distributed applications with graphics and/or audio rendering. 
 EOD
