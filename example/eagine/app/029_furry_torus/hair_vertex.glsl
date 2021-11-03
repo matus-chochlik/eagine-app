@@ -14,7 +14,7 @@ uniform sampler2D Tex;
 
 void main() {
     gl_Position = CurrModel * vec4(Position, 1.0);
-    vertColor = texture(Tex, TexCoord * vec2(4.0, 2.0)).rgb;
+    vertColor = texture(Tex, TexCoord).rgb;
 	vertNormal = mat3(PrevModel) * Normal;
     vertOccl = Occlusion;
 	vertLength = Occlusion;

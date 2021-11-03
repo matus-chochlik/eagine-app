@@ -13,6 +13,7 @@
 #include <eagine/app/main.hpp>
 #include <eagine/oglplus/math/matrix.hpp>
 #include <eagine/oglplus/math/vector.hpp>
+#include <eagine/shapes/scaled_wrap_coords.hpp>
 #include <eagine/shapes/torus.hpp>
 #include <eagine/timeout.hpp>
 
@@ -53,14 +54,18 @@ example_fur::example_fur(execution_context& ec, video_context& vc)
     const auto& glapi = _video.gl_api();
     auto& [gl, GL] = glapi;
 
-    const std::shared_ptr<shapes::generator> gen{shapes::unit_torus(
-      shapes::vertex_attrib_kind::position |
-        shapes::vertex_attrib_kind::normal |
-        shapes::vertex_attrib_kind::wrap_coord |
-        shapes::vertex_attrib_kind::occlusion,
-      18,
-      36,
-      0.6F)};
+    const std::shared_ptr<shapes::generator> gen{shapes::scale_wrap_coords(
+      shapes::unit_torus(
+        shapes::vertex_attrib_kind::position |
+          shapes::vertex_attrib_kind::normal |
+          shapes::vertex_attrib_kind::wrap_coord |
+          shapes::vertex_attrib_kind::occlusion,
+        18,
+        36,
+        0.6F),
+      4.F,
+      2.F,
+      1.F)};
 
     shape_tex.init(ec, vc);
     surf_prog.init(ec, vc);
