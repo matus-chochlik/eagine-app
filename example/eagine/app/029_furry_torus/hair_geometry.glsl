@@ -27,7 +27,7 @@ void main() {
 
 	float occ[3];
 	occ[0] = mix(0.6, 0.2, vertOccl[0]);
-	occ[1] = mix(0.8, 0.5, vertOccl[0]);
+	occ[1] = mix(0.8, 0.4, vertOccl[0]);
 	occ[2] = 1.0;
 
 	geomColor = vertColor[0];

@@ -17,5 +17,5 @@ void main() {
     vertColor = texture(Tex, TexCoord).rgb;
 	vertNormal = mat3(PrevModel) * Normal;
     vertOccl = Occlusion;
-	vertLength = Occlusion;
+	vertLength = pow(Occlusion * 1.1, 2.0);
 }

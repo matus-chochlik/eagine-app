@@ -118,10 +118,10 @@ example_fur::example_fur(execution_context& ec, video_context& vc)
       .set_near(0.1F * sr)
       .set_far(50.F * sr)
       .set_orbit_min(1.2F * sr)
-      .set_orbit_max(2.5F * sr)
-      .set_fov(degrees_(55));
+      .set_orbit_max(2.2F * sr)
+      .set_fov(degrees_(50));
 
-    gl.clear_color(0.45F, 0.45F, 0.45F, 0.0F);
+    gl.clear_color(0.35F, 0.40F, 0.30F, 0.0F);
     gl.enable(GL.depth_test);
 
     camera.connect_inputs(ec).basic_input_mapping(ec);
