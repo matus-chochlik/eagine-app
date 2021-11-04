@@ -79,7 +79,7 @@ example_arrow::example_arrow(
     // camera
     const auto sr = shape.bounding_sphere().radius();
     camera.set_near(sr * 0.1F)
-      .set_far(sr * 4.0F)
+      .set_far(sr * 3.0F)
       .set_orbit_min(sr * 1.2F)
       .set_orbit_max(sr * 1.7F)
       .set_fov(degrees_(80.F));
@@ -144,7 +144,12 @@ public:
     auto setup(main_ctx& ctx, launch_options& opts) -> bool final {
         opts.no_audio().require_input().require_video();
 
-        if(ctx.args().find("--twisted-torus")) {
+        if(ctx.args().find("--monkey")) {
+            const auto json_text =
+              as_chars(embed(EAGINE_ID(MonkeyJson), "monkey.json").unpack(ctx));
+            _gen = shapes::from_value_tree(
+              valtree::from_json_text(json_text, ctx), ctx);
+        } else if(ctx.args().find("--twisted-torus")) {
             _gen = shapes::unit_twisted_torus(
               shapes::vertex_attrib_kind::position |
                 shapes::vertex_attrib_kind::normal,
