@@ -190,7 +190,7 @@ void shape_surface::init(
       vao,
       positions,
       position_loc(),
-      eagine::shapes::vertex_attrib_kind::position,
+      shapes::vertex_attrib_kind::position,
       ec.buffer());
 
     // texcoords
@@ -200,7 +200,7 @@ void shape_surface::init(
       vao,
       texcoords,
       texcoord_loc(),
-      eagine::shapes::vertex_attrib_kind::wrap_coord,
+      shapes::vertex_attrib_kind::wrap_coord,
       ec.buffer());
 
     // occlusions
@@ -210,7 +210,7 @@ void shape_surface::init(
       vao,
       occlusions,
       occlusion_loc(),
-      eagine::shapes::vertex_attrib_kind::occlusion,
+      shapes::vertex_attrib_kind::occlusion,
       ec.buffer());
 
     // indices
@@ -245,7 +245,9 @@ void shape_hair::init(
     const auto& gl = glapi;
 
     oglplus::shape_generator shape(
-      glapi, shapes::surface_points(gen, 192 * 1024, ec.as_parent()));
+      glapi,
+      shapes::surface_points(
+        gen, 256 * 1024, shapes::vertex_attrib_kind::occlusion, ec.as_parent()));
 
     auto draw_var = shape.draw_variant(0);
     ops.resize(std_size(shape.operation_count(draw_var)));
@@ -262,7 +264,7 @@ void shape_hair::init(
       vao,
       positions,
       position_loc(),
-      eagine::shapes::vertex_attrib_kind::position,
+      shapes::vertex_attrib_kind::position,
       ec.buffer());
 
     // normals
@@ -272,7 +274,7 @@ void shape_hair::init(
       vao,
       normals,
       normal_loc(),
-      eagine::shapes::vertex_attrib_kind::normal,
+      shapes::vertex_attrib_kind::normal,
       ec.buffer());
 
     // texcoords
@@ -282,7 +284,7 @@ void shape_hair::init(
       vao,
       texcoords,
       texcoord_loc(),
-      eagine::shapes::vertex_attrib_kind::wrap_coord,
+      shapes::vertex_attrib_kind::wrap_coord,
       ec.buffer());
 
     // occlusions
@@ -292,7 +294,7 @@ void shape_hair::init(
       vao,
       occlusions,
       occlusion_loc(),
-      eagine::shapes::vertex_attrib_kind::occlusion,
+      shapes::vertex_attrib_kind::occlusion,
       ec.buffer());
 }
 //------------------------------------------------------------------------------
@@ -338,10 +340,29 @@ void shape_textures::init(execution_context& ec, video_context& vc) {
       0,
       oglplus::texture_image_block(zebra_tex_src.unpack(ec)));
     gl.generate_mipmap(GL.texture_2d);
+
+    // monkey texture
+    const auto monkey_tex_src{embed(EAGINE_ID(MonkeyTex), "monkey")};
+
+    gl.gen_textures() >> monkey;
+    gl.active_texture(GL.texture0 + map_unit_monkey());
+    gl.bind_texture(GL.texture_2d, monkey);
+    gl.tex_parameter_i(GL.texture_2d, GL.texture_mag_filter, GL.linear);
+    gl.tex_parameter_i(
+      GL.texture_2d, GL.texture_min_filter, GL.linear_mipmap_linear);
+    gl.tex_parameter_i(GL.texture_2d, GL.texture_wrap_s, GL.clamp_to_edge);
+    gl.tex_parameter_i(GL.texture_2d, GL.texture_wrap_t, GL.clamp_to_edge);
+    glapi.spec_tex_image2d(
+      GL.texture_2d,
+      0,
+      0,
+      oglplus::texture_image_block(monkey_tex_src.unpack(ec)));
+    gl.generate_mipmap(GL.texture_2d);
 }
 //------------------------------------------------------------------------------
 void shape_textures::clean_up(video_context& vc) {
     const auto& gl = vc.gl_api();
+    gl.delete_textures(std::move(monkey));
     gl.delete_textures(std::move(zebra));
 }
 //------------------------------------------------------------------------------

@@ -11,5 +11,5 @@ uniform mat4 Model, Camera;
 void main() {
     gl_Position = Camera * Model * vec4(Position, 1.0);
     vertCoord = TexCoord;
-    vertOccl = Occlusion * 0.3;
+    vertOccl = Occlusion;
 }

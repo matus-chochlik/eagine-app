@@ -6,5 +6,5 @@ out vec3 fragColor;
 uniform sampler2D Tex;
 
 void main() {
-    fragColor = texture(Tex, vertCoord).rgb * vertOccl;
+    fragColor = texture(Tex, vertCoord).rgb * mix(0.6, 0.2, vertOccl);
 }
