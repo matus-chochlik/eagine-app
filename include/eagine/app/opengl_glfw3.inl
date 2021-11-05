@@ -722,17 +722,18 @@ void glfw3_opengl_window::update(
                             }
                         }
                     }
-
-                    for(auto& ks : _key_states) {
-                        if(ks.enabled) {
-                            const auto state = glfwGetKey(_window, ks.key_code);
-                            const auto press = state == GLFW_PRESS;
-                            if(ks.pressed.assign(press) || press) {
-                                sink.consume(
-                                  {{EAGINE_ID(Keyboard), ks.key_id},
-                                   input_value_kind::absolute_norm},
-                                  ks.pressed);
-                            }
+                }
+            }
+            if(!_imgui_visible) {
+                for(auto& ks : _key_states) {
+                    if(ks.enabled) {
+                        const auto state = glfwGetKey(_window, ks.key_code);
+                        const auto press = state == GLFW_PRESS;
+                        if(ks.pressed.assign(press) || press) {
+                            sink.consume(
+                              {{EAGINE_ID(Keyboard), ks.key_id},
+                               input_value_kind::absolute_norm},
+                              ks.pressed);
                         }
                     }
                 }
