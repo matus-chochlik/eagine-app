@@ -673,7 +673,7 @@ def main():
     try:
         arg_parser = make_argument_parser()
         try: args = sys.argv[sys.argv.index("--") + 1:]
-        except ValueError: args = sys.argv[1:]
+        except ValueError: args = []
         options = arg_parser.parse_args(args)
         if options.debug:
             print(options)

@@ -20,7 +20,7 @@ void main() {
     ivec2 texelCoord = ivec2(gl_FragCoord.xy);
     float backZ = texelFetch(DepthTexture, texelCoord).x / gl_FragCoord.w;
     float frontZ = gl_FragCoord.z / gl_FragCoord.w;
-    float translucence = pow(1.0 - sqrt(max(backZ - frontZ, 0.0)), 5.0);
+    float translucence = pow(1.0 - sqrt(max(backZ - frontZ, 0.0)), 6.0);
     float transmission =
       translucence * mix(2.0 * (viewLightDir.z * 0.5 + 0.5), 0.5, 0.5);
 

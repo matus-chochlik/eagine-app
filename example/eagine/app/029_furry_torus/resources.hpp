@@ -152,8 +152,13 @@ public:
         return oglplus::gl_types::int_type(0);
     }
 
+    static auto map_unit_monkey() noexcept {
+        return oglplus::gl_types::int_type(1);
+    }
+
 private:
     oglplus::owned_texture_name zebra;
+    oglplus::owned_texture_name monkey;
 };
 //------------------------------------------------------------------------------
 } // namespace eagine::app
