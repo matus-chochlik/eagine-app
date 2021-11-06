@@ -57,8 +57,9 @@ public:
     void video_end(execution_context&) final;
     void video_commit(execution_context&) final;
 
-    void input_enumerate(
-      const callable_ref<void(message_id, input_value_kinds)>) final;
+    void input_enumerate(const callable_ref<void(
+                           const message_id,
+                           const input_value_kinds) noexcept>) noexcept final;
 
     void input_connect(input_sink&) final;
     void input_disconnect() final;
@@ -402,16 +403,17 @@ void glfw3_opengl_window::video_commit(execution_context&) {
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
 void glfw3_opengl_window::input_enumerate(
-  const callable_ref<void(message_id, input_value_kinds)> callback) {
+  const callable_ref<void(const message_id, const input_value_kinds) noexcept>
+    callback) noexcept {
     // Keyboard inputs
-    for(auto& ks : _key_states) {
+    for(const auto& ks : _key_states) {
         callback(
           message_id{EAGINE_ID(Keyboard), ks.key_id},
           input_value_kind::absolute_norm);
     }
 
     // cursor device inputs
-    for(auto& ks : _mouse_states) {
+    for(const auto& ks : _mouse_states) {
         callback(
           message_id{EAGINE_ID(Cursor), ks.key_id},
           input_value_kind::absolute_norm);
