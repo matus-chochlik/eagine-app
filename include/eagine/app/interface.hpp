@@ -41,7 +41,8 @@ struct input_provider : interface<input_provider> {
     virtual auto instance_id() const noexcept -> identifier = 0;
 
     virtual void input_enumerate(
-      const callable_ref<void(message_id, input_value_kinds)>) = 0;
+      const callable_ref<
+        void(const message_id, const input_value_kinds) noexcept>) = 0;
 
     virtual void input_connect(input_sink&) = 0;
     virtual void input_disconnect() = 0;

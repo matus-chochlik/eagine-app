@@ -13,6 +13,7 @@ eagine_embed_target_resources(
 	tileset_thicket16
 	tileset_blocks16
 	tileset_nodes16
+	tileset_connections16
 	PACKED
 )
 eagine_add_exe_analysis(app-013_tiling)
