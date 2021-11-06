@@ -115,6 +115,8 @@ public:
     void mapping_enable(const message_id signal_id) final;
     void mapping_commit(const identifier setup_id) final;
 
+    auto add_ui_button(std::string label, const identifier) -> bool final;
+
     void on_scroll(const float x, const float y) {
         _wheel_change_x += x;
         _wheel_change_y += y;
@@ -138,15 +140,31 @@ private:
         input_variable<bool> pressed{false};
         bool enabled{false};
 
-        constexpr key_state(identifier id, int code) noexcept
+        constexpr key_state(const identifier id, const int code) noexcept
           : key_id{id}
           , key_code{code} {}
     };
+
+#if EAGINE_APP_USE_IMGUI
+    struct ui_button_state {
+        std::string button_label;
+        identifier button_id;
+        input_variable<bool> pressed{false};
+
+        ui_button_state(std::string label, const identifier id) noexcept
+          : button_label{std::move(label)}
+          , button_id{id} {}
+    };
+#endif
 
     flat_set<message_id> _enabled_signals;
 
     std::vector<key_state> _key_states;
     std::vector<key_state> _mouse_states;
+
+#if EAGINE_APP_USE_IMGUI
+    std::vector<ui_button_state> _ui_button_states;
+#endif
 
     input_variable<float> _mouse_x_pix{0};
     input_variable<float> _mouse_y_pix{0};
@@ -308,6 +326,25 @@ glfw3_opengl_window::glfw3_opengl_window(
     _mouse_states.emplace_back(EAGINE_ID(Button5), GLFW_MOUSE_BUTTON_6);
     _mouse_states.emplace_back(EAGINE_ID(Button6), GLFW_MOUSE_BUTTON_7);
     _mouse_states.emplace_back(EAGINE_ID(Button7), GLFW_MOUSE_BUTTON_8);
+}
+//------------------------------------------------------------------------------
+EAGINE_LIB_FUNC
+auto glfw3_opengl_window::add_ui_button(std::string label, const identifier id)
+  -> bool {
+#if EAGINE_APP_USE_IMGUI
+    if(
+      std::find_if(
+        _ui_button_states.begin(),
+        _ui_button_states.end(),
+        [id](const auto& state) { return state.button_id == id; }) ==
+      _ui_button_states.end()) {
+        _ui_button_states.emplace_back(std::move(label), id);
+        return true;
+    }
+#endif
+    EAGINE_MAYBE_UNUSED(label);
+    EAGINE_MAYBE_UNUSED(id);
+    return false;
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
@@ -526,7 +563,7 @@ EAGINE_LIB_FUNC
 void glfw3_opengl_window::input_enumerate(
   const callable_ref<void(const message_id, const input_value_kinds) noexcept>
     callback) noexcept {
-    // Keyboard inputs
+    // keyboard inputs
     for(const auto& ks : _key_states) {
         callback(
           message_id{EAGINE_ID(Keyboard), ks.key_id},
@@ -553,6 +590,15 @@ void glfw3_opengl_window::input_enumerate(
     // wheel inputs
     callback(EAGINE_MSG_ID(Wheel, ScrollX), input_value_kind::relative);
     callback(EAGINE_MSG_ID(Wheel, ScrollY), input_value_kind::relative);
+
+#if EAGINE_APP_USE_IMGUI
+    // ui input
+    for(const auto& bs : _ui_button_states) {
+        callback(
+          message_id{EAGINE_ID(GUI), bs.button_id},
+          input_value_kind::absolute_norm);
+    }
+#endif
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
