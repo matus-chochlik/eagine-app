@@ -51,7 +51,8 @@ struct input_provider : interface<input_provider> {
     virtual void mapping_enable(const message_id signal_id) = 0;
     virtual void mapping_commit(const identifier setup_id) = 0;
 
-    virtual auto add_ui_button(std::string label, const identifier) -> bool = 0;
+    virtual auto add_ui_button(const std::string& label, const message_id)
+      -> bool = 0;
 };
 //------------------------------------------------------------------------------
 class video_context;

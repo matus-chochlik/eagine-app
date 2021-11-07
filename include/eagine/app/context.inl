@@ -578,6 +578,16 @@ auto execution_context::connect_inputs() -> execution_context& {
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
+auto execution_context::add_ui_button(
+  const std::string& label,
+  const message_id id) -> execution_context& {
+    for(auto& input : _input_providers) {
+        extract(input).add_ui_button(label, id);
+    }
+    return *this;
+}
+//------------------------------------------------------------------------------
+EAGINE_LIB_FUNC
 auto execution_context::map_input(
   const message_id input_id,
   const identifier mapping_id,

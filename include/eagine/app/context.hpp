@@ -269,6 +269,10 @@ public:
     /// @brief Connect generic, reusable application logical input slots.
     auto connect_inputs() -> execution_context&;
 
+    /// @brief Add a UI button with the specified label and id
+    auto add_ui_button(const std::string& label, const message_id id)
+      -> execution_context&;
+
     /// @brief Map a specified logical input to a physical input signal.
     auto map_input(
       const message_id input_id,

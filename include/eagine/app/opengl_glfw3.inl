@@ -115,7 +115,8 @@ public:
     void mapping_enable(const message_id signal_id) final;
     void mapping_commit(const identifier setup_id) final;
 
-    auto add_ui_button(std::string label, const identifier) -> bool final;
+    auto add_ui_button(const std::string& label, const message_id)
+      -> bool final;
 
     void on_scroll(const float x, const float y) {
         _wheel_change_x += x;
@@ -148,10 +149,10 @@ private:
 #if EAGINE_APP_USE_IMGUI
     struct ui_button_state {
         std::string button_label;
-        identifier button_id;
+        message_id button_id;
         input_variable<bool> pressed{false};
 
-        ui_button_state(std::string label, const identifier id) noexcept
+        ui_button_state(std::string label, const message_id id) noexcept
           : button_label{std::move(label)}
           , button_id{id} {}
     };
@@ -329,8 +330,9 @@ glfw3_opengl_window::glfw3_opengl_window(
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
-auto glfw3_opengl_window::add_ui_button(std::string label, const identifier id)
-  -> bool {
+auto glfw3_opengl_window::add_ui_button(
+  const std::string& label,
+  const message_id id) -> bool {
 #if EAGINE_APP_USE_IMGUI
     if(
       std::find_if(
@@ -338,7 +340,7 @@ auto glfw3_opengl_window::add_ui_button(std::string label, const identifier id)
         _ui_button_states.end(),
         [id](const auto& state) { return state.button_id == id; }) ==
       _ui_button_states.end()) {
-        _ui_button_states.emplace_back(std::move(label), id);
+        _ui_button_states.emplace_back(label, id);
         return true;
     }
 #endif
@@ -594,9 +596,7 @@ void glfw3_opengl_window::input_enumerate(
 #if EAGINE_APP_USE_IMGUI
     // ui input
     for(const auto& bs : _ui_button_states) {
-        callback(
-          message_id{EAGINE_ID(GUI), bs.button_id},
-          input_value_kind::absolute_norm);
+        callback(bs.button_id, input_value_kind::absolute_norm);
     }
 #endif
 }
@@ -668,6 +668,19 @@ void glfw3_opengl_window::update(
         ImGui::Text("Frame time: %.1f [ms]", frame_dur * 1000.F);
         ImGui::Text("Frames per second: %.0f", frames_per_second);
         ImGui::Text("Activities in progress: %ld", upd_ctx.activities.size());
+
+#if EAGINE_APP_USE_IMGUI
+        if(_input_sink) {
+            auto& sink = extract(_input_sink);
+            for(auto& bs : _ui_button_states) {
+                if(bs.pressed.assign(ImGui::Button(bs.button_label.c_str()))) {
+                    sink.consume(
+                      {bs.button_id, input_value_kind::absolute_norm},
+                      bs.pressed);
+                }
+            }
+        }
+#endif
 
         if(ImGui::Button("Hide")) {
             _imgui_visible = false;

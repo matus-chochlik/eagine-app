@@ -23,6 +23,10 @@ class example_triangle : public application {
 public:
     example_triangle(execution_context&, video_context&);
 
+    void reset_timeout(const input&) noexcept {
+        _is_done.reset();
+    }
+
     auto is_done() noexcept -> bool final {
         return _is_done.is_expired();
     }
@@ -114,7 +118,16 @@ example_triangle::example_triangle(execution_context& ec, video_context& vc)
 
     gl.disable(GL.depth_test);
 
-    ec.connect_inputs().map_inputs().switch_input_mapping();
+    ec.connect_inputs()
+      .map_inputs()
+      .add_ui_button("Reset", EAGINE_MSG_ID(GUI, Reset))
+      .connect_input(
+        EAGINE_MSG_ID(Example, Reset), EAGINE_THIS_MEM_FUNC_REF(reset_timeout))
+      .map_input(
+        EAGINE_MSG_ID(Example, Reset),
+        EAGINE_MSG_ID(GUI, Reset),
+        input_setup().any_value_kind())
+      .switch_input_mapping();
 }
 //------------------------------------------------------------------------------
 void example_triangle::on_video_resize() noexcept {
