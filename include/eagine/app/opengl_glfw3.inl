@@ -669,13 +669,14 @@ void glfw3_opengl_window::update(
         // NOLINTNEXTLINE(hicpp-vararg)
         ImGui::Text("Dimensions: %dx%d", _window_width, _window_height);
         // NOLINTNEXTLINE(hicpp-vararg)
-        ImGui::Text("Frame number: %ld", par_ctx.frame_number());
+        ImGui::Text("Frame number: %ld", long(par_ctx.frame_number()));
         // NOLINTNEXTLINE(hicpp-vararg)
         ImGui::Text("Frame time: %.1f [ms]", frame_dur * 1000.F);
         // NOLINTNEXTLINE(hicpp-vararg)
         ImGui::Text("Frames per second: %.0f", frames_per_second);
         // NOLINTNEXTLINE(hicpp-vararg)
-        ImGui::Text("Activities in progress: %ld", upd_ctx.activities.size());
+        ImGui::Text(
+          "Activities in progress: %ld", long(upd_ctx.activities.size()));
 
 #if EAGINE_APP_USE_IMGUI
         if(_input_sink) {
