@@ -371,6 +371,7 @@ auto glfw3_opengl_window::handle_progress(
                 ImGui::NewFrame();
 
                 ImGuiWindowFlags window_flags = 0;
+                // NOLINTNEXTLINE(hicpp-signed-bitwise)
                 window_flags |= ImGuiWindowFlags_NoResize;
                 ImGui::SetNextWindowSize(
                   ImVec2(float(_window_width) * 0.8F, 0.F));
@@ -480,6 +481,7 @@ auto glfw3_opengl_window::initialize(
             IMGUI_CHECKVERSION();
             ImGui::CreateContext();
             ImGuiIO& io = ImGui::GetIO();
+            // NOLINTNEXTLINE(hicpp-signed-bitwise)
             io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
             ImGui::StyleColorsDark();
@@ -661,12 +663,18 @@ void glfw3_opengl_window::update(
         ImGui::NewFrame();
 
         ImGuiWindowFlags window_flags = 0;
+        // NOLINTNEXTLINE(hicpp-signed-bitwise)
         window_flags |= ImGuiWindowFlags_NoResize;
         ImGui::Begin("Application", nullptr, window_flags);
+        // NOLINTNEXTLINE(hicpp-vararg)
         ImGui::Text("Dimensions: %dx%d", _window_width, _window_height);
+        // NOLINTNEXTLINE(hicpp-vararg)
         ImGui::Text("Frame number: %ld", par_ctx.frame_number());
+        // NOLINTNEXTLINE(hicpp-vararg)
         ImGui::Text("Frame time: %.1f [ms]", frame_dur * 1000.F);
+        // NOLINTNEXTLINE(hicpp-vararg)
         ImGui::Text("Frames per second: %.0f", frames_per_second);
+        // NOLINTNEXTLINE(hicpp-vararg)
         ImGui::Text("Activities in progress: %ld", upd_ctx.activities.size());
 
 #if EAGINE_APP_USE_IMGUI
@@ -691,6 +699,7 @@ void glfw3_opengl_window::update(
         }
         if(ImGui::IsItemHovered()) {
             ImGui::BeginTooltip();
+            // NOLINTNEXTLINE(hicpp-vararg)
             ImGui::Text("Closes the application");
             ImGui::EndTooltip();
         }
