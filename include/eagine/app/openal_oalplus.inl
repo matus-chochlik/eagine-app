@@ -47,6 +47,7 @@ public:
     auto audio_kind() const noexcept -> audio_context_kind final;
     auto instance_id() const noexcept -> identifier final;
 
+    void parent_context_changed(const audio_context&) final;
     void audio_begin(execution_context&) final;
     void audio_end(execution_context&) final;
     void audio_commit(execution_context&) final;
@@ -121,6 +122,9 @@ EAGINE_LIB_FUNC
 auto oalplus_openal_player::instance_id() const noexcept -> identifier {
     return _instance_id;
 }
+//------------------------------------------------------------------------------
+EAGINE_LIB_FUNC
+void oalplus_openal_player::parent_context_changed(const audio_context&) {}
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
 void oalplus_openal_player::audio_begin(execution_context&) {

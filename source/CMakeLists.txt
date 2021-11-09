@@ -17,6 +17,7 @@ get_target_property(EAGINE_CORE_LIBS EAGine::Core INTERFACE_LINK_LIBRARIES)
 
 install(
 	TARGETS
+		eagine-app-imgui
 		eagine-app-private-headers
 		eagine-app-headers
 		eagine-app

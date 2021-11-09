@@ -35,9 +35,7 @@ class video_context {
 public:
     video_context(
       execution_context& parent,
-      std::shared_ptr<video_provider> provider) noexcept
-      : _parent{parent}
-      , _provider{std::move(provider)} {}
+      std::shared_ptr<video_provider> provider) noexcept;
 
     /// @brief Returns a reference to the parent application execution context.
     auto parent() const noexcept -> execution_context& {
@@ -123,11 +121,7 @@ class audio_context {
 public:
     audio_context(
       execution_context& parent,
-      std::shared_ptr<audio_provider> provider) noexcept
-      : _parent{parent}
-      , _provider{std::move(provider)} {
-        EAGINE_MAYBE_UNUSED(_parent);
-    }
+      std::shared_ptr<audio_provider> provider) noexcept;
 
     /// @brief Start working in this audio context (make it current).
     /// @see end
@@ -274,6 +268,10 @@ public:
 
     /// @brief Connect generic, reusable application logical input slots.
     auto connect_inputs() -> execution_context&;
+
+    /// @brief Add a UI button with the specified label and id
+    auto add_ui_button(const std::string& label, const message_id id)
+      -> execution_context&;
 
     /// @brief Map a specified logical input to a physical input signal.
     auto map_input(

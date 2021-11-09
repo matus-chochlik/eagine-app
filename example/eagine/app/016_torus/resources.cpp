@@ -13,6 +13,7 @@
 #include <eagine/embed.hpp>
 #include <eagine/oglplus/glsl/string_ref.hpp>
 #include <eagine/oglplus/shapes/generator.hpp>
+#include <eagine/shapes/scaled_wrap_coords.hpp>
 #include <eagine/shapes/torus.hpp>
 
 namespace eagine::app {
@@ -72,10 +73,14 @@ void torus_geometry::init(execution_context& ec, video_context& vc) {
 
     oglplus::shape_generator shape(
       glapi,
-      shapes::unit_torus(
-        shapes::vertex_attrib_kind::position |
-        shapes::vertex_attrib_kind::normal |
-        shapes::vertex_attrib_kind::wrap_coord));
+      shapes::scale_wrap_coords(
+        shapes::unit_torus(
+          shapes::vertex_attrib_kind::position |
+          shapes::vertex_attrib_kind::normal |
+          shapes::vertex_attrib_kind::wrap_coord),
+        36.F,
+        12.F,
+        1.F));
 
     auto draw_var = shape.draw_variant(0);
     ops.resize(std_size(shape.operation_count(draw_var)));

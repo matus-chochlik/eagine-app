@@ -65,6 +65,7 @@ public:
     auto surface_size() noexcept -> std::tuple<int, int> final;
     auto surface_aspect() noexcept -> float final;
 
+    void parent_context_changed(const video_context&) final;
     void video_begin(execution_context&) final;
     void video_end(execution_context&) final;
     void video_commit(execution_context&) final;
@@ -501,6 +502,9 @@ EAGINE_LIB_FUNC
 auto eglplus_opengl_surface::surface_aspect() noexcept -> float {
     return float(_width) / float(_height);
 }
+//------------------------------------------------------------------------------
+EAGINE_LIB_FUNC
+void eglplus_opengl_surface::parent_context_changed(const video_context&) {}
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
 void eglplus_opengl_surface::video_begin(execution_context&) {

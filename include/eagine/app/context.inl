@@ -245,6 +245,16 @@ static void video_context_debug_callback(
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
+video_context::video_context(
+  execution_context& parent,
+  std::shared_ptr<video_provider> provider) noexcept
+  : _parent{parent}
+  , _provider{std::move(provider)} {
+    EAGINE_ASSERT(_provider);
+    extract(_provider).parent_context_changed(*this);
+}
+//------------------------------------------------------------------------------
+EAGINE_LIB_FUNC
 auto video_context::init_gl_api() noexcept -> bool {
     try {
         _gl_api = std::make_shared<oglplus::gl_api>();
@@ -332,6 +342,16 @@ void video_context::clean_up() noexcept {
 }
 //------------------------------------------------------------------------------
 // audio_context
+//------------------------------------------------------------------------------
+EAGINE_LIB_FUNC
+audio_context::audio_context(
+  execution_context& parent,
+  std::shared_ptr<audio_provider> provider) noexcept
+  : _parent{parent}
+  , _provider{std::move(provider)} {
+    EAGINE_ASSERT(_provider);
+    extract(_provider).parent_context_changed(*this);
+}
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
 void audio_context::begin() {
@@ -554,6 +574,16 @@ auto execution_context::connect_input(
 EAGINE_LIB_FUNC
 auto execution_context::connect_inputs() -> execution_context& {
     connect_input(stop_running_input());
+    return *this;
+}
+//------------------------------------------------------------------------------
+EAGINE_LIB_FUNC
+auto execution_context::add_ui_button(
+  const std::string& label,
+  const message_id id) -> execution_context& {
+    for(auto& input : _input_providers) {
+        extract(input).add_ui_button(label, id);
+    }
     return *this;
 }
 //------------------------------------------------------------------------------

@@ -55,10 +55,22 @@ public:
         return seconds_(_frame_time.value());
     }
 
-    /// @brief Returns the duration of the previos frame.
+    /// @brief Returns the duration of the previous frame.
     /// @see frame_time
+    /// @see frames_per_second
     auto frame_duration() const noexcept -> seconds_t<float> {
         return seconds_(_frame_time.delta());
+    }
+
+    /// @brief Return the number of frames per second.
+    /// @see frame_time
+    /// @see frame_duration
+    auto frames_per_second() const noexcept -> float {
+        const auto dur{frame_duration().value()};
+        if(dur > 0.F) {
+            return 1.F / dur;
+        }
+        return 0.F;
     }
 
     /// @brief Indicates if the example or the user is active in some way.

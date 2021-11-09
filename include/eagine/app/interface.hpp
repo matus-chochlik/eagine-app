@@ -41,7 +41,8 @@ struct input_provider : interface<input_provider> {
     virtual auto instance_id() const noexcept -> identifier = 0;
 
     virtual void input_enumerate(
-      const callable_ref<void(message_id, input_value_kinds)>) = 0;
+      const callable_ref<
+        void(const message_id, const input_value_kinds) noexcept>) = 0;
 
     virtual void input_connect(input_sink&) = 0;
     virtual void input_disconnect() = 0;
@@ -49,8 +50,12 @@ struct input_provider : interface<input_provider> {
     virtual void mapping_begin(const identifier setup_id) = 0;
     virtual void mapping_enable(const message_id signal_id) = 0;
     virtual void mapping_commit(const identifier setup_id) = 0;
+
+    virtual auto add_ui_button(const std::string& label, const message_id)
+      -> bool = 0;
 };
 //------------------------------------------------------------------------------
+class video_context;
 struct video_provider : interface<video_provider> {
 
     virtual auto video_kind() const noexcept -> video_context_kind = 0;
@@ -61,16 +66,19 @@ struct video_provider : interface<video_provider> {
     virtual auto surface_size() noexcept -> std::tuple<int, int> = 0;
     virtual auto surface_aspect() noexcept -> float = 0;
 
+    virtual void parent_context_changed(const video_context&) = 0;
     virtual void video_begin(execution_context&) = 0;
     virtual void video_end(execution_context&) = 0;
     virtual void video_commit(execution_context&) = 0;
 };
 //------------------------------------------------------------------------------
+class audio_context;
 struct audio_provider : interface<audio_provider> {
 
     virtual auto audio_kind() const noexcept -> audio_context_kind = 0;
     virtual auto instance_id() const noexcept -> identifier = 0;
 
+    virtual void parent_context_changed(const audio_context&) = 0;
     virtual void audio_begin(execution_context&) = 0;
     virtual void audio_end(execution_context&) = 0;
     virtual void audio_commit(execution_context&) = 0;

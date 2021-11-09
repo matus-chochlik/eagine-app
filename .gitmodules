@@ -13,3 +13,6 @@
 [submodule "submodules/eagine-oalplus"]
 	path = submodules/eagine-oalplus
 	url = https://github.com/matus-chochlik/eagine-oalplus.git
+[submodule "submodules/imgui"]
+	path = submodules/imgui
+	url = https://github.com/ocornut/imgui.git

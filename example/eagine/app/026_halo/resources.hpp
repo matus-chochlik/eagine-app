@@ -57,9 +57,6 @@ private:
 //------------------------------------------------------------------------------
 class shape_geometry {
 public:
-    shape_geometry(std::shared_ptr<shapes::generator> gen)
-      : _gen{std::move(gen)} {}
-
     void init(execution_context&, video_context&);
     void clean_up(video_context&);
     void draw(execution_context&, video_context&);
@@ -73,7 +70,6 @@ public:
     }
 
 private:
-    std::shared_ptr<shapes::generator> _gen;
     oglplus::owned_vertex_array_name _vao;
 
     oglplus::owned_buffer_name _positions;

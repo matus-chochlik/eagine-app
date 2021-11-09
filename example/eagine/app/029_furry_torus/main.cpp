@@ -11,10 +11,14 @@
 
 #include <eagine/app/camera.hpp>
 #include <eagine/app/main.hpp>
+#include <eagine/embed.hpp>
 #include <eagine/oglplus/math/matrix.hpp>
 #include <eagine/oglplus/math/vector.hpp>
+#include <eagine/shapes/scaled_wrap_coords.hpp>
 #include <eagine/shapes/torus.hpp>
+#include <eagine/shapes/value_tree.hpp>
 #include <eagine/timeout.hpp>
+#include <eagine/value_tree/json.hpp>
 
 #include "resources.hpp"
 
@@ -53,14 +57,29 @@ example_fur::example_fur(execution_context& ec, video_context& vc)
     const auto& glapi = _video.gl_api();
     auto& [gl, GL] = glapi;
 
-    const std::shared_ptr<shapes::generator> gen{shapes::unit_torus(
-      shapes::vertex_attrib_kind::position |
-        shapes::vertex_attrib_kind::normal |
-        shapes::vertex_attrib_kind::wrap_coord |
-        shapes::vertex_attrib_kind::occlusion,
-      18,
-      36,
-      0.6F)};
+    const bool use_monkey_shape = ec.main_context().args().find("--monkey");
+
+    const auto gen = [&]() -> std::shared_ptr<shapes::generator> {
+        if(use_monkey_shape) {
+            const auto json_text =
+              as_chars(embed(EAGINE_ID(MonkeyJson), "monkey.json").unpack(ec));
+            return shapes::from_value_tree(
+              valtree::from_json_text(json_text, ec.as_parent()),
+              ec.as_parent());
+        }
+        return shapes::scale_wrap_coords(
+          shapes::unit_torus(
+            shapes::vertex_attrib_kind::position |
+              shapes::vertex_attrib_kind::normal |
+              shapes::vertex_attrib_kind::wrap_coord |
+              shapes::vertex_attrib_kind::occlusion,
+            18,
+            36,
+            0.6F),
+          4.F,
+          2.F,
+          1.F);
+    }();
 
     shape_tex.init(ec, vc);
     surf_prog.init(ec, vc);
@@ -72,26 +91,37 @@ example_fur::example_fur(execution_context& ec, video_context& vc)
     surf_prog.bind_position_location(vc, surf.position_loc());
     surf_prog.bind_texcoord_location(vc, surf.texcoord_loc());
     surf_prog.bind_occlusion_location(vc, surf.occlusion_loc());
-    surf_prog.set_texture(vc, shape_tex.map_unit_zebra());
+    if(use_monkey_shape) {
+        surf_prog.set_texture(vc, shape_tex.map_unit_monkey());
+    } else {
+        surf_prog.set_texture(vc, shape_tex.map_unit_zebra());
+    }
 
     hair_prog.use(vc);
     hair_prog.bind_position_location(vc, hair.position_loc());
     hair_prog.bind_normal_location(vc, hair.normal_loc());
     hair_prog.bind_texcoord_location(vc, hair.texcoord_loc());
     hair_prog.bind_occlusion_location(vc, hair.occlusion_loc());
-    hair_prog.set_texture(vc, shape_tex.map_unit_zebra());
+    if(use_monkey_shape) {
+        hair_prog.set_texture(vc, shape_tex.map_unit_monkey());
+    } else {
+        hair_prog.set_texture(vc, shape_tex.map_unit_zebra());
+    }
 
     prev_model = oglplus::matrix_rotation_y(radians_(0.F)) *
                  oglplus::matrix_rotation_x(radians_(0.F));
 
     // camera
-    camera.set_near(0.1F)
-      .set_far(50.F)
-      .set_orbit_min(0.7F)
-      .set_orbit_max(1.4F)
-      .set_fov(degrees_(60));
+    const auto bs = gen->bounding_sphere();
+    const auto sr = bs.radius();
+    camera.set_target(bs.center())
+      .set_near(0.1F * sr)
+      .set_far(50.F * sr)
+      .set_orbit_min(1.2F * sr)
+      .set_orbit_max(2.2F * sr)
+      .set_fov(degrees_(50));
 
-    gl.clear_color(0.45F, 0.45F, 0.45F, 0.0F);
+    gl.clear_color(0.35F, 0.40F, 0.30F, 0.0F);
     gl.enable(GL.depth_test);
 
     camera.connect_inputs(ec).basic_input_mapping(ec);
