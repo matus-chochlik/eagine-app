@@ -119,7 +119,7 @@ example_fur::example_fur(execution_context& ec, video_context& vc)
       .set_far(50.F * sr)
       .set_orbit_min(1.2F * sr)
       .set_orbit_max(2.2F * sr)
-      .set_fov(degrees_(50));
+      .set_fov(degrees_(45));
 
     gl.clear_color(0.35F, 0.40F, 0.30F, 0.0F);
     gl.enable(GL.depth_test);
@@ -143,7 +143,7 @@ void example_fur::update() noexcept {
     }
 
     const auto t = state.frame_time().value();
-    const auto model = oglplus::matrix_rotation_y(degrees_(t * 23.F)) *
+    const auto model = oglplus::matrix_rotation_y(degrees_(-t * 23.F)) *
                        oglplus::matrix_rotation_x(degrees_(t * 41.F));
 
     const auto& glapi = _video.gl_api();
