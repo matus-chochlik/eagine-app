@@ -7,13 +7,14 @@
 ///
 
 #include <eagine/app/context.hpp>
+#include <eagine/app_config.hpp>
 #include <eagine/diagnostic.hpp>
 #include <eagine/flat_set.hpp>
 #include <eagine/main_ctx.hpp>
 #include <eagine/maybe_unused.hpp>
 #include <eagine/oglplus/config/basic.hpp>
+#include <eagine/progress/backend.hpp>
 
-namespace eagine::app {
 //------------------------------------------------------------------------------
 #if OGLPLUS_GLFW3_FOUND
 
@@ -26,23 +27,68 @@ EAGINE_DIAG_OFF(documentation)
 EAGINE_DIAG_POP()
 #endif
 
+#ifndef EAGINE_APP_USE_IMGUI
+#define EAGINE_APP_USE_IMGUI 1
+#endif
+
+#if EAGINE_APP_USE_IMGUI
+#ifdef __clang__
+EAGINE_DIAG_PUSH()
+EAGINE_DIAG_OFF(zero-as-null-pointer-constant)
+#endif
+#include <backends/imgui_impl_glfw.h>
+#include <backends/imgui_impl_opengl3.h>
+#include <imgui.h>
+#include <vector>
+#ifdef __clang__
+EAGINE_DIAG_POP()
+#endif
+#endif // EAGINE_APP_USE_IMGUI
+
 #endif // OGLPLUS_GLFW3_FOUND
+
+namespace eagine::app {
 //------------------------------------------------------------------------------
 #if OGLPLUS_GLFW3_FOUND
+#if EAGINE_APP_USE_IMGUI
+struct glfw3_activity_progress_info {
+    activity_progress_id_t activity_id{0};
+    activity_progress_id_t parent_id{0};
+    span_size_t current_steps{0};
+    span_size_t total_steps{0};
+    std::string title;
+};
+#endif
+//------------------------------------------------------------------------------
+struct glfw3_update_context {
+#if EAGINE_APP_USE_IMGUI
+    span<const glfw3_activity_progress_info> activities;
+#endif
+};
+//------------------------------------------------------------------------------
 class glfw3_opengl_window
   : public main_ctx_object
   , public video_provider
   , public input_provider {
 public:
-    glfw3_opengl_window(main_ctx_parent parent);
+    glfw3_opengl_window(
+      application_config&,
+      const identifier instance_id,
+      main_ctx_parent parent);
 
-    auto get_progress_callback() noexcept -> callable_ref<bool() noexcept>;
+    glfw3_opengl_window(
+      application_config&,
+      const identifier instance_id,
+      const string_view instance,
+      main_ctx_parent parent);
+
     auto initialize(
-      const identifier id,
       const launch_options&,
       const video_options&,
       const span<GLFWmonitor* const>) -> bool;
-    void update(execution_context& exec_ctx);
+
+    void update(execution_context&, const glfw3_update_context&);
+
     void clean_up();
 
     auto video_kind() const noexcept -> video_context_kind final;
@@ -53,12 +99,14 @@ public:
     auto surface_size() noexcept -> std::tuple<int, int> final;
     auto surface_aspect() noexcept -> float final;
 
+    void parent_context_changed(const video_context&) final;
     void video_begin(execution_context&) final;
     void video_end(execution_context&) final;
     void video_commit(execution_context&) final;
 
-    void input_enumerate(
-      const callable_ref<void(message_id, input_value_kinds)>) final;
+    void input_enumerate(const callable_ref<void(
+                           const message_id,
+                           const input_value_kinds) noexcept>) noexcept final;
 
     void input_connect(input_sink&) final;
     void input_disconnect() final;
@@ -67,17 +115,23 @@ public:
     void mapping_enable(const message_id signal_id) final;
     void mapping_commit(const identifier setup_id) final;
 
+    auto add_ui_button(const std::string& label, const message_id)
+      -> bool final;
+
     void on_scroll(const float x, const float y) {
         _wheel_change_x += x;
         _wheel_change_y += y;
     }
 
-private:
-    auto _handle_progress() noexcept -> bool;
+    auto handle_progress(const glfw3_update_context&) noexcept -> bool;
 
+private:
     identifier _instance_id;
+    application_config_value<bool> _imgui_enabled;
+
     GLFWwindow* _window{nullptr};
     input_sink* _input_sink{nullptr};
+    const video_context* _parent_context{nullptr};
     int _window_width{1};
     int _window_height{1};
 
@@ -87,15 +141,31 @@ private:
         input_variable<bool> pressed{false};
         bool enabled{false};
 
-        constexpr key_state(identifier id, int code) noexcept
+        constexpr key_state(const identifier id, const int code) noexcept
           : key_id{id}
           , key_code{code} {}
     };
+
+#if EAGINE_APP_USE_IMGUI
+    struct ui_button_state {
+        std::string button_label;
+        message_id button_id;
+        input_variable<bool> pressed{false};
+
+        ui_button_state(std::string label, const message_id id) noexcept
+          : button_label{std::move(label)}
+          , button_id{id} {}
+    };
+#endif
 
     flat_set<message_id> _enabled_signals;
 
     std::vector<key_state> _key_states;
     std::vector<key_state> _mouse_states;
+
+#if EAGINE_APP_USE_IMGUI
+    std::vector<ui_button_state> _ui_button_states;
+#endif
 
     input_variable<float> _mouse_x_pix{0};
     input_variable<float> _mouse_y_pix{0};
@@ -110,7 +180,9 @@ private:
     float _aspect{1};
     float _wheel_change_x{0};
     float _wheel_change_y{0};
+    bool _imgui_visible{false};
     bool _mouse_enabled{false};
+    bool _backtick_was_pressed{false};
 };
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
@@ -122,8 +194,18 @@ void glfw3_opengl_window_scroll_callback(GLFWwindow* window, double x, double y)
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
-glfw3_opengl_window::glfw3_opengl_window(main_ctx_parent parent)
-  : main_ctx_object{EAGINE_ID(GLFW3Wndow), parent} {
+glfw3_opengl_window::glfw3_opengl_window(
+  application_config& c,
+  const identifier instance_id,
+  const string_view instance,
+  main_ctx_parent parent)
+  : main_ctx_object{EAGINE_ID(GLFW3Wndow), parent}
+  , _instance_id{instance_id}
+  , _imgui_enabled{
+      c,
+      "application.imgui.enable",
+      instance,
+      EAGINE_APP_USE_IMGUI != 0} {
 
     // keyboard keys/buttons
     _key_states.emplace_back(EAGINE_ID(Spacebar), GLFW_KEY_SPACE);
@@ -149,7 +231,6 @@ glfw3_opengl_window::glfw3_opengl_window(main_ctx_parent parent)
     _key_states.emplace_back(EAGINE_ID(Slash), GLFW_KEY_SLASH);
     _key_states.emplace_back(EAGINE_ID(LtBracket), GLFW_KEY_LEFT_BRACKET);
     _key_states.emplace_back(EAGINE_ID(RtBracket), GLFW_KEY_RIGHT_BRACKET);
-    _key_states.emplace_back(EAGINE_ID(Backtick), GLFW_KEY_GRAVE_ACCENT);
     _key_states.emplace_back(EAGINE_ID(CapsLock), GLFW_KEY_CAPS_LOCK);
     _key_states.emplace_back(EAGINE_ID(NumLock), GLFW_KEY_NUM_LOCK);
     _key_states.emplace_back(EAGINE_ID(ScrollLock), GLFW_KEY_SCROLL_LOCK);
@@ -249,26 +330,77 @@ glfw3_opengl_window::glfw3_opengl_window(main_ctx_parent parent)
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
-auto glfw3_opengl_window::_handle_progress() noexcept -> bool {
-    if(_window) {
-        glfwPollEvents();
-        return glfwGetKey(_window, GLFW_KEY_ESCAPE) != GLFW_PRESS;
+auto glfw3_opengl_window::add_ui_button(
+  const std::string& label,
+  const message_id id) -> bool {
+#if EAGINE_APP_USE_IMGUI
+    if(
+      std::find_if(
+        _ui_button_states.begin(),
+        _ui_button_states.end(),
+        [id](const auto& state) { return state.button_id == id; }) ==
+      _ui_button_states.end()) {
+        _ui_button_states.emplace_back(label, id);
+        return true;
     }
+#endif
+    EAGINE_MAYBE_UNUSED(label);
+    EAGINE_MAYBE_UNUSED(id);
     return false;
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
-auto glfw3_opengl_window::get_progress_callback() noexcept
-  -> callable_ref<bool() noexcept> {
-    return EAGINE_THIS_MEM_FUNC_REF(_handle_progress);
+glfw3_opengl_window::glfw3_opengl_window(
+  application_config& cfg,
+  const identifier instance_id,
+  main_ctx_parent parent)
+  : glfw3_opengl_window{cfg, instance_id, instance_id.name(), parent} {}
+//------------------------------------------------------------------------------
+EAGINE_LIB_FUNC
+auto glfw3_opengl_window::handle_progress(
+  const glfw3_update_context& upd_ctx) noexcept -> bool {
+    bool result = false;
+    EAGINE_MAYBE_UNUSED(upd_ctx);
+    if(_window) {
+        result = glfwGetKey(_window, GLFW_KEY_ESCAPE) != GLFW_PRESS;
+        if(_imgui_enabled) {
+#ifdef EAGINE_APP_USE_IMGUI
+            if(!upd_ctx.activities.empty()) {
+                ImGui_ImplOpenGL3_NewFrame();
+                ImGui_ImplGlfw_NewFrame();
+                ImGui::NewFrame();
+
+                ImGuiWindowFlags window_flags = 0;
+                // NOLINTNEXTLINE(hicpp-signed-bitwise)
+                window_flags |= ImGuiWindowFlags_NoResize;
+                ImGui::SetNextWindowSize(
+                  ImVec2(float(_window_width) * 0.8F, 0.F));
+                ImGui::Begin("Activities", nullptr, window_flags);
+                for(const auto& info : upd_ctx.activities) {
+                    const auto progress =
+                      float(info.current_steps) / float(info.total_steps);
+                    ImGui::TextUnformatted(info.title.c_str());
+                    ImGui::ProgressBar(progress, ImVec2(-1.F, 0.F));
+                }
+                ImGui::End();
+                ImGui::EndFrame();
+                ImGui::Render();
+                if(const auto draw_data{ImGui::GetDrawData()}) {
+                    ImGui_ImplOpenGL3_RenderDrawData(draw_data);
+                }
+            }
+#endif
+            glfwSwapBuffers(_window);
+        }
+    }
+    return result;
 }
 //------------------------------------------------------------------------------
-EAGINE_LIB_FUNC auto glfw3_opengl_window::initialize(
-  const identifier id,
+EAGINE_LIB_FUNC
+auto glfw3_opengl_window::initialize(
   const launch_options& options,
   const video_options& video_opts,
   const span<GLFWmonitor* const> monitors) -> bool {
-    _instance_id = id;
 
     if(const auto ver_maj{video_opts.gl_version_major()}) {
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, extract(ver_maj));
@@ -279,14 +411,17 @@ EAGINE_LIB_FUNC auto glfw3_opengl_window::initialize(
     const auto compat = video_opts.gl_compatibility_context();
     if(compat) {
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
-        log_debug("using compatibility GL context").arg(EAGINE_ID(instance), id);
+        log_debug("using compatibility GL context")
+          .arg(EAGINE_ID(instance), _instance_id);
     } else if(!compat) {
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-        log_debug("using core GL context").arg(EAGINE_ID(instance), id);
+        log_debug("using core GL context")
+          .arg(EAGINE_ID(instance), _instance_id);
     }
     if(video_opts.gl_debug_context()) {
         glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GL_TRUE);
-        log_debug("using debugging GL context").arg(EAGINE_ID(instance), id);
+        log_debug("using debugging GL context")
+          .arg(EAGINE_ID(instance), _instance_id);
     }
 
     glfwWindowHint(GLFW_DOUBLEBUFFER, GL_TRUE);
@@ -340,9 +475,26 @@ EAGINE_LIB_FUNC auto glfw3_opengl_window::initialize(
             _norm_y_ndc = 1.F / float(_window_height);
             _aspect = _norm_y_ndc / _norm_x_ndc;
         }
+        if(_imgui_enabled) {
+#if EAGINE_APP_USE_IMGUI
+            glfwMakeContextCurrent(_window);
+            IMGUI_CHECKVERSION();
+            ImGui::CreateContext();
+            ImGuiIO& io = ImGui::GetIO();
+            // NOLINTNEXTLINE(hicpp-signed-bitwise)
+            io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+
+            ImGui::StyleColorsDark();
+
+            ImGui_ImplGlfw_InitForOpenGL(_window, true);
+            ImGui_ImplOpenGL3_Init("#version 150");
+            glfwMakeContextCurrent(nullptr);
+#endif
+        }
         return true;
     } else {
-        log_error("Failed to create GLFW window").arg(EAGINE_ID(instance), id);
+        log_error("Failed to create GLFW window")
+          .arg(EAGINE_ID(instance), _instance_id);
     }
     return false;
 }
@@ -380,10 +532,16 @@ auto glfw3_opengl_window::surface_size() noexcept -> std::tuple<int, int> {
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
 auto glfw3_opengl_window::surface_aspect() noexcept -> float {
-    return float(_aspect);
+    return _aspect;
 }
 //------------------------------------------------------------------------------
-EAGINE_LIB_FUNC void glfw3_opengl_window::video_begin(execution_context&) {
+EAGINE_LIB_FUNC
+void glfw3_opengl_window::parent_context_changed(const video_context& vctx) {
+    _parent_context = &vctx;
+}
+//------------------------------------------------------------------------------
+EAGINE_LIB_FUNC
+void glfw3_opengl_window::video_begin(execution_context&) {
 
     EAGINE_ASSERT(_window);
     glfwMakeContextCurrent(_window);
@@ -397,21 +555,27 @@ void glfw3_opengl_window::video_end(execution_context&) {
 EAGINE_LIB_FUNC
 void glfw3_opengl_window::video_commit(execution_context&) {
     EAGINE_ASSERT(_window);
+    if(_imgui_enabled && _imgui_visible) {
+        if(const auto draw_data{ImGui::GetDrawData()}) {
+            ImGui_ImplOpenGL3_RenderDrawData(draw_data);
+        }
+    }
     glfwSwapBuffers(_window);
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
 void glfw3_opengl_window::input_enumerate(
-  const callable_ref<void(message_id, input_value_kinds)> callback) {
-    // Keyboard inputs
-    for(auto& ks : _key_states) {
+  const callable_ref<void(const message_id, const input_value_kinds) noexcept>
+    callback) noexcept {
+    // keyboard inputs
+    for(const auto& ks : _key_states) {
         callback(
           message_id{EAGINE_ID(Keyboard), ks.key_id},
           input_value_kind::absolute_norm);
     }
 
     // cursor device inputs
-    for(auto& ks : _mouse_states) {
+    for(const auto& ks : _mouse_states) {
         callback(
           message_id{EAGINE_ID(Cursor), ks.key_id},
           input_value_kind::absolute_norm);
@@ -430,6 +594,13 @@ void glfw3_opengl_window::input_enumerate(
     // wheel inputs
     callback(EAGINE_MSG_ID(Wheel, ScrollX), input_value_kind::relative);
     callback(EAGINE_MSG_ID(Wheel, ScrollY), input_value_kind::relative);
+
+#if EAGINE_APP_USE_IMGUI
+    // ui input
+    for(const auto& bs : _ui_button_states) {
+        callback(bs.button_id, input_value_kind::absolute_norm);
+    }
+#endif
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
@@ -474,7 +645,71 @@ void glfw3_opengl_window::mapping_commit(const identifier setup_id) {
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
-void glfw3_opengl_window::update(execution_context& exec_ctx) {
+void glfw3_opengl_window::update(
+  execution_context& exec_ctx,
+  const glfw3_update_context& upd_ctx) {
+    EAGINE_MAYBE_UNUSED(upd_ctx);
+
+    if(_imgui_enabled && _imgui_visible) {
+        EAGINE_ASSERT(_parent_context);
+#if EAGINE_APP_USE_IMGUI
+        const auto& par_ctx = *_parent_context;
+        const auto& state = exec_ctx.state();
+        const auto frame_dur = state.frame_duration().value();
+        const auto frames_per_second = state.frames_per_second();
+
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        ImGuiWindowFlags window_flags = 0;
+        // NOLINTNEXTLINE(hicpp-signed-bitwise)
+        window_flags |= ImGuiWindowFlags_NoResize;
+        ImGui::Begin("Application", nullptr, window_flags);
+        // NOLINTNEXTLINE(hicpp-vararg)
+        ImGui::Text("Dimensions: %dx%d", _window_width, _window_height);
+        // NOLINTNEXTLINE(hicpp-vararg)
+        ImGui::Text("Frame number: %ld", long(par_ctx.frame_number()));
+        // NOLINTNEXTLINE(hicpp-vararg)
+        ImGui::Text("Frame time: %.1f [ms]", frame_dur * 1000.F);
+        // NOLINTNEXTLINE(hicpp-vararg)
+        ImGui::Text("Frames per second: %.0f", frames_per_second);
+        // NOLINTNEXTLINE(hicpp-vararg)
+        ImGui::Text(
+          "Activities in progress: %ld", long(upd_ctx.activities.size()));
+
+#if EAGINE_APP_USE_IMGUI
+        if(_input_sink) {
+            auto& sink = extract(_input_sink);
+            for(auto& bs : _ui_button_states) {
+                if(bs.pressed.assign(ImGui::Button(bs.button_label.c_str()))) {
+                    sink.consume(
+                      {bs.button_id, input_value_kind::absolute_norm},
+                      bs.pressed);
+                }
+            }
+        }
+#endif
+
+        if(ImGui::Button("Hide")) {
+            _imgui_visible = false;
+        }
+        ImGui::SameLine();
+        if(ImGui::Button("Quit")) {
+            glfwSetWindowShouldClose(_window, GLFW_TRUE);
+        }
+        if(ImGui::IsItemHovered()) {
+            ImGui::BeginTooltip();
+            // NOLINTNEXTLINE(hicpp-vararg)
+            ImGui::Text("Closes the application");
+            ImGui::EndTooltip();
+        }
+        ImGui::End();
+
+        ImGui::EndFrame();
+        ImGui::Render();
+#endif
+    }
 
     if(glfwWindowShouldClose(_window)) {
         exec_ctx.stop_running();
@@ -544,31 +779,45 @@ void glfw3_opengl_window::update(execution_context& exec_ctx) {
                         }
                     }
                 }
-            }
 
-            for(auto& ks : _mouse_states) {
-                if(ks.enabled) {
-                    if(ks.pressed.assign(
-                         glfwGetMouseButton(_window, ks.key_code) ==
-                         GLFW_PRESS)) {
-                        sink.consume(
-                          {{EAGINE_ID(Cursor), ks.key_id},
-                           input_value_kind::absolute_norm},
-                          ks.pressed);
+                if(!_imgui_visible) {
+                    for(auto& ks : _mouse_states) {
+                        if(ks.enabled) {
+                            if(ks.pressed.assign(
+                                 glfwGetMouseButton(_window, ks.key_code) ==
+                                 GLFW_PRESS)) {
+                                sink.consume(
+                                  {{EAGINE_ID(Cursor), ks.key_id},
+                                   input_value_kind::absolute_norm},
+                                  ks.pressed);
+                            }
+                        }
+                    }
+                }
+            }
+            if(!_imgui_visible) {
+                for(auto& ks : _key_states) {
+                    if(ks.enabled) {
+                        const auto state = glfwGetKey(_window, ks.key_code);
+                        const auto press = state == GLFW_PRESS;
+                        if(ks.pressed.assign(press) || press) {
+                            sink.consume(
+                              {{EAGINE_ID(Keyboard), ks.key_id},
+                               input_value_kind::absolute_norm},
+                              ks.pressed);
+                        }
                     }
                 }
             }
 
-            for(auto& ks : _key_states) {
-                if(ks.enabled) {
-                    const auto state = glfwGetKey(_window, ks.key_code);
-                    const auto press = state == GLFW_PRESS;
-                    if(ks.pressed.assign(press) || press) {
-                        sink.consume(
-                          {{EAGINE_ID(Keyboard), ks.key_id},
-                           input_value_kind::absolute_norm},
-                          ks.pressed);
+            if(_imgui_enabled) {
+                const auto backtick_is_pressed =
+                  glfwGetKey(_window, GLFW_KEY_GRAVE_ACCENT) == GLFW_PRESS;
+                if(_backtick_was_pressed != backtick_is_pressed) {
+                    if(_backtick_was_pressed) {
+                        _imgui_visible = !_imgui_visible;
                     }
+                    _backtick_was_pressed = backtick_is_pressed;
                 }
             }
         }
@@ -578,17 +827,29 @@ void glfw3_opengl_window::update(execution_context& exec_ctx) {
 EAGINE_LIB_FUNC
 void glfw3_opengl_window::clean_up() {
     if(_window) {
+        if(_imgui_enabled) {
+#if EAGINE_APP_USE_IMGUI
+            ImGui_ImplOpenGL3_Shutdown();
+            ImGui_ImplGlfw_Shutdown();
+            ImGui::DestroyContext();
+#endif
+        }
         glfwDestroyWindow(_window);
     }
 }
 #endif // OGLPLUS_GLFW3_FOUND
 //------------------------------------------------------------------------------
-class glfw3_opengl_provider
+class glfw3_opengl_provider final
   : public main_ctx_object
-  , public hmi_provider {
+  , public hmi_provider
+  , public progress_observer {
 public:
-    glfw3_opengl_provider(main_ctx_parent parent)
-      : main_ctx_object{EAGINE_ID(GLFW3Prvdr), parent} {}
+    glfw3_opengl_provider(main_ctx_parent parent);
+    glfw3_opengl_provider(glfw3_opengl_provider&&) = delete;
+    glfw3_opengl_provider(const glfw3_opengl_provider&) = delete;
+    auto operator=(glfw3_opengl_provider&&) = delete;
+    auto operator=(const glfw3_opengl_provider&) = delete;
+    ~glfw3_opengl_provider() noexcept final;
 
     auto is_implemented() const noexcept -> bool final;
     auto implementation_name() const noexcept -> string_view final;
@@ -606,11 +867,72 @@ public:
     void audio_enumerate(
       callable_ref<void(std::shared_ptr<audio_provider>)>) final;
 
+    void activity_begun(
+      const activity_progress_id_t parent_id,
+      const activity_progress_id_t activity_id,
+      const string_view title,
+      const span_size_t total_steps) noexcept final;
+
+    void activity_finished(
+      const activity_progress_id_t parent_id,
+      const activity_progress_id_t activity_id,
+      const string_view title,
+      span_size_t total_steps) noexcept final;
+
+    void activity_updated(
+      const activity_progress_id_t parent_id,
+      const activity_progress_id_t activity_id,
+      const span_size_t current,
+      const span_size_t total) noexcept final;
+
 private:
 #if OGLPLUS_GLFW3_FOUND
     std::map<identifier, std::shared_ptr<glfw3_opengl_window>> _windows;
+#if EAGINE_APP_USE_IMGUI
+    std::vector<glfw3_activity_progress_info> _activities;
 #endif
+#endif
+    auto _get_progress_callback() noexcept -> callable_ref<bool() noexcept>;
+    auto _handle_progress() noexcept -> bool;
 };
+//------------------------------------------------------------------------------
+EAGINE_LIB_FUNC
+glfw3_opengl_provider::glfw3_opengl_provider(main_ctx_parent parent)
+  : main_ctx_object{EAGINE_ID(GLFW3Prvdr), parent} {
+    set_progress_update_callback(
+      main_context(), _get_progress_callback(), std::chrono::milliseconds{100});
+    register_progress_observer(main_context(), *this);
+}
+//------------------------------------------------------------------------------
+EAGINE_LIB_FUNC
+glfw3_opengl_provider::~glfw3_opengl_provider() noexcept {
+    unregister_progress_observer(main_context(), *this);
+    reset_progress_update_callback(main_context());
+}
+//------------------------------------------------------------------------------
+EAGINE_LIB_FUNC
+auto glfw3_opengl_provider::_get_progress_callback() noexcept
+  -> callable_ref<bool() noexcept> {
+    return EAGINE_THIS_MEM_FUNC_REF(_handle_progress);
+}
+//------------------------------------------------------------------------------
+EAGINE_LIB_FUNC
+auto glfw3_opengl_provider::_handle_progress() noexcept -> bool {
+#if OGLPLUS_GLFW3_FOUND
+    glfw3_update_context upd_ctx{};
+#ifdef EAGINE_APP_USE_IMGUI
+    upd_ctx.activities = cover(_activities);
+#endif
+    glfwPollEvents();
+    for(auto& entry : _windows) {
+        EAGINE_ASSERT(std::get<1>(entry));
+        if(!extract(std::get<1>(entry)).handle_progress(upd_ctx)) {
+            return false;
+        }
+    }
+#endif
+    return true;
+}
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
 auto glfw3_opengl_provider::is_implemented() const noexcept -> bool {
@@ -672,15 +994,10 @@ auto glfw3_opengl_provider::initialize(execution_context& exec_ctx) -> bool {
               (video_opts.video_kind() == video_context_kind::opengl);
 
             if(should_create_window) {
-                if(auto new_win{std::make_shared<glfw3_opengl_window>(*this)}) {
+                if(auto new_win{std::make_shared<glfw3_opengl_window>(
+                     this->main_context().config(), inst, this->as_parent())}) {
                     if(extract(new_win).initialize(
-                         inst, options, video_opts, monitors)) {
-                        if(_windows.empty()) {
-                            set_progress_update_callback(
-                              exec_ctx.main_context(),
-                              extract(new_win).get_progress_callback(),
-                              std::chrono::milliseconds{100});
-                        }
+                         options, video_opts, monitors)) {
                         _windows[inst] = std::move(new_win);
                     } else {
                         extract(new_win).clean_up();
@@ -701,9 +1018,13 @@ EAGINE_LIB_FUNC
 void glfw3_opengl_provider::update(execution_context& exec_ctx) {
     EAGINE_MAYBE_UNUSED(exec_ctx);
 #if OGLPLUS_GLFW3_FOUND
+    glfw3_update_context upd_ctx{};
+#ifdef EAGINE_APP_USE_IMGUI
+    upd_ctx.activities = cover(_activities);
+#endif
     glfwPollEvents();
     for(auto& entry : _windows) {
-        entry.second->update(exec_ctx);
+        entry.second->update(exec_ctx, upd_ctx);
     }
 #endif // OGLPLUS_GLFW3_FOUND
 }
@@ -743,6 +1064,72 @@ void glfw3_opengl_provider::video_enumerate(
 EAGINE_LIB_FUNC
 void glfw3_opengl_provider::audio_enumerate(
   callable_ref<void(std::shared_ptr<audio_provider>)>) {}
+//------------------------------------------------------------------------------
+EAGINE_LIB_FUNC
+void glfw3_opengl_provider::activity_begun(
+  const activity_progress_id_t parent_id,
+  const activity_progress_id_t activity_id,
+  const string_view title,
+  const span_size_t total_steps) noexcept {
+    EAGINE_MAYBE_UNUSED(parent_id);
+    EAGINE_MAYBE_UNUSED(activity_id);
+    EAGINE_MAYBE_UNUSED(title);
+    EAGINE_MAYBE_UNUSED(total_steps);
+#if OGLPLUS_GLFW3_FOUND
+#if EAGINE_APP_USE_IMGUI
+    _activities.emplace_back();
+    auto& info = _activities.back();
+    info.activity_id = activity_id;
+    info.parent_id = parent_id;
+    info.total_steps = total_steps;
+    info.title = to_string(title);
+#endif
+#endif
+}
+//------------------------------------------------------------------------------
+EAGINE_LIB_FUNC
+void glfw3_opengl_provider::activity_finished(
+  const activity_progress_id_t parent_id,
+  const activity_progress_id_t activity_id,
+  const string_view title,
+  span_size_t total_steps) noexcept {
+#if OGLPLUS_GLFW3_FOUND
+#if EAGINE_APP_USE_IMGUI
+    std::erase_if(_activities, [activity_id](const auto& activity) -> bool {
+        return activity.activity_id == activity_id;
+    });
+#endif
+#endif
+    EAGINE_MAYBE_UNUSED(parent_id);
+    EAGINE_MAYBE_UNUSED(activity_id);
+    EAGINE_MAYBE_UNUSED(title);
+    EAGINE_MAYBE_UNUSED(total_steps);
+}
+//------------------------------------------------------------------------------
+EAGINE_LIB_FUNC
+void glfw3_opengl_provider::activity_updated(
+  const activity_progress_id_t parent_id,
+  const activity_progress_id_t activity_id,
+  const span_size_t current_steps,
+  const span_size_t total_steps) noexcept {
+#if OGLPLUS_GLFW3_FOUND
+#if EAGINE_APP_USE_IMGUI
+    const auto pos = std::find_if(
+      _activities.begin(),
+      _activities.end(),
+      [activity_id](const auto& activity) -> bool {
+          return activity.activity_id == activity_id;
+      });
+    if(EAGINE_LIKELY(pos != _activities.end())) {
+        pos->current_steps = current_steps;
+    }
+#endif
+#endif
+    EAGINE_MAYBE_UNUSED(parent_id);
+    EAGINE_MAYBE_UNUSED(activity_id);
+    EAGINE_MAYBE_UNUSED(current_steps);
+    EAGINE_MAYBE_UNUSED(total_steps);
+}
 //------------------------------------------------------------------------------
 auto make_glfw3_opengl_provider(main_ctx_parent parent)
   -> std::shared_ptr<hmi_provider> {

@@ -11,6 +11,7 @@ set(HEADERS
     eagine/app/input.hpp
     eagine/app/interface.hpp
     eagine/app/main.hpp
+    eagine/app/openal_oalplus.hpp
     eagine/app/opengl_eglplus.hpp
     eagine/app/opengl_glfw3.hpp
     eagine/app/options.hpp
@@ -27,6 +28,7 @@ set(LIB_INLS
     eagine/app/camera.inl
     eagine/app/context.inl
     eagine/app/framedump_raw.inl
+    eagine/app/openal_oalplus.inl
     eagine/app/opengl_eglplus.inl
     eagine/app/opengl_glfw3.inl
     eagine/app/options.inl

@@ -167,6 +167,9 @@ example_tiling::example_tiling(execution_context& ec, video_context& vc)
 
     // tile-set texture
     const auto tileset_tex_src{[&] {
+        if(ec.main_context().args().find("--connections")) {
+            return embed(EAGINE_ID(Conncts512), "tileset_connections16");
+        }
         if(ec.main_context().args().find("--blocks")) {
             return embed(EAGINE_ID(Blocks512), "tileset_blocks16");
         }

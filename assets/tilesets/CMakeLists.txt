@@ -5,4 +5,5 @@
 
 add_subdirectory(blocks16)
 add_subdirectory(nodes16)
+add_subdirectory(connections16)
 add_subdirectory(thicket16)

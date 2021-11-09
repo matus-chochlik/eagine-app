@@ -26,8 +26,8 @@ void main() {
 	pos[2] = pos[1]+nml[1]*len*0.06;
 
 	float occ[3];
-	occ[0] = 0.3;
-	occ[1] = mix(0.8, 0.5, max(dot(nml[0], nml[1]), 0.0));
+	occ[0] = mix(0.6, 0.2, vertOccl[0]);
+	occ[1] = mix(0.8, 0.4, vertOccl[0]);
 	occ[2] = 1.0;
 
 	geomColor = vertColor[0];

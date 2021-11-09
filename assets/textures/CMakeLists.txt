@@ -19,5 +19,7 @@ oglplus_add_texture(wheelcart_1_aoccl)
 oglplus_add_texture(hydrant)
 oglplus_add_texture(pumpkin)
 
+oglplus_add_texture(monkey)
+
 oglplus_add_texture(bricks)
 oglplus_add_texture(stones)
