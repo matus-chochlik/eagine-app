@@ -4,6 +4,7 @@
 #  http://www.boost.org/LICENSE_1_0.txt
 #
 set(HEADERS
+    eagine/app/config/basic.hpp
     eagine/app/camera.hpp
     eagine/app/context.hpp
     eagine/app/framedump_raw.hpp

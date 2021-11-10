@@ -9,6 +9,7 @@
 #ifndef EAGINE_APP_CONTEXT_HPP
 #define EAGINE_APP_CONTEXT_HPP
 
+#include "config/basic.hpp"
 #include "interface.hpp"
 #include "options.hpp"
 #include "state_view.hpp"

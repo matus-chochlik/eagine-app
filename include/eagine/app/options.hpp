@@ -9,6 +9,7 @@
 #ifndef EAGINE_APP_OPTIONS_HPP
 #define EAGINE_APP_OPTIONS_HPP
 
+#include "config/basic.hpp"
 #include "fwd.hpp"
 #include "types.hpp"
 #include <eagine/app_config.hpp>

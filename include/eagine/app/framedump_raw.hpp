@@ -9,6 +9,7 @@
 #ifndef EAGINE_APP_FRAMEDUMP_RAW_HPP
 #define EAGINE_APP_FRAMEDUMP_RAW_HPP
 
+#include "config/basic.hpp"
 #include "interface.hpp"
 #include <eagine/main_ctx_fwd.hpp>
 #include <memory>

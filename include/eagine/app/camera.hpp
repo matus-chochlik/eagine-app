@@ -9,6 +9,7 @@
 #ifndef EAGINE_APP_CAMERA_HPP
 #define EAGINE_APP_CAMERA_HPP
 
+#include "config/basic.hpp"
 #include "context.hpp"
 #include <eagine/oglplus/camera.hpp>
 #include <eagine/oglplus/math/sign.hpp>

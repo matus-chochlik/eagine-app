@@ -9,6 +9,7 @@
 #ifndef EAGINE_APP_STATE_HPP
 #define EAGINE_APP_STATE_HPP
 
+#include "config/basic.hpp"
 #include "state_view.hpp"
 #include <eagine/main_ctx_object.hpp>
 #include <eagine/valid_if/positive.hpp>
