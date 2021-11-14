@@ -256,7 +256,7 @@ glfw3_opengl_window::glfw3_opengl_window(
     _key_states.emplace_back(EAGINE_ID(Q), GLFW_KEY_Q);
     _key_states.emplace_back(EAGINE_ID(R), GLFW_KEY_R);
     _key_states.emplace_back(EAGINE_ID(S), GLFW_KEY_S);
-    _key_states.emplace_back(EAGINE_ID(T), GLFW_KEY_R);
+    _key_states.emplace_back(EAGINE_ID(T), GLFW_KEY_T);
     _key_states.emplace_back(EAGINE_ID(U), GLFW_KEY_U);
     _key_states.emplace_back(EAGINE_ID(V), GLFW_KEY_V);
     _key_states.emplace_back(EAGINE_ID(W), GLFW_KEY_W);
