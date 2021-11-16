@@ -180,7 +180,7 @@ example_tiling::example_tiling(execution_context& ec, video_context& vc)
     for(const auto idx : integer_range(tileset_srcs.size())) {
         oglplus::texture_image_block tileset_img{tileset_srcs[idx].unpack(ec)};
         gl.active_texture(GL.texture0 + tileset_tex_units[idx]);
-        gl.bind_texture(GL.texture_2d_array, tileset_texs[idx]);
+        gl.bind_texture(GL.texture_2d_array, tileset_texs[span_size(idx)]);
         gl.tex_parameter_i(
           GL.texture_2d_array, GL.texture_min_filter, GL.linear_mipmap_linear);
         gl.tex_parameter_i(
