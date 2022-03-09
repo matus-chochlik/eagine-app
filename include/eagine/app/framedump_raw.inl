@@ -94,7 +94,7 @@ auto raw_framedump::dump_frame(
               type, type_identity<framedump_data_type>(), value_tree_tag())
          << '-' << std::setfill('0') << std::setw(6) << frame_number;
 
-    if(auto packed{main_context().compressor().compress(
+    if(const auto packed{main_context().compressor().compress(
          data, _compressed, data_compression_level::highest)}) {
         path << ".zlib";
         return _write_to_file(path.str(), skip(packed, 1));

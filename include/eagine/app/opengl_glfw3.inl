@@ -439,7 +439,7 @@ auto glfw3_opengl_window::initialize(
     int fallback_width = 1280, fallback_height = 800;
     if(video_opts.fullscreen()) {
         window_monitor = glfwGetPrimaryMonitor();
-        if(auto opt_mon_name{video_opts.display_name()}) {
+        if(const auto opt_mon_name{video_opts.display_name()}) {
             for(auto monitor : monitors) {
                 string_view mon_name(glfwGetMonitorName(monitor));
                 if(are_equal(extract(opt_mon_name), mon_name)) {
@@ -448,7 +448,7 @@ auto glfw3_opengl_window::initialize(
             }
         }
     }
-    if(auto mode{glfwGetVideoMode(
+    if(const auto mode{glfwGetVideoMode(
          window_monitor ? window_monitor : glfwGetPrimaryMonitor())}) {
         fallback_width = extract(mode).width;
         fallback_height = extract(mode).height;
@@ -994,7 +994,7 @@ auto glfw3_opengl_provider::initialize(execution_context& exec_ctx) -> bool {
               (video_opts.video_kind() == video_context_kind::opengl);
 
             if(should_create_window) {
-                if(auto new_win{std::make_shared<glfw3_opengl_window>(
+                if(const auto new_win{std::make_shared<glfw3_opengl_window>(
                      this->main_context().config(), inst, this->as_parent())}) {
                     if(extract(new_win).initialize(
                          options, video_opts, monitors)) {
