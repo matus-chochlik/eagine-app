@@ -218,12 +218,12 @@ inline void video_context_state::clean_up(oglplus::gl_api& api) noexcept {
 }
 //------------------------------------------------------------------------------
 static void video_context_debug_callback(
-  oglplus::gl_types::enum_type source,
-  oglplus::gl_types::enum_type type,
-  oglplus::gl_types::uint_type id,
-  oglplus::gl_types::enum_type severity,
-  oglplus::gl_types::sizei_type length,
-  const oglplus::gl_types::char_type* message,
+  [[maybe_unused]] oglplus::gl_types::enum_type source,
+  [[maybe_unused]] oglplus::gl_types::enum_type type,
+  [[maybe_unused]] oglplus::gl_types::uint_type id,
+  [[maybe_unused]] oglplus::gl_types::enum_type severity,
+  [[maybe_unused]] oglplus::gl_types::sizei_type length,
+  [[maybe_unused]] const oglplus::gl_types::char_type* message,
   const void* raw_pvc) {
     EAGINE_ASSERT(raw_pvc);
     const auto& vc = *static_cast<const video_context*>(raw_pvc);
@@ -235,13 +235,6 @@ static void video_context_debug_callback(
       .arg(EAGINE_ID(source), EAGINE_ID(DbgOutSrce), source)
       .arg(EAGINE_ID(type), EAGINE_ID(DbgOutType), type)
       .arg(EAGINE_ID(id), id);
-
-    EAGINE_MAYBE_UNUSED(source);
-    EAGINE_MAYBE_UNUSED(type);
-    EAGINE_MAYBE_UNUSED(id);
-    EAGINE_MAYBE_UNUSED(severity);
-    EAGINE_MAYBE_UNUSED(length);
-    EAGINE_MAYBE_UNUSED(message);
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC

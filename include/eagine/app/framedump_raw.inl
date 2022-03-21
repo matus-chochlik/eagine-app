@@ -78,12 +78,10 @@ auto raw_framedump::dump_frame(
   const int width,
   const int height,
   const int elements,
-  const span_size_t element_size,
+  [[maybe_unused]] const span_size_t element_size,
   const framedump_pixel_format format,
   const framedump_data_type type,
-  memory::block data) -> bool {
-    EAGINE_MAYBE_UNUSED(element_size);
-    EAGINE_MAYBE_UNUSED(data);
+  [[maybe_unused]] memory::block data) -> bool {
 
     std::stringstream path;
     path << _prefix << '-' << width << 'x' << height << 'x' << elements << '-'

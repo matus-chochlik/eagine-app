@@ -10,7 +10,6 @@
 #include <eagine/extract.hpp>
 #include <eagine/integer_range.hpp>
 #include <eagine/logging/type/yes_no_maybe.hpp>
-#include <eagine/maybe_unused.hpp>
 #include <eagine/oglplus/config/basic.hpp>
 #include <eagine/valid_if/decl.hpp>
 
@@ -574,8 +573,8 @@ auto eglplus_opengl_provider::is_initialized() -> bool {
 EAGINE_LIB_FUNC
 auto eglplus_opengl_provider::should_initialize(execution_context& exec_ctx)
   -> bool {
-    for(auto& [inst, video_opts] : exec_ctx.options().video_requirements()) {
-        EAGINE_MAYBE_UNUSED(inst);
+    for(auto& entry : exec_ctx.options().video_requirements()) {
+        auto& video_opts = std::get<1>(entry);
         if(video_opts.has_provider(implementation_name())) {
             return true;
         }
