@@ -29,7 +29,7 @@ public:
 
     /// @brief Advances the simulation time.
     auto advance_time() noexcept -> auto& {
-        if(EAGINE_UNLIKELY(_fixed_fps)) {
+        if(_fixed_fps) [[unlikely]] {
             _frame_time.advance(1.F / extract(_fixed_fps));
         } else {
             _frame_time.assign(

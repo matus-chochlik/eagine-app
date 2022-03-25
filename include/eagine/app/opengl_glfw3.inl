@@ -1104,7 +1104,7 @@ void glfw3_opengl_provider::activity_updated(
       [activity_id](const auto& activity) -> bool {
           return activity.activity_id == activity_id;
       });
-    if(EAGINE_LIKELY(pos != _activities.end())) {
+    if(pos != _activities.end()) [[likely]] {
         pos->current_steps = current_steps;
     }
 #endif
