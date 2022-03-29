@@ -5,6 +5,7 @@
 /// See accompanying file LICENSE_1_0.txt or copy at
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
+#include <eagine/app/input_observers.hpp>
 #include <eagine/app/main.hpp>
 #include <eagine/app_config.hpp>
 #include <eagine/embed.hpp>
@@ -36,6 +37,8 @@ public:
     void zoom(const input&) noexcept;
     void pan_x(const input&) noexcept;
     void pan_y(const input&) noexcept;
+    void change_gradient(const input&) noexcept;
+    void set_gradient_image() noexcept;
 
 private:
     execution_context& _ctx;
@@ -61,6 +64,7 @@ private:
     float offset_y{0.0F};
     float scale{1.0F};
     float aspect{1.0F};
+    trigger_released reset_triggered;
     bool dampen_motion{false};
     bool is_dragging{false};
 
@@ -134,24 +138,13 @@ example_newton::example_newton(execution_context& ec, video_context& vc)
     gl.enable_vertex_attrib_array(coord_loc);
 
     // gradient texture
-    auto gradient_data = GL.float_.array(size_constant<8 * 3>{});
-    _ctx.random_uniform_01(cover(gradient_data));
-
     gl.gen_textures() >> gradient;
     gl.active_texture(GL.texture0);
     gl.bind_texture(GL.texture_1d, gradient);
     gl.tex_parameter_i(GL.texture_1d, GL.texture_min_filter, GL.linear);
     gl.tex_parameter_i(GL.texture_1d, GL.texture_mag_filter, GL.linear);
     gl.tex_parameter_i(GL.texture_1d, GL.texture_wrap_s, GL.repeat);
-    gl.tex_image1d(
-      GL.texture_1d,
-      0,
-      GL.rgb,
-      8,
-      0,
-      GL.rgb,
-      GL.float_,
-      as_bytes(view(gradient_data)));
+    set_gradient_image();
 
     gl.disable(GL.depth_test);
 
@@ -163,6 +156,9 @@ example_newton::example_newton(execution_context& ec, video_context& vc)
       .connect_input(EAGINE_MSG_ID(View, Zoom), EAGINE_THIS_MEM_FUNC_REF(zoom))
       .connect_input(EAGINE_MSG_ID(View, PanX), EAGINE_THIS_MEM_FUNC_REF(pan_x))
       .connect_input(EAGINE_MSG_ID(View, PanY), EAGINE_THIS_MEM_FUNC_REF(pan_y))
+      .connect_input(
+        EAGINE_MSG_ID(Example, ChngGrad),
+        EAGINE_THIS_MEM_FUNC_REF(change_gradient))
       .map_inputs()
       .map_input(
         EAGINE_MSG_ID(Motion, Dampening),
@@ -200,6 +196,10 @@ example_newton::example_newton(execution_context& ec, video_context& vc)
         EAGINE_MSG_ID(View, PanY),
         EAGINE_MSG_ID(Keyboard, Up),
         input_setup().trigger().multiply(0.25).invert())
+      .map_input(
+        EAGINE_MSG_ID(Example, ChngGrad),
+        EAGINE_MSG_ID(Keyboard, G),
+        input_setup().trigger())
       .map_input(
         EAGINE_MSG_ID(View, PanX),
         EAGINE_MSG_ID(Cursor, MotionX),
@@ -252,6 +252,27 @@ void example_newton::pan_y(const input& i) noexcept {
 
     const auto& gl = _video.gl_api();
     gl.uniform2f(offset_loc, offset_x, offset_y);
+}
+//------------------------------------------------------------------------------
+void example_newton::change_gradient(const input& i) noexcept {
+    if(reset_triggered(i)) {
+        set_gradient_image();
+    }
+}
+//------------------------------------------------------------------------------
+void example_newton::set_gradient_image() noexcept {
+    const auto& [gl, GL] = _video.gl_api();
+    auto gradient_data = GL.float_.array(size_constant<8 * 3>{});
+    _ctx.random_uniform_01(cover(gradient_data));
+    gl.tex_image1d(
+      GL.texture_1d,
+      0,
+      GL.rgb,
+      8,
+      0,
+      GL.rgb,
+      GL.float_,
+      as_bytes(view(gradient_data)));
 }
 //------------------------------------------------------------------------------
 void example_newton::update() noexcept {

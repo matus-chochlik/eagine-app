@@ -10,7 +10,6 @@
 #include <eagine/extract.hpp>
 #include <eagine/integer_range.hpp>
 #include <eagine/logging/type/yes_no_maybe.hpp>
-#include <eagine/maybe_unused.hpp>
 #include <eagine/valid_if/decl.hpp>
 
 #include <eagine/oalplus/al.hpp>
@@ -68,7 +67,7 @@ auto oalplus_openal_player::get_context_attribs(
     const auto& ALC = _alc_api.constants();
 
     // TODO
-    EAGINE_MAYBE_UNUSED(audio_opts);
+    (void)(audio_opts);
 
     const auto add_sync = [&](auto attribs) {
         return attribs + (ALC.sync | false);
@@ -89,8 +88,8 @@ auto oalplus_openal_player::initialize(
     const auto& [alc, ALC] = _alc_api;
 
     // TODO
-    EAGINE_MAYBE_UNUSED(opts);
-    EAGINE_MAYBE_UNUSED(audio_opts);
+    (void)(opts);
+    (void)(audio_opts);
 
     if(const ok context{alc.create_context(_device)}) {
         _context = context;
@@ -193,8 +192,8 @@ auto oalplus_openal_provider::is_initialized() -> bool {
 EAGINE_LIB_FUNC
 auto oalplus_openal_provider::should_initialize(execution_context& exec_ctx)
   -> bool {
-    for(auto& [inst, audio_opts] : exec_ctx.options().audio_requirements()) {
-        EAGINE_MAYBE_UNUSED(inst);
+    for(auto& entry : exec_ctx.options().audio_requirements()) {
+        auto& audio_opts = std::get<1>(entry);
         if(audio_opts.has_provider(implementation_name())) {
             return true;
         }

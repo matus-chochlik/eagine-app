@@ -10,7 +10,6 @@
 #include <eagine/extract.hpp>
 #include <eagine/integer_range.hpp>
 #include <eagine/logging/type/yes_no_maybe.hpp>
-#include <eagine/maybe_unused.hpp>
 #include <eagine/oglplus/config/basic.hpp>
 #include <eagine/valid_if/decl.hpp>
 
@@ -162,7 +161,7 @@ auto eglplus_opengl_surface::initialize(
     _height = video_opts.surface_height() / 1;
 
     const auto surface_attribs = (EGL.width | _width) + (EGL.height | _height);
-    if(ok surface{
+    if(const ok surface{
          egl.create_pbuffer_surface(display, config, surface_attribs)}) {
         _surface = surface;
 
@@ -170,11 +169,11 @@ auto eglplus_opengl_surface::initialize(
                               ? eglplus::client_api(EGL.opengl_api)
                               : eglplus::client_api(EGL.opengl_es_api);
 
-        if(ok bound{egl.bind_api(gl_api)}) {
+        if(const ok bound{egl.bind_api(gl_api)}) {
             const auto context_attribs = get_context_attribs(
               exec_ctx, gl_otherwise_gles, opts, video_opts);
 
-            if(ok ctxt{egl.create_context(
+            if(const ok ctxt{egl.create_context(
                  display,
                  config,
                  eglplus::context_handle{},
@@ -214,10 +213,10 @@ auto eglplus_opengl_surface::initialize(
         exec_ctx.log_info("trying default EGL display device");
     }
 
-    if(ok initialized{egl.initialize(display)}) {
-        if(auto conf_driver_name{video_opts.driver_name()}) {
+    if(const ok initialized{egl.initialize(display)}) {
+        if(const auto conf_driver_name{video_opts.driver_name()}) {
             if(egl.MESA_query_driver(display)) {
-                if(ok driver_name{egl.get_display_driver_name(display)}) {
+                if(const ok driver_name{egl.get_display_driver_name(display)}) {
                     if(are_equal(
                          extract(video_opts.driver_name()),
                          extract(driver_name))) {
@@ -256,7 +255,7 @@ auto eglplus_opengl_surface::initialize(
             }
         } else {
             if(egl.MESA_query_driver(display)) {
-                if(ok driver_name{egl.get_display_driver_name(display)}) {
+                if(const ok driver_name{egl.get_display_driver_name(display)}) {
                     log_info("using the ${driver} MESA display driver")
                       .arg(
                         EAGINE_ID(driver),
@@ -279,11 +278,11 @@ auto eglplus_opengl_surface::initialize(
           (EGL.surface_type | EGL.pbuffer_bit) +
           (EGL.renderable_type | (EGL.opengl_bit | EGL.opengl_es3_bit));
 
-        if(ok count{egl.choose_config.count(_display, config_attribs)}) {
+        if(const ok count{egl.choose_config.count(_display, config_attribs)}) {
             log_info("found ${count} suitable framebuffer configurations")
               .arg(EAGINE_ID(count), extract(count));
 
-            if(ok config{egl.choose_config(_display, config_attribs)}) {
+            if(const ok config{egl.choose_config(_display, config_attribs)}) {
                 return initialize(exec_ctx, _display, config, opts, video_opts);
             } else {
                 const string_view dont_care{"-"};
@@ -338,7 +337,7 @@ auto eglplus_opengl_surface::initialize(
       device_idx.is_valid() || video_opts.driver_name().is_valid();
 
     if(select_device && egl.EXT_device_enumeration) {
-        if(ok dev_count{egl.query_devices.count()}) {
+        if(const ok dev_count{egl.query_devices.count()}) {
             const auto n = std_size(extract(dev_count));
             std::vector<eglplus::egl_types::device_type> devices;
             devices.resize(n);
@@ -394,7 +393,7 @@ auto eglplus_opengl_surface::initialize(
 
                     if(device_path) {
                         if(egl.EXT_device_drm(device)) {
-                            if(ok path{egl.query_device_string(
+                            if(const ok path{egl.query_device_string(
                                  device, EGL.drm_device_file)}) {
                                 if(are_equal(
                                      extract(device_path), extract(path))) {
@@ -432,7 +431,7 @@ auto eglplus_opengl_surface::initialize(
                     }
 
                     if(matching_device) {
-                        if(ok display{egl.get_platform_display(device)}) {
+                        if(const ok display{egl.get_platform_display(device)}) {
 
                             if(initialize(
                                  exec_ctx,
@@ -450,7 +449,7 @@ auto eglplus_opengl_surface::initialize(
             }
         }
     } else {
-        if(ok display{egl.get_display()}) {
+        if(const ok display{egl.get_display()}) {
             return initialize(exec_ctx, display, -1, opts, video_opts);
         } else {
             exec_ctx.log_error("failed to get EGL display")
@@ -574,8 +573,8 @@ auto eglplus_opengl_provider::is_initialized() -> bool {
 EAGINE_LIB_FUNC
 auto eglplus_opengl_provider::should_initialize(execution_context& exec_ctx)
   -> bool {
-    for(auto& [inst, video_opts] : exec_ctx.options().video_requirements()) {
-        EAGINE_MAYBE_UNUSED(inst);
+    for(auto& entry : exec_ctx.options().video_requirements()) {
+        auto& video_opts = std::get<1>(entry);
         if(video_opts.has_provider(implementation_name())) {
             return true;
         }

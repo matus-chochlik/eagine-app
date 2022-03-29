@@ -9,6 +9,7 @@
 #ifndef EAGINE_APP_CONTEXT_HPP
 #define EAGINE_APP_CONTEXT_HPP
 
+#include "config/basic.hpp"
 #include "interface.hpp"
 #include "options.hpp"
 #include "state_view.hpp"
@@ -84,7 +85,7 @@ public:
 
     /// @brief Returns the rendering surface's dimensions (in pixels).
     auto surface_size() noexcept -> std::tuple<int, int> {
-        if(EAGINE_LIKELY(_provider)) {
+        if(_provider) [[likely]] {
             return extract(_provider).surface_size();
         }
         return {1, 1};
@@ -92,7 +93,7 @@ public:
 
     /// @brief Returns the rendering surface's aspect ratio.
     auto surface_aspect() noexcept -> float {
-        if(EAGINE_LIKELY(_provider)) {
+        if(_provider) [[likely]] {
             return extract(_provider).surface_aspect();
         }
         return 1.F;

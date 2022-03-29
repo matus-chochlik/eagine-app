@@ -78,12 +78,10 @@ auto raw_framedump::dump_frame(
   const int width,
   const int height,
   const int elements,
-  const span_size_t element_size,
+  [[maybe_unused]] const span_size_t element_size,
   const framedump_pixel_format format,
   const framedump_data_type type,
-  memory::block data) -> bool {
-    EAGINE_MAYBE_UNUSED(element_size);
-    EAGINE_MAYBE_UNUSED(data);
+  [[maybe_unused]] memory::block data) -> bool {
 
     std::stringstream path;
     path << _prefix << '-' << width << 'x' << height << 'x' << elements << '-'
@@ -94,7 +92,7 @@ auto raw_framedump::dump_frame(
               type, type_identity<framedump_data_type>(), value_tree_tag())
          << '-' << std::setfill('0') << std::setw(6) << frame_number;
 
-    if(auto packed{main_context().compressor().compress(
+    if(const auto packed{main_context().compressor().compress(
          data, _compressed, data_compression_level::highest)}) {
         path << ".zlib";
         return _write_to_file(path.str(), skip(packed, 1));

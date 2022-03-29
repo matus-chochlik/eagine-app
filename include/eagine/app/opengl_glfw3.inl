@@ -11,7 +11,6 @@
 #include <eagine/diagnostic.hpp>
 #include <eagine/flat_set.hpp>
 #include <eagine/main_ctx.hpp>
-#include <eagine/maybe_unused.hpp>
 #include <eagine/oglplus/config/basic.hpp>
 #include <eagine/progress/backend.hpp>
 
@@ -256,7 +255,7 @@ glfw3_opengl_window::glfw3_opengl_window(
     _key_states.emplace_back(EAGINE_ID(Q), GLFW_KEY_Q);
     _key_states.emplace_back(EAGINE_ID(R), GLFW_KEY_R);
     _key_states.emplace_back(EAGINE_ID(S), GLFW_KEY_S);
-    _key_states.emplace_back(EAGINE_ID(T), GLFW_KEY_R);
+    _key_states.emplace_back(EAGINE_ID(T), GLFW_KEY_T);
     _key_states.emplace_back(EAGINE_ID(U), GLFW_KEY_U);
     _key_states.emplace_back(EAGINE_ID(V), GLFW_KEY_V);
     _key_states.emplace_back(EAGINE_ID(W), GLFW_KEY_W);
@@ -331,8 +330,8 @@ glfw3_opengl_window::glfw3_opengl_window(
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
 auto glfw3_opengl_window::add_ui_button(
-  const std::string& label,
-  const message_id id) -> bool {
+  [[maybe_unused]] const std::string& label,
+  [[maybe_unused]] const message_id id) -> bool {
 #if EAGINE_APP_USE_IMGUI
     if(
       std::find_if(
@@ -344,8 +343,6 @@ auto glfw3_opengl_window::add_ui_button(
         return true;
     }
 #endif
-    EAGINE_MAYBE_UNUSED(label);
-    EAGINE_MAYBE_UNUSED(id);
     return false;
 }
 //------------------------------------------------------------------------------
@@ -358,9 +355,8 @@ glfw3_opengl_window::glfw3_opengl_window(
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
 auto glfw3_opengl_window::handle_progress(
-  const glfw3_update_context& upd_ctx) noexcept -> bool {
+  [[maybe_unused]] const glfw3_update_context& upd_ctx) noexcept -> bool {
     bool result = false;
-    EAGINE_MAYBE_UNUSED(upd_ctx);
     if(_window) {
         result = glfwGetKey(_window, GLFW_KEY_ESCAPE) != GLFW_PRESS;
         if(_imgui_enabled) {
@@ -439,7 +435,7 @@ auto glfw3_opengl_window::initialize(
     int fallback_width = 1280, fallback_height = 800;
     if(video_opts.fullscreen()) {
         window_monitor = glfwGetPrimaryMonitor();
-        if(auto opt_mon_name{video_opts.display_name()}) {
+        if(const auto opt_mon_name{video_opts.display_name()}) {
             for(auto monitor : monitors) {
                 string_view mon_name(glfwGetMonitorName(monitor));
                 if(are_equal(extract(opt_mon_name), mon_name)) {
@@ -448,7 +444,7 @@ auto glfw3_opengl_window::initialize(
             }
         }
     }
-    if(auto mode{glfwGetVideoMode(
+    if(const auto mode{glfwGetVideoMode(
          window_monitor ? window_monitor : glfwGetPrimaryMonitor())}) {
         fallback_width = extract(mode).width;
         fallback_height = extract(mode).height;
@@ -614,8 +610,8 @@ void glfw3_opengl_window::input_disconnect() {
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
-void glfw3_opengl_window::mapping_begin(const identifier setup_id) {
-    EAGINE_MAYBE_UNUSED(setup_id);
+void glfw3_opengl_window::mapping_begin(
+  [[maybe_unused]] const identifier setup_id) {
     _enabled_signals.clear();
 }
 //------------------------------------------------------------------------------
@@ -625,8 +621,8 @@ void glfw3_opengl_window::mapping_enable(const message_id signal_id) {
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
-void glfw3_opengl_window::mapping_commit(const identifier setup_id) {
-    EAGINE_MAYBE_UNUSED(setup_id);
+void glfw3_opengl_window::mapping_commit(
+  [[maybe_unused]] const identifier setup_id) {
 
     for(auto& ks : _key_states) {
         ks.enabled =
@@ -647,8 +643,7 @@ void glfw3_opengl_window::mapping_commit(const identifier setup_id) {
 EAGINE_LIB_FUNC
 void glfw3_opengl_window::update(
   execution_context& exec_ctx,
-  const glfw3_update_context& upd_ctx) {
-    EAGINE_MAYBE_UNUSED(upd_ctx);
+  [[maybe_unused]] const glfw3_update_context& upd_ctx) {
 
     if(_imgui_enabled && _imgui_visible) {
         EAGINE_ASSERT(_parent_context);
@@ -954,12 +949,11 @@ auto glfw3_opengl_provider::is_initialized() -> bool {
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
-auto glfw3_opengl_provider::should_initialize(execution_context& exec_ctx)
-  -> bool {
-    EAGINE_MAYBE_UNUSED(exec_ctx);
+auto glfw3_opengl_provider::should_initialize(
+  [[maybe_unused]] execution_context& exec_ctx) -> bool {
 #if OGLPLUS_GLFW3_FOUND
-    for(auto& [inst, video_opts] : exec_ctx.options().video_requirements()) {
-        EAGINE_MAYBE_UNUSED(inst);
+    for(auto& entry : exec_ctx.options().video_requirements()) {
+        auto& video_opts = std::get<1>(entry);
         if(video_opts.has_provider(implementation_name())) {
             return true;
         }
@@ -994,7 +988,7 @@ auto glfw3_opengl_provider::initialize(execution_context& exec_ctx) -> bool {
               (video_opts.video_kind() == video_context_kind::opengl);
 
             if(should_create_window) {
-                if(auto new_win{std::make_shared<glfw3_opengl_window>(
+                if(const auto new_win{std::make_shared<glfw3_opengl_window>(
                      this->main_context().config(), inst, this->as_parent())}) {
                     if(extract(new_win).initialize(
                          options, video_opts, monitors)) {
@@ -1015,8 +1009,8 @@ auto glfw3_opengl_provider::initialize(execution_context& exec_ctx) -> bool {
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
-void glfw3_opengl_provider::update(execution_context& exec_ctx) {
-    EAGINE_MAYBE_UNUSED(exec_ctx);
+void glfw3_opengl_provider::update(
+  [[maybe_unused]] execution_context& exec_ctx) {
 #if OGLPLUS_GLFW3_FOUND
     glfw3_update_context upd_ctx{};
 #ifdef EAGINE_APP_USE_IMGUI
@@ -1041,8 +1035,7 @@ void glfw3_opengl_provider::clean_up(execution_context&) {
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
 void glfw3_opengl_provider::input_enumerate(
-  callable_ref<void(std::shared_ptr<input_provider>)> handler) {
-    EAGINE_MAYBE_UNUSED(handler);
+  [[maybe_unused]] callable_ref<void(std::shared_ptr<input_provider>)> handler) {
 #if OGLPLUS_GLFW3_FOUND
     for(auto& p : _windows) {
         handler(p.second);
@@ -1052,8 +1045,7 @@ void glfw3_opengl_provider::input_enumerate(
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
 void glfw3_opengl_provider::video_enumerate(
-  callable_ref<void(std::shared_ptr<video_provider>)> handler) {
-    EAGINE_MAYBE_UNUSED(handler);
+  [[maybe_unused]] callable_ref<void(std::shared_ptr<video_provider>)> handler) {
 #if OGLPLUS_GLFW3_FOUND
     for(auto& p : _windows) {
         handler(p.second);
@@ -1067,14 +1059,10 @@ void glfw3_opengl_provider::audio_enumerate(
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
 void glfw3_opengl_provider::activity_begun(
-  const activity_progress_id_t parent_id,
-  const activity_progress_id_t activity_id,
-  const string_view title,
-  const span_size_t total_steps) noexcept {
-    EAGINE_MAYBE_UNUSED(parent_id);
-    EAGINE_MAYBE_UNUSED(activity_id);
-    EAGINE_MAYBE_UNUSED(title);
-    EAGINE_MAYBE_UNUSED(total_steps);
+  [[maybe_unused]] const activity_progress_id_t parent_id,
+  [[maybe_unused]] const activity_progress_id_t activity_id,
+  [[maybe_unused]] const string_view title,
+  [[maybe_unused]] const span_size_t total_steps) noexcept {
 #if OGLPLUS_GLFW3_FOUND
 #if EAGINE_APP_USE_IMGUI
     _activities.emplace_back();
@@ -1089,10 +1077,10 @@ void glfw3_opengl_provider::activity_begun(
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
 void glfw3_opengl_provider::activity_finished(
-  const activity_progress_id_t parent_id,
-  const activity_progress_id_t activity_id,
-  const string_view title,
-  span_size_t total_steps) noexcept {
+  [[maybe_unused]] const activity_progress_id_t parent_id,
+  [[maybe_unused]] const activity_progress_id_t activity_id,
+  [[maybe_unused]] const string_view title,
+  [[maybe_unused]] span_size_t total_steps) noexcept {
 #if OGLPLUS_GLFW3_FOUND
 #if EAGINE_APP_USE_IMGUI
     std::erase_if(_activities, [activity_id](const auto& activity) -> bool {
@@ -1100,18 +1088,14 @@ void glfw3_opengl_provider::activity_finished(
     });
 #endif
 #endif
-    EAGINE_MAYBE_UNUSED(parent_id);
-    EAGINE_MAYBE_UNUSED(activity_id);
-    EAGINE_MAYBE_UNUSED(title);
-    EAGINE_MAYBE_UNUSED(total_steps);
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
 void glfw3_opengl_provider::activity_updated(
-  const activity_progress_id_t parent_id,
-  const activity_progress_id_t activity_id,
-  const span_size_t current_steps,
-  const span_size_t total_steps) noexcept {
+  [[maybe_unused]] const activity_progress_id_t parent_id,
+  [[maybe_unused]] const activity_progress_id_t activity_id,
+  [[maybe_unused]] const span_size_t current_steps,
+  [[maybe_unused]] const span_size_t total_steps) noexcept {
 #if OGLPLUS_GLFW3_FOUND
 #if EAGINE_APP_USE_IMGUI
     const auto pos = std::find_if(
@@ -1120,15 +1104,11 @@ void glfw3_opengl_provider::activity_updated(
       [activity_id](const auto& activity) -> bool {
           return activity.activity_id == activity_id;
       });
-    if(EAGINE_LIKELY(pos != _activities.end())) {
+    if(pos != _activities.end()) [[likely]] {
         pos->current_steps = current_steps;
     }
 #endif
 #endif
-    EAGINE_MAYBE_UNUSED(parent_id);
-    EAGINE_MAYBE_UNUSED(activity_id);
-    EAGINE_MAYBE_UNUSED(current_steps);
-    EAGINE_MAYBE_UNUSED(total_steps);
 }
 //------------------------------------------------------------------------------
 auto make_glfw3_opengl_provider(main_ctx_parent parent)

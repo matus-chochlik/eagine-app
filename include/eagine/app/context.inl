@@ -19,7 +19,6 @@
 #include <eagine/app/opengl_eglplus.hpp>
 #include <eagine/app/opengl_glfw3.hpp>
 #include <eagine/app/state.hpp>
-#include <eagine/branch_predict.hpp>
 #include <eagine/main_ctx.hpp>
 #include <eagine/memory/buffer.hpp>
 #include <eagine/span.hpp>
@@ -94,10 +93,10 @@ inline auto video_context_state::commit(
   video_provider& provider,
   oglplus::gl_api& api) -> bool {
     bool result = true;
-    if(EAGINE_UNLIKELY(doing_framedump())) {
+    if(doing_framedump()) [[unlikely]] {
         const auto& [gl, GL] = api;
 
-        if(EAGINE_LIKELY(gl.read_pixels)) {
+        if(gl.read_pixels) [[likely]] {
 
             const auto dump_frame = [&](
                                       framedump& target,
@@ -218,12 +217,12 @@ inline void video_context_state::clean_up(oglplus::gl_api& api) noexcept {
 }
 //------------------------------------------------------------------------------
 static void video_context_debug_callback(
-  oglplus::gl_types::enum_type source,
-  oglplus::gl_types::enum_type type,
-  oglplus::gl_types::uint_type id,
-  oglplus::gl_types::enum_type severity,
-  oglplus::gl_types::sizei_type length,
-  const oglplus::gl_types::char_type* message,
+  [[maybe_unused]] oglplus::gl_types::enum_type source,
+  [[maybe_unused]] oglplus::gl_types::enum_type type,
+  [[maybe_unused]] oglplus::gl_types::uint_type id,
+  [[maybe_unused]] oglplus::gl_types::enum_type severity,
+  [[maybe_unused]] oglplus::gl_types::sizei_type length,
+  [[maybe_unused]] const oglplus::gl_types::char_type* message,
   const void* raw_pvc) {
     EAGINE_ASSERT(raw_pvc);
     const auto& vc = *static_cast<const video_context*>(raw_pvc);
@@ -235,13 +234,6 @@ static void video_context_debug_callback(
       .arg(EAGINE_ID(source), EAGINE_ID(DbgOutSrce), source)
       .arg(EAGINE_ID(type), EAGINE_ID(DbgOutType), type)
       .arg(EAGINE_ID(id), id);
-
-    EAGINE_MAYBE_UNUSED(source);
-    EAGINE_MAYBE_UNUSED(type);
-    EAGINE_MAYBE_UNUSED(id);
-    EAGINE_MAYBE_UNUSED(severity);
-    EAGINE_MAYBE_UNUSED(length);
-    EAGINE_MAYBE_UNUSED(message);
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
@@ -314,18 +306,18 @@ void video_context::end() {
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
 void video_context::commit() {
-    if(EAGINE_LIKELY(_gl_api)) {
-        if(EAGINE_UNLIKELY(!extract(_state).commit(
-             _frame_no, extract(_provider), extract(_gl_api)))) {
+    if(_gl_api) [[likely]] {
+        if(!extract(_state).commit(
+             _frame_no, extract(_provider), extract(_gl_api))) [[unlikely]] {
             _parent.stop_running();
         }
     }
     extract(_provider).video_commit(_parent);
 
-    if(EAGINE_UNLIKELY(_parent.enough_frames(++_frame_no))) {
+    if(_parent.enough_frames(++_frame_no)) [[unlikely]] {
         _parent.stop_running();
     }
-    if(EAGINE_UNLIKELY(_parent.enough_run_time())) {
+    if(_parent.enough_run_time()) [[unlikely]] {
         _parent.stop_running();
     }
 }
@@ -525,8 +517,8 @@ auto execution_context::prepare(std::unique_ptr<launchpad> pad)
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
 auto execution_context::is_running() noexcept -> bool {
-    if(EAGINE_LIKELY(_keep_running)) {
-        if(EAGINE_LIKELY(_app)) {
+    if(_keep_running) [[likely]] {
+        if(_app) [[likely]] {
             return !extract(_app).is_done();
         }
     }

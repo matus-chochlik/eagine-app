@@ -35,6 +35,7 @@ public:
     void on_video_resize() noexcept final;
     void update() noexcept final;
     void clean_up() noexcept final;
+    void change_tileset(const input&) noexcept;
 
 private:
     execution_context& _ctx;
@@ -50,7 +51,9 @@ private:
     oglplus::owned_buffer_name indices;
 
     oglplus::owned_texture_name tiling_tex;
-    oglplus::owned_texture_name tileset_tex;
+    oglplus::texture_name_array<4> tileset_texs;
+    std::array<int, 4> tileset_tex_units{1, 2, 3, 4};
+    std::size_t tileset_tex_idx{0U};
 
     oglplus::owned_program_name prog;
 
@@ -61,6 +64,7 @@ private:
 
     orbiting_camera camera;
     oglplus::uniform_location camera_loc;
+    oglplus::uniform_location tileset_tex_loc;
 };
 //------------------------------------------------------------------------------
 example_tiling::example_tiling(execution_context& ec, video_context& vc)
@@ -165,35 +169,28 @@ example_tiling::example_tiling(execution_context& ec, video_context& vc)
     gl.get_uniform_location(prog, "TilingTex") >> tiling_tex_loc;
     glapi.set_uniform(prog, tiling_tex_loc, 0);
 
-    // tile-set texture
-    const auto tileset_tex_src{[&] {
-        if(ec.main_context().args().find("--connections")) {
-            return embed(EAGINE_ID(Conncts512), "tileset_connections16");
-        }
-        if(ec.main_context().args().find("--blocks")) {
-            return embed(EAGINE_ID(Blocks512), "tileset_blocks16");
-        }
-        if(ec.main_context().args().find("--thicket")) {
-            return embed(EAGINE_ID(Thicket512), "tileset_thicket16");
-        }
-        return embed(EAGINE_ID(Nodes512), "tileset_nodes16");
-    }()};
-    const auto tileset_img{
-      oglplus::texture_image_block(tileset_tex_src.unpack(ec))};
+    // tile-set textures
+    const std::array<embedded_resource, 4> tileset_srcs{
+      embed(EAGINE_ID(Nodes512), "tileset_nodes16"),
+      embed(EAGINE_ID(Blocks512), "tileset_blocks16"),
+      embed(EAGINE_ID(Conncts512), "tileset_connections16"),
+      embed(EAGINE_ID(Thicket512), "tileset_thicket16")};
 
-    gl.gen_textures() >> tileset_tex;
-    gl.active_texture(GL.texture0 + 1);
-    gl.bind_texture(GL.texture_2d_array, tileset_tex);
-    gl.tex_parameter_i(
-      GL.texture_2d_array, GL.texture_min_filter, GL.linear_mipmap_linear);
-    gl.tex_parameter_i(GL.texture_2d_array, GL.texture_mag_filter, GL.linear);
-    gl.tex_parameter_i(GL.texture_2d_array, GL.texture_wrap_s, GL.repeat);
-    gl.tex_parameter_i(GL.texture_2d_array, GL.texture_wrap_t, GL.repeat);
-    glapi.spec_tex_image3d(GL.texture_2d_array, 0, 0, tileset_img);
-    gl.generate_mipmap(GL.texture_2d_array);
-    oglplus::uniform_location tileset_tex_loc;
+    gl.gen_textures(tileset_texs.raw_handles());
+    for(const auto idx : integer_range(tileset_srcs.size())) {
+        oglplus::texture_image_block tileset_img{tileset_srcs[idx].unpack(ec)};
+        gl.active_texture(GL.texture0 + tileset_tex_units[idx]);
+        gl.bind_texture(GL.texture_2d_array, tileset_texs[span_size(idx)]);
+        gl.tex_parameter_i(
+          GL.texture_2d_array, GL.texture_min_filter, GL.linear_mipmap_linear);
+        gl.tex_parameter_i(
+          GL.texture_2d_array, GL.texture_mag_filter, GL.linear);
+        gl.tex_parameter_i(GL.texture_2d_array, GL.texture_wrap_s, GL.repeat);
+        gl.tex_parameter_i(GL.texture_2d_array, GL.texture_wrap_t, GL.repeat);
+        glapi.spec_tex_image3d(GL.texture_2d_array, 0, 0, tileset_img);
+        gl.generate_mipmap(GL.texture_2d_array);
+    }
     gl.get_uniform_location(prog, "TilesetTex") >> tileset_tex_loc;
-    glapi.set_uniform(prog, tileset_tex_loc, 1);
 
     // uniform
     gl.get_uniform_location(prog, "Camera") >> camera_loc;
@@ -213,12 +210,32 @@ example_tiling::example_tiling(execution_context& ec, video_context& vc)
     gl.enable(GL.depth_test);
 
     camera.connect_inputs(ec).basic_input_mapping(ec);
-    ec.setup_inputs().switch_input_mapping();
+    ec.connect_inputs()
+      .add_ui_button("Change tile-set", EAGINE_MSG_ID(GUI, ChngTilset))
+      .connect_input(
+        EAGINE_MSG_ID(Example, ChngTilset),
+        EAGINE_THIS_MEM_FUNC_REF(change_tileset))
+      .map_inputs()
+      .map_input(
+        EAGINE_MSG_ID(Example, ChngTilset),
+        EAGINE_MSG_ID(Keyboard, T),
+        input_setup().trigger())
+      .map_input(
+        EAGINE_MSG_ID(Example, ChngTilset),
+        EAGINE_MSG_ID(GUI, ChngTilset),
+        input_setup().trigger())
+      .switch_input_mapping();
 }
 //------------------------------------------------------------------------------
 void example_tiling::on_video_resize() noexcept {
     const auto& gl = _video.gl_api();
     gl.viewport(_video.surface_size());
+}
+//------------------------------------------------------------------------------
+void example_tiling::change_tileset(const input& i) noexcept {
+    if(!i) {
+        tileset_tex_idx = (tileset_tex_idx + 1) % tileset_tex_units.size();
+    }
 }
 //------------------------------------------------------------------------------
 void example_tiling::update() noexcept {
@@ -259,9 +276,9 @@ void example_tiling::update() noexcept {
     const auto& [gl, GL] = glapi;
 
     gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
-    if(camera.has_changed()) {
-        glapi.set_uniform(prog, camera_loc, camera.matrix(_video));
-    }
+    glapi.set_uniform(
+      prog, tileset_tex_loc, tileset_tex_units[tileset_tex_idx]);
+    glapi.set_uniform(prog, camera_loc, camera.matrix(_video));
     oglplus::draw_using_instructions(glapi, view(_ops));
 
     _video.commit();
@@ -270,7 +287,7 @@ void example_tiling::update() noexcept {
 void example_tiling::clean_up() noexcept {
     const auto& gl = _video.gl_api();
 
-    gl.delete_textures(std::move(tileset_tex));
+    gl.delete_textures(tileset_texs.raw_handles());
     gl.delete_textures(std::move(tiling_tex));
     gl.delete_program(std::move(prog));
     gl.delete_buffers(std::move(indices));

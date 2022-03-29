@@ -5,6 +5,7 @@
 /// See accompanying file LICENSE_1_0.txt or copy at
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
+#include <eagine/app/input_observers.hpp>
 #include <eagine/app/main.hpp>
 #include <eagine/app_config.hpp>
 #include <eagine/embed.hpp>
@@ -63,6 +64,7 @@ private:
     float offset_y{0.0F};
     float scale{1.0F};
     float aspect{1.0F};
+    trigger_released reset_triggered;
     bool dampen_motion{false};
     bool is_dragging{false};
 
@@ -257,7 +259,7 @@ void example_mandelbrot::pan_y(const input& i) noexcept {
 }
 //------------------------------------------------------------------------------
 void example_mandelbrot::change_gradient(const input& i) noexcept {
-    if(!i) {
+    if(reset_triggered(i)) {
         set_gradient_image();
     }
 }

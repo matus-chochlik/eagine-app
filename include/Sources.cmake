@@ -5,10 +5,12 @@
 #
 set(HEADERS
     eagine/app/camera.hpp
+    eagine/app/config/basic.hpp
     eagine/app/context.hpp
     eagine/app/framedump_raw.hpp
     eagine/app/fwd.hpp
     eagine/app/input.hpp
+    eagine/app/input_observers.hpp
     eagine/app/interface.hpp
     eagine/app/main.hpp
     eagine/app/openal_oalplus.hpp

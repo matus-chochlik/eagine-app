@@ -9,6 +9,7 @@
 #ifndef EAGINE_APP_OPENGL_EGLPLUS_HPP
 #define EAGINE_APP_OPENGL_EGLPLUS_HPP
 
+#include "config/basic.hpp"
 #include "interface.hpp"
 #include <eagine/main_ctx_fwd.hpp>
 #include <memory>
