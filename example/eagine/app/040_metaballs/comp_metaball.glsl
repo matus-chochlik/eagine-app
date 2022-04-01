@@ -1,5 +1,5 @@
 #version 430
-#define MB_COUNT 24
+#define MB_COUNT 48
 
 layout(local_size_x = MB_COUNT) in;
 
@@ -58,9 +58,9 @@ void init() {
                 metaballs.param[i].majorAxis = axis * 0.5;
                 metaballs.param[i].time = 0.0;
                 metaballs.param[i].minorAxis = axis.yxz * 0.25;
-                metaballs.param[i].speed = 0.2 + random() * 0.15;
+                metaballs.param[i].speed = 0.1 + random() * 0.05;
                 metaballs.param[i].center = vec3(0.0);
-                metaballs.param[i].radius = 0.1 + random() * 0.1;
+                metaballs.param[i].radius = 0.12 + random() * 0.05;
                 vec3 color = randomVec();
                 color[i % 3] = 2.0 * float(i % 2);
                 metaballs.param[i].color = normalize(color) * 1.414;

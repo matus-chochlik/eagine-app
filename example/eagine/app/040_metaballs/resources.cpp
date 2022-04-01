@@ -87,7 +87,7 @@ void volume_domain::init(example& e) {
     gl.object_label(_metaballs, "domain metaball parameters");
     gl.bind_buffer_base(
       GL.shader_storage_buffer, metaballs_binding(), _metaballs);
-    gl.buffer_storage(GL.shader_storage_buffer, 2048);
+    gl.buffer_storage(GL.shader_storage_buffer, 4096);
     gl.clear_buffer_sub_data(
       GL.shader_storage_buffer, 0, 1, oglplus::gl_types::uint_type(0U));
 

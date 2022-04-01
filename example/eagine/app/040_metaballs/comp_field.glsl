@@ -1,5 +1,5 @@
 #version 430
-#define MB_COUNT 24
+#define MB_COUNT 48
 
 layout(local_size_x = 4, local_size_y = 4, local_size_z = 4) in;
 
