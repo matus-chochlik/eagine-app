@@ -86,11 +86,8 @@ auto oalplus_openal_player::initialize(
     _device = device;
     const auto& [alc, ALC] = _alc_api;
 
-    // TODO
-    (void)(opts);
-    (void)(audio_opts);
-
-    if(const ok context{alc.create_context(_device)}) {
+    if(const ok context{alc.create_context(
+         _device, get_context_attribs(exec_ctx, opts, audio_opts))}) {
         _context = context;
         return true;
     } else {
