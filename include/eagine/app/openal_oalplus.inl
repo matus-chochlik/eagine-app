@@ -32,7 +32,7 @@ public:
     auto get_context_attribs(
       execution_context&,
       const launch_options&,
-      const audio_options&) const -> std::vector<oalplus::alc_types::int_type>;
+      const audio_options&) const -> oalplus::context_attributes;
 
     auto initialize(
       execution_context&,
@@ -62,8 +62,7 @@ EAGINE_LIB_FUNC
 auto oalplus_openal_player::get_context_attribs(
   execution_context&,
   const launch_options&,
-  const audio_options& audio_opts) const
-  -> std::vector<oalplus::alc_types::int_type> {
+  const audio_options& audio_opts) const -> oalplus::context_attributes {
     const auto& ALC = _alc_api.constants();
 
     // TODO
@@ -73,7 +72,7 @@ auto oalplus_openal_player::get_context_attribs(
         return attribs + (ALC.sync | false);
     };
 
-    return add_sync(oalplus::context_attribute_base()).copy();
+    return add_sync(oalplus::context_attributes());
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
