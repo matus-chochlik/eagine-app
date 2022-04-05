@@ -32,7 +32,7 @@ public:
       execution_context&,
       const bool gl_otherwise_gles,
       const launch_options&,
-      const video_options&) const -> std::vector<eglplus::egl_types::int_type>;
+      const video_options&) const -> eglplus::context_attributes;
 
     auto initialize(
       execution_context&,
@@ -85,8 +85,7 @@ auto eglplus_opengl_surface::get_context_attribs(
   execution_context&,
   const bool gl_otherwise_gles,
   const launch_options&,
-  const video_options& video_opts) const
-  -> std::vector<eglplus::egl_types::int_type> {
+  const video_options& video_opts) const -> eglplus::context_attributes {
     const auto& EGL = _egl_api.constants();
 
     const auto add_major_version = [&](auto attribs) {
@@ -126,10 +125,8 @@ auto eglplus_opengl_surface::get_context_attribs(
                           video_opts.gl_robust_access());
     };
 
-    return add_robustness(
-             add_debugging(add_profile_mask(add_minor_version(
-               add_major_version(eglplus::context_attribute_base())))))
-      .copy();
+    return add_robustness(add_debugging(add_profile_mask(
+      add_minor_version(add_major_version(eglplus::context_attributes())))));
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
@@ -174,10 +171,7 @@ auto eglplus_opengl_surface::initialize(
               exec_ctx, gl_otherwise_gles, opts, video_opts);
 
             if(const ok ctxt{egl.create_context(
-                 display,
-                 config,
-                 eglplus::context_handle{},
-                 view(context_attribs))}) {
+                 display, config, eglplus::context_handle{}, context_attribs)}) {
                 _context = ctxt;
                 return true;
             } else {

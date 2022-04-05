@@ -27,7 +27,7 @@ public:
     void draw(example&);
 
     constexpr auto plane_count() const noexcept -> int {
-        return 64;
+        return 128;
     }
 
     constexpr auto div_count() const noexcept -> int {
