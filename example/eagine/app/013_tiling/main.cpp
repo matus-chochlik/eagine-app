@@ -153,7 +153,7 @@ example_tiling::example_tiling(execution_context& ec, video_context& vc)
     shape.index_setup(glapi, indices, _ctx.buffer());
 
     // tiling texture
-    const auto tiling_tex_src{embed(EAGINE_ID(TilingTex), "tiles_r4_s512_a6")};
+    const auto tiling_tex_src{embed(EAGINE_ID(TilingTex), "tiles_r4_s1024_a6")};
     const auto tiling_img{
       oglplus::texture_image_block(tiling_tex_src.unpack(ec))};
 
@@ -199,9 +199,9 @@ example_tiling::example_tiling(execution_context& ec, video_context& vc)
       geo_coord.update(_ctx.state().frame_duration().value()).get();
     camera.set_near(0.01F)
       .set_far(50.F)
-      .set_orbit_min(1.05F)
-      .set_orbit_max(2.0F)
-      .set_fov(degrees_(60))
+      .set_orbit_min(1.02F)
+      .set_orbit_max(2.2F)
+      .set_fov(degrees_(55))
       .set_azimuth(azimuth)
       .set_elevation(elevation)
       .set_orbit_factor(orbit);
