@@ -76,7 +76,7 @@ example_sketch::example_sketch(execution_context& ec, video_context& vc)
 //------------------------------------------------------------------------------
 void example_sketch::on_video_resize() noexcept {
     const auto& gl = _video.gl_api();
-    gl.viewport(_video.surface_size());
+    gl.viewport[_video.surface_size()];
 }
 //------------------------------------------------------------------------------
 void example_sketch::update() noexcept {

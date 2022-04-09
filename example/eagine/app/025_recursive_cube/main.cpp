@@ -64,7 +64,7 @@ example_cube::example_cube(execution_context& ec, video_context& vc)
 }
 //------------------------------------------------------------------------------
 void example_cube::on_video_resize() noexcept {
-    _video.gl_api().viewport(_video.surface_size());
+    _video.gl_api().viewport[_video.surface_size()];
 }
 //------------------------------------------------------------------------------
 void example_cube::update() noexcept {
@@ -92,7 +92,7 @@ void example_cube::update() noexcept {
 
     // draw on screen
     gl.bind_framebuffer(GL.draw_framebuffer, oglplus::default_framebuffer);
-    gl.viewport(_video.surface_size());
+    gl.viewport[_video.surface_size()];
 
     const float h = 0.55F;
     const float w = h * _video.surface_aspect();

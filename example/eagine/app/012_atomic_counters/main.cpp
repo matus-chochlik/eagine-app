@@ -114,7 +114,7 @@ example_atomics::example_atomics(execution_context& ec, video_context& vc)
 //------------------------------------------------------------------------------
 void example_atomics::on_video_resize() noexcept {
     const auto& gl = _video.gl_api();
-    gl.viewport(_video.surface_size());
+    gl.viewport[_video.surface_size()];
 }
 //------------------------------------------------------------------------------
 void example_atomics::update() noexcept {

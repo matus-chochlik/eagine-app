@@ -97,7 +97,7 @@ example_arrow::example_arrow(
 //------------------------------------------------------------------------------
 void example_arrow::on_video_resize() noexcept {
     const auto& gl = _video.gl_api();
-    gl.viewport(_video.surface_size());
+    gl.viewport[_video.surface_size()];
 }
 //------------------------------------------------------------------------------
 void example_arrow::update() noexcept {

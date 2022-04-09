@@ -207,7 +207,7 @@ example_occlusion::example_occlusion(
 //------------------------------------------------------------------------------
 void example_occlusion::on_video_resize() noexcept {
     const auto& gl = _video.gl_api();
-    gl.viewport(_video.surface_size());
+    gl.viewport[_video.surface_size()];
 }
 //------------------------------------------------------------------------------
 void example_occlusion::update() noexcept {

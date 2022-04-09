@@ -203,7 +203,7 @@ example_stencil_shadow::example_stencil_shadow(
 //------------------------------------------------------------------------------
 void example_stencil_shadow::on_video_resize() noexcept {
     const auto& gl = _video.gl_api();
-    gl.viewport(_video.surface_size());
+    gl.viewport[_video.surface_size()];
 }
 //------------------------------------------------------------------------------
 void example_stencil_shadow::update() noexcept {

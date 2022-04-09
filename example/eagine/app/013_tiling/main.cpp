@@ -229,7 +229,7 @@ example_tiling::example_tiling(execution_context& ec, video_context& vc)
 //------------------------------------------------------------------------------
 void example_tiling::on_video_resize() noexcept {
     const auto& gl = _video.gl_api();
-    gl.viewport(_video.surface_size());
+    gl.viewport[_video.surface_size()];
 }
 //------------------------------------------------------------------------------
 void example_tiling::change_tileset(const input& i) noexcept {

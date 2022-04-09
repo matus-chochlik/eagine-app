@@ -219,7 +219,7 @@ void example_mandelbrot::on_video_resize() noexcept {
     const auto& gl = _video.gl_api();
 
     aspect = _video.surface_aspect();
-    gl.viewport(_video.surface_size());
+    gl.viewport[_video.surface_size()];
     gl.uniform2f(scale_loc, scale * aspect, scale);
 }
 //------------------------------------------------------------------------------
