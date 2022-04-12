@@ -82,7 +82,7 @@ example_parallax::example_parallax(execution_context& ec, video_context& vc)
 //------------------------------------------------------------------------------
 void example_parallax::on_video_resize() noexcept {
     const auto& gl = _video.gl_api();
-    gl.viewport(_video.surface_size());
+    gl.viewport[_video.surface_size()];
 }
 //------------------------------------------------------------------------------
 void example_parallax::update() noexcept {

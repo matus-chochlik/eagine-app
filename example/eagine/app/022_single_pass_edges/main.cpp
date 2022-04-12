@@ -71,7 +71,7 @@ example_edges::example_edges(execution_context& ec, video_context& vc)
 //------------------------------------------------------------------------------
 void example_edges::on_video_resize() noexcept {
     const auto& gl = _video.gl_api();
-    gl.viewport(_video.surface_size());
+    gl.viewport[_video.surface_size()];
 }
 //------------------------------------------------------------------------------
 void example_edges::update() noexcept {

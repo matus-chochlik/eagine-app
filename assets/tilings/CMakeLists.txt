@@ -5,6 +5,7 @@
 
 oglplus_add_texture(tiles_r4_s256_a6)
 oglplus_add_texture(tiles_r4_s512_a6)
+oglplus_add_texture(tiles_r4_s1024_a6)
 oglplus_add_texture(tiles_r4_s256_a16)
 oglplus_add_texture(tiles_r4_s512_a16)
 

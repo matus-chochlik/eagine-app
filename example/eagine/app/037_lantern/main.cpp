@@ -88,7 +88,7 @@ example_lantern::example_lantern(execution_context& ec, video_context& vc)
 //------------------------------------------------------------------------------
 void example_lantern::on_video_resize() noexcept {
     const auto& gl = _video.gl_api();
-    gl.viewport(_video.surface_size());
+    gl.viewport[_video.surface_size()];
     draw_bufs.resize(_video);
 }
 //------------------------------------------------------------------------------

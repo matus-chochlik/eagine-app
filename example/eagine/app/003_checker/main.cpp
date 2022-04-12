@@ -63,7 +63,7 @@ example_checker::example_checker(execution_context& ec, video_context& vc)
 void example_checker::on_video_resize() noexcept {
     const auto& [gl, GL] = _video.gl_api();
 
-    gl.viewport(_video.surface_size());
+    gl.viewport[_video.surface_size()];
 
     const auto h = GL.double_(2);
     const auto w = h * GL.double_(_video.surface_aspect());
