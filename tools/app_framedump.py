@@ -189,6 +189,17 @@ class FramedumpArgumentParser(argparse.ArgumentParser):
         )
 
         self.add_argument(
+            "--skip-frames",
+            help="""
+                Number of initial video frames to be skipped.
+            """,
+            type=PositiveInt,
+            dest="skip_frames",
+            action="store",
+            default=0
+        )
+
+        self.add_argument(
             "--max-frames",
             help="""
                 Maximum number of output video frames.
@@ -422,6 +433,9 @@ class Framedump(object):
                 "--application-simulate-activity-for",
                 "%ss" % self.options.sim_active
             ]
+
+        if self.options.skip_frames:
+            cmd_line += ["--application-video-framedump-skip-frames", self.options.skip_frames]
 
         if self.options.max_frames:
             cmd_line += ["--application-max-frames", self.options.max_frames]
