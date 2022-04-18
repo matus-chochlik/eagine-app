@@ -22,6 +22,7 @@ namespace eagine::app {
 class edges_program {
 public:
     void init(execution_context&, video_context&);
+    void use(video_context&);
     void clean_up(video_context&);
     void set_projection(video_context&, orbiting_camera&);
 
@@ -38,6 +39,7 @@ private:
 class icosahedron_geometry {
 public:
     void init(execution_context&, video_context&);
+    void use(video_context&);
     void clean_up(video_context&);
     void draw(video_context&);
 

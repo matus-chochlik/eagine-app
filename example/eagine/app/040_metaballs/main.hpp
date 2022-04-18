@@ -11,6 +11,7 @@
 
 #include "resources.hpp"
 
+#include <eagine/app/background/icosahedron.hpp>
 #include <eagine/app/camera.hpp>
 #include <eagine/app/interface.hpp>
 #include <eagine/cleanup_group.hpp>
@@ -55,6 +56,7 @@ private:
     cleanup_group _cleanup;
     execution_context& _ctx;
     video_context& _video;
+    background_icosahedron _bg;
     timeout _is_done{std::chrono::seconds{60}};
 
     orbiting_camera _camera;
