@@ -5,12 +5,13 @@
 /// See accompanying file LICENSE_1_0.txt or copy at
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
+#include <eagine/oglplus/gl.hpp>
+#include <eagine/oglplus/gl_api.hpp>
+
+#include <eagine/app/background/plain.hpp>
 #include <eagine/app/main.hpp>
 #include <eagine/app_config.hpp>
 #include <eagine/timeout.hpp>
-
-#include <eagine/oglplus/gl.hpp>
-#include <eagine/oglplus/gl_api.hpp>
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
@@ -18,9 +19,8 @@ class example_spectrum : public application {
 public:
     example_spectrum(execution_context& ec, video_context& vc)
       : _ec{ec}
-      , _video{vc} {
-        auto& gl = _video.gl_api();
-        gl.clear_color(0.4F, 0.4F, 0.4F, 0.0F);
+      , _video{vc}
+      , _bg{vc.gl_api()} {
 
         ec.connect_inputs().map_inputs().switch_input_mapping();
     }
@@ -46,7 +46,7 @@ public:
     void update() noexcept final {
         const auto& [gl, GL] = _video.gl_api();
 
-        gl.clear(GL.color_buffer_bit);
+        _bg.clear(gl, GL);
 
         gl.matrix_mode(GL.modelview);
         gl.load_identity();
@@ -112,6 +112,7 @@ public:
 private:
     execution_context& _ec;
     video_context& _video;
+    background_color _bg;
     timeout _is_done{std::chrono::seconds{8}};
 };
 //------------------------------------------------------------------------------
