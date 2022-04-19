@@ -34,7 +34,10 @@ public:
     auto init_framebuffer(execution_context&, oglplus::gl_api&) noexcept
       -> bool;
 
-    auto doing_framedump() const noexcept;
+    auto doing_framedump() const noexcept -> bool;
+
+    auto framedump_number(const long frame_no) const noexcept
+      -> valid_if_nonnegative<long>;
 
     auto commit(long frame_number, video_provider&, oglplus::gl_api&) -> bool;
 
@@ -83,8 +86,14 @@ inline auto video_context_state::init_framebuffer(
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
-inline auto video_context_state::doing_framedump() const noexcept {
+inline auto video_context_state::doing_framedump() const noexcept -> bool {
     return _options.doing_framedump();
+}
+//------------------------------------------------------------------------------
+EAGINE_LIB_FUNC
+auto video_context_state::framedump_number(const long frame_no) const noexcept
+  -> valid_if_nonnegative<long> {
+    return _options.framedump_number(frame_no);
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
@@ -98,7 +107,7 @@ inline auto video_context_state::commit(
 
         if(gl.read_pixels) [[likely]] {
 
-            const auto dump_frame = [&](
+            const auto dump_frame = [&, this](
                                       framedump& target,
                                       const auto gl_format,
                                       const auto gl_type,
@@ -107,29 +116,32 @@ inline auto video_context_state::commit(
                                       const int elements,
                                       const span_size_t element_size) {
                 const auto [width, height] = provider.surface_size();
-                const auto size =
-                  span_size(width * height * elements * element_size);
-                auto buffer{target.get_buffer(size)};
 
-                api.operations().read_pixels(
-                  0,
-                  0,
-                  oglplus::gl_types::sizei_type(width),
-                  oglplus::gl_types::sizei_type(height),
-                  gl_format,
-                  gl_type,
-                  buffer);
+                if(const auto framedump_no{framedump_number(frame_number)}) {
+                    const auto size =
+                      span_size(width * height * elements * element_size);
+                    auto buffer{target.get_buffer(size)};
 
-                if(!target.dump_frame(
-                     frame_number,
-                     width,
-                     height,
-                     elements,
-                     element_size,
-                     format,
-                     type,
-                     buffer)) {
-                    result = false;
+                    api.operations().read_pixels(
+                      0,
+                      0,
+                      oglplus::gl_types::sizei_type(width),
+                      oglplus::gl_types::sizei_type(height),
+                      gl_format,
+                      gl_type,
+                      buffer);
+
+                    if(!target.dump_frame(
+                         extract(framedump_no),
+                         width,
+                         height,
+                         elements,
+                         element_size,
+                         format,
+                         type,
+                         buffer)) {
+                        result = false;
+                    }
                 }
             };
 

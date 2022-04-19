@@ -9,6 +9,7 @@
 #include <eagine/oglplus/gl.hpp>
 #include <eagine/oglplus/gl_api.hpp>
 
+#include <eagine/app/background/plain.hpp>
 #include <eagine/app/camera.hpp>
 #include <eagine/app/main.hpp>
 #include <eagine/app_config.hpp>
@@ -38,6 +39,7 @@ public:
 private:
     execution_context& _ctx;
     video_context& _video;
+    background_color_depth _bg;
     timeout _is_done{std::chrono::seconds{30}};
 
     std::vector<oglplus::shape_draw_operation> _ops;
@@ -55,7 +57,8 @@ private:
 //------------------------------------------------------------------------------
 example_cube::example_cube(execution_context& ec, video_context& vc)
   : _ctx{ec}
-  , _video{vc} {
+  , _video{vc}
+  , _bg{_video.gl_api(), 0.4F, 0.F, 1.F} {
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
 
@@ -132,7 +135,6 @@ example_cube::example_cube(execution_context& ec, video_context& vc)
       .set_orbit_max(3.5F)
       .set_fov(right_angle_());
 
-    gl.clear_color(0.4F, 0.4F, 0.4F, 0.0F);
     gl.enable(GL.depth_test);
 
     camera.connect_inputs(ec).basic_input_mapping(ec);
@@ -156,7 +158,8 @@ void example_cube::update() noexcept {
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
 
-    gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
+    _bg.clear(gl, GL);
+
     if(camera.has_changed()) {
         glapi.set_uniform(prog, camera_loc, camera.matrix(_video));
     }

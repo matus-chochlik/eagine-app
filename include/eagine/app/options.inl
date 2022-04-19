@@ -49,11 +49,9 @@ video_options::video_options(
   , _device_kind{c, "application.video.device.kind", instance, video_device_kind::dont_care}
   , _framedump_color{c, "application.video.framedump.color", instance, framedump_data_type::none}
   , _framedump_depth{c, "application.video.framedump.depth", instance, framedump_data_type::none}
-  , _framedump_stencil{
-      c,
-      "application.video.framedump.stencil",
-      instance,
-      framedump_data_type::none} {}
+  , _framedump_stencil{c, "application.video.framedump.stencil", instance, framedump_data_type::none}
+  , _framedump_skip{c, "application.video.framedump.skip_frames", instance, 0} {
+}
 //------------------------------------------------------------------------------
 // audio_options
 //------------------------------------------------------------------------------

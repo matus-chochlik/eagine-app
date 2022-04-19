@@ -13,6 +13,7 @@
 #include <eagine/oglplus/gl.hpp>
 #include <eagine/oglplus/gl_api.hpp>
 
+#include <eagine/app/background/plain.hpp>
 #include <eagine/oglplus/glsl/string_ref.hpp>
 #include <eagine/oglplus/math/primitives.hpp>
 #include <eagine/oglplus/math/vector.hpp>
@@ -37,6 +38,7 @@ public:
 
 private:
     video_context& _video;
+    background_color _bg;
     timeout _is_done{std::chrono::seconds{10}};
 
     oglplus::triangle tri{
@@ -53,10 +55,9 @@ private:
 };
 //------------------------------------------------------------------------------
 example_triangle::example_triangle(execution_context& ec, video_context& vc)
-  : _video{vc} {
+  : _video{vc}
+  , _bg{_video.gl_api(), 0.4F} {
     const auto& [gl, GL] = _video.gl_api();
-
-    gl.clear_color(0.4F, 0.4F, 0.4F, 0.0F);
 
     // vertex shader
     const auto vs_source = embed(EAGINE_ID(VertShader), "vertex.glsl");
@@ -138,7 +139,8 @@ void example_triangle::on_video_resize() noexcept {
 void example_triangle::update() noexcept {
     const auto& [gl, GL] = _video.gl_api();
 
-    gl.clear(GL.color_buffer_bit);
+    _bg.clear(gl, GL);
+
     gl.draw_arrays(GL.triangles, 0, 3);
 
     _video.commit();

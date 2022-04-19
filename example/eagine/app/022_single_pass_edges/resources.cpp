@@ -35,6 +35,10 @@ void edges_program::init(execution_context& ec, video_context& vc) {
     gl.get_uniform_location(prog, "ViewportDimensions") >> vp_dim_loc;
 }
 //------------------------------------------------------------------------------
+void edges_program::use(video_context& vc) {
+    vc.gl_api().use_program(prog);
+}
+//------------------------------------------------------------------------------
 void edges_program::clean_up(video_context& vc) {
     vc.gl_api().delete_program(std::move(prog));
 }
@@ -87,6 +91,10 @@ void icosahedron_geometry::init(execution_context& ec, video_context& vc) {
     // indices
     gl.gen_buffers() >> indices;
     shape.index_setup(glapi, indices, ec.buffer());
+}
+//------------------------------------------------------------------------------
+void icosahedron_geometry::use(video_context& vc) {
+    vc.gl_api().bind_vertex_array(vao);
 }
 //------------------------------------------------------------------------------
 void icosahedron_geometry::clean_up(video_context& vc) {

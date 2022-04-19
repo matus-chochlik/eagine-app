@@ -19,10 +19,12 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 example::example(execution_context& ec, video_context& vc)
   : _ctx{ec}
-  , _video{vc} {
-
-    const auto& glapi = _video.gl_api();
-    const auto& [gl, GL] = glapi;
+  , _video{vc}
+  , _bg{
+      _video.gl_api(),
+      {0.5F, 0.5F, 0.5F, 1.F},
+      {0.25F, 0.25F, 0.25F, 0.0F},
+      1.F} {
 
     _volume.init(*this);
 
@@ -46,12 +48,6 @@ example::example(execution_context& ec, video_context& vc)
       .set_orbit_min(7.0F)
       .set_orbit_max(8.0F)
       .set_fov(degrees_(75.F));
-
-    gl.clear_color(0.25F, 0.25F, 0.25F, 0.0F);
-    gl.clear_depth(1.0F);
-
-    gl.enable(GL.depth_test);
-    gl.enable(GL.cull_face);
 
     _camera.connect_inputs(ec).basic_input_mapping(ec);
     ec.setup_inputs().switch_input_mapping();
@@ -82,7 +78,10 @@ void example::update() noexcept {
     _field_prog.prepare_frame(*this);
     _volume.compute(*this);
 
-    gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
+    _bg.clear(_video, _camera);
+
+    gl.enable(GL.depth_test);
+    gl.enable(GL.cull_face);
 
     _srfce_prog.use(*this);
     _srfce_prog.prepare_frame(*this);

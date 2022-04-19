@@ -362,6 +362,12 @@ public:
                (_framedump_stencil != framedump_data_type::none);
     }
 
+    /// @brief Returns adjusted frame number for frame-dump functionality.
+    auto framedump_number(const long frame_no) const noexcept
+      -> valid_if_nonnegative<long> {
+        return frame_no - extract_or(_framedump_skip.value(), 0);
+    }
+
 private:
     video_context_kind _video_kind;
 
@@ -396,6 +402,7 @@ private:
     application_config_value<framedump_data_type> _framedump_color;
     application_config_value<framedump_data_type> _framedump_depth;
     application_config_value<framedump_data_type> _framedump_stencil;
+    application_config_value<valid_if_nonnegative<long>> _framedump_skip;
 };
 //------------------------------------------------------------------------------
 /// @brief Class holding and managing audio-related application options.
