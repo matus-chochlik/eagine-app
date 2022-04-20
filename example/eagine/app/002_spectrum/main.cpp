@@ -19,9 +19,7 @@ class example_spectrum : public application {
 public:
     example_spectrum(execution_context& ec, video_context& vc)
       : _ec{ec}
-      , _video{vc}
-      , _bg{vc.gl_api()} {
-
+      , _video{vc} {
         ec.connect_inputs().map_inputs().switch_input_mapping();
     }
 
@@ -44,9 +42,9 @@ public:
     }
 
     void update() noexcept final {
-        const auto& [gl, GL] = _video.gl_api();
 
-        _bg.clear(gl, GL);
+        _bg.clear(_video);
+        const auto& [gl, GL] = _video.gl_api();
 
         gl.matrix_mode(GL.modelview);
         gl.load_identity();

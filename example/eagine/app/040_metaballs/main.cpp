@@ -20,11 +20,7 @@ namespace eagine::app {
 example::example(execution_context& ec, video_context& vc)
   : _ctx{ec}
   , _video{vc}
-  , _bg{
-      _video.gl_api(),
-      {0.5F, 0.5F, 0.5F, 1.F},
-      {0.25F, 0.25F, 0.25F, 0.0F},
-      1.F} {
+  , _bg{_video, {0.5F, 0.5F, 0.5F, 1.F}, {0.25F, 0.25F, 0.25F, 0.0F}, 1.F} {
 
     _volume.init(*this);
 
@@ -91,6 +87,7 @@ void example::update() noexcept {
 }
 //------------------------------------------------------------------------------
 void example::clean_up() noexcept {
+    _bg.clean_up(_video);
     _cleanup.clear();
     _video.end();
 }

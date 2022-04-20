@@ -58,7 +58,7 @@ private:
 example_cube::example_cube(execution_context& ec, video_context& vc)
   : _ctx{ec}
   , _video{vc}
-  , _bg{_video.gl_api(), 0.4F, 0.F, 1.F} {
+  , _bg{0.4F, 0.F, 1.F} {
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
 
@@ -156,9 +156,8 @@ void example_cube::update() noexcept {
     }
 
     const auto& glapi = _video.gl_api();
-    const auto& [gl, GL] = glapi;
 
-    _bg.clear(gl, GL);
+    _bg.clear(_video);
 
     if(camera.has_changed()) {
         glapi.set_uniform(prog, camera_loc, camera.matrix(_video));

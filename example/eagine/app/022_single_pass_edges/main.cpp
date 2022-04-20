@@ -46,11 +46,7 @@ private:
 example_edges::example_edges(execution_context& ec, video_context& vc)
   : _ctx{ec}
   , _video{vc}
-  , _bg{
-      _video.gl_api(),
-      {0.1F, 0.1F, 0.1F, 1.0F},
-      {0.4F, 0.4F, 0.4F, 0.0F},
-      1.F} {
+  , _bg{_video, {0.1F, 0.1F, 0.1F, 1.0F}, {0.4F, 0.4F, 0.4F, 0.0F}, 1.F} {
     const auto& glapi = _video.gl_api();
     auto& [gl, GL] = glapi;
 
@@ -104,8 +100,8 @@ void example_edges::clean_up() noexcept {
 
     prog.clean_up(_video);
     shape.clean_up(_video);
+    _bg.clean_up(_video);
 
-    _bg.cleanup(_video.gl_api());
     _video.end();
 }
 //------------------------------------------------------------------------------

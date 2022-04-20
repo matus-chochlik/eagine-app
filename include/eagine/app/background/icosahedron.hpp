@@ -24,23 +24,12 @@ namespace eagine::app {
 class background_icosahedron {
 public:
     background_icosahedron(
-      const oglplus::gl_api& glapi,
+      video_context& vc,
       const oglplus::vec4 ica,
       const oglplus::vec4 ca,
-      const float depth) noexcept
-      : _icolor{ica}
-      , _red{ca.x()}
-      , _green{ca.y()}
-      , _blue{ca.z()}
-      , _alpha{ca.w()}
-      , _depth{depth} {
-        init(glapi);
-    }
+      const float depth) noexcept;
 
-    auto init(const oglplus::gl_api& glapi) noexcept -> background_icosahedron&;
-
-    auto cleanup(const oglplus::gl_api& glapi) noexcept
-      -> background_icosahedron&;
+    auto clean_up(video_context& vc) noexcept -> background_icosahedron&;
 
     auto clear(video_context& vc, const orbiting_camera& camera) noexcept
       -> background_icosahedron&;
@@ -55,7 +44,7 @@ private:
 
     oglplus::owned_program_name _prog;
     oglplus::uniform_location _camera_loc;
-    oglplus::uniform_location _midpoint_loc;
+    oglplus::uniform_location _scale_loc;
     oglplus::uniform_location _color_loc;
 
     oglplus::owned_vertex_array_name _vao;
@@ -66,8 +55,18 @@ private:
     std::vector<oglplus::shape_draw_operation> _ops;
 };
 //------------------------------------------------------------------------------
-inline auto background_icosahedron::init(const oglplus::gl_api& glapi) noexcept
-  -> background_icosahedron& {
+inline background_icosahedron::background_icosahedron(
+  video_context& vc,
+  const oglplus::vec4 ica,
+  const oglplus::vec4 ca,
+  const float depth) noexcept
+  : _icolor{ica}
+  , _red{ca.x()}
+  , _green{ca.y()}
+  , _blue{ca.z()}
+  , _alpha{ca.w()}
+  , _depth{depth} {
+    const auto& glapi = vc.gl_api();
     const auto& [gl, GL] = glapi;
     memory::buffer temp;
 
@@ -81,10 +80,10 @@ inline auto background_icosahedron::init(const oglplus::gl_api& glapi) noexcept
 		#version 140
 		in vec3 Position;
 		uniform mat4 Camera;
-		uniform float Midpoint = 1.0;
+		uniform float Scale = 1.0;
 
 		void main() {
-			gl_Position = Camera * vec4(Position * Midpoint, 1.0);
+			gl_Position = Camera * vec4(Position * Scale, 1.0);
 		})";
     oglplus::owned_shader_name vs;
     gl.create_shader(GL.vertex_shader) >> vs;
@@ -113,7 +112,7 @@ inline auto background_icosahedron::init(const oglplus::gl_api& glapi) noexcept
     gl.use_program(_prog);
 
     gl.get_uniform_location(_prog, "Camera") >> _camera_loc;
-    gl.get_uniform_location(_prog, "Midpoint") >> _midpoint_loc;
+    gl.get_uniform_location(_prog, "Scale") >> _scale_loc;
     gl.get_uniform_location(_prog, "Color") >> _color_loc;
 
     oglplus::shape_generator shape{
@@ -136,13 +135,11 @@ inline auto background_icosahedron::init(const oglplus::gl_api& glapi) noexcept
 
     gl.gen_buffers() >> _indices;
     shape.index_setup(glapi, _indices, temp);
-
-    return *this;
 }
 //------------------------------------------------------------------------------
-inline auto background_icosahedron::cleanup(
-  const oglplus::gl_api& glapi) noexcept -> background_icosahedron& {
-    const auto& gl = glapi;
+inline auto background_icosahedron::clean_up(video_context& vc) noexcept
+  -> background_icosahedron& {
+    const auto& gl = vc.gl_api();
 
     gl.delete_program(std::move(_prog));
     gl.delete_buffers(std::move(_indices));
@@ -161,7 +158,7 @@ inline auto background_icosahedron::clear(
     gl.clear(GL.color_buffer_bit);
     gl.use_program(_prog);
     glapi.set_uniform(_prog, _camera_loc, camera.matrix(vc));
-    glapi.set_uniform(_prog, _midpoint_loc, radius);
+    glapi.set_uniform(_prog, _scale_loc, radius);
     glapi.set_uniform(_prog, _color_loc, _icolor);
     gl.bind_vertex_array(_vao);
     gl.polygon_mode(GL.front_and_back, GL.line);
