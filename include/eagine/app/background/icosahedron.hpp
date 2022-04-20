@@ -153,7 +153,7 @@ inline auto background_icosahedron::clear(
   const orbiting_camera& camera) noexcept -> background_icosahedron& {
     const auto glapi = vc.gl_api();
     const auto& [gl, GL] = glapi;
-    const auto radius{(camera.orbit() + camera.far()) * 1.25F};
+    const auto radius{(camera.skybox_distance())};
 
     gl.clear(GL.color_buffer_bit);
     gl.use_program(_prog);
