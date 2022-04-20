@@ -23,3 +23,5 @@ oglplus_add_texture(monkey)
 
 oglplus_add_texture(bricks)
 oglplus_add_texture(stones)
+
+oglplus_add_texture(cube_map)
