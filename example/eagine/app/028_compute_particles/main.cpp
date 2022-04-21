@@ -84,6 +84,7 @@ void example::update() noexcept {
 }
 //------------------------------------------------------------------------------
 void example::clean_up() noexcept {
+    _bg.clean_up(_video);
     _cleanup.clear();
     _video.end();
 }

@@ -151,6 +151,7 @@ void shape_geometry::clean_up(video_context& vc) {
 }
 //------------------------------------------------------------------------------
 void shape_geometry::draw(execution_context&, video_context& ec) {
+    ec.gl_api().bind_vertex_array(_vao);
     draw_using_instructions(ec.gl_api(), view(_ops));
 }
 //------------------------------------------------------------------------------

@@ -9,6 +9,7 @@
 #include <eagine/oglplus/gl.hpp>
 #include <eagine/oglplus/gl_api.hpp>
 
+#include <eagine/app/background/icosahedron.hpp>
 #include <eagine/app/camera.hpp>
 #include <eagine/app/main.hpp>
 #include <eagine/oglplus/math/matrix.hpp>
@@ -36,6 +37,7 @@ public:
 private:
     execution_context& _ctx;
     video_context& _video;
+    background_icosahedron _bg;
     timeout _is_done{std::chrono::seconds{30}};
 
     orbiting_camera _camera;
@@ -46,7 +48,8 @@ private:
 //------------------------------------------------------------------------------
 example_sketch::example_sketch(execution_context& ec, video_context& vc)
   : _ctx{ec}
-  , _video{vc} {
+  , _video{vc}
+  , _bg{_video, {0.50F, 0.50F, 0.45F, 1.0F}, {0.85F, 0.85F, 0.85F, 0.0F}, 1.F} {
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
 
@@ -88,10 +91,7 @@ void example_sketch::update() noexcept {
         _camera.idle_update(state, 9.F);
     }
 
-    const auto& glapi = _video.gl_api();
-    auto& [gl, GL] = glapi;
-
-    gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
+    _bg.clear(_video, _camera);
 
     _sketch_prog.prepare_frame(
       _video, _camera, _ctx.state().frame_time().value());
@@ -102,6 +102,7 @@ void example_sketch::update() noexcept {
 //------------------------------------------------------------------------------
 void example_sketch::clean_up() noexcept {
 
+    _bg.clean_up(_video);
     _sketch_prog.clean_up(_video);
     _shape.clean_up(_video);
     _tex.init(_ctx, _video);
