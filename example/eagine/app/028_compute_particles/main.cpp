@@ -20,6 +20,7 @@ namespace eagine::app {
 example::example(execution_context& ec, video_context& vc)
   : _ctx{ec}
   , _video{vc}
+  , _bg{_video, {0.45F, 0.40F, 0.35F, 1.0F}, {0.25F, 0.25F, 0.25F, 0.0F}, 1.F}
   , _path{view(std::array<oglplus::vec3, 4>{
       {{-20.F, -10.F, -10.F},
        {20.F, -10.F, -10.F},
@@ -48,9 +49,6 @@ example::example(execution_context& ec, video_context& vc)
       .set_orbit_max(40.0F)
       .set_fov(right_angle_());
 
-    gl.clear_color(0.25F, 0.25F, 0.25F, 0.0F);
-    gl.clear_depth(1.0F);
-
     gl.enable(GL.depth_test);
     gl.disable(GL.cull_face);
 
@@ -72,10 +70,7 @@ void example::update() noexcept {
         _camera.idle_update(state, 7.F);
     }
 
-    const auto& glapi = _video.gl_api();
-    const auto& [gl, GL] = glapi;
-
-    gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
+    _bg.clear(_video, _camera);
 
     _emit_prog.use(*this);
     _emit_prog.prepare_frame(*this);
