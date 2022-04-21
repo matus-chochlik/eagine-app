@@ -262,7 +262,7 @@ inline auto background_skybox::clear(
     gl.enable(GL.depth_test);
 
     gl.clear_depth(1.F);
-    gl.clear(GL.depth_buffer_bit);
+    gl.clear(GL.depth_buffer_bit | GL.stencil_buffer_bit);
     return *this;
 }
 //------------------------------------------------------------------------------

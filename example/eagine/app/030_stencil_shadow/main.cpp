@@ -9,6 +9,7 @@
 #include <eagine/oglplus/gl.hpp>
 #include <eagine/oglplus/gl_api.hpp>
 
+#include <eagine/app/background/skybox.hpp>
 #include <eagine/app/camera.hpp>
 #include <eagine/app/main.hpp>
 #include <eagine/app_config.hpp>
@@ -39,6 +40,7 @@ public:
 private:
     execution_context& _ctx;
     video_context& _video;
+    background_skybox _bg;
     timeout _is_done{std::chrono::seconds{90}};
 
     std::vector<oglplus::shape_draw_operation> _ops;
@@ -67,7 +69,8 @@ example_stencil_shadow::example_stencil_shadow(
   execution_context& ec,
   video_context& vc)
   : _ctx{ec}
-  , _video{vc} {
+  , _video{vc}
+  , _bg{_video, embed(EAGINE_ID(CubeMap), "cloudy_day").unpack(ec)} {
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
 
@@ -193,7 +196,6 @@ example_stencil_shadow::example_stencil_shadow(
       .set_far(100.0F);
     camera.idle_update(_ctx.state(), 11.F);
 
-    gl.clear_color(0.35F, 0.35F, 0.35F, 1.0F);
     gl.enable(GL.depth_test);
     gl.enable(GL.cull_face);
 
@@ -226,9 +228,10 @@ void example_stencil_shadow::update() noexcept {
     // first color pass (shadow)
     gl.color_mask(GL.true_, GL.true_, GL.true_, GL.true_);
     gl.depth_mask(GL.true_);
-    gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit | GL.stencil_buffer_bit);
+    _bg.clear(_video, camera);
     gl.disable(GL.stencil_test);
 
+    gl.bind_vertex_array(vao);
     gl.use_program(draw_prog);
     glapi.set_uniform(draw_prog, light_mult_loc, 0.7F);
     glapi.set_uniform(draw_prog, light_dir_draw_loc, light_dir);
@@ -272,6 +275,8 @@ void example_stencil_shadow::update() noexcept {
 //------------------------------------------------------------------------------
 void example_stencil_shadow::clean_up() noexcept {
     const auto& gl = _video.gl_api();
+
+    _bg.clean_up(_video);
 
     gl.delete_textures(std::move(light_tex));
     gl.delete_textures(std::move(color_tex));
