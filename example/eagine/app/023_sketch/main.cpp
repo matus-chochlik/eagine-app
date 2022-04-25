@@ -18,8 +18,6 @@
 
 #include "resources.hpp"
 
-#include <iostream>
-
 namespace eagine::app {
 //------------------------------------------------------------------------------
 class example_sketch : public application {
