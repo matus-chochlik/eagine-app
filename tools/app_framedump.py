@@ -238,6 +238,14 @@ class FramedumpArgumentParser(argparse.ArgumentParser):
         )
 
         self.add_argument(
+            "--mastodon-gif",
+            help="""Render a GIF for MAstodon""",
+            default=False,
+            action="store_true",
+            dest="mastodon_gif"
+        )
+
+        self.add_argument(
             "--twitter-vid",
             help="""Render a video for Twitter""",
             default=False,
@@ -303,6 +311,13 @@ class FramedumpArgumentParser(argparse.ArgumentParser):
                     self.fps = 24
                     self.render_scale = 2
                     self.max_bytes = "14500k"
+                elif self.mastodon_gif:
+                    self.gif_output = True
+                    self.frame_size[0] = 420
+                    self.frame_size[1] = 240
+                    self.fps = 20
+                    self.render_scale = 2
+                    self.max_bytes = "10000k"
 
                 self.frame_width, self.frame_height = self.frame_size
 
