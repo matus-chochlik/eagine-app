@@ -19,6 +19,7 @@ eagine_embed_target_resources(
 		stencil_shadow_mask
 		wheelcart_1_color
 		wheelcart_1_aoccl
+		cloudy_day
 	PACKED
 )
 eagine_add_exe_analysis(app-030_stencil_shadow)

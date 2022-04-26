@@ -9,6 +9,7 @@
 #ifndef EAGINE_APP_BACKGROUND_PLAIN_HPP
 #define EAGINE_APP_BACKGROUND_PLAIN_HPP
 
+#include <eagine/app/context.hpp>
 #include <eagine/oglplus/gl_api.hpp>
 #include <eagine/oglplus/math/vector.hpp>
 
@@ -16,51 +17,37 @@ namespace eagine::app {
 
 class background_color {
 public:
-    background_color(
-      const oglplus::gl_api& glapi,
-      const oglplus::vec4 ca) noexcept
+    background_color(const oglplus::vec4 ca) noexcept
       : _red{ca.x()}
       , _green{ca.y()}
       , _blue{ca.z()}
-      , _alpha{ca.w()} {
-        init(glapi);
-    }
+      , _alpha{ca.w()} {}
 
-    background_color(
-      const oglplus::gl_api& glapi,
-      const oglplus::vec3 c) noexcept
+    background_color(const oglplus::vec3 c) noexcept
       : _red{c.x()}
       , _green{c.y()}
       , _blue{c.z()}
-      , _alpha{1.F} {
-        init(glapi);
-    }
+      , _alpha{1.F} {}
 
-    background_color(
-      const oglplus::gl_api& glapi,
-      float gray,
-      float alpha) noexcept
-      : background_color{glapi, {gray, gray, gray, alpha}} {}
+    background_color(float gray, float alpha) noexcept
+      : background_color{{gray, gray, gray, alpha}} {}
 
-    background_color(const oglplus::gl_api& glapi, float gray) noexcept
-      : background_color{glapi, gray, 1.F} {}
+    background_color(float gray) noexcept
+      : background_color{gray, 1.F} {}
 
-    background_color(const oglplus::gl_api& glapi) noexcept
-      : background_color{glapi, 0.5F} {}
+    background_color() noexcept
+      : background_color{0.5F} {}
 
-    auto init(const oglplus::gl_api& glapi) noexcept -> background_color& {
-        glapi.clear_color(_red, _green, _blue, _alpha);
+    auto setup(video_context& vc) noexcept -> background_color& {
+        vc.gl_api().clear_color(_red, _green, _blue, _alpha);
         return *this;
     }
 
-    auto clear(const auto& gl, const auto& GL) noexcept -> background_color& {
+    auto clear(video_context& vc) noexcept -> background_color& {
+        setup(vc);
+        const auto& [gl, GL] = vc.gl_api();
         gl.clear(GL.color_buffer_bit);
         return *this;
-    }
-
-    auto clear(const oglplus::gl_api& glapi) noexcept -> background_color& {
-        const auto& [gl, GL] = glapi;
-        return clear(gl, GL);
     }
 
 private:
@@ -72,60 +59,36 @@ private:
 
 class background_color_depth {
 public:
-    background_color_depth(
-      const oglplus::gl_api& glapi,
-      const oglplus::vec4 ca,
-      const float depth) noexcept
-      : _color{glapi, ca}
-      , _depth{depth} {
-        init(glapi);
-    }
+    background_color_depth(const oglplus::vec4 ca, const float depth) noexcept
+      : _color{ca}
+      , _depth{depth} {}
+
+    background_color_depth(const oglplus::vec3 c, const float depth) noexcept
+      : _color{c}
+      , _depth{depth} {}
 
     background_color_depth(
-      const oglplus::gl_api& glapi,
-      const oglplus::vec3 c,
-      const float depth) noexcept
-      : _color{glapi, c}
-      , _depth{depth} {
-        init(glapi);
-    }
-
-    background_color_depth(
-      const oglplus::gl_api& glapi,
       const float gray,
       const float alpha,
       const float depth) noexcept
-      : _color{glapi, gray, alpha}
-      , _depth{depth} {
-        init(glapi);
-    }
+      : _color{gray, alpha}
+      , _depth{depth} {}
 
-    background_color_depth(
-      const oglplus::gl_api& glapi,
-      const float gray,
-      const float depth) noexcept
-      : _color{glapi, gray}
-      , _depth{depth} {
-        init(glapi);
-    }
+    background_color_depth(const float gray, const float depth) noexcept
+      : _color{gray}
+      , _depth{depth} {}
 
-    auto init(const oglplus::gl_api& glapi) noexcept
-      -> background_color_depth& {
-        _color.init(glapi);
-        glapi.clear_depth(_depth);
+    auto setup(video_context& vc) noexcept -> background_color_depth& {
+        _color.setup(vc);
+        vc.gl_api().clear_depth(_depth);
         return *this;
     }
 
-    auto clear(const auto& gl, const auto& GL) noexcept
-      -> background_color_depth& {
+    auto clear(video_context& vc) noexcept -> background_color_depth& {
+        setup(vc);
+        const auto& [gl, GL] = vc.gl_api();
         gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
         return *this;
-    }
-
-    auto clear(const oglplus::gl_api& glapi) noexcept
-      -> background_color_depth& {
-        const auto& [gl, GL] = glapi;
-        return clear(gl, GL);
     }
 
 private:

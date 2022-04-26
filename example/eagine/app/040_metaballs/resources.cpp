@@ -127,6 +127,7 @@ void volume_domain::compute(example& e) {
 //------------------------------------------------------------------------------
 void volume_domain::draw(example& e) {
     const auto& [gl, GL] = e.video().gl_api();
+    gl.front_face(GL.ccw);
     gl.bind_vertex_array(_tetrahedrons);
     gl.draw_elements_instanced(
       GL.lines_adjacency, 4 * 6, GL.unsigned_int_, nullptr, cube_count());

@@ -56,7 +56,7 @@ private:
 //------------------------------------------------------------------------------
 example_triangle::example_triangle(execution_context& ec, video_context& vc)
   : _video{vc}
-  , _bg{_video.gl_api(), 0.4F} {
+  , _bg{0.4F} {
     const auto& [gl, GL] = _video.gl_api();
 
     // vertex shader
@@ -137,10 +137,10 @@ void example_triangle::on_video_resize() noexcept {
 }
 //------------------------------------------------------------------------------
 void example_triangle::update() noexcept {
+
+    _bg.clear(_video);
+
     const auto& [gl, GL] = _video.gl_api();
-
-    _bg.clear(gl, GL);
-
     gl.draw_arrays(GL.triangles, 0, 3);
 
     _video.commit();
