@@ -34,6 +34,7 @@ EAGINE_DIAG_POP()
 #ifdef __clang__
 EAGINE_DIAG_PUSH()
 EAGINE_DIAG_OFF(zero-as-null-pointer-constant)
+EAGINE_DIAG_OFF(reserved-identifier)
 #endif
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>

@@ -12,8 +12,8 @@
 #include "config/basic.hpp"
 #include "state_view.hpp"
 #include <eagine/main_ctx_object.hpp>
+#include <eagine/random_bytes.hpp>
 #include <eagine/valid_if/positive.hpp>
-#include <random>
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
@@ -49,7 +49,7 @@ public:
 
     /// @brief Generates random uniformly-distributed bytes.
     void random_uniform(span<byte> dest) {
-        generate(dest, [this] { return _dist_uniform_byte(_rand_eng); });
+        fill_with_random_bytes(dest, _rand_eng);
     }
 
     /// @brief Generates random uniformly-distributed floats in range <0, 1>.
@@ -81,7 +81,6 @@ private:
     std::default_random_engine::result_type _rand_init;
 
     std::default_random_engine _rand_eng;
-    std::uniform_int_distribution<byte> _dist_uniform_byte{0x00, 0xFF};
     std::uniform_real_distribution<float> _dist_uniform_float_01{0.F, 1.F};
     std::uniform_real_distribution<float> _dist_uniform_float_11{-1.F, 1.F};
     std::normal_distribution<float> _dist_normal_float{0.F, 1.F};
