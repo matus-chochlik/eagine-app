@@ -238,7 +238,7 @@ public:
     auto video_ctx(const span_size_t index = 0) const noexcept
       -> video_context* {
         if((index >= 0) && (index < video_ctx_count())) {
-            return _video_contexts[std_size(index)].get();
+            return _video_contexts[integer(index)].get();
         }
         return nullptr;
     }
@@ -252,7 +252,7 @@ public:
     auto audio_ctx(const span_size_t index = 0) const noexcept
       -> audio_context* {
         if((index >= 0) && (index < audio_ctx_count())) {
-            return _audio_contexts[std_size(index)].get();
+            return _audio_contexts[integer(index)].get();
         }
         return nullptr;
     }
