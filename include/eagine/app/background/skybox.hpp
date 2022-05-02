@@ -199,7 +199,7 @@ inline background_skybox::background_skybox(
         shapes::vertex_attrib_kind::position |
         shapes::vertex_attrib_kind::face_coord)};
 
-    _ops.resize(std_size(shape.operation_count()));
+    _ops.resize(integer(shape.operation_count()));
     shape.instructions(glapi, cover(_ops));
 
     gl.gen_vertex_arrays() >> _vao;

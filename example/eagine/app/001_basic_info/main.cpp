@@ -15,14 +15,15 @@
 #include <eagine/oalplus/al.hpp>
 #include <eagine/oalplus/al_api.hpp>
 
-#include <iostream>
-
 namespace eagine::app {
 //------------------------------------------------------------------------------
-class example_info : public application {
+class example_info
+  : public main_ctx_object
+  , public application {
 public:
     example_info(execution_context& ec, video_context& vc, audio_context& ac)
-      : _video{vc}
+      : main_ctx_object{EAGINE_ID(ApiInfo), ec}
+      , _video{vc}
       , _audio{ac} {
         ec.connect_inputs().map_inputs().switch_input_mapping();
     }
@@ -45,73 +46,78 @@ public:
 
 private:
     void _print_gl_info() {
-        std::cout << "GL info:" << std::endl;
+        const auto gl_cio{cio_print("GL info:").to_be_continued()};
 
         const auto& [gl, GL] = _video.gl_api();
 
         if(const ok info{gl.get_string(GL.vendor)}) {
-            std::cout << "Vendor: " << extract(info) << std::endl;
+            gl_cio.print("Vendor: ${info}").arg(EAGINE_ID(info), extract(info));
         }
 
         if(const ok info{gl.get_string(GL.renderer)}) {
-            std::cout << "Renderer: " << extract(info) << std::endl;
+            gl_cio.print("Renderer: ${info}")
+              .arg(EAGINE_ID(info), extract(info));
         }
 
         if(const ok info{gl.get_string(GL.version)}) {
-            std::cout << "Version: " << extract(info) << std::endl;
+            gl_cio.print("Version: ${info}").arg(EAGINE_ID(info), extract(info));
         }
 
         if(const ok info{gl.get_integer(GL.major_version)}) {
-            std::cout << "Major version: " << extract(info) << std::endl;
+            gl_cio.print("Major version: ${info}")
+              .arg(EAGINE_ID(info), extract(info));
         }
 
         if(const ok info{gl.get_integer(GL.minor_version)}) {
-            std::cout << "Minor version: " << extract(info) << std::endl;
+            gl_cio.print("Minor version: ${info}")
+              .arg(EAGINE_ID(info), extract(info));
         }
 
         if(const ok info{gl.get_string(GL.shading_language_version)}) {
-            std::cout << "GLSL Version: " << extract(info) << std::endl;
+            gl_cio.print("GLSL version: ${info}")
+              .arg(EAGINE_ID(info), extract(info));
         }
 
-        std::cout << "GL Extensions:" << std::endl;
+        const auto ext_cio{gl_cio.print("GL extensions:").to_be_continued()};
 
         if(const ok extensions{gl.get_extensions()}) {
             for(auto name : extensions) {
-                std::cout << "  " << name << std::endl;
+                ext_cio.print(name);
             }
         } else {
-            std::cerr << "failed to get GL extension list: "
-                      << (!extensions).message() << std::endl;
+            ext_cio.error("failed to get GL extension list: ${message}")
+              .arg(EAGINE_ID(message), (!extensions).message());
         }
         _gl_info_printed = true;
     }
 
     void _print_al_info() {
-        std::cout << "AL info:" << std::endl;
+        const auto al_cio{cio_print("AL info:").to_be_continued()};
 
         const auto& [al, AL] = _audio.al_api();
 
         if(const ok info{al.get_string(AL.vendor)}) {
-            std::cout << "Vendor: " << extract(info) << std::endl;
+            al_cio.print("Vendor: ${info}").arg(EAGINE_ID(info), extract(info));
         }
 
         if(const ok info{al.get_string(AL.renderer)}) {
-            std::cout << "Renderer: " << extract(info) << std::endl;
+            al_cio.print("Renderer: ${info}")
+              .arg(EAGINE_ID(info), extract(info));
         }
 
         if(const ok info{al.get_string(AL.version)}) {
-            std::cout << "Version: " << extract(info) << std::endl;
+            al_cio.print("Version: ${info}").arg(EAGINE_ID(info), extract(info));
         }
 
-        std::cout << "AL Extensions:" << std::endl;
+        const auto ext_cio{al_cio.print("AL extensions:").to_be_continued()};
 
         if(const ok extensions{al.get_extensions()}) {
             for(auto name : extensions) {
-                std::cout << "  " << name << std::endl;
+                ext_cio.print(name);
             }
         } else {
-            std::cerr << "failed to get AL extension list: "
-                      << (!extensions).message() << std::endl;
+            ext_cio.error("failed to get AL extension list: ${message}")
+              .arg(EAGINE_ID(message), (!extensions).message());
         }
         _al_info_printed = true;
     }

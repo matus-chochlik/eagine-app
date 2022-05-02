@@ -34,6 +34,7 @@ EAGINE_DIAG_POP()
 #ifdef __clang__
 EAGINE_DIAG_PUSH()
 EAGINE_DIAG_OFF(zero-as-null-pointer-constant)
+EAGINE_DIAG_OFF(reserved-identifier)
 #endif
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
@@ -992,7 +993,7 @@ auto glfw3_opengl_provider::initialize(execution_context& exec_ctx) -> bool {
                      this->main_context().config(), inst, this->as_parent())}) {
                     if(extract(new_win).initialize(
                          options, video_opts, monitors)) {
-                        _windows[inst] = std::move(new_win);
+                        _windows[inst] = new_win;
                     } else {
                         extract(new_win).clean_up();
                     }

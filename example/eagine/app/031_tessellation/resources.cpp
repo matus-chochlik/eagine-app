@@ -41,6 +41,10 @@ void sphere_program::clean_up(video_context& vc) {
     vc.gl_api().delete_program(std::move(prog));
 }
 //------------------------------------------------------------------------------
+void sphere_program::use(video_context& vc) {
+    vc.gl_api().use_program(prog);
+}
+//------------------------------------------------------------------------------
 void sphere_program::set_projection(video_context& vc, orbiting_camera& camera) {
     const auto [width, height] = vc.surface_size();
     const auto& gl = vc.gl_api();
@@ -133,8 +137,9 @@ void icosahedron_geometry::clean_up(video_context& vc) {
 }
 //------------------------------------------------------------------------------
 void icosahedron_geometry::draw(video_context& vc) {
-    draw_instanced_using_instructions(
-      vc.gl_api(), view(ops), count * count * count);
+    const auto& glapi = vc.gl_api();
+    glapi.bind_vertex_array(vao);
+    draw_instanced_using_instructions(glapi, view(ops), count * count * count);
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

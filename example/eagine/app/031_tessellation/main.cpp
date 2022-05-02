@@ -9,6 +9,7 @@
 #include <eagine/oglplus/gl.hpp>
 #include <eagine/oglplus/gl_api.hpp>
 
+#include <eagine/app/background/icosahedron.hpp>
 #include <eagine/app/camera.hpp>
 #include <eagine/app/main.hpp>
 #include <eagine/oglplus/math/matrix.hpp>
@@ -34,6 +35,7 @@ public:
 private:
     execution_context& _ctx;
     video_context& _video;
+    background_icosahedron _bg;
     timeout _is_done{std::chrono::seconds{30}};
 
     orbiting_camera camera;
@@ -43,9 +45,8 @@ private:
 //------------------------------------------------------------------------------
 example_sphere::example_sphere(execution_context& ec, video_context& vc)
   : _ctx{ec}
-  , _video{vc} {
-    const auto& glapi = _video.gl_api();
-    const auto& [gl, GL] = glapi;
+  , _video{vc}
+  , _bg{_video, {0.0F, 0.0F, 0.0F, 1.F}, {0.25F, 0.25F, 0.25F, 0.0F}, 1.F} {
 
     prog.init(ec, vc);
     shape.init(ec, vc);
@@ -59,13 +60,6 @@ example_sphere::example_sphere(execution_context& ec, video_context& vc)
       .set_orbit_max(24.0F)
       .set_fov(degrees_(70.F));
     prog.set_projection(vc, camera);
-
-    gl.clear_color(0.25F, 0.25F, 0.25F, 0.0F);
-    gl.clear_depth(1.0F);
-
-    gl.enable(GL.depth_test);
-    gl.enable(GL.cull_face);
-    gl.cull_face(GL.back);
 
     camera.connect_inputs(ec).basic_input_mapping(ec);
     ec.setup_inputs().switch_input_mapping();
@@ -85,11 +79,16 @@ void example_sphere::update() noexcept {
         camera.idle_update(state, 7.F);
     }
 
+    _bg.clear(_video, camera);
+
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
 
-    gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
+    gl.enable(GL.depth_test);
+    gl.enable(GL.cull_face);
+    gl.cull_face(GL.back);
 
+    prog.use(_video);
     prog.set_projection(_video, camera);
     shape.draw(_video);
 

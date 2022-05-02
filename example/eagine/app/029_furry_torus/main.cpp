@@ -9,6 +9,7 @@
 #include <eagine/oglplus/gl.hpp>
 #include <eagine/oglplus/gl_api.hpp>
 
+#include <eagine/app/background/icosahedron.hpp>
 #include <eagine/app/camera.hpp>
 #include <eagine/app/main.hpp>
 #include <eagine/embed.hpp>
@@ -39,6 +40,7 @@ public:
 private:
     execution_context& _ctx;
     video_context& _video;
+    background_icosahedron _bg;
     timeout _is_done{std::chrono::seconds{120}};
 
     oglplus::tmat<float, 4, 4, true> prev_model;
@@ -53,9 +55,8 @@ private:
 //------------------------------------------------------------------------------
 example_fur::example_fur(execution_context& ec, video_context& vc)
   : _ctx{ec}
-  , _video{vc} {
-    const auto& glapi = _video.gl_api();
-    auto& [gl, GL] = glapi;
+  , _video{vc}
+  , _bg{_video, {0.1F, 0.1F, 0.1F, 1.F}, {0.35F, 0.40F, 0.30F, 0.0F}, 1.F} {
 
     const bool use_monkey_shape = ec.main_context().args().find("--monkey");
 
@@ -121,9 +122,6 @@ example_fur::example_fur(execution_context& ec, video_context& vc)
       .set_orbit_max(2.2F * sr)
       .set_fov(degrees_(45));
 
-    gl.clear_color(0.35F, 0.40F, 0.30F, 0.0F);
-    gl.enable(GL.depth_test);
-
     camera.connect_inputs(ec).basic_input_mapping(ec);
     ec.setup_inputs().switch_input_mapping();
 }
@@ -146,10 +144,7 @@ void example_fur::update() noexcept {
     const auto model = oglplus::matrix_rotation_y(degrees_(-t * 23.F)) *
                        oglplus::matrix_rotation_x(degrees_(t * 41.F));
 
-    const auto& glapi = _video.gl_api();
-    const auto& [gl, GL] = glapi;
-
-    gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
+    _bg.clear(_video, camera);
 
     surf_prog.use(_video);
     surf_prog.set_projection(_video, camera);
