@@ -97,12 +97,12 @@ void example_halo::update() noexcept {
 
     float t = _ctx.state().frame_time().value();
     _surf_prog.prepare_frame(_video, _camera, t);
-    _shape.draw(_ctx, _video);
+    _shape.draw(_video);
 
     gl.depth_mask(GL.false_);
     gl.enable(GL.blend);
     _halo_prog.prepare_frame(_video, _camera, t);
-    _shape.draw(_ctx, _video);
+    _shape.draw(_video);
     gl.disable(GL.blend);
     gl.depth_mask(GL.true_);
 
