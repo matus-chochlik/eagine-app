@@ -53,7 +53,7 @@ example_cube::example_cube(execution_context& ec, video_context& vc)
 
     prog.bind_position_location(vc, cube.position_loc());
     prog.bind_normal_location(vc, cube.normal_loc());
-    prog.bind_tex_coord_location(vc, cube.tex_coord_loc());
+    prog.bind_tex_coord_location(vc, cube.wrap_coord_loc());
 
     gl.clear_color(0.8F, 0.8F, 0.8F, 0.0F);
     gl.enable(GL.depth_test);

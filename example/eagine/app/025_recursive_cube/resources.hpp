@@ -15,6 +15,7 @@
 #include <eagine/app/fwd.hpp>
 #include <eagine/double_buffer.hpp>
 #include <eagine/oglplus/shapes/drawing.hpp>
+#include <eagine/oglplus/shapes/geometry.hpp>
 #include <eagine/quantities.hpp>
 
 namespace eagine::app {
@@ -47,33 +48,13 @@ private:
 //------------------------------------------------------------------------------
 // geometry
 //------------------------------------------------------------------------------
-class cube_geometry {
+class cube_geometry
+  : public oglplus::vertex_attrib_bindings
+  , public oglplus::geometry {
 public:
     void init(execution_context&, video_context&);
     void clean_up(video_context&);
     void draw(video_context&);
-
-    static auto position_loc() noexcept {
-        return oglplus::vertex_attrib_location{0};
-    }
-
-    static auto normal_loc() noexcept {
-        return oglplus::vertex_attrib_location{1};
-    }
-
-    static auto tex_coord_loc() noexcept {
-        return oglplus::vertex_attrib_location{2};
-    }
-
-private:
-    oglplus::owned_vertex_array_name vao;
-
-    oglplus::owned_buffer_name positions;
-    oglplus::owned_buffer_name normals;
-    oglplus::owned_buffer_name tex_coords;
-    oglplus::owned_buffer_name indices;
-
-    std::vector<oglplus::shape_draw_operation> ops;
 };
 //------------------------------------------------------------------------------
 // draw buffers

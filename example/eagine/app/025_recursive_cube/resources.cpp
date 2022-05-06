@@ -86,7 +86,6 @@ void cube_program::bind_tex_coord_location(
 //------------------------------------------------------------------------------
 void cube_geometry::init(execution_context& ec, video_context& vc) {
     const auto& glapi = vc.gl_api();
-    const auto& gl = glapi;
 
     oglplus::shape_generator shape(
       glapi,
@@ -94,60 +93,18 @@ void cube_geometry::init(execution_context& ec, video_context& vc) {
         shapes::vertex_attrib_kind::position |
         shapes::vertex_attrib_kind::normal |
         shapes::vertex_attrib_kind::face_coord));
-
-    ops.resize(std_size(shape.operation_count()));
-    shape.instructions(glapi, cover(ops));
-
-    // vao
-    gl.gen_vertex_arrays() >> vao;
-    gl.bind_vertex_array(vao);
-
-    // positions
-    gl.gen_buffers() >> positions;
-    shape.attrib_setup(
-      glapi,
-      vao,
-      positions,
-      position_loc(),
-      eagine::shapes::vertex_attrib_kind::position,
-      ec.buffer());
-
-    // normals
-    gl.gen_buffers() >> normals;
-    shape.attrib_setup(
-      glapi,
-      vao,
-      normals,
-      normal_loc(),
-      eagine::shapes::vertex_attrib_kind::normal,
-      ec.buffer());
-
-    // tex_coords
-    gl.gen_buffers() >> tex_coords;
-    shape.attrib_setup(
-      glapi,
-      vao,
-      tex_coords,
-      tex_coord_loc(),
-      eagine::shapes::vertex_attrib_kind::face_coord,
-      ec.buffer());
-
-    // indices
-    gl.gen_buffers() >> indices;
-    shape.index_setup(glapi, indices, ec.buffer());
+    vertex_attrib_bindings::init(shape);
+    geometry::init(glapi, shape, *this, ec.buffer());
 }
 //------------------------------------------------------------------------------
 void cube_geometry::clean_up(video_context& vc) {
-    const auto& gl = vc.gl_api();
-    gl.delete_buffers(std::move(indices));
-    gl.delete_buffers(std::move(tex_coords));
-    gl.delete_buffers(std::move(normals));
-    gl.delete_buffers(std::move(positions));
-    gl.delete_vertex_arrays(std::move(vao));
+    geometry::clean_up(vc.gl_api());
 }
 //------------------------------------------------------------------------------
 void cube_geometry::draw(video_context& vc) {
-    draw_using_instructions(vc.gl_api(), view(ops));
+    const auto& glapi = vc.gl_api();
+    geometry::use(glapi);
+    geometry::draw(glapi);
 }
 //------------------------------------------------------------------------------
 void cube_draw_buffers::init(execution_context&, video_context& vc) {
