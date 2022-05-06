@@ -103,7 +103,7 @@ void torus_geometry::init(execution_context& ec, video_context& vc) {
       shapes::unit_torus(
         shapes::vertex_attrib_kind::position |
           shapes::vertex_attrib_kind::normal |
-          shapes::vertex_attrib_kind::tangential |
+          shapes::vertex_attrib_kind::tangent |
           shapes::vertex_attrib_kind::wrap_coord,
         48,
         72,
@@ -144,7 +144,7 @@ void torus_geometry::init(execution_context& ec, video_context& vc) {
       vao,
       tangents,
       tangent_loc(),
-      eagine::shapes::vertex_attrib_kind::tangential,
+      eagine::shapes::vertex_attrib_kind::tangent,
       ec.buffer());
 
     // texcoords

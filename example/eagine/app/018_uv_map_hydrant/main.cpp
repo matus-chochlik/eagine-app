@@ -136,7 +136,7 @@ example_uv_map::example_uv_map(execution_context& ec, video_context& vc)
       vao,
       tangents,
       tangent_loc,
-      eagine::shapes::vertex_attrib_kind::tangential,
+      eagine::shapes::vertex_attrib_kind::tangent,
       _ctx.buffer());
     gl.bind_attrib_location(prog, tangent_loc, "Tangent");
 
@@ -148,7 +148,7 @@ example_uv_map::example_uv_map(execution_context& ec, video_context& vc)
       vao,
       bitangents,
       bitangent_loc,
-      eagine::shapes::vertex_attrib_kind::bitangential,
+      eagine::shapes::vertex_attrib_kind::bitangent,
       _ctx.buffer());
     gl.bind_attrib_location(prog, bitangent_loc, "Bitangent");
 

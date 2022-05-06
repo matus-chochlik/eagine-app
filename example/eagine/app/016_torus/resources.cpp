@@ -69,73 +69,27 @@ void torus_program::bind_texcoord_location(
 //------------------------------------------------------------------------------
 void torus_geometry::init(execution_context& ec, video_context& vc) {
     const auto& glapi = vc.gl_api();
-    const auto& gl = glapi;
 
+    // geometry
+    vertex_attrib_bindings::init(
+      {(shapes::vertex_attrib_kind::position / 3),
+       (shapes::vertex_attrib_kind::normal / 3),
+       (shapes::vertex_attrib_kind::wrap_coord / 0)});
     oglplus::shape_generator shape(
       glapi,
       shapes::scale_wrap_coords(
-        shapes::unit_torus(
-          shapes::vertex_attrib_kind::position |
-          shapes::vertex_attrib_kind::normal |
-          shapes::vertex_attrib_kind::wrap_coord),
-        36.F,
-        12.F,
-        1.F));
-
-    auto draw_var = shape.draw_variant(0);
-    ops.resize(std_size(shape.operation_count(draw_var)));
-    shape.instructions(glapi, draw_var, cover(ops));
-
-    // vao
-    gl.gen_vertex_arrays() >> vao;
-    gl.bind_vertex_array(vao);
-
-    // positions
-    gl.gen_buffers() >> positions;
-    shape.attrib_setup(
-      glapi,
-      vao,
-      positions,
-      position_loc(),
-      eagine::shapes::vertex_attrib_kind::position / 3,
-      ec.buffer());
-
-    // normals
-    gl.gen_buffers() >> normals;
-    shape.attrib_setup(
-      glapi,
-      vao,
-      normals,
-      normal_loc(),
-      eagine::shapes::vertex_attrib_kind::normal / 3,
-      ec.buffer());
-
-    // texcoords
-    gl.gen_buffers() >> texcoords;
-    shape.attrib_setup(
-      glapi,
-      vao,
-      texcoords,
-      texcoord_loc(),
-      eagine::shapes::vertex_attrib_kind::wrap_coord,
-      ec.buffer());
-
-    // indices
-    gl.gen_buffers() >> indices;
-    shape.index_setup(glapi, indices, draw_var, ec.buffer());
+        shapes::unit_torus(attrib_kinds()), 36.F, 12.F, 1.F));
+    geometry::init(glapi, shape, *this, ec.buffer());
+}
+//------------------------------------------------------------------------------
+void torus_geometry::draw(execution_context&, video_context& vc) {
+    const auto& glapi = vc.gl_api();
+    geometry::use(glapi);
+    geometry::draw(glapi);
 }
 //------------------------------------------------------------------------------
 void torus_geometry::clean_up(video_context& vc) {
-    const auto& gl = vc.gl_api();
-    gl.delete_buffers(std::move(indices));
-    gl.delete_buffers(std::move(texcoords));
-    gl.delete_buffers(std::move(normals));
-    gl.delete_buffers(std::move(positions));
-    gl.delete_vertex_arrays(std::move(vao));
-}
-//------------------------------------------------------------------------------
-void torus_geometry::draw(execution_context&, video_context& ec) {
-    draw_using_instructions(ec.gl_api(), view(ops));
+    geometry::clean_up(vc.gl_api());
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

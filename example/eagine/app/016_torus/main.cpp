@@ -52,7 +52,7 @@ example_torus::example_torus(execution_context& ec, video_context& vc)
 
     prog.bind_position_location(vc, torus.position_loc());
     prog.bind_normal_location(vc, torus.normal_loc());
-    prog.bind_texcoord_location(vc, torus.texcoord_loc());
+    prog.bind_texcoord_location(vc, torus.wrap_coord_loc());
 
     // camera
     camera.set_near(0.1F)
