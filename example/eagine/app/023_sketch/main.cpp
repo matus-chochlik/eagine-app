@@ -57,7 +57,7 @@ example_sketch::example_sketch(execution_context& ec, video_context& vc)
     _sketch_prog.init(ec, vc);
     _sketch_prog.bind_position_location(vc, _shape.position_loc());
     _sketch_prog.bind_normal_location(vc, _shape.normal_loc());
-    _sketch_prog.bind_coord_location(vc, _shape.coord_loc());
+    _sketch_prog.bind_coord_location(vc, _shape.wrap_coord_loc());
 
     // camera
     _camera.set_near(0.1F)
@@ -93,7 +93,7 @@ void example_sketch::update() noexcept {
 
     _sketch_prog.prepare_frame(
       _video, _camera, _ctx.state().frame_time().value());
-    _shape.draw(_ctx, _video);
+    _shape.draw(_video);
 
     _video.commit();
 }

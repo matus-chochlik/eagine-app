@@ -14,6 +14,7 @@
 
 #include <eagine/app/fwd.hpp>
 #include <eagine/oglplus/shapes/drawing.hpp>
+#include <eagine/oglplus/shapes/geometry.hpp>
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
@@ -37,23 +38,13 @@ private:
 //------------------------------------------------------------------------------
 // geometry
 //------------------------------------------------------------------------------
-class icosahedron_geometry {
+class icosahedron_geometry
+  : public oglplus::vertex_attrib_bindings
+  , public oglplus::geometry {
 public:
     void init(execution_context&, video_context&);
     void clean_up(video_context&);
     void draw(video_context& ctx);
-
-    static auto position_loc() noexcept {
-        return oglplus::vertex_attrib_location{0};
-    }
-
-private:
-    oglplus::owned_vertex_array_name vao;
-
-    oglplus::owned_buffer_name positions;
-    oglplus::owned_buffer_name indices;
-
-    std::vector<oglplus::shape_draw_operation> ops;
 };
 //------------------------------------------------------------------------------
 } // namespace eagine::app
