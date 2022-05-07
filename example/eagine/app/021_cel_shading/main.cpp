@@ -9,6 +9,7 @@
 #include <eagine/oglplus/gl.hpp>
 #include <eagine/oglplus/gl_api.hpp>
 
+#include <eagine/app/background/icosahedron.hpp>
 #include <eagine/app/camera.hpp>
 #include <eagine/app/main.hpp>
 #include <eagine/oglplus/math/matrix.hpp>
@@ -34,6 +35,7 @@ public:
 private:
     execution_context& _ctx;
     video_context& _video;
+    background_icosahedron _bg;
     timeout _is_done{std::chrono::seconds{30}};
 
     orbiting_camera camera;
@@ -43,7 +45,8 @@ private:
 //------------------------------------------------------------------------------
 example_cel::example_cel(execution_context& ec, video_context& vc)
   : _ctx{ec}
-  , _video{vc} {
+  , _video{vc}
+  , _bg{_video, {0.1F, 0.1F, 0.1F, 1.0F}, {0.4F, 0.4F, 0.4F, 0.0F}, 1.F} {
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
 
@@ -58,8 +61,6 @@ example_cel::example_cel(execution_context& ec, video_context& vc)
       .set_orbit_max(6.0F)
       .set_fov(right_angle_());
     prog.set_projection(vc, camera);
-
-    gl.clear_color(0.4F, 0.4F, 0.4F, 0.0F);
 
     gl.enable(GL.depth_test);
     gl.enable(GL.cull_face);
@@ -83,10 +84,7 @@ void example_cel::update() noexcept {
         camera.idle_update(state);
     }
 
-    const auto& glapi = _video.gl_api();
-    const auto& [gl, GL] = glapi;
-
-    gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
+    _bg.clear(_video, camera);
 
     prog.set_projection(_video, camera);
     prog.set_modelview(_ctx, _video);
@@ -99,6 +97,7 @@ void example_cel::clean_up() noexcept {
 
     prog.clean_up(_video);
     shape.clean_up(_video);
+    _bg.clean_up(_video);
 
     _video.end();
 }
