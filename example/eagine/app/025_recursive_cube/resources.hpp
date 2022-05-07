@@ -13,9 +13,8 @@
 #include <eagine/oglplus/gl_api.hpp>
 
 #include <eagine/app/fwd.hpp>
+#include <eagine/app/geometry.hpp>
 #include <eagine/double_buffer.hpp>
-#include <eagine/oglplus/shapes/drawing.hpp>
-#include <eagine/oglplus/shapes/geometry.hpp>
 #include <eagine/quantities.hpp>
 
 namespace eagine::app {
@@ -48,13 +47,9 @@ private:
 //------------------------------------------------------------------------------
 // geometry
 //------------------------------------------------------------------------------
-class cube_geometry
-  : public oglplus::vertex_attrib_bindings
-  , public oglplus::geometry {
+class cube_geometry : public geometry_and_bindings {
 public:
     void init(execution_context&, video_context&);
-    void clean_up(video_context&);
-    void draw(video_context&);
 };
 //------------------------------------------------------------------------------
 // draw buffers

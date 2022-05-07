@@ -93,7 +93,7 @@ void example_sketch::update() noexcept {
 
     _sketch_prog.prepare_frame(
       _video, _camera, _ctx.state().frame_time().value());
-    _shape.draw(_video);
+    _shape.use_and_draw(_video);
 
     _video.commit();
 }

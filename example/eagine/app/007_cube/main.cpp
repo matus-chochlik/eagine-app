@@ -42,7 +42,7 @@ private:
     background_color_depth _bg;
     timeout _is_done{std::chrono::seconds{30}};
 
-    oglplus::geometry cube;
+    oglplus::geometry_and_bindings cube;
 
     oglplus::owned_program_name prog;
 
@@ -64,8 +64,7 @@ example_cube::example_cube(execution_context& ec, video_context& vc)
       shapes::unit_cube(
         shapes::vertex_attrib_kind::position |
         shapes::vertex_attrib_kind::normal));
-    oglplus::vertex_attrib_bindings bindings{shape};
-    cube = oglplus::geometry{glapi, shape, bindings, temp};
+    cube = oglplus::geometry_and_bindings{glapi, shape, temp};
     cube.use(glapi);
 
     // vertex shader
@@ -91,12 +90,8 @@ example_cube::example_cube(execution_context& ec, video_context& vc)
     gl.link_program(prog);
     gl.use_program(prog);
 
-    gl.bind_attrib_location(
-      prog,
-      bindings.location(shapes::vertex_attrib_kind::position),
-      "Position");
-    gl.bind_attrib_location(
-      prog, bindings.location(shapes::vertex_attrib_kind::normal), "Normal");
+    gl.bind_attrib_location(prog, cube.position_loc(), "Position");
+    gl.bind_attrib_location(prog, cube.normal_loc(), "Normal");
 
     // uniform
     gl.get_uniform_location(prog, "Camera") >> camera_loc;

@@ -66,18 +66,7 @@ void icosahedron_geometry::init(execution_context& ec, video_context& vc) {
 
     oglplus::shape_generator shape(
       glapi, shapes::unit_icosahedron(shapes::vertex_attrib_kind::position));
-    vertex_attrib_bindings::init(shape);
-    geometry::init(glapi, shape, *this, ec.buffer());
-}
-//------------------------------------------------------------------------------
-void icosahedron_geometry::clean_up(video_context& vc) {
-    geometry::clean_up(vc.gl_api());
-}
-//------------------------------------------------------------------------------
-void icosahedron_geometry::draw(video_context& vc) {
-    const auto& glapi = vc.gl_api();
-    geometry::use(glapi);
-    geometry::draw(glapi);
+    geometry_and_bindings::init(glapi, shape, ec.buffer());
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

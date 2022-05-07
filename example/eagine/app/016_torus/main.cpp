@@ -90,7 +90,7 @@ void example_torus::update() noexcept {
 
     gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
     prog.set_projection(_video, camera);
-    torus.draw(_ctx, _video);
+    torus.use_and_draw(_video);
 
     _video.commit();
 }

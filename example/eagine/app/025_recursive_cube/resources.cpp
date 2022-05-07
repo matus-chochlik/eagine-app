@@ -93,18 +93,7 @@ void cube_geometry::init(execution_context& ec, video_context& vc) {
         shapes::vertex_attrib_kind::position |
         shapes::vertex_attrib_kind::normal |
         shapes::vertex_attrib_kind::face_coord));
-    vertex_attrib_bindings::init(shape);
-    geometry::init(glapi, shape, *this, ec.buffer());
-}
-//------------------------------------------------------------------------------
-void cube_geometry::clean_up(video_context& vc) {
-    geometry::clean_up(vc.gl_api());
-}
-//------------------------------------------------------------------------------
-void cube_geometry::draw(video_context& vc) {
-    const auto& glapi = vc.gl_api();
-    geometry::use(glapi);
-    geometry::draw(glapi);
+    geometry_and_bindings::init(glapi, shape, ec.buffer());
 }
 //------------------------------------------------------------------------------
 void cube_draw_buffers::init(execution_context&, video_context& vc) {

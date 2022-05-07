@@ -69,17 +69,7 @@ void icosahedron_geometry::init(execution_context& ec, video_context& vc) {
           {0.5F, 0.5F, 0.5F}),
         {1.F, 1.F, 1.F},
         {3, 3, 3})));
-    vertex_attrib_bindings::init(shape);
-    geometry::init(glapi, shape, *this, ec.buffer());
-}
-//------------------------------------------------------------------------------
-void icosahedron_geometry::clean_up(video_context& vc) {
-    geometry::clean_up(vc.gl_api());
-}
-//------------------------------------------------------------------------------
-void icosahedron_geometry::draw(video_context& vc) {
-    geometry::use(vc.gl_api());
-    geometry::draw(vc.gl_api());
+    geometry_and_bindings::init(glapi, shape, ec.buffer());
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

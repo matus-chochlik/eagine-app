@@ -96,18 +96,7 @@ void shape_geometry::init(execution_context& ec, video_context& vc) {
           9,
           0.5F),
         ec));
-    vertex_attrib_bindings::init(shape);
-    geometry::init(glapi, shape, *this, ec.buffer());
-}
-//------------------------------------------------------------------------------
-void shape_geometry::clean_up(video_context& vc) {
-    geometry::clean_up(vc.gl_api());
-}
-//------------------------------------------------------------------------------
-void shape_geometry::draw(video_context& vc) {
-    const auto& glapi = vc.gl_api();
-    geometry::use(glapi);
-    geometry::draw(glapi);
+    geometry_and_bindings::init(glapi, shape, ec.buffer());
 }
 //------------------------------------------------------------------------------
 // sketch texture

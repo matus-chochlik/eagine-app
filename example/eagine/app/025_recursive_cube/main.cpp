@@ -88,7 +88,7 @@ void example_cube::update() noexcept {
         oglplus::matrix_translation(0.F, 0.F, -2.F));
 
     gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
-    cube.draw(_video);
+    cube.use_and_draw(_video);
 
     // draw on screen
     gl.bind_framebuffer(GL.draw_framebuffer, oglplus::default_framebuffer);
@@ -102,7 +102,7 @@ void example_cube::update() noexcept {
         oglplus::matrix_translation(0.F, 0.F, -2.F));
 
     gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
-    cube.draw(_video);
+    cube.use_and_draw(_video);
     // swap texture draw buffers
     bufs.swap();
 

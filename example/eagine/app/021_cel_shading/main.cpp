@@ -90,7 +90,7 @@ void example_cel::update() noexcept {
 
     prog.set_projection(_video, camera);
     prog.set_modelview(_ctx, _video);
-    shape.draw(_video);
+    shape.use_and_draw(_video);
 
     _video.commit();
 }

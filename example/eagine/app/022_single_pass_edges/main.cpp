@@ -90,7 +90,7 @@ void example_edges::update() noexcept {
 
     prog.use(_video);
     prog.set_projection(_video, camera);
-    shape.draw(_video);
+    shape.use_and_draw(_video);
 
     _video.commit();
 }
