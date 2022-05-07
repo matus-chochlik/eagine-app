@@ -13,8 +13,7 @@
 #include <eagine/oglplus/gl_api.hpp>
 
 #include <eagine/app/fwd.hpp>
-#include <eagine/oglplus/shapes/drawing.hpp>
-#include <eagine/oglplus/shapes/geometry.hpp>
+#include <eagine/app/geometry.hpp>
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
@@ -71,28 +70,20 @@ private:
 //------------------------------------------------------------------------------
 // geometry
 //------------------------------------------------------------------------------
-class shape_surface
-  : public oglplus::vertex_attrib_bindings
-  , public oglplus::geometry {
+class shape_surface : public geometry_and_bindings {
 public:
     void init(
       execution_context&,
       video_context&,
       const std::shared_ptr<shapes::generator>&);
-    void clean_up(video_context&);
-    void draw(video_context&);
 };
 //------------------------------------------------------------------------------
-class shape_hair
-  : public oglplus::vertex_attrib_bindings
-  , public oglplus::geometry {
+class shape_hair : public geometry_and_bindings {
 public:
     void init(
       execution_context&,
       video_context&,
       const std::shared_ptr<shapes::generator>&);
-    void clean_up(video_context&);
-    void draw(video_context&);
 };
 //------------------------------------------------------------------------------
 // texture

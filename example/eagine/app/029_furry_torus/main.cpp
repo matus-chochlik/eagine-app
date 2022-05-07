@@ -149,12 +149,12 @@ void example_fur::update() noexcept {
     surf_prog.use(_video);
     surf_prog.set_projection(_video, camera);
     surf_prog.set_model(_video, model);
-    surf.draw(_video);
+    surf.use_and_draw(_video);
 
     hair_prog.use(_video);
     hair_prog.set_projection(_video, camera);
     hair_prog.set_model(_video, prev_model, model);
-    hair.draw(_video);
+    hair.use_and_draw(_video);
 
     prev_model = model;
 

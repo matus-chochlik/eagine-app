@@ -173,18 +173,7 @@ void shape_surface::init(
     const auto& glapi = vc.gl_api();
 
     oglplus::shape_generator shape(glapi, gen);
-    vertex_attrib_bindings::init(shape);
-    geometry::init(glapi, shape, *this, ec.buffer());
-}
-//------------------------------------------------------------------------------
-void shape_surface::clean_up(video_context& vc) {
-    geometry::clean_up(vc.gl_api());
-}
-//------------------------------------------------------------------------------
-void shape_surface::draw(video_context& vc) {
-    const auto& glapi = vc.gl_api();
-    geometry::use(glapi);
-    geometry::draw(glapi);
+    geometry_and_bindings::init(glapi, shape, ec.buffer());
 }
 //------------------------------------------------------------------------------
 // hair geometry
@@ -200,18 +189,7 @@ void shape_hair::init(
       glapi,
       shapes::surface_points(
         gen, 256 * 1024, shapes::vertex_attrib_kind::occlusion, ec.as_parent()));
-    vertex_attrib_bindings::init(shape);
-    geometry::init(glapi, shape, *this, ec.buffer());
-}
-//------------------------------------------------------------------------------
-void shape_hair::clean_up(video_context& vc) {
-    geometry::clean_up(vc.gl_api());
-}
-//------------------------------------------------------------------------------
-void shape_hair::draw(video_context& vc) {
-    const auto& glapi = vc.gl_api();
-    geometry::use(glapi);
-    geometry::draw(glapi);
+    geometry_and_bindings::init(glapi, shape, ec.buffer());
 }
 //------------------------------------------------------------------------------
 // textures
