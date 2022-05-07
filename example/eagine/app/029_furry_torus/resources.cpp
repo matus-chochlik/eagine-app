@@ -171,68 +171,20 @@ void shape_surface::init(
   video_context& vc,
   const std::shared_ptr<shapes::generator>& gen) {
     const auto& glapi = vc.gl_api();
-    const auto& gl = glapi;
 
     oglplus::shape_generator shape(glapi, gen);
-
-    auto draw_var = shape.draw_variant(0);
-    ops.resize(std_size(shape.operation_count(draw_var)));
-    shape.instructions(glapi, draw_var, cover(ops));
-
-    // vao
-    gl.gen_vertex_arrays() >> vao;
-    gl.bind_vertex_array(vao);
-
-    // positions
-    gl.gen_buffers() >> positions;
-    shape.attrib_setup(
-      glapi,
-      vao,
-      positions,
-      position_loc(),
-      shapes::vertex_attrib_kind::position,
-      ec.buffer());
-
-    // texcoords
-    gl.gen_buffers() >> texcoords;
-    shape.attrib_setup(
-      glapi,
-      vao,
-      texcoords,
-      texcoord_loc(),
-      shapes::vertex_attrib_kind::wrap_coord,
-      ec.buffer());
-
-    // occlusions
-    gl.gen_buffers() >> occlusions;
-    shape.attrib_setup(
-      glapi,
-      vao,
-      occlusions,
-      occlusion_loc(),
-      shapes::vertex_attrib_kind::occlusion,
-      ec.buffer());
-
-    // indices
-    gl.gen_buffers() >> indices;
-    shape.index_setup(glapi, indices, draw_var, ec.buffer());
+    vertex_attrib_bindings::init(shape);
+    geometry::init(glapi, shape, *this, ec.buffer());
 }
 //------------------------------------------------------------------------------
 void shape_surface::clean_up(video_context& vc) {
-    const auto& gl = vc.gl_api();
-    gl.delete_buffers(std::move(indices));
-    gl.delete_buffers(std::move(occlusions));
-    gl.delete_buffers(std::move(texcoords));
-    gl.delete_buffers(std::move(positions));
-    gl.delete_vertex_arrays(std::move(vao));
+    geometry::clean_up(vc.gl_api());
 }
 //------------------------------------------------------------------------------
-void shape_surface::use(video_context& vc) {
-    vc.gl_api().bind_vertex_array(vao);
-}
-//------------------------------------------------------------------------------
-void shape_surface::draw(execution_context&, video_context& vc) {
-    draw_using_instructions(vc.gl_api(), view(ops));
+void shape_surface::draw(video_context& vc) {
+    const auto& glapi = vc.gl_api();
+    geometry::use(glapi);
+    geometry::draw(glapi);
 }
 //------------------------------------------------------------------------------
 // hair geometry
@@ -241,78 +193,25 @@ void shape_hair::init(
   execution_context& ec,
   video_context& vc,
   const std::shared_ptr<shapes::generator>& gen) {
+
     const auto& glapi = vc.gl_api();
-    const auto& gl = glapi;
 
     oglplus::shape_generator shape(
       glapi,
       shapes::surface_points(
         gen, 256 * 1024, shapes::vertex_attrib_kind::occlusion, ec.as_parent()));
-
-    auto draw_var = shape.draw_variant(0);
-    ops.resize(std_size(shape.operation_count(draw_var)));
-    shape.instructions(glapi, draw_var, cover(ops));
-
-    // vao
-    gl.gen_vertex_arrays() >> vao;
-    gl.bind_vertex_array(vao);
-
-    // positions
-    gl.gen_buffers() >> positions;
-    shape.attrib_setup(
-      glapi,
-      vao,
-      positions,
-      position_loc(),
-      shapes::vertex_attrib_kind::position,
-      ec.buffer());
-
-    // normals
-    gl.gen_buffers() >> normals;
-    shape.attrib_setup(
-      glapi,
-      vao,
-      normals,
-      normal_loc(),
-      shapes::vertex_attrib_kind::normal,
-      ec.buffer());
-
-    // texcoords
-    gl.gen_buffers() >> texcoords;
-    shape.attrib_setup(
-      glapi,
-      vao,
-      texcoords,
-      texcoord_loc(),
-      shapes::vertex_attrib_kind::wrap_coord,
-      ec.buffer());
-
-    // occlusions
-    gl.gen_buffers() >> occlusions;
-    shape.attrib_setup(
-      glapi,
-      vao,
-      occlusions,
-      occlusion_loc(),
-      shapes::vertex_attrib_kind::occlusion,
-      ec.buffer());
+    vertex_attrib_bindings::init(shape);
+    geometry::init(glapi, shape, *this, ec.buffer());
 }
 //------------------------------------------------------------------------------
 void shape_hair::clean_up(video_context& vc) {
-    const auto& gl = vc.gl_api();
-    gl.delete_buffers(std::move(occlusions));
-    gl.delete_buffers(std::move(texcoords));
-    gl.delete_buffers(std::move(normals));
-    gl.delete_buffers(std::move(positions));
-    gl.delete_vertex_arrays(std::move(vao));
+    geometry::clean_up(vc.gl_api());
 }
 //------------------------------------------------------------------------------
-void shape_hair::use(video_context& vc) {
-    vc.gl_api().bind_vertex_array(vao);
-}
-//------------------------------------------------------------------------------
-void shape_hair::draw(execution_context&, video_context& vc) {
-    draw_using_instructions(vc.gl_api(), view(ops));
+void shape_hair::draw(video_context& vc) {
+    const auto& glapi = vc.gl_api();
+    geometry::use(glapi);
+    geometry::draw(glapi);
 }
 //------------------------------------------------------------------------------
 // textures
