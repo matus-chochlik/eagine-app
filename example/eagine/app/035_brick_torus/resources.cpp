@@ -95,10 +95,7 @@ void torus_program::bind_texcoord_location(
 // geometry
 //------------------------------------------------------------------------------
 void torus_geometry::init(execution_context& ec, video_context& vc) {
-    const auto& glapi = vc.gl_api();
-
-    oglplus::shape_generator shape(
-      glapi,
+    geometry_and_bindings::init(
       shapes::unit_torus(
         shapes::vertex_attrib_kind::position |
           shapes::vertex_attrib_kind::normal |
@@ -106,8 +103,9 @@ void torus_geometry::init(execution_context& ec, video_context& vc) {
           shapes::vertex_attrib_kind::wrap_coord,
         48,
         72,
-        0.5F));
-    geometry_and_bindings::init(glapi, shape, ec.buffer());
+        0.5F),
+      ec,
+      vc);
 }
 //------------------------------------------------------------------------------
 // textures

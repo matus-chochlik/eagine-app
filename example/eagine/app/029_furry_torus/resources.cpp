@@ -170,10 +170,7 @@ void shape_surface::init(
   execution_context& ec,
   video_context& vc,
   const std::shared_ptr<shapes::generator>& gen) {
-    const auto& glapi = vc.gl_api();
-
-    oglplus::shape_generator shape(glapi, gen);
-    geometry_and_bindings::init(glapi, shape, ec.buffer());
+    geometry_and_bindings::init(gen, ec, vc);
 }
 //------------------------------------------------------------------------------
 // hair geometry

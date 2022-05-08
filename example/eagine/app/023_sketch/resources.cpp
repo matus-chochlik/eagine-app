@@ -82,10 +82,7 @@ void sketch_program::bind_coord_location(
 // geometry
 //------------------------------------------------------------------------------
 void shape_geometry::init(execution_context& ec, video_context& vc) {
-    const auto& glapi = vc.gl_api();
-
-    oglplus::shape_generator shape(
-      glapi,
+    geometry_and_bindings::init(
       shapes::add_triangle_adjacency(
         shapes::unit_twisted_torus(
           shapes::vertex_attrib_kind::position |
@@ -95,8 +92,9 @@ void shape_geometry::init(execution_context& ec, video_context& vc) {
           13,
           9,
           0.5F),
-        ec));
-    geometry_and_bindings::init(glapi, shape, ec.buffer());
+        ec),
+      ec,
+      vc);
 }
 //------------------------------------------------------------------------------
 // sketch texture

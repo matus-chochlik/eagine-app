@@ -85,15 +85,13 @@ void cube_program::bind_tex_coord_location(
 // geometry
 //------------------------------------------------------------------------------
 void cube_geometry::init(execution_context& ec, video_context& vc) {
-    const auto& glapi = vc.gl_api();
-
-    oglplus::shape_generator shape(
-      glapi,
+    geometry_and_bindings::init(
       shapes::unit_cube(
         shapes::vertex_attrib_kind::position |
         shapes::vertex_attrib_kind::normal |
-        shapes::vertex_attrib_kind::face_coord));
-    geometry_and_bindings::init(glapi, shape, ec.buffer());
+        shapes::vertex_attrib_kind::face_coord),
+      ec,
+      vc);
 }
 //------------------------------------------------------------------------------
 void cube_draw_buffers::init(execution_context&, video_context& vc) {

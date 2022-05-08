@@ -59,17 +59,15 @@ void edges_program::bind_position_location(
 // geometry
 //------------------------------------------------------------------------------
 void icosahedron_geometry::init(execution_context& ec, video_context& vc) {
-    const auto& glapi = vc.gl_api();
-
-    oglplus::shape_generator shape(
-      glapi,
+    geometry_and_bindings::init(
       shapes::center(eagine::shapes::ortho_array_xyz(
         shapes::scale(
           shapes::unit_icosahedron(shapes::vertex_attrib_kind::position),
           {0.5F, 0.5F, 0.5F}),
         {1.F, 1.F, 1.F},
-        {3, 3, 3})));
-    geometry_and_bindings::init(glapi, shape, ec.buffer());
+        {3, 3, 3})),
+      ec,
+      vc);
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

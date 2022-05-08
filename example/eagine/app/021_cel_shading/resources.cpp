@@ -67,11 +67,8 @@ void cel_program::bind_position_location(
 // geometry
 //------------------------------------------------------------------------------
 void icosahedron_geometry::init(execution_context& ec, video_context& vc) {
-    const auto& glapi = vc.gl_api();
-
-    oglplus::shape_generator shape(
-      glapi, shapes::unit_icosahedron(shapes::vertex_attrib_kind::position));
-    geometry_and_bindings::init(glapi, shape, ec.buffer());
+    geometry_and_bindings::init(
+      shapes::unit_icosahedron(shapes::vertex_attrib_kind::position), ec, vc);
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app
