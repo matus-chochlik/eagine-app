@@ -96,7 +96,6 @@ void torus_program::bind_texcoord_location(
 //------------------------------------------------------------------------------
 void torus_geometry::init(execution_context& ec, video_context& vc) {
     const auto& glapi = vc.gl_api();
-    const auto& gl = glapi;
 
     oglplus::shape_generator shape(
       glapi,
@@ -108,72 +107,7 @@ void torus_geometry::init(execution_context& ec, video_context& vc) {
         48,
         72,
         0.5F));
-
-    auto draw_var = shape.draw_variant(0);
-    ops.resize(std_size(shape.operation_count(draw_var)));
-    shape.instructions(glapi, draw_var, cover(ops));
-
-    // vao
-    gl.gen_vertex_arrays() >> vao;
-    gl.bind_vertex_array(vao);
-
-    // positions
-    gl.gen_buffers() >> positions;
-    shape.attrib_setup(
-      glapi,
-      vao,
-      positions,
-      position_loc(),
-      eagine::shapes::vertex_attrib_kind::position,
-      ec.buffer());
-
-    // normals
-    gl.gen_buffers() >> normals;
-    shape.attrib_setup(
-      glapi,
-      vao,
-      normals,
-      normal_loc(),
-      eagine::shapes::vertex_attrib_kind::normal,
-      ec.buffer());
-
-    // tangents
-    gl.gen_buffers() >> tangents;
-    shape.attrib_setup(
-      glapi,
-      vao,
-      tangents,
-      tangent_loc(),
-      eagine::shapes::vertex_attrib_kind::tangent,
-      ec.buffer());
-
-    // texcoords
-    gl.gen_buffers() >> texcoords;
-    shape.attrib_setup(
-      glapi,
-      vao,
-      texcoords,
-      texcoord_loc(),
-      eagine::shapes::vertex_attrib_kind::wrap_coord,
-      ec.buffer());
-
-    // indices
-    gl.gen_buffers() >> indices;
-    shape.index_setup(glapi, indices, draw_var, ec.buffer());
-}
-//------------------------------------------------------------------------------
-void torus_geometry::clean_up(video_context& vc) {
-    const auto& gl = vc.gl_api();
-    gl.delete_buffers(std::move(indices));
-    gl.delete_buffers(std::move(texcoords));
-    gl.delete_buffers(std::move(tangents));
-    gl.delete_buffers(std::move(normals));
-    gl.delete_buffers(std::move(positions));
-    gl.delete_vertex_arrays(std::move(vao));
-}
-//------------------------------------------------------------------------------
-void torus_geometry::draw(execution_context&, video_context& ec) {
-    draw_using_instructions(ec.gl_api(), view(ops));
+    geometry_and_bindings::init(glapi, shape, ec.buffer());
 }
 //------------------------------------------------------------------------------
 // textures

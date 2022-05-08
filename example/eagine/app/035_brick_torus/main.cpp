@@ -55,7 +55,7 @@ example_parallax::example_parallax(execution_context& ec, video_context& vc)
     prog.bind_position_location(vc, torus.position_loc());
     prog.bind_normal_location(vc, torus.normal_loc());
     prog.bind_tangent_location(vc, torus.tangent_loc());
-    prog.bind_texcoord_location(vc, torus.texcoord_loc());
+    prog.bind_texcoord_location(vc, torus.wrap_coord_loc());
 
     if(ec.main_context().args().find("--stones")) {
         prog.set_texture_map(vc, textures.stones_map_unit());
@@ -108,13 +108,13 @@ void example_parallax::update() noexcept {
       _video,
       oglplus::matrix_translation(0.5F, 0.F, 0.F) *
         oglplus::matrix_rotation_x(right_angles_(-0.5F)));
-    torus.draw(_ctx, _video);
+    torus.use_and_draw(_video);
 
     prog.set_model(
       _video,
       oglplus::matrix_translation(-0.5F, 0.F, 0.F) *
         oglplus::matrix_rotation_x(right_angles_(+0.5F)));
-    torus.draw(_ctx, _video);
+    torus.use_and_draw(_video);
 
     _video.commit();
 }
