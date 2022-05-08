@@ -36,6 +36,11 @@ void cel_program::clean_up(video_context& vc) {
     gl.delete_program(std::move(prog));
 }
 //------------------------------------------------------------------------------
+void cel_program::use(video_context& vc) {
+    const auto& gl = vc.gl_api();
+    gl.use_program(prog);
+}
+//------------------------------------------------------------------------------
 void cel_program::set_projection(video_context& vc, orbiting_camera& camera) {
     if(camera.has_changed()) {
         vc.gl_api().set_uniform(prog, projection_loc, camera.matrix(vc));

@@ -23,6 +23,7 @@ class cel_program {
 public:
     void init(execution_context&, video_context&);
     void clean_up(video_context&);
+    void use(video_context&);
     void set_projection(video_context&, orbiting_camera& camera);
     void set_modelview(execution_context&, video_context&);
 
