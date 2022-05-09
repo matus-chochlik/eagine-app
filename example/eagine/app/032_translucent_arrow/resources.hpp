@@ -13,10 +13,8 @@
 #include <eagine/oglplus/gl_api.hpp>
 
 #include <eagine/app/fwd.hpp>
-#include <eagine/cleanup_group.hpp>
+#include <eagine/app/geometry.hpp>
 #include <eagine/oglplus/math/primitives.hpp>
-#include <eagine/oglplus/shapes/drawing.hpp>
-#include <eagine/oglplus/shapes/generator.hpp>
 #include <eagine/quantities.hpp>
 
 namespace eagine::app {
@@ -25,8 +23,9 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 class depth_program {
 public:
-    void init(execution_context&, video_context&, cleanup_group&);
-    void set_camera(video_context& ctx, orbiting_camera& camera);
+    void init(execution_context&, video_context&);
+    void clean_up(video_context&);
+    void set_camera(video_context&, orbiting_camera& camera);
     void update(video_context&);
 
     void bind_position_location(video_context&, oglplus::vertex_attrib_location);
@@ -39,8 +38,9 @@ private:
 //------------------------------------------------------------------------------
 class draw_program {
 public:
-    void init(execution_context&, video_context&, cleanup_group&);
-    void set_depth_texture(video_context& ctx, oglplus::gl_types::int_type);
+    void init(execution_context&, video_context&);
+    void clean_up(video_context&);
+    void set_depth_texture(video_context&, oglplus::gl_types::int_type);
     void set_camera(video_context&, orbiting_camera& camera);
     void update(execution_context&, video_context&);
 
@@ -61,42 +61,22 @@ private:
 //------------------------------------------------------------------------------
 // geometry
 //------------------------------------------------------------------------------
-class shape_geometry {
+class shape_geometry : public geometry_and_bindings {
 public:
-    shape_geometry(std::shared_ptr<shapes::generator> gen)
-      : _gen{std::move(gen)} {}
-
-    void init(execution_context&, video_context&, cleanup_group&);
-    void draw(video_context&);
+    void init(const std::shared_ptr<shapes::generator>&, video_context&);
 
     auto bounding_sphere() noexcept {
         return bound_sphere;
     }
 
-    static auto position_loc() noexcept {
-        return oglplus::vertex_attrib_location{0};
-    }
-
-    static auto normal_loc() noexcept {
-        return oglplus::vertex_attrib_location{1};
-    }
-
 private:
-    std::shared_ptr<shapes::generator> _gen;
-    oglplus::owned_vertex_array_name vao;
-
-    oglplus::owned_buffer_name positions;
-    oglplus::owned_buffer_name normals;
-    oglplus::owned_buffer_name indices;
-
-    std::vector<oglplus::shape_draw_operation> ops;
-
     oglplus::sphere bound_sphere;
 };
 //------------------------------------------------------------------------------
 class depth_texture {
 public:
-    void init(execution_context&, video_context&, cleanup_group&);
+    void init(execution_context&, video_context&);
+    void clean_up(video_context&);
     void reshape(video_context&);
     void copy_from_fb(video_context&);
 
