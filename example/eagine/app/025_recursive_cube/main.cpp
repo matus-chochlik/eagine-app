@@ -48,12 +48,12 @@ example_cube::example_cube(execution_context& ec, video_context& vc)
     const auto& [gl, GL] = glapi;
 
     prog.init(ec, vc);
-    cube.init(ec, vc);
+    cube.init(vc);
     bufs.init(ec, vc);
 
     prog.bind_position_location(vc, cube.position_loc());
     prog.bind_normal_location(vc, cube.normal_loc());
-    prog.bind_tex_coord_location(vc, cube.tex_coord_loc());
+    prog.bind_tex_coord_location(vc, cube.wrap_coord_loc());
 
     gl.clear_color(0.8F, 0.8F, 0.8F, 0.0F);
     gl.enable(GL.depth_test);
@@ -88,7 +88,7 @@ void example_cube::update() noexcept {
         oglplus::matrix_translation(0.F, 0.F, -2.F));
 
     gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
-    cube.draw(_video);
+    cube.use_and_draw(_video);
 
     // draw on screen
     gl.bind_framebuffer(GL.draw_framebuffer, oglplus::default_framebuffer);
@@ -102,7 +102,7 @@ void example_cube::update() noexcept {
         oglplus::matrix_translation(0.F, 0.F, -2.F));
 
     gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
-    cube.draw(_video);
+    cube.use_and_draw(_video);
     // swap texture draw buffers
     bufs.swap();
 

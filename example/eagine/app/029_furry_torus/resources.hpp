@@ -13,8 +13,7 @@
 #include <eagine/oglplus/gl_api.hpp>
 
 #include <eagine/app/fwd.hpp>
-#include <eagine/oglplus/shapes/drawing.hpp>
-#include <eagine/oglplus/shapes/generator.hpp>
+#include <eagine/app/geometry.hpp>
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
@@ -71,74 +70,14 @@ private:
 //------------------------------------------------------------------------------
 // geometry
 //------------------------------------------------------------------------------
-class shape_surface {
+class shape_surface : public geometry_and_bindings {
 public:
-    void init(
-      execution_context&,
-      video_context&,
-      const std::shared_ptr<shapes::generator>&);
-    void clean_up(video_context&);
-    void use(video_context&);
-    void draw(execution_context&, video_context&);
-
-    static auto position_loc() noexcept {
-        return oglplus::vertex_attrib_location{0};
-    }
-
-    static auto texcoord_loc() noexcept {
-        return oglplus::vertex_attrib_location{1};
-    }
-
-    static auto occlusion_loc() noexcept {
-        return oglplus::vertex_attrib_location{2};
-    }
-
-private:
-    oglplus::owned_vertex_array_name vao;
-
-    oglplus::owned_buffer_name positions;
-    oglplus::owned_buffer_name texcoords;
-    oglplus::owned_buffer_name occlusions;
-    oglplus::owned_buffer_name indices;
-
-    std::vector<oglplus::shape_draw_operation> ops;
+    void init(video_context&, const std::shared_ptr<shapes::generator>&);
 };
 //------------------------------------------------------------------------------
-class shape_hair {
+class shape_hair : public geometry_and_bindings {
 public:
-    void init(
-      execution_context&,
-      video_context&,
-      const std::shared_ptr<shapes::generator>&);
-    void clean_up(video_context&);
-    void use(video_context&);
-    void draw(execution_context&, video_context&);
-
-    static auto position_loc() noexcept {
-        return oglplus::vertex_attrib_location{0};
-    }
-
-    static auto normal_loc() noexcept {
-        return oglplus::vertex_attrib_location{1};
-    }
-
-    static auto texcoord_loc() noexcept {
-        return oglplus::vertex_attrib_location{2};
-    }
-
-    static auto occlusion_loc() noexcept {
-        return oglplus::vertex_attrib_location{3};
-    }
-
-private:
-    oglplus::owned_vertex_array_name vao;
-
-    oglplus::owned_buffer_name positions;
-    oglplus::owned_buffer_name normals;
-    oglplus::owned_buffer_name texcoords;
-    oglplus::owned_buffer_name occlusions;
-
-    std::vector<oglplus::shape_draw_operation> ops;
+    void init(video_context&, const std::shared_ptr<shapes::generator>&);
 };
 //------------------------------------------------------------------------------
 // texture

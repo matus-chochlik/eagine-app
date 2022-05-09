@@ -18,7 +18,7 @@
 #include <eagine/oglplus/math/matrix.hpp>
 #include <eagine/oglplus/math/primitives.hpp>
 #include <eagine/oglplus/math/vector.hpp>
-#include <eagine/oglplus/shapes/generator.hpp>
+#include <eagine/oglplus/shapes/geometry.hpp>
 #include <eagine/shapes/cube.hpp>
 #include <eagine/timeout.hpp>
 
@@ -42,12 +42,7 @@ private:
     background_color_depth _bg;
     timeout _is_done{std::chrono::seconds{30}};
 
-    std::vector<oglplus::shape_draw_operation> _ops;
-    oglplus::owned_vertex_array_name vao;
-
-    oglplus::owned_buffer_name positions;
-    oglplus::owned_buffer_name normals;
-    oglplus::owned_buffer_name indices;
+    oglplus::geometry_and_bindings cube;
 
     oglplus::owned_program_name prog;
 
@@ -61,6 +56,16 @@ example_cube::example_cube(execution_context& ec, video_context& vc)
   , _bg{0.4F, 0.F, 1.F} {
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
+
+    // geometry
+    memory::buffer temp;
+    oglplus::shape_generator shape(
+      glapi,
+      shapes::unit_cube(
+        shapes::vertex_attrib_kind::position |
+        shapes::vertex_attrib_kind::normal));
+    cube = oglplus::geometry_and_bindings{glapi, shape, temp};
+    cube.use(glapi);
 
     // vertex shader
     auto vs_source = embed(EAGINE_ID(VertShader), "vertex.glsl");
@@ -85,47 +90,8 @@ example_cube::example_cube(execution_context& ec, video_context& vc)
     gl.link_program(prog);
     gl.use_program(prog);
 
-    // geometry
-    oglplus::shape_generator shape(
-      glapi,
-      shapes::unit_cube(
-        shapes::vertex_attrib_kind::position |
-        shapes::vertex_attrib_kind::normal));
-
-    _ops.resize(std_size(shape.operation_count()));
-    shape.instructions(glapi, cover(_ops));
-
-    // vao
-    gl.gen_vertex_arrays() >> vao;
-    gl.bind_vertex_array(vao);
-
-    // positions
-    oglplus::vertex_attrib_location position_loc{0};
-    gl.gen_buffers() >> positions;
-    shape.attrib_setup(
-      glapi,
-      vao,
-      positions,
-      position_loc,
-      eagine::shapes::vertex_attrib_kind::position,
-      _ctx.buffer());
-    gl.bind_attrib_location(prog, position_loc, "Position");
-
-    // normals
-    oglplus::vertex_attrib_location normal_loc{1};
-    gl.gen_buffers() >> normals;
-    shape.attrib_setup(
-      glapi,
-      vao,
-      normals,
-      normal_loc,
-      eagine::shapes::vertex_attrib_kind::normal,
-      _ctx.buffer());
-    gl.bind_attrib_location(prog, normal_loc, "Normal");
-
-    // indices
-    gl.gen_buffers() >> indices;
-    shape.index_setup(glapi, indices, _ctx.buffer());
+    gl.bind_attrib_location(prog, cube.position_loc(), "Position");
+    gl.bind_attrib_location(prog, cube.normal_loc(), "Normal");
 
     // uniform
     gl.get_uniform_location(prog, "Camera") >> camera_loc;
@@ -162,7 +128,7 @@ void example_cube::update() noexcept {
     if(camera.has_changed()) {
         glapi.set_uniform(prog, camera_loc, camera.matrix(_video));
     }
-    oglplus::draw_using_instructions(glapi, view(_ops));
+    cube.draw(glapi);
 
     _video.commit();
 }
@@ -171,10 +137,7 @@ void example_cube::clean_up() noexcept {
     const auto& gl = _video.gl_api();
 
     gl.delete_program(std::move(prog));
-    gl.delete_buffers(std::move(indices));
-    gl.delete_buffers(std::move(normals));
-    gl.delete_buffers(std::move(positions));
-    gl.delete_vertex_arrays(std::move(vao));
+    cube.clean_up(gl);
 
     _video.end();
 }

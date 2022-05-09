@@ -4,11 +4,15 @@
 #  http://www.boost.org/LICENSE_1_0.txt
 #
 set(HEADERS
+    eagine/app/background/icosahedron.hpp
+    eagine/app/background/plain.hpp
+    eagine/app/background/skybox.hpp
     eagine/app/camera.hpp
     eagine/app/config/basic.hpp
     eagine/app/context.hpp
     eagine/app/framedump_raw.hpp
     eagine/app/fwd.hpp
+    eagine/app/geometry.hpp
     eagine/app/input.hpp
     eagine/app/input_observers.hpp
     eagine/app/interface.hpp

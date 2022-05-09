@@ -36,6 +36,11 @@ void cel_program::clean_up(video_context& vc) {
     gl.delete_program(std::move(prog));
 }
 //------------------------------------------------------------------------------
+void cel_program::use(video_context& vc) {
+    const auto& gl = vc.gl_api();
+    gl.use_program(prog);
+}
+//------------------------------------------------------------------------------
 void cel_program::set_projection(video_context& vc, orbiting_camera& camera) {
     if(camera.has_changed()) {
         vc.gl_api().set_uniform(prog, projection_loc, camera.matrix(vc));
@@ -61,44 +66,9 @@ void cel_program::bind_position_location(
 //------------------------------------------------------------------------------
 // geometry
 //------------------------------------------------------------------------------
-void icosahedron_geometry::init(execution_context& ec, video_context& vc) {
-    const auto& glapi = vc.gl_api();
-    const auto& gl = glapi;
-
-    oglplus::shape_generator shape(
-      gl, shapes::unit_icosahedron(shapes::vertex_attrib_kind::position));
-
-    ops.resize(std_size(shape.operation_count()));
-    shape.instructions(glapi, cover(ops));
-
-    // vao
-    gl.gen_vertex_arrays() >> vao;
-    gl.bind_vertex_array(vao);
-
-    // positions
-    gl.gen_buffers() >> positions;
-    shape.attrib_setup(
-      glapi,
-      vao,
-      positions,
-      position_loc(),
-      eagine::shapes::vertex_attrib_kind::position,
-      ec.buffer());
-
-    // indices
-    gl.gen_buffers() >> indices;
-    shape.index_setup(glapi, indices, ec.buffer());
-}
-//------------------------------------------------------------------------------
-void icosahedron_geometry::clean_up(video_context& vc) {
-    const auto& gl = vc.gl_api();
-    gl.delete_buffers(std::move(indices));
-    gl.delete_buffers(std::move(positions));
-    gl.delete_vertex_arrays(std::move(vao));
-}
-//------------------------------------------------------------------------------
-void icosahedron_geometry::draw(video_context& vc) {
-    draw_using_instructions(vc.gl_api(), view(ops));
+void icosahedron_geometry::init(video_context& vc) {
+    geometry_and_bindings::init(
+      shapes::unit_icosahedron(shapes::vertex_attrib_kind::position), vc);
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

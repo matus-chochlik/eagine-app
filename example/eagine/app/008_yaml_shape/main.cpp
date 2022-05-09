@@ -10,6 +10,7 @@
 #include <eagine/oglplus/gl_api.hpp>
 
 #include <eagine/app/camera.hpp>
+#include <eagine/app/geometry.hpp>
 #include <eagine/app/main.hpp>
 #include <eagine/app_config.hpp>
 #include <eagine/embed.hpp>
@@ -17,7 +18,6 @@
 #include <eagine/oglplus/math/matrix.hpp>
 #include <eagine/oglplus/math/primitives.hpp>
 #include <eagine/oglplus/math/vector.hpp>
-#include <eagine/oglplus/shapes/generator.hpp>
 #include <eagine/shapes/value_tree.hpp>
 #include <eagine/timeout.hpp>
 #include <eagine/value_tree/yaml.hpp>
@@ -41,12 +41,7 @@ private:
     video_context& _video;
     timeout _is_done{std::chrono::seconds{30}};
 
-    std::vector<oglplus::shape_draw_operation> _ops;
-    oglplus::owned_vertex_array_name vao;
-
-    oglplus::owned_buffer_name positions;
-    oglplus::owned_buffer_name colors;
-    oglplus::owned_buffer_name indices;
+    geometry_and_bindings geom;
 
     oglplus::owned_program_name prog;
 
@@ -59,6 +54,13 @@ example_shape::example_shape(execution_context& ec, video_context& vc)
   , _video{vc} {
     auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
+
+    auto yaml_text = as_chars(embed(EAGINE_ID(ShapeYaml), "shape.yaml"));
+    oglplus::shape_generator shape(
+      glapi,
+      shapes::from_value_tree(
+        valtree::from_yaml_text(yaml_text, ec.as_parent()), ec.as_parent()));
+    geom.init(glapi, shape, _ctx.buffer());
 
     // vertex shader
     auto vs_source = embed(EAGINE_ID(VertShader), "vertex.glsl");
@@ -83,47 +85,8 @@ example_shape::example_shape(execution_context& ec, video_context& vc)
     gl.link_program(prog);
     gl.use_program(prog);
 
-    // geometry
-    auto yaml_text = as_chars(embed(EAGINE_ID(ShapeYaml), "shape.yaml"));
-    oglplus::shape_generator shape(
-      glapi,
-      shapes::from_value_tree(
-        valtree::from_yaml_text(yaml_text, ec.as_parent()), ec.as_parent()));
-
-    _ops.resize(std_size(shape.operation_count()));
-    shape.instructions(glapi, cover(_ops));
-
-    // vao
-    gl.gen_vertex_arrays() >> vao;
-    gl.bind_vertex_array(vao);
-
-    // positions
-    oglplus::vertex_attrib_location position_loc{0};
-    gl.gen_buffers() >> positions;
-    shape.attrib_setup(
-      glapi,
-      vao,
-      positions,
-      position_loc,
-      eagine::shapes::vertex_attrib_kind::position,
-      _ctx.buffer());
-    gl.bind_attrib_location(prog, position_loc, "Position");
-
-    // colors
-    oglplus::vertex_attrib_location color_loc{1};
-    gl.gen_buffers() >> colors;
-    shape.attrib_setup(
-      glapi,
-      vao,
-      colors,
-      color_loc,
-      eagine::shapes::vertex_attrib_kind::color,
-      _ctx.buffer());
-    gl.bind_attrib_location(prog, color_loc, "Color");
-
-    // indices
-    gl.gen_buffers() >> indices;
-    shape.index_setup(glapi, indices, _ctx.buffer());
+    gl.bind_attrib_location(prog, geom.position_loc(), "Position");
+    gl.bind_attrib_location(prog, geom.color_loc(), "Color");
 
     // uniform
     gl.get_uniform_location(prog, "Camera") >> camera_loc;
@@ -163,7 +126,7 @@ void example_shape::update() noexcept {
     if(camera.has_changed()) {
         glapi.set_uniform(prog, camera_loc, camera.matrix(_video));
     }
-    oglplus::draw_using_instructions(glapi, view(_ops));
+    geom.use_and_draw(_video);
 
     _video.commit();
 }
@@ -172,10 +135,7 @@ void example_shape::clean_up() noexcept {
     const auto& gl = _video.gl_api();
 
     gl.delete_program(std::move(prog));
-    gl.delete_buffers(std::move(indices));
-    gl.delete_buffers(std::move(colors));
-    gl.delete_buffers(std::move(positions));
-    gl.delete_vertex_arrays(std::move(vao));
+    geom.clean_up(_video);
 
     _video.end();
 }

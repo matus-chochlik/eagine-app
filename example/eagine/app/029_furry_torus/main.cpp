@@ -35,7 +35,6 @@ public:
 
     void on_video_resize() noexcept final;
     void update() noexcept final;
-    void clean_up() noexcept final;
 
 private:
     execution_context& _ctx;
@@ -85,12 +84,12 @@ example_fur::example_fur(execution_context& ec, video_context& vc)
     shape_tex.init(ec, vc);
     surf_prog.init(ec, vc);
     hair_prog.init(ec, vc);
-    surf.init(ec, vc, gen);
-    hair.init(ec, vc, gen);
+    surf.init(vc, gen);
+    hair.init(vc, gen);
 
     surf_prog.use(vc);
     surf_prog.bind_position_location(vc, surf.position_loc());
-    surf_prog.bind_texcoord_location(vc, surf.texcoord_loc());
+    surf_prog.bind_texcoord_location(vc, surf.wrap_coord_loc());
     surf_prog.bind_occlusion_location(vc, surf.occlusion_loc());
     if(use_monkey_shape) {
         surf_prog.set_texture(vc, shape_tex.map_unit_monkey());
@@ -101,7 +100,7 @@ example_fur::example_fur(execution_context& ec, video_context& vc)
     hair_prog.use(vc);
     hair_prog.bind_position_location(vc, hair.position_loc());
     hair_prog.bind_normal_location(vc, hair.normal_loc());
-    hair_prog.bind_texcoord_location(vc, hair.texcoord_loc());
+    hair_prog.bind_texcoord_location(vc, hair.wrap_coord_loc());
     hair_prog.bind_occlusion_location(vc, hair.occlusion_loc());
     if(use_monkey_shape) {
         hair_prog.set_texture(vc, shape_tex.map_unit_monkey());
@@ -149,28 +148,16 @@ void example_fur::update() noexcept {
     surf_prog.use(_video);
     surf_prog.set_projection(_video, camera);
     surf_prog.set_model(_video, model);
-    surf.use(_video);
-    surf.draw(_ctx, _video);
+    surf.use_and_draw(_video);
 
     hair_prog.use(_video);
     hair_prog.set_projection(_video, camera);
     hair_prog.set_model(_video, prev_model, model);
-    hair.use(_video);
-    hair.draw(_ctx, _video);
+    hair.use_and_draw(_video);
 
     prev_model = model;
 
     _video.commit();
-}
-//------------------------------------------------------------------------------
-void example_fur::clean_up() noexcept {
-    hair.clean_up(_video);
-    surf.clean_up(_video);
-    hair_prog.clean_up(_video);
-    surf_prog.clean_up(_video);
-    shape_tex.clean_up(_video);
-
-    _video.end();
 }
 //------------------------------------------------------------------------------
 class example_launchpad : public launchpad {

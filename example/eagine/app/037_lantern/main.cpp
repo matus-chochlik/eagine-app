@@ -30,7 +30,6 @@ public:
 
     void on_video_resize() noexcept final;
     void update() noexcept final;
-    void clean_up() noexcept final;
 
 private:
     execution_context& _ctx;
@@ -64,7 +63,7 @@ example_lantern::example_lantern(execution_context& ec, video_context& vc)
 
     screen_prog.init(_video);
     screen_prog.bind_position_location(_video, screen.position_loc());
-    screen_prog.bind_coord_location(_video, screen.coord_loc());
+    screen_prog.bind_coord_location(_video, screen.wrap_coord_loc());
     screen_prog.set_texture_unit(_video, draw_bufs.tex_unit());
 
     // camera
@@ -133,17 +132,6 @@ void example_lantern::update() noexcept {
     screen.draw(_video);
 
     _video.commit();
-}
-//------------------------------------------------------------------------------
-void example_lantern::clean_up() noexcept {
-
-    screen_prog.clean_up(_video);
-    draw_prog.clean_up(_video);
-    screen.clean_up(_video);
-    pumpkin.clean_up(_video);
-    draw_bufs.clean_up(_video);
-
-    _video.end();
 }
 //------------------------------------------------------------------------------
 class example_launchpad : public launchpad {

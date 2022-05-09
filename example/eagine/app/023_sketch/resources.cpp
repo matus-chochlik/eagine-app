@@ -81,12 +81,8 @@ void sketch_program::bind_coord_location(
 //------------------------------------------------------------------------------
 // geometry
 //------------------------------------------------------------------------------
-void shape_geometry::init(execution_context& ec, video_context& vc) {
-    const auto& glapi = vc.gl_api();
-    const auto& gl = glapi;
-
-    oglplus::shape_generator shape(
-      glapi,
+void shape_geometry::init(video_context& vc) {
+    geometry_and_bindings::init(
       shapes::add_triangle_adjacency(
         shapes::unit_twisted_torus(
           shapes::vertex_attrib_kind::position |
@@ -96,63 +92,8 @@ void shape_geometry::init(execution_context& ec, video_context& vc) {
           13,
           9,
           0.5F),
-        ec));
-
-    auto draw_var = shape.draw_variant(0);
-    _ops.resize(std_size(shape.operation_count(draw_var)));
-    shape.instructions(glapi, draw_var, cover(_ops));
-
-    // vao
-    gl.gen_vertex_arrays() >> _vao;
-    gl.bind_vertex_array(_vao);
-
-    // positions
-    gl.gen_buffers() >> _positions;
-    shape.attrib_setup(
-      glapi,
-      _vao,
-      _positions,
-      position_loc(),
-      eagine::shapes::vertex_attrib_kind::position,
-      ec.buffer());
-
-    // normals
-    gl.gen_buffers() >> _normals;
-    shape.attrib_setup(
-      glapi,
-      _vao,
-      _normals,
-      normal_loc(),
-      eagine::shapes::vertex_attrib_kind::normal,
-      ec.buffer());
-
-    // coords
-    gl.gen_buffers() >> _coords;
-    shape.attrib_setup(
-      glapi,
-      _vao,
-      _coords,
-      coord_loc(),
-      eagine::shapes::vertex_attrib_kind::wrap_coord,
-      ec.buffer());
-
-    // indices
-    gl.gen_buffers() >> _indices;
-    shape.index_setup(glapi, _indices, draw_var, ec.buffer());
-}
-//------------------------------------------------------------------------------
-void shape_geometry::clean_up(video_context& vc) {
-    const auto& gl = vc.gl_api();
-    gl.delete_buffers(std::move(_indices));
-    gl.delete_buffers(std::move(_coords));
-    gl.delete_buffers(std::move(_normals));
-    gl.delete_buffers(std::move(_positions));
-    gl.delete_vertex_arrays(std::move(_vao));
-}
-//------------------------------------------------------------------------------
-void shape_geometry::draw(execution_context&, video_context& ec) {
-    ec.gl_api().bind_vertex_array(_vao);
-    draw_using_instructions(ec.gl_api(), view(_ops));
+        vc.parent()),
+      vc);
 }
 //------------------------------------------------------------------------------
 // sketch texture

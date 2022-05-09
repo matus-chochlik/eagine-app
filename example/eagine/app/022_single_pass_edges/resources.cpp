@@ -58,54 +58,15 @@ void edges_program::bind_position_location(
 //------------------------------------------------------------------------------
 // geometry
 //------------------------------------------------------------------------------
-void icosahedron_geometry::init(execution_context& ec, video_context& vc) {
-    const auto& glapi = vc.gl_api();
-    const auto& gl = glapi;
-
-    oglplus::shape_generator shape(
-      glapi,
+void icosahedron_geometry::init(video_context& vc) {
+    geometry_and_bindings::init(
       shapes::center(eagine::shapes::ortho_array_xyz(
         shapes::scale(
           shapes::unit_icosahedron(shapes::vertex_attrib_kind::position),
           {0.5F, 0.5F, 0.5F}),
         {1.F, 1.F, 1.F},
-        {3, 3, 3})));
-
-    ops.resize(std_size(shape.operation_count()));
-    shape.instructions(glapi, cover(ops));
-
-    // vao
-    gl.gen_vertex_arrays() >> vao;
-    gl.bind_vertex_array(vao);
-
-    // positions
-    gl.gen_buffers() >> positions;
-    shape.attrib_setup(
-      glapi,
-      vao,
-      positions,
-      position_loc(),
-      eagine::shapes::vertex_attrib_kind::position,
-      ec.buffer());
-
-    // indices
-    gl.gen_buffers() >> indices;
-    shape.index_setup(glapi, indices, ec.buffer());
-}
-//------------------------------------------------------------------------------
-void icosahedron_geometry::use(video_context& vc) {
-    vc.gl_api().bind_vertex_array(vao);
-}
-//------------------------------------------------------------------------------
-void icosahedron_geometry::clean_up(video_context& vc) {
-    const auto& gl = vc.gl_api();
-    gl.delete_buffers(std::move(indices));
-    gl.delete_buffers(std::move(positions));
-    gl.delete_vertex_arrays(std::move(vao));
-}
-//------------------------------------------------------------------------------
-void icosahedron_geometry::draw(video_context& vc) {
-    draw_using_instructions(vc.gl_api(), view(ops));
+        {3, 3, 3})),
+      vc);
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

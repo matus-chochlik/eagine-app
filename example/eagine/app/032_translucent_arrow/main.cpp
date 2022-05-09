@@ -31,7 +31,7 @@ public:
     example_arrow(
       execution_context&,
       video_context&,
-      std::shared_ptr<shapes::generator>);
+      const std::shared_ptr<shapes::generator>&);
 
     auto is_done() noexcept -> bool final {
         return _is_done.is_expired();
@@ -39,10 +39,8 @@ public:
 
     void on_video_resize() noexcept final;
     void update() noexcept final;
-    void clean_up() noexcept final;
 
 private:
-    cleanup_group _cleanup;
     execution_context& _ctx;
     video_context& _video;
     timeout _is_done{std::chrono::seconds{30}};
@@ -58,20 +56,23 @@ private:
 example_arrow::example_arrow(
   execution_context& ec,
   video_context& vc,
-  std::shared_ptr<shapes::generator> gen)
+  const std::shared_ptr<shapes::generator>& gen)
   : _ctx{ec}
-  , _video{vc}
-  , shape{std::move(gen)} {
+  , _video{vc} {
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
 
-    shape.init(ec, vc, _cleanup);
-    depth_tex.init(ec, vc, _cleanup);
+    shape.init(gen, vc);
+    vc.clean_up_later(shape);
+    depth_tex.init(ec, vc);
+    vc.clean_up_later(depth_tex);
 
-    depth_prog.init(ec, vc, _cleanup);
+    depth_prog.init(ec, vc);
+    vc.clean_up_later(depth_prog);
     depth_prog.bind_position_location(vc, shape.position_loc());
 
-    draw_prog.init(ec, vc, _cleanup);
+    draw_prog.init(ec, vc);
+    vc.clean_up_later(draw_prog);
     draw_prog.bind_position_location(vc, shape.position_loc());
     draw_prog.bind_normal_location(vc, shape.normal_loc());
     draw_prog.set_depth_texture(vc, depth_tex.texture_unit());
@@ -114,10 +115,14 @@ void example_arrow::update() noexcept {
 
     gl.clear_depth(0);
     gl.clear(GL.depth_buffer_bit);
+
+    gl.enable(GL.depth_test);
     gl.depth_func(GL.greater);
+    gl.enable(GL.cull_face);
     gl.cull_face(GL.front);
     depth_prog.update(_video);
     depth_prog.set_camera(_video, camera);
+    shape.use(_video);
     shape.draw(_video);
 
     depth_tex.copy_from_fb(_video);
@@ -131,12 +136,6 @@ void example_arrow::update() noexcept {
     shape.draw(_video);
 
     _video.commit();
-}
-//------------------------------------------------------------------------------
-void example_arrow::clean_up() noexcept {
-    _cleanup.clear();
-
-    _video.end();
 }
 //------------------------------------------------------------------------------
 class example_launchpad : public launchpad {

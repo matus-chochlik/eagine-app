@@ -51,7 +51,7 @@ example_edges::example_edges(execution_context& ec, video_context& vc)
     auto& [gl, GL] = glapi;
 
     prog.init(ec, vc);
-    shape.init(ec, vc);
+    shape.init(vc);
 
     prog.bind_position_location(vc, shape.position_loc());
 
@@ -90,8 +90,7 @@ void example_edges::update() noexcept {
 
     prog.use(_video);
     prog.set_projection(_video, camera);
-    shape.use(_video);
-    shape.draw(_video);
+    shape.use_and_draw(_video);
 
     _video.commit();
 }

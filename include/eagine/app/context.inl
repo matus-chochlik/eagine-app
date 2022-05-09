@@ -41,7 +41,9 @@ public:
 
     auto commit(long frame_number, video_provider&, oglplus::gl_api&) -> bool;
 
-    void clean_up(oglplus::gl_api& api) noexcept;
+    void add_cleanup_op(callable_ref<void(video_context&) noexcept> op);
+
+    void clean_up(video_context&) noexcept;
 
 private:
     const video_options& _options;
@@ -52,6 +54,7 @@ private:
     std::shared_ptr<framedump> _framedump_color{};
     std::shared_ptr<framedump> _framedump_depth{};
     std::shared_ptr<framedump> _framedump_stencil{};
+    std::vector<callable_ref<void(video_context&) noexcept>> _cleanup_ops;
 };
 //------------------------------------------------------------------------------
 inline video_context_state::video_context_state(
@@ -213,7 +216,18 @@ inline auto video_context_state::commit(
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
-inline void video_context_state::clean_up(oglplus::gl_api& api) noexcept {
+void video_context_state::add_cleanup_op(
+  callable_ref<void(video_context&) noexcept> op) {
+    _cleanup_ops.push_back(op);
+}
+//------------------------------------------------------------------------------
+EAGINE_LIB_FUNC
+inline void video_context_state::clean_up(video_context& vc) noexcept {
+    for(auto& clean_up : _cleanup_ops) {
+        clean_up(vc);
+    }
+    _cleanup_ops.clear();
+    const auto& api = vc.gl_api();
     if(_offscreen_fbo) {
         api.delete_framebuffers(std::move(_offscreen_fbo));
     }
@@ -335,10 +349,18 @@ void video_context::commit() {
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
+void video_context::add_cleanup_op(
+  callable_ref<void(video_context&) noexcept> op) {
+    if(_state) {
+        extract(_state).add_cleanup_op(op);
+    }
+}
+//------------------------------------------------------------------------------
+EAGINE_LIB_FUNC
 void video_context::clean_up() noexcept {
     try {
         if(_state) {
-            extract(_state).clean_up(extract(_gl_api));
+            extract(_state).clean_up(*this);
             _state.reset();
         }
     } catch(...) {

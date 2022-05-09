@@ -35,6 +35,8 @@ void sphere_program::init(execution_context& ec, video_context& vc) {
     gl.get_uniform_location(prog, "CameraPosition") >> camera_position_loc;
     gl.get_uniform_location(prog, "ViewportDimensions") >> viewport_dim_loc;
     gl.get_uniform_block_index(prog, "OffsetBlock") >> offset_blk_idx;
+
+    vc.clean_up_later(*this);
 }
 //------------------------------------------------------------------------------
 void sphere_program::clean_up(video_context& vc) {
@@ -126,6 +128,8 @@ void icosahedron_geometry::init(execution_context& ec, video_context& vc) {
     gl.object_label(offsets, "offsets");
     gl.bind_buffer_base(GL.uniform_buffer, 0, offsets);
     gl.buffer_data(GL.uniform_buffer, view(offset_data), GL.static_draw);
+
+    vc.clean_up_later(*this);
 }
 //------------------------------------------------------------------------------
 void icosahedron_geometry::clean_up(video_context& vc) {

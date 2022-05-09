@@ -13,8 +13,7 @@
 #include <eagine/oglplus/gl_api.hpp>
 
 #include <eagine/app/fwd.hpp>
-#include <eagine/oglplus/shapes/drawing.hpp>
-#include <eagine/oglplus/shapes/generator.hpp>
+#include <eagine/app/geometry.hpp>
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
@@ -40,33 +39,9 @@ private:
 //------------------------------------------------------------------------------
 // geometry
 //------------------------------------------------------------------------------
-class shape_geometry {
+class shape_geometry : public geometry_and_bindings {
 public:
-    void init(execution_context&, video_context&);
-    void clean_up(video_context&);
-    void draw(execution_context&, video_context&);
-
-    static auto position_loc() noexcept {
-        return oglplus::vertex_attrib_location{0};
-    }
-
-    static auto normal_loc() noexcept {
-        return oglplus::vertex_attrib_location{1};
-    }
-
-    static auto coord_loc() noexcept {
-        return oglplus::vertex_attrib_location{2};
-    }
-
-private:
-    oglplus::owned_vertex_array_name _vao;
-
-    oglplus::owned_buffer_name _positions;
-    oglplus::owned_buffer_name _normals;
-    oglplus::owned_buffer_name _coords;
-    oglplus::owned_buffer_name _indices;
-
-    std::vector<oglplus::shape_draw_operation> _ops;
+    void init(video_context&);
 };
 //------------------------------------------------------------------------------
 // texture

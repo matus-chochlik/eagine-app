@@ -38,6 +38,8 @@ void surface_program::init(execution_context& ec, video_context& vc) {
     gl.get_uniform_location(_prog, "Model") >> _model_loc;
     gl.get_uniform_location(_prog, "View") >> _view_loc;
     gl.get_uniform_location(_prog, "Projection") >> _projection_loc;
+
+    vc.clean_up_later(*this);
 }
 //------------------------------------------------------------------------------
 void surface_program::clean_up(video_context& vc) {
@@ -88,6 +90,8 @@ void halo_program::init(execution_context& ec, video_context& vc) {
     gl.get_uniform_location(_prog, "View") >> _view_loc;
     gl.get_uniform_location(_prog, "Projection") >> _projection_loc;
     gl.get_uniform_location(_prog, "CameraPos") >> _camera_pos_loc;
+
+    vc.clean_up_later(*this);
 }
 //------------------------------------------------------------------------------
 void halo_program::clean_up(video_context& vc) {
@@ -127,25 +131,21 @@ void halo_program::bind_normal_location(
 // geometry
 //------------------------------------------------------------------------------
 void shape_geometry::init(execution_context& ec, video_context& vc) {
-    const auto& glapi = vc.gl_api();
-    const auto& gl = glapi;
 
+    const auto& glapi = vc.gl_api();
     auto& ctx = ec.main_context();
     const auto& args = ctx.args();
+    vertex_attrib_bindings::init(
+      {shapes::vertex_attrib_kind::position,
+       shapes::vertex_attrib_kind::normal});
     std::shared_ptr<shapes::generator> gen;
 
     if(args.find("--icosahedron")) {
-        gen = shapes::unit_icosahedron(
-          shapes::vertex_attrib_kind::position |
-          shapes::vertex_attrib_kind::normal);
+        gen = shapes::unit_icosahedron(attrib_kinds());
     } else if(args.find("--twisted-torus")) {
-        gen = shapes::unit_twisted_torus(
-          shapes::vertex_attrib_kind::position |
-          shapes::vertex_attrib_kind::normal);
+        gen = shapes::unit_twisted_torus(attrib_kinds());
     } else if(args.find("--torus")) {
-        gen = shapes::unit_torus(
-          shapes::vertex_attrib_kind::position |
-          shapes::vertex_attrib_kind::normal);
+        gen = shapes::unit_torus(attrib_kinds());
     }
 
     if(!gen) {
@@ -157,52 +157,19 @@ void shape_geometry::init(execution_context& ec, video_context& vc) {
 
     oglplus::shape_generator shape(
       glapi, shapes::add_triangle_adjacency(std::move(gen), ctx));
+    geometry::init(glapi, shape, *this, ec.buffer());
 
-    auto draw_var = shape.draw_variant(0);
-    _ops.resize(std_size(shape.operation_count(draw_var)));
-    shape.instructions(glapi, draw_var, cover(_ops));
-
-    // vao
-    gl.gen_vertex_arrays() >> _vao;
-    gl.bind_vertex_array(_vao);
-
-    // positions
-    gl.gen_buffers() >> _positions;
-    shape.attrib_setup(
-      glapi,
-      _vao,
-      _positions,
-      position_loc(),
-      eagine::shapes::vertex_attrib_kind::position,
-      "positions",
-      ec.buffer());
-
-    // normals
-    gl.gen_buffers() >> _normals;
-    shape.attrib_setup(
-      glapi,
-      _vao,
-      _normals,
-      normal_loc(),
-      eagine::shapes::vertex_attrib_kind::normal,
-      "normals",
-      ec.buffer());
-
-    // indices
-    gl.gen_buffers() >> _indices;
-    shape.index_setup(glapi, _indices, draw_var, "indices", ec.buffer());
+    vc.clean_up_later(*this);
 }
 //------------------------------------------------------------------------------
 void shape_geometry::clean_up(video_context& vc) {
-    const auto& gl = vc.gl_api();
-    gl.delete_buffers(std::move(_indices));
-    gl.delete_buffers(std::move(_normals));
-    gl.delete_buffers(std::move(_positions));
-    gl.delete_vertex_arrays(std::move(_vao));
+    geometry::clean_up(vc.gl_api());
 }
 //------------------------------------------------------------------------------
-void shape_geometry::draw(execution_context&, video_context& ec) {
-    draw_using_instructions(ec.gl_api(), view(_ops));
+void shape_geometry::draw(video_context& vc) {
+    const auto& glapi = vc.gl_api();
+    geometry::use(glapi);
+    geometry::draw(glapi);
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

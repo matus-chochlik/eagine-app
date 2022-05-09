@@ -52,7 +52,7 @@ example_torus::example_torus(execution_context& ec, video_context& vc)
 
     prog.bind_position_location(vc, torus.position_loc());
     prog.bind_normal_location(vc, torus.normal_loc());
-    prog.bind_texcoord_location(vc, torus.texcoord_loc());
+    prog.bind_texcoord_location(vc, torus.wrap_coord_loc());
 
     // camera
     camera.set_near(0.1F)
@@ -90,7 +90,7 @@ void example_torus::update() noexcept {
 
     gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
     prog.set_projection(_video, camera);
-    torus.draw(_ctx, _video);
+    torus.use_and_draw(_video);
 
     _video.commit();
 }
