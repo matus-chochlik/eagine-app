@@ -35,7 +35,6 @@ public:
 
     void on_video_resize() noexcept final;
     void update() noexcept final;
-    void clean_up() noexcept final;
 
 private:
     execution_context& _ctx;
@@ -159,16 +158,6 @@ void example_fur::update() noexcept {
     prev_model = model;
 
     _video.commit();
-}
-//------------------------------------------------------------------------------
-void example_fur::clean_up() noexcept {
-    hair.clean_up(_video);
-    surf.clean_up(_video);
-    hair_prog.clean_up(_video);
-    surf_prog.clean_up(_video);
-    shape_tex.clean_up(_video);
-
-    _video.end();
 }
 //------------------------------------------------------------------------------
 class example_launchpad : public launchpad {

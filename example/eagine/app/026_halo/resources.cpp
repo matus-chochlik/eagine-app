@@ -38,6 +38,8 @@ void surface_program::init(execution_context& ec, video_context& vc) {
     gl.get_uniform_location(_prog, "Model") >> _model_loc;
     gl.get_uniform_location(_prog, "View") >> _view_loc;
     gl.get_uniform_location(_prog, "Projection") >> _projection_loc;
+
+    vc.clean_up_later(*this);
 }
 //------------------------------------------------------------------------------
 void surface_program::clean_up(video_context& vc) {
@@ -88,6 +90,8 @@ void halo_program::init(execution_context& ec, video_context& vc) {
     gl.get_uniform_location(_prog, "View") >> _view_loc;
     gl.get_uniform_location(_prog, "Projection") >> _projection_loc;
     gl.get_uniform_location(_prog, "CameraPos") >> _camera_pos_loc;
+
+    vc.clean_up_later(*this);
 }
 //------------------------------------------------------------------------------
 void halo_program::clean_up(video_context& vc) {
@@ -154,6 +158,8 @@ void shape_geometry::init(execution_context& ec, video_context& vc) {
     oglplus::shape_generator shape(
       glapi, shapes::add_triangle_adjacency(std::move(gen), ctx));
     geometry::init(glapi, shape, *this, ec.buffer());
+
+    vc.clean_up_later(*this);
 }
 //------------------------------------------------------------------------------
 void shape_geometry::clean_up(video_context& vc) {

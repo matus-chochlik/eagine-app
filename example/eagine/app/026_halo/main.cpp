@@ -30,7 +30,6 @@ public:
 
     void on_video_resize() noexcept final;
     void update() noexcept final;
-    void clean_up() noexcept final;
 
 private:
     execution_context& _ctx;
@@ -107,15 +106,6 @@ void example_halo::update() noexcept {
     gl.depth_mask(GL.true_);
 
     _video.commit();
-}
-//------------------------------------------------------------------------------
-void example_halo::clean_up() noexcept {
-
-    _halo_prog.clean_up(_video);
-    _surf_prog.clean_up(_video);
-    _shape.clean_up(_video);
-
-    _video.end();
 }
 //------------------------------------------------------------------------------
 class example_launchpad : public launchpad {

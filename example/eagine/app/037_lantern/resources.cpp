@@ -54,6 +54,8 @@ void draw_program::init(video_context& vc) {
     gl.get_uniform_location(_prog, "CandleLight") >> _candle_light_loc;
     gl.get_uniform_location(_prog, "AmbientLight") >> _ambient_light_loc;
     gl.get_uniform_location(_prog, "Tex") >> _tex_loc;
+
+    vc.clean_up_later(*this);
 }
 //------------------------------------------------------------------------------
 void draw_program::use(video_context& vc) {
@@ -135,6 +137,8 @@ void screen_program::init(video_context& vc) {
 
     gl.get_uniform_location(_prog, "ScreenSize") >> _screen_size_loc;
     gl.get_uniform_location(_prog, "Tex") >> _tex_loc;
+
+    vc.clean_up_later(*this);
 }
 //------------------------------------------------------------------------------
 void screen_program::use(video_context& vc) {
@@ -203,6 +207,8 @@ void pumpkin_geometry::init(video_context& vc) {
       0,
       0,
       oglplus::texture_image_block(tex_src.unpack(vc.parent())));
+
+    vc.clean_up_later(*this);
 }
 //------------------------------------------------------------------------------
 void pumpkin_geometry::clean_up(video_context& vc) {
@@ -220,6 +226,8 @@ void screen_geometry::init(video_context& vc) {
         shapes::vertex_attrib_kind::position |
         shapes::vertex_attrib_kind::wrap_coord),
       vc);
+
+    vc.clean_up_later(*this);
 }
 //------------------------------------------------------------------------------
 // draw buffers
@@ -261,6 +269,8 @@ void draw_buffers::init(video_context& vc) {
       GL.draw_framebuffer, GL.depth_attachment, GL.renderbuffer, _rbo);
 
     gl.bind_framebuffer(GL.draw_framebuffer, oglplus::default_framebuffer);
+
+    vc.clean_up_later(*this);
 }
 //------------------------------------------------------------------------------
 void draw_buffers::resize(video_context& vc) {

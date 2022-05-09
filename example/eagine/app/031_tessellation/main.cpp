@@ -30,7 +30,6 @@ public:
 
     void on_video_resize() noexcept final;
     void update() noexcept final;
-    void clean_up() noexcept final;
 
 private:
     execution_context& _ctx;
@@ -93,14 +92,6 @@ void example_sphere::update() noexcept {
     shape.draw(_video);
 
     _video.commit();
-}
-//------------------------------------------------------------------------------
-void example_sphere::clean_up() noexcept {
-
-    prog.clean_up(_video);
-    shape.clean_up(_video);
-
-    _video.end();
 }
 //------------------------------------------------------------------------------
 class example_launchpad : public launchpad {

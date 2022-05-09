@@ -32,6 +32,8 @@ void surface_program::init(execution_context& ec, video_context& vc) {
     gl.get_uniform_location(prog, "Model") >> model_loc;
     gl.get_uniform_location(prog, "Camera") >> camera_loc;
     gl.get_uniform_location(prog, "Tex") >> texture_loc;
+
+    vc.clean_up_later(*this);
 }
 //------------------------------------------------------------------------------
 void surface_program::clean_up(video_context& vc) {
@@ -103,6 +105,8 @@ void hair_program::init(execution_context& ec, video_context& vc) {
     gl.get_uniform_location(prog, "CurrModel") >> curr_model_loc;
     gl.get_uniform_location(prog, "Camera") >> camera_loc;
     gl.get_uniform_location(prog, "Tex") >> texture_loc;
+
+    vc.clean_up_later(*this);
 }
 //------------------------------------------------------------------------------
 void hair_program::clean_up(video_context& vc) {
@@ -170,6 +174,8 @@ void shape_surface::init(
   video_context& vc,
   const std::shared_ptr<shapes::generator>& gen) {
     geometry_and_bindings::init(gen, vc);
+
+    vc.clean_up_later(*this);
 }
 //------------------------------------------------------------------------------
 // hair geometry
@@ -185,6 +191,8 @@ void shape_hair::init(
       shapes::surface_points(
         gen, 256 * 1024, shapes::vertex_attrib_kind::occlusion, vc.parent()));
     geometry_and_bindings::init(shape, vc);
+
+    vc.clean_up_later(*this);
 }
 //------------------------------------------------------------------------------
 // textures
@@ -230,6 +238,8 @@ void shape_textures::init(execution_context& ec, video_context& vc) {
       0,
       oglplus::texture_image_block(monkey_tex_src.unpack(ec)));
     gl.generate_mipmap(GL.texture_2d);
+
+    vc.clean_up_later(*this);
 }
 //------------------------------------------------------------------------------
 void shape_textures::clean_up(video_context& vc) {
