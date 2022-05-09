@@ -51,7 +51,7 @@ example_sketch::example_sketch(execution_context& ec, video_context& vc)
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
 
-    _shape.init(ec, vc);
+    _shape.init(vc);
     _tex.init(ec, vc);
 
     _sketch_prog.init(ec, vc);

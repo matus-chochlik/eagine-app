@@ -94,7 +94,7 @@ void torus_program::bind_texcoord_location(
 //------------------------------------------------------------------------------
 // geometry
 //------------------------------------------------------------------------------
-void torus_geometry::init(execution_context& ec, video_context& vc) {
+void torus_geometry::init(video_context& vc) {
     geometry_and_bindings::init(
       shapes::unit_torus(
         shapes::vertex_attrib_kind::position |
@@ -104,7 +104,6 @@ void torus_geometry::init(execution_context& ec, video_context& vc) {
         48,
         72,
         0.5F),
-      ec,
       vc);
 }
 //------------------------------------------------------------------------------

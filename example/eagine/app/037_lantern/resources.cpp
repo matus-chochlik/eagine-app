@@ -184,7 +184,7 @@ void pumpkin_geometry::init(video_context& vc) {
     _bounding_sphere = shape.bounding_sphere();
 
     // geometry
-    geometry_and_bindings::init(glapi, shape, vc.parent().buffer());
+    geometry_and_bindings::init(shape, vc);
 
     // textures
     const auto tex_src{embed(EAGINE_ID(PumpkinTex), "pumpkin")};
@@ -219,7 +219,6 @@ void screen_geometry::init(video_context& vc) {
       shapes::unit_screen(
         shapes::vertex_attrib_kind::position |
         shapes::vertex_attrib_kind::wrap_coord),
-      vc.parent(),
       vc);
 }
 //------------------------------------------------------------------------------

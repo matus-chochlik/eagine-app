@@ -49,7 +49,7 @@ private:
 //------------------------------------------------------------------------------
 class cube_geometry : public geometry_and_bindings {
 public:
-    void init(execution_context&, video_context&);
+    void init(video_context&);
 };
 //------------------------------------------------------------------------------
 // draw buffers

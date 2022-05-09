@@ -85,8 +85,8 @@ example_fur::example_fur(execution_context& ec, video_context& vc)
     shape_tex.init(ec, vc);
     surf_prog.init(ec, vc);
     hair_prog.init(ec, vc);
-    surf.init(ec, vc, gen);
-    hair.init(ec, vc, gen);
+    surf.init(vc, gen);
+    hair.init(vc, gen);
 
     surf_prog.use(vc);
     surf_prog.bind_position_location(vc, surf.position_loc());

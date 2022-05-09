@@ -81,7 +81,7 @@ void sketch_program::bind_coord_location(
 //------------------------------------------------------------------------------
 // geometry
 //------------------------------------------------------------------------------
-void shape_geometry::init(execution_context& ec, video_context& vc) {
+void shape_geometry::init(video_context& vc) {
     geometry_and_bindings::init(
       shapes::add_triangle_adjacency(
         shapes::unit_twisted_torus(
@@ -92,8 +92,7 @@ void shape_geometry::init(execution_context& ec, video_context& vc) {
           13,
           9,
           0.5F),
-        ec),
-      ec,
+        vc.parent()),
       vc);
 }
 //------------------------------------------------------------------------------

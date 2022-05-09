@@ -49,7 +49,7 @@ example_parallax::example_parallax(execution_context& ec, video_context& vc)
     auto& [gl, GL] = glapi;
 
     prog.init(ec, vc);
-    torus.init(ec, vc);
+    torus.init(vc);
     textures.init(ec, vc);
 
     prog.bind_position_location(vc, torus.position_loc());

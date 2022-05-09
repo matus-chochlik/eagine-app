@@ -72,18 +72,12 @@ private:
 //------------------------------------------------------------------------------
 class shape_surface : public geometry_and_bindings {
 public:
-    void init(
-      execution_context&,
-      video_context&,
-      const std::shared_ptr<shapes::generator>&);
+    void init(video_context&, const std::shared_ptr<shapes::generator>&);
 };
 //------------------------------------------------------------------------------
 class shape_hair : public geometry_and_bindings {
 public:
-    void init(
-      execution_context&,
-      video_context&,
-      const std::shared_ptr<shapes::generator>&);
+    void init(video_context&, const std::shared_ptr<shapes::generator>&);
 };
 //------------------------------------------------------------------------------
 // texture

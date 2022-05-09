@@ -58,7 +58,7 @@ void edges_program::bind_position_location(
 //------------------------------------------------------------------------------
 // geometry
 //------------------------------------------------------------------------------
-void icosahedron_geometry::init(execution_context& ec, video_context& vc) {
+void icosahedron_geometry::init(video_context& vc) {
     geometry_and_bindings::init(
       shapes::center(eagine::shapes::ortho_array_xyz(
         shapes::scale(
@@ -66,7 +66,6 @@ void icosahedron_geometry::init(execution_context& ec, video_context& vc) {
           {0.5F, 0.5F, 0.5F}),
         {1.F, 1.F, 1.F},
         {3, 3, 3})),
-      ec,
       vc);
 }
 //------------------------------------------------------------------------------

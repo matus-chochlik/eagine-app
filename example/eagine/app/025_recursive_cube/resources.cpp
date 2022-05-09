@@ -84,13 +84,12 @@ void cube_program::bind_tex_coord_location(
 //------------------------------------------------------------------------------
 // geometry
 //------------------------------------------------------------------------------
-void cube_geometry::init(execution_context& ec, video_context& vc) {
+void cube_geometry::init(video_context& vc) {
     geometry_and_bindings::init(
       shapes::unit_cube(
         shapes::vertex_attrib_kind::position |
         shapes::vertex_attrib_kind::normal |
         shapes::vertex_attrib_kind::face_coord),
-      ec,
       vc);
 }
 //------------------------------------------------------------------------------

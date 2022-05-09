@@ -167,16 +167,14 @@ void hair_program::bind_occlusion_location(
 // surface geometry
 //------------------------------------------------------------------------------
 void shape_surface::init(
-  execution_context& ec,
   video_context& vc,
   const std::shared_ptr<shapes::generator>& gen) {
-    geometry_and_bindings::init(gen, ec, vc);
+    geometry_and_bindings::init(gen, vc);
 }
 //------------------------------------------------------------------------------
 // hair geometry
 //------------------------------------------------------------------------------
 void shape_hair::init(
-  execution_context& ec,
   video_context& vc,
   const std::shared_ptr<shapes::generator>& gen) {
 
@@ -185,8 +183,8 @@ void shape_hair::init(
     oglplus::shape_generator shape(
       glapi,
       shapes::surface_points(
-        gen, 256 * 1024, shapes::vertex_attrib_kind::occlusion, ec.as_parent()));
-    geometry_and_bindings::init(glapi, shape, ec.buffer());
+        gen, 256 * 1024, shapes::vertex_attrib_kind::occlusion, vc.parent()));
+    geometry_and_bindings::init(shape, vc);
 }
 //------------------------------------------------------------------------------
 // textures

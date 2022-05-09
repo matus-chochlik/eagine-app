@@ -48,7 +48,7 @@ example_cube::example_cube(execution_context& ec, video_context& vc)
     const auto& [gl, GL] = glapi;
 
     prog.init(ec, vc);
-    cube.init(ec, vc);
+    cube.init(vc);
     bufs.init(ec, vc);
 
     prog.bind_position_location(vc, cube.position_loc());

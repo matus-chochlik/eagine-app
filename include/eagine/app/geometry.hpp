@@ -30,6 +30,11 @@ public:
         return *this;
     }
 
+    auto init(const oglplus::shape_generator& shape, video_context& vc)
+      -> auto& {
+        return init(shape, vc, vc.parent().buffer());
+    }
+
     auto init(
       const std::shared_ptr<shapes::generator>& gen,
       video_context& vc,
@@ -39,11 +44,9 @@ public:
         return init(shape, vc, temp);
     }
 
-    auto init(
-      const std::shared_ptr<shapes::generator>& gen,
-      execution_context& ec,
-      video_context& vc) -> auto& {
-        return init(gen, vc, ec.buffer());
+    auto init(const std::shared_ptr<shapes::generator>& gen, video_context& vc)
+      -> auto& {
+        return init(gen, vc, vc.parent().buffer());
     }
 
     auto clean_up(video_context& vc) -> auto& {
