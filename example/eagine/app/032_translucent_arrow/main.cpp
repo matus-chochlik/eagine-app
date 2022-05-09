@@ -39,7 +39,6 @@ public:
 
     void on_video_resize() noexcept final;
     void update() noexcept final;
-    void clean_up() noexcept final;
 
 private:
     execution_context& _ctx;
@@ -64,12 +63,16 @@ example_arrow::example_arrow(
     const auto& [gl, GL] = glapi;
 
     shape.init(gen, vc);
+    vc.clean_up_later(shape);
     depth_tex.init(ec, vc);
+    vc.clean_up_later(depth_tex);
 
     depth_prog.init(ec, vc);
+    vc.clean_up_later(depth_prog);
     depth_prog.bind_position_location(vc, shape.position_loc());
 
     draw_prog.init(ec, vc);
+    vc.clean_up_later(draw_prog);
     draw_prog.bind_position_location(vc, shape.position_loc());
     draw_prog.bind_normal_location(vc, shape.normal_loc());
     draw_prog.set_depth_texture(vc, depth_tex.texture_unit());
@@ -133,14 +136,6 @@ void example_arrow::update() noexcept {
     shape.draw(_video);
 
     _video.commit();
-}
-//------------------------------------------------------------------------------
-void example_arrow::clean_up() noexcept {
-    draw_prog.clean_up(_video);
-    depth_prog.clean_up(_video);
-    depth_tex.clean_up(_video);
-    shape.clean_up(_video);
-    _video.end();
 }
 //------------------------------------------------------------------------------
 class example_launchpad : public launchpad {

@@ -126,7 +126,7 @@ struct application : interface<application> {
     virtual auto is_done() noexcept -> bool = 0;
     virtual void on_video_resize() noexcept = 0;
     virtual void update() noexcept = 0;
-    virtual void clean_up() noexcept = 0;
+    virtual void clean_up() noexcept {}
 };
 //------------------------------------------------------------------------------
 struct launchpad : interface<launchpad> {

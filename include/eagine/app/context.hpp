@@ -15,6 +15,7 @@
 #include "state_view.hpp"
 #include <eagine/app_config.hpp>
 #include <eagine/assert.hpp>
+#include <eagine/callable_ref.hpp>
 #include <eagine/flat_map.hpp>
 #include <eagine/main_ctx_object.hpp>
 #include <eagine/memory/buffer.hpp>
@@ -99,10 +100,25 @@ public:
         return 1.F;
     }
 
+    /// @brief Adds a clean-up callback.
+    void add_cleanup_op(callable_ref<void(video_context&) noexcept> op);
+
+    template <typename Obj>
+    auto clean_up_later(Obj& obj) -> auto& {
+        add_cleanup_op(callable_ref<void(video_context&) noexcept>{
+          obj, &_call_clean_up<Obj>});
+        return *this;
+    }
+
     /// @brief Cleans up and releases this rendering context and APIs.
     void clean_up() noexcept;
 
 private:
+    template <typename Obj>
+    static void _call_clean_up(Obj* obj, video_context& vc) noexcept {
+        obj->clean_up(vc);
+    }
+
     execution_context& _parent;
     long _frame_no{0};
     std::shared_ptr<video_provider> _provider{};
