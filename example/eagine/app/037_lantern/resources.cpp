@@ -183,46 +183,8 @@ void pumpkin_geometry::init(video_context& vc) {
         valtree::from_json_text(json_text, vc.parent()), vc.parent()));
     _bounding_sphere = shape.bounding_sphere();
 
-    _ops.resize(std_size(shape.operation_count()));
-    shape.instructions(glapi, cover(_ops));
-
-    // vao
-    gl.gen_vertex_arrays() >> _vao;
-    gl.bind_vertex_array(_vao);
-
-    // positions
-    gl.gen_buffers() >> _positions;
-    shape.attrib_setup(
-      glapi,
-      _vao,
-      _positions,
-      position_loc(),
-      eagine::shapes::vertex_attrib_kind::position,
-      vc.parent().buffer());
-
-    // normals
-    gl.gen_buffers() >> _normals;
-    shape.attrib_setup(
-      glapi,
-      _vao,
-      _normals,
-      normal_loc(),
-      eagine::shapes::vertex_attrib_kind::normal,
-      vc.parent().buffer());
-
-    // wrap_coords
-    gl.gen_buffers() >> _wrap_coords;
-    shape.attrib_setup(
-      glapi,
-      _vao,
-      _wrap_coords,
-      wrap_coord_loc(),
-      eagine::shapes::vertex_attrib_kind::wrap_coord,
-      vc.parent().buffer());
-
-    // indices
-    gl.gen_buffers() >> _indices;
-    shape.index_setup(glapi, _indices, vc.parent().buffer());
+    // geometry
+    geometry_and_bindings::init(glapi, shape, vc.parent().buffer());
 
     // textures
     const auto tex_src{embed(EAGINE_ID(PumpkinTex), "pumpkin")};
@@ -243,79 +205,22 @@ void pumpkin_geometry::init(video_context& vc) {
       oglplus::texture_image_block(tex_src.unpack(vc.parent())));
 }
 //------------------------------------------------------------------------------
-void pumpkin_geometry::use(video_context& vc) {
-    vc.gl_api().bind_vertex_array(_vao);
-}
-//------------------------------------------------------------------------------
-void pumpkin_geometry::draw(video_context& vc) {
-    oglplus::draw_using_instructions(vc.gl_api(), view(_ops));
-}
-//------------------------------------------------------------------------------
 void pumpkin_geometry::clean_up(video_context& vc) {
     const auto& gl = vc.gl_api();
 
     gl.delete_textures(std::move(_tex));
-    gl.delete_buffers(std::move(_indices));
-    gl.delete_buffers(std::move(_wrap_coords));
-    gl.delete_buffers(std::move(_normals));
-    gl.delete_buffers(std::move(_positions));
-    gl.delete_vertex_arrays(std::move(_vao));
+    geometry_and_bindings::clean_up(vc);
 }
 //------------------------------------------------------------------------------
 // screen
 //------------------------------------------------------------------------------
 void screen_geometry::init(video_context& vc) {
-    const auto& glapi = vc.gl_api();
-    const auto& [gl, GL] = glapi;
-
-    oglplus::shape_generator shape(
-      glapi,
+    geometry_and_bindings::init(
       shapes::unit_screen(
         shapes::vertex_attrib_kind::position |
-        shapes::vertex_attrib_kind::wrap_coord));
-
-    _ops.resize(std_size(shape.operation_count()));
-    shape.instructions(glapi, cover(_ops));
-
-    // vao
-    gl.gen_vertex_arrays() >> _vao;
-    gl.bind_vertex_array(_vao);
-
-    // positions
-    gl.gen_buffers() >> _positions;
-    shape.attrib_setup(
-      glapi,
-      _vao,
-      _positions,
-      position_loc(),
-      eagine::shapes::vertex_attrib_kind::position,
-      vc.parent().buffer());
-
-    // coords
-    gl.gen_buffers() >> _coords;
-    shape.attrib_setup(
-      glapi,
-      _vao,
-      _coords,
-      coord_loc(),
-      eagine::shapes::vertex_attrib_kind::wrap_coord,
-      vc.parent().buffer());
-}
-//------------------------------------------------------------------------------
-void screen_geometry::use(video_context& vc) {
-    vc.gl_api().bind_vertex_array(_vao);
-}
-//------------------------------------------------------------------------------
-void screen_geometry::draw(video_context& vc) {
-    oglplus::draw_using_instructions(vc.gl_api(), view(_ops));
-}
-//------------------------------------------------------------------------------
-void screen_geometry::clean_up(video_context& vc) {
-    const auto& gl = vc.gl_api();
-
-    gl.delete_buffers(std::move(_coords));
-    gl.delete_buffers(std::move(_positions));
-    gl.delete_vertex_arrays(std::move(_vao));
+        shapes::vertex_attrib_kind::wrap_coord),
+      vc.parent(),
+      vc);
 }
 //------------------------------------------------------------------------------
 // draw buffers

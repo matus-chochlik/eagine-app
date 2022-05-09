@@ -22,13 +22,21 @@ public:
     using base::init;
 
     auto init(
+      const oglplus::shape_generator& shape,
+      video_context& vc,
+      memory::buffer& temp) -> auto& {
+        const auto& glapi = vc.gl_api();
+        oglplus::geometry_and_bindings::init(glapi, shape, temp);
+        return *this;
+    }
+
+    auto init(
       const std::shared_ptr<shapes::generator>& gen,
       video_context& vc,
       memory::buffer& temp) -> auto& {
         const auto& glapi = vc.gl_api();
         oglplus::shape_generator shape(glapi, gen);
-        oglplus::geometry_and_bindings::init(glapi, shape, temp);
-        return *this;
+        return init(shape, vc, temp);
     }
 
     auto init(

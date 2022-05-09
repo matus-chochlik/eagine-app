@@ -64,7 +64,7 @@ example_lantern::example_lantern(execution_context& ec, video_context& vc)
 
     screen_prog.init(_video);
     screen_prog.bind_position_location(_video, screen.position_loc());
-    screen_prog.bind_coord_location(_video, screen.coord_loc());
+    screen_prog.bind_coord_location(_video, screen.wrap_coord_loc());
     screen_prog.set_texture_unit(_video, draw_bufs.tex_unit());
 
     // camera
