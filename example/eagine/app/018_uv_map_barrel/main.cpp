@@ -65,26 +65,18 @@ example_uv_map::example_uv_map(execution_context& ec, video_context& vc)
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
 
-    // vertex shader
-    auto vs_source = embed(EAGINE_ID(VertShader), "vertex.glsl");
-    oglplus::owned_shader_name vs;
-    gl.create_shader(GL.vertex_shader) >> vs;
-    auto cleanup_vs = gl.delete_shader.raii(vs);
-    gl.shader_source(vs, oglplus::glsl_string_ref(vs_source.unpack(ec)));
-    gl.compile_shader(vs);
-
-    // fragment shader
-    auto fs_source = embed(EAGINE_ID(FragShader), "fragment.glsl");
-    oglplus::owned_shader_name fs;
-    gl.create_shader(GL.fragment_shader) >> fs;
-    auto cleanup_fs = gl.delete_shader.raii(fs);
-    gl.shader_source(fs, oglplus::glsl_string_ref(fs_source.unpack(ec)));
-    gl.compile_shader(fs);
-
     // program
     gl.create_program() >> prog;
-    gl.attach_shader(prog, vs);
-    gl.attach_shader(prog, fs);
+    glapi.add_shader(
+      prog,
+      GL.vertex_shader,
+      oglplus::glsl_string_ref(
+        embed(EAGINE_ID(VertShader), "vertex.glsl").unpack(ec)));
+    glapi.add_shader(
+      prog,
+      GL.fragment_shader,
+      oglplus::glsl_string_ref(
+        embed(EAGINE_ID(FragShader), "fragment.glsl").unpack(ec)));
     gl.link_program(prog);
     gl.use_program(prog);
 

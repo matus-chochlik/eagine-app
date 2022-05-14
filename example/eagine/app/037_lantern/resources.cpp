@@ -27,26 +27,18 @@ void draw_program::init(video_context& vc) {
 
     // vertex shader
     auto vs_source = embed(EAGINE_ID(DrawVert), "draw_vertex.glsl");
-    oglplus::owned_shader_name vs;
-    const auto cleanup_vs = gl.delete_shader.raii(vs);
-    gl.create_shader(GL.vertex_shader) >> vs;
-    gl.shader_source(
-      vs, oglplus::glsl_string_ref(vs_source.unpack(vc.parent())));
-    gl.compile_shader(vs);
-
-    // fragment shader
     auto fs_source = embed(EAGINE_ID(DrawFrag), "draw_fragment.glsl");
-    oglplus::owned_shader_name fs;
-    const auto cleanup_fs = gl.delete_shader.raii(fs);
-    gl.create_shader(GL.fragment_shader) >> fs;
-    gl.shader_source(
-      fs, oglplus::glsl_string_ref(fs_source.unpack(vc.parent())));
-    gl.compile_shader(fs);
 
     // program
     gl.create_program() >> _prog;
-    gl.attach_shader(_prog, vs);
-    gl.attach_shader(_prog, fs);
+    glapi.add_shader(
+      _prog,
+      GL.vertex_shader,
+      oglplus::glsl_string_ref(vs_source.unpack(vc.parent())));
+    glapi.add_shader(
+      _prog,
+      GL.fragment_shader,
+      oglplus::glsl_string_ref(fs_source.unpack(vc.parent())));
     gl.link_program(_prog);
     gl.use_program(_prog);
 
