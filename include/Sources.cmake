@@ -13,6 +13,7 @@ set(HEADERS
     eagine/app/framedump_raw.hpp
     eagine/app/fwd.hpp
     eagine/app/geometry.hpp
+    eagine/app/gpu_program.hpp
     eagine/app/input.hpp
     eagine/app/input_observers.hpp
     eagine/app/interface.hpp
