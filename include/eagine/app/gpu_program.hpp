@@ -23,6 +23,11 @@ public:
         return *this;
     }
 
+    auto label(video_context& vc, string_view lbl) -> glsl_program& {
+        vc.gl_api().object_label(*this, lbl);
+        return *this;
+    }
+
     auto add_shader(
       video_context& vc,
       oglplus::shader_type shdr_type,
@@ -33,8 +38,25 @@ public:
 
     auto add_shader(
       video_context& vc,
+      oglplus::shader_type shdr_type,
+      const oglplus::glsl_source_ref& shdr_src,
+      const string_view label) -> glsl_program& {
+        vc.gl_api().add_shader(*this, shdr_type, shdr_src, label);
+        return *this;
+    }
+
+    auto add_shader(
+      video_context& vc,
       const oglplus::shader_source_block& shdr_src_blk) -> glsl_program& {
         vc.gl_api().add_shader(*this, shdr_src_blk);
+        return *this;
+    }
+
+    auto add_shader(
+      video_context& vc,
+      const oglplus::shader_source_block& shdr_src_blk,
+      const string_view label) -> glsl_program& {
+        vc.gl_api().add_shader(*this, shdr_src_blk, label);
         return *this;
     }
 

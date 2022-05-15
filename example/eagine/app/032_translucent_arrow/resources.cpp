@@ -18,100 +18,71 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 // programs
 //------------------------------------------------------------------------------
-void depth_program::init(execution_context& ec, video_context& vc) {
-    const auto& glapi = vc.gl_api();
-    const auto& [gl, GL] = glapi;
+void depth_program::init(video_context& vc) {
+    const auto& GL = vc.gl_api();
 
-    // program
-    gl.create_program() >> prog;
-    gl.object_label(prog, "depth program");
-    glapi.add_shader(
-      prog,
-      GL.vertex_shader,
-      oglplus::glsl_string_ref(
-        embed(EAGINE_ID(VSDepth), "vertex_depth.glsl").unpack(ec)));
-    gl.link_program(prog);
-    gl.use_program(prog);
-
-    gl.get_uniform_location(prog, "Camera") >> camera_loc;
-}
-//------------------------------------------------------------------------------
-void depth_program::clean_up(video_context& vc) {
-    const auto& gl = vc.gl_api();
-    gl.delete_program(std::move(prog));
+    create(vc)
+      .label(vc, "depth program")
+      .add_shader(
+        vc,
+        GL.vertex_shader,
+        oglplus::glsl_string_ref(
+          embed(EAGINE_ID(VSDepth), "vertex_depth.glsl").unpack(vc.parent())),
+        "depth vertex shader")
+      .link(vc)
+      .use(vc)
+      .query(vc, "Camera", camera_loc);
 }
 //------------------------------------------------------------------------------
 void depth_program::set_camera(video_context& vc, orbiting_camera& camera) {
-    const auto& gl = vc.gl_api();
-
-    gl.use_program(prog);
-    gl.set_uniform(prog, camera_loc, camera.matrix(vc));
-}
-//------------------------------------------------------------------------------
-void depth_program::update(video_context& vc) {
-    vc.gl_api().use_program(prog);
+    use(vc).set(vc, camera_loc, camera.matrix(vc));
 }
 //------------------------------------------------------------------------------
 void depth_program::bind_position_location(
   video_context& vc,
   oglplus::vertex_attrib_location loc) {
-    vc.gl_api().bind_attrib_location(prog, loc, "Position");
+    bind(vc, loc, "Position");
 }
 //------------------------------------------------------------------------------
-void draw_program::init(execution_context& ec, video_context& vc) {
-    const auto& glapi = vc.gl_api();
-    const auto& [gl, GL] = glapi;
+void draw_program::init(video_context& vc) {
+    const auto& GL = vc.gl_api();
 
-    // program
-    gl.create_program() >> prog;
-    gl.object_label(prog, "draw program");
-    glapi.add_shader(
-      prog,
-      GL.vertex_shader,
-      oglplus::glsl_string_ref(
-        embed(EAGINE_ID(VSDraw), "vertex_draw.glsl").unpack(ec)));
-    glapi.add_shader(
-      prog,
-      GL.fragment_shader,
-      oglplus::glsl_string_ref(
-        embed(EAGINE_ID(FSDraw), "fragment_draw.glsl").unpack(ec)));
-    gl.link_program(prog);
-    gl.use_program(prog);
-
-    gl.get_uniform_location(prog, "Camera") >> camera_loc;
-    gl.get_uniform_location(prog, "LightPosition") >> light_pos_loc;
-    gl.get_uniform_location(prog, "DepthTexture") >> depth_tex_loc;
-}
-//------------------------------------------------------------------------------
-void draw_program::clean_up(video_context& vc) {
-    const auto& gl = vc.gl_api();
-    gl.delete_program(std::move(prog));
+    create(vc)
+      .label(vc, "draw program")
+      .add_shader(
+        vc,
+        GL.vertex_shader,
+        oglplus::glsl_string_ref(
+          embed(EAGINE_ID(VSDraw), "vertex_draw.glsl").unpack(vc.parent())),
+        "draw vertex shader")
+      .add_shader(
+        vc,
+        GL.fragment_shader,
+        oglplus::glsl_string_ref(
+          embed(EAGINE_ID(FSDraw), "fragment_draw.glsl").unpack(vc.parent())),
+        "draw fragment shader")
+      .link(vc)
+      .use(vc)
+      .query(vc, "Camera", camera_loc)
+      .query(vc, "LightPosition", light_pos_loc)
+      .query(vc, "DepthTexture", depth_tex_loc);
 }
 //------------------------------------------------------------------------------
 void draw_program::set_depth_texture(
   video_context& vc,
   oglplus::gl_types::int_type tex_unit) {
-    const auto& gl = vc.gl_api();
-
-    gl.use_program(prog);
-    gl.set_uniform(prog, depth_tex_loc, tex_unit);
+    use(vc).set(vc, depth_tex_loc, tex_unit);
 }
 //------------------------------------------------------------------------------
 void draw_program::set_camera(video_context& vc, orbiting_camera& camera) {
-    const auto& gl = vc.gl_api();
-
-    gl.use_program(prog);
-    gl.set_uniform(prog, camera_loc, camera.matrix(vc));
+    use(vc).set(vc, camera_loc, camera.matrix(vc));
 }
 //------------------------------------------------------------------------------
 void draw_program::update(execution_context& ec, video_context& vc) {
-    const auto& gl = vc.gl_api();
-
     rad += radians_(0.5F * ec.state().frame_duration().value());
 
-    gl.use_program(prog);
-    gl.set_uniform(
-      prog,
+    use(vc).set(
+      vc,
       light_pos_loc,
       oglplus::vec3(cos(rad) * 5, sin(rad) * 7, sin(rad * 0.618F) * 8));
 }
@@ -119,13 +90,13 @@ void draw_program::update(execution_context& ec, video_context& vc) {
 void draw_program::bind_position_location(
   video_context& vc,
   oglplus::vertex_attrib_location loc) {
-    vc.gl_api().bind_attrib_location(prog, loc, "Position");
+    bind(vc, loc, "Position");
 }
 //------------------------------------------------------------------------------
 void draw_program::bind_normal_location(
   video_context& vc,
   oglplus::vertex_attrib_location loc) {
-    vc.gl_api().bind_attrib_location(prog, loc, "Normal");
+    bind(vc, loc, "Normal");
 }
 //------------------------------------------------------------------------------
 // geometry
