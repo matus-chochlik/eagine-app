@@ -14,17 +14,16 @@
 
 #include <eagine/app/fwd.hpp>
 #include <eagine/app/geometry.hpp>
+#include <eagine/app/gpu_program.hpp>
 #include <eagine/oglplus/math/primitives.hpp>
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
 // programs
 //------------------------------------------------------------------------------
-class draw_program {
+class draw_program : public glsl_program {
 public:
     void init(video_context&);
-    void use(video_context&);
-    void clean_up(video_context&);
     void set_camera(video_context&, const orbiting_camera& camera);
     void set_candle_light(video_context&, oglplus::gl_types::float_type);
     void set_ambient_light(video_context&, oglplus::gl_types::float_type);
@@ -37,18 +36,15 @@ public:
       oglplus::vertex_attrib_location);
 
 private:
-    oglplus::owned_program_name _prog;
     oglplus::uniform_location _camera_loc;
     oglplus::uniform_location _candle_light_loc;
     oglplus::uniform_location _ambient_light_loc;
     oglplus::uniform_location _tex_loc;
 };
 //------------------------------------------------------------------------------
-class screen_program {
+class screen_program : public glsl_program {
 public:
     void init(video_context&);
-    void use(video_context&);
-    void clean_up(video_context&);
     void set_screen_size(video_context& vc);
     void set_texture_unit(video_context&, oglplus::gl_types::int_type);
 
@@ -56,7 +52,6 @@ public:
     void bind_coord_location(video_context&, oglplus::vertex_attrib_location);
 
 private:
-    oglplus::owned_program_name _prog;
     oglplus::uniform_location _screen_size_loc;
     oglplus::uniform_location _tex_loc;
 };
