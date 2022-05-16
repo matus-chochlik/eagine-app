@@ -13,24 +13,22 @@
 #include <eagine/oglplus/gl_api.hpp>
 
 #include <eagine/app/fwd.hpp>
+#include <eagine/app/gpu_program.hpp>
 #include <eagine/oglplus/shapes/drawing.hpp>
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
 // program
 //------------------------------------------------------------------------------
-class sphere_program {
+class sphere_program : public glsl_program {
 public:
-    void init(execution_context&, video_context&);
-    void clean_up(video_context&);
-    void use(video_context&);
+    void init(video_context&);
     void set_projection(video_context&, orbiting_camera&);
 
     void bind_position_location(video_context&, oglplus::vertex_attrib_location);
     void bind_offsets_block(video_context&, oglplus::gl_types::uint_type);
 
 private:
-    oglplus::owned_program_name prog;
     oglplus::uniform_location camera_matrix_loc;
     oglplus::uniform_location camera_position_loc;
     oglplus::uniform_location viewport_dim_loc;
@@ -41,7 +39,7 @@ private:
 //------------------------------------------------------------------------------
 class icosahedron_geometry {
 public:
-    void init(execution_context&, video_context&);
+    void init(video_context&);
     void clean_up(video_context&);
     void draw(video_context&);
 

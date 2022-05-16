@@ -10,6 +10,7 @@
 #define EAGINE_APP_GPU_PROGRAM_HPP
 
 #include "context.hpp"
+#include <eagine/embed.hpp>
 #include <eagine/oglplus/glsl_program.hpp>
 
 namespace eagine::app {
@@ -66,6 +67,22 @@ public:
         return *this;
     }
 
+    auto add_shader(video_context& vc, const embedded_resource& shdr_src_res)
+      -> glsl_program& {
+        return add_shader(
+          vc, oglplus::shader_source_block{shdr_src_res.unpack(vc.parent())});
+    }
+
+    auto add_shader(
+      video_context& vc,
+      const embedded_resource& shdr_src_res,
+      const string_view label) -> glsl_program& {
+        return add_shader(
+          vc,
+          oglplus::shader_source_block{shdr_src_res.unpack(vc.parent())},
+          label);
+    }
+
     using base::link;
 
     auto link(video_context& vc) -> glsl_program& {
@@ -80,6 +97,12 @@ public:
       const oglplus::program_source_block& prog_src_blk) -> glsl_program& {
         base::build(vc.gl_api(), prog_src_blk);
         return *this;
+    }
+
+    auto build(video_context& vc, const embedded_resource& prog_src_res)
+      -> glsl_program& {
+        return build(
+          vc, oglplus::program_source_block{prog_src_res.unpack(vc.parent())});
     }
 
     using base::init;
@@ -104,6 +127,12 @@ public:
         return base::get_uniform_location(vc.gl_api(), name);
     }
 
+    using base::get_uniform_block_index;
+
+    auto get_uniform_block_index(video_context& vc, string_view name) -> auto {
+        return base::get_uniform_block_index(vc.gl_api(), name);
+    }
+
     using base::query;
 
     auto query(
@@ -111,6 +140,14 @@ public:
       string_view name,
       oglplus::uniform_location& loc) -> glsl_program& {
         base::query(vc.gl_api(), name, loc);
+        return *this;
+    }
+
+    auto query(
+      video_context& vc,
+      string_view name,
+      oglplus::uniform_block_index& ubi) -> glsl_program& {
+        base::query(vc.gl_api(), name, ubi);
         return *this;
     }
 
@@ -130,6 +167,14 @@ public:
       oglplus::vertex_attrib_location loc,
       string_view name) -> glsl_program& {
         base::bind(vc.gl_api(), loc, name);
+        return *this;
+    }
+
+    auto bind(
+      video_context& vc,
+      oglplus::uniform_block_index blk_idx,
+      oglplus::gl_types::uint_type binding) -> glsl_program& {
+        base::bind(vc.gl_api(), blk_idx, binding);
         return *this;
     }
 

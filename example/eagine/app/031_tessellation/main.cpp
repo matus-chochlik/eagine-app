@@ -47,8 +47,8 @@ example_sphere::example_sphere(execution_context& ec, video_context& vc)
   , _video{vc}
   , _bg{_video, {0.0F, 0.0F, 0.0F, 1.F}, {0.25F, 0.25F, 0.25F, 0.0F}, 1.F} {
 
-    prog.init(ec, vc);
-    shape.init(ec, vc);
+    prog.init(vc);
+    shape.init(vc);
 
     prog.bind_position_location(vc, shape.position_loc());
     prog.bind_offsets_block(vc, shape.offsets_binding());
