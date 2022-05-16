@@ -81,9 +81,9 @@ example_fur::example_fur(execution_context& ec, video_context& vc)
           1.F);
     }();
 
-    shape_tex.init(ec, vc);
-    surf_prog.init(ec, vc);
-    hair_prog.init(ec, vc);
+    shape_tex.init(vc);
+    surf_prog.init(vc);
+    hair_prog.init(vc);
     surf.init(vc, gen);
     hair.init(vc, gen);
 
