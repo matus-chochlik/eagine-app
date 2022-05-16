@@ -50,7 +50,7 @@ example_edges::example_edges(execution_context& ec, video_context& vc)
     const auto& glapi = _video.gl_api();
     auto& [gl, GL] = glapi;
 
-    prog.init(ec, vc);
+    prog.init(vc);
     shape.init(vc);
 
     prog.bind_position_location(vc, shape.position_loc());
