@@ -11,6 +11,7 @@
 
 #include "context.hpp"
 #include <eagine/embed.hpp>
+#include <eagine/oglplus/glsl/string_ref.hpp>
 #include <eagine/oglplus/glsl_program.hpp>
 
 namespace eagine::app {
@@ -65,6 +66,28 @@ public:
       const string_view label) -> glsl_program& {
         base::add_shader(vc.gl_api(), shdr_src_blk, label);
         return *this;
+    }
+
+    auto add_shader(
+      video_context& vc,
+      oglplus::shader_type shdr_type,
+      const embedded_resource& shdr_src_res) -> glsl_program& {
+        return add_shader(
+          vc,
+          shdr_type,
+          oglplus::glsl_string_ref{shdr_src_res.unpack(vc.parent())});
+    }
+
+    auto add_shader(
+      video_context& vc,
+      oglplus::shader_type shdr_type,
+      const embedded_resource& shdr_src_res,
+      const string_view label) -> glsl_program& {
+        return add_shader(
+          vc,
+          shdr_type,
+          oglplus::glsl_string_ref{shdr_src_res.unpack(vc.parent())},
+          label);
     }
 
     auto add_shader(video_context& vc, const embedded_resource& shdr_src_res)

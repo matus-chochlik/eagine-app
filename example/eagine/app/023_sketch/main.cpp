@@ -52,9 +52,9 @@ example_sketch::example_sketch(execution_context& ec, video_context& vc)
     const auto& [gl, GL] = glapi;
 
     _shape.init(vc);
-    _tex.init(ec, vc);
+    _tex.init(vc);
 
-    _sketch_prog.init(ec, vc);
+    _sketch_prog.init(vc);
     _sketch_prog.bind_position_location(vc, _shape.position_loc());
     _sketch_prog.bind_normal_location(vc, _shape.normal_loc());
     _sketch_prog.bind_coord_location(vc, _shape.wrap_coord_loc());
@@ -103,7 +103,7 @@ void example_sketch::clean_up() noexcept {
     _bg.clean_up(_video);
     _sketch_prog.clean_up(_video);
     _shape.clean_up(_video);
-    _tex.init(_ctx, _video);
+    _tex.clean_up(_video);
 
     _video.end();
 }

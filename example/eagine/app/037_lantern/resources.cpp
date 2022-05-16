@@ -29,14 +29,8 @@ void draw_program::init(video_context& vc) {
     const auto& GL = vc.gl_api();
 
     create(vc)
-      .add_shader(
-        vc,
-        GL.vertex_shader,
-        oglplus::glsl_string_ref(vs_source.unpack(vc.parent())))
-      .add_shader(
-        vc,
-        GL.fragment_shader,
-        oglplus::glsl_string_ref(fs_source.unpack(vc.parent())))
+      .add_shader(vc, GL.vertex_shader, vs_source)
+      .add_shader(vc, GL.fragment_shader, fs_source)
       .link(vc)
       .use(vc)
       .query(vc, "Camera", _camera_loc)
