@@ -19,57 +19,40 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 // program
 //------------------------------------------------------------------------------
-void sphere_program::init(execution_context& ec, video_context& vc) {
-    const auto& glapi = vc.gl_api();
-    const auto& gl = glapi;
-
-    gl.create_program() >> prog;
-    gl.object_label(prog, "sphere program");
-
-    const auto prog_src{
-      embed(EAGINE_ID(TessProg), "sphere_tessellation.oglpprog")};
-    gl.build_program(prog, prog_src.unpack(ec));
-    gl.use_program(prog);
-
-    gl.get_uniform_location(prog, "CameraMatrix") >> camera_matrix_loc;
-    gl.get_uniform_location(prog, "CameraPosition") >> camera_position_loc;
-    gl.get_uniform_location(prog, "ViewportDimensions") >> viewport_dim_loc;
-    gl.get_uniform_block_index(prog, "OffsetBlock") >> offset_blk_idx;
-
-    vc.clean_up_later(*this);
-}
-//------------------------------------------------------------------------------
-void sphere_program::clean_up(video_context& vc) {
-    vc.gl_api().delete_program(std::move(prog));
-}
-//------------------------------------------------------------------------------
-void sphere_program::use(video_context& vc) {
-    vc.gl_api().use_program(prog);
+void sphere_program::init(video_context& vc) {
+    create(vc)
+      .label(vc, "sphere program")
+      .build(vc, embed(EAGINE_ID(TessProg), "sphere_tessellation.oglpprog"))
+      .use(vc)
+      .query(vc, "CameraMatrix", camera_matrix_loc)
+      .query(vc, "CameraPosition", camera_position_loc)
+      .query(vc, "ViewportDimensions", viewport_dim_loc)
+      .query(vc, "OffsetBlock", offset_blk_idx)
+      .clean_up_later(vc);
 }
 //------------------------------------------------------------------------------
 void sphere_program::set_projection(video_context& vc, orbiting_camera& camera) {
     const auto [width, height] = vc.surface_size();
-    const auto& gl = vc.gl_api();
-    gl.set_uniform(prog, camera_position_loc, camera.position());
-    gl.set_uniform(prog, camera_matrix_loc, camera.matrix(vc));
-    gl.set_uniform(prog, viewport_dim_loc, oglplus::vec2(width, height));
+    set(vc, camera_position_loc, camera.position());
+    set(vc, camera_matrix_loc, camera.matrix(vc));
+    set(vc, viewport_dim_loc, oglplus::vec2(width, height));
 }
 //------------------------------------------------------------------------------
 void sphere_program::bind_position_location(
   video_context& vc,
   oglplus::vertex_attrib_location loc) {
-    vc.gl_api().bind_attrib_location(prog, loc, "Position");
+    bind(vc, loc, "Position");
 }
 //------------------------------------------------------------------------------
 void sphere_program::bind_offsets_block(
   video_context& vc,
   oglplus::gl_types::uint_type binding) {
-    vc.gl_api().uniform_block_binding(prog, offset_blk_idx, binding);
+    bind(vc, offset_blk_idx, binding);
 }
 //------------------------------------------------------------------------------
 // geometry
 //------------------------------------------------------------------------------
-void icosahedron_geometry::init(execution_context& ec, video_context& vc) {
+void icosahedron_geometry::init(video_context& vc) {
     const auto& glapi = vc.gl_api();
     const auto& [gl, GL] = glapi;
 
@@ -94,11 +77,11 @@ void icosahedron_geometry::init(execution_context& ec, video_context& vc) {
       position_loc(),
       eagine::shapes::vertex_attrib_kind::position,
       "positions",
-      ec.buffer());
+      vc.parent().buffer());
 
     // indices
     gl.gen_buffers() >> indices;
-    shape.index_setup(glapi, indices, "indices", ec.buffer());
+    shape.index_setup(glapi, indices, "indices", vc.parent().buffer());
 
     // offsets
     const float d = 4.2F;
@@ -106,7 +89,7 @@ void icosahedron_geometry::init(execution_context& ec, video_context& vc) {
 
     std::vector<oglplus::gl_types::float_type> offset_data;
     offset_data.resize(std_size(count * count * count * 4));
-    ec.random_normal(cover(offset_data));
+    vc.parent().random_normal(cover(offset_data));
     auto p = offset_data.begin();
 
     for(int k = 0; k != count; ++k) {

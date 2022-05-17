@@ -21,39 +21,24 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 // program
 //------------------------------------------------------------------------------
-void edges_program::init(execution_context& ec, video_context& vc) {
-    const auto& glapi = vc.gl_api();
-    const auto& gl = glapi;
-
-    gl.create_program() >> prog;
-
-    const auto prog_src{embed(EAGINE_ID(prog), "single_pass_edges.oglpprog")};
-    gl.build_program(prog, prog_src.unpack(ec));
-    gl.use_program(prog);
-
-    gl.get_uniform_location(prog, "Projection") >> camera_loc;
-    gl.get_uniform_location(prog, "ViewportDimensions") >> vp_dim_loc;
-}
-//------------------------------------------------------------------------------
-void edges_program::use(video_context& vc) {
-    vc.gl_api().use_program(prog);
-}
-//------------------------------------------------------------------------------
-void edges_program::clean_up(video_context& vc) {
-    vc.gl_api().delete_program(std::move(prog));
+void edges_program::init(video_context& vc) {
+    create(vc)
+      .build(vc, embed(EAGINE_ID(prog), "single_pass_edges.oglpprog"))
+      .use(vc)
+      .query(vc, "Projection", camera_loc)
+      .query(vc, "ViewportDimensions", vp_dim_loc);
 }
 //------------------------------------------------------------------------------
 void edges_program::set_projection(video_context& vc, orbiting_camera& camera) {
     const auto [width, height] = vc.surface_size();
-    const auto& glapi = vc.gl_api();
-    glapi.set_uniform(prog, camera_loc, camera.matrix(vc));
-    glapi.set_uniform(prog, vp_dim_loc, oglplus::vec2(width, height));
+    set(vc, camera_loc, camera.matrix(vc));
+    set(vc, vp_dim_loc, oglplus::vec2(width, height));
 }
 //------------------------------------------------------------------------------
 void edges_program::bind_position_location(
   video_context& vc,
   oglplus::vertex_attrib_location loc) {
-    vc.gl_api().bind_attrib_location(prog, loc, "Position");
+    bind(vc, loc, "Position");
 }
 //------------------------------------------------------------------------------
 // geometry

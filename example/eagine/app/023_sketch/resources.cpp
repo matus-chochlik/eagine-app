@@ -21,24 +21,14 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 // sketch program
 //------------------------------------------------------------------------------
-void sketch_program::init(execution_context& ec, video_context& vc) {
-    const auto& gl = vc.gl_api();
-
-    gl.create_program() >> _prog;
-
-    const auto prog_src{embed(EAGINE_ID(SketchProg), "sketch.oglpprog")};
-    gl.build_program(_prog, prog_src.unpack(ec));
-    gl.use_program(_prog);
-
-    gl.get_uniform_location(_prog, "Model") >> _model_loc;
-    gl.get_uniform_location(_prog, "View") >> _view_loc;
-    gl.get_uniform_location(_prog, "Projection") >> _projection_loc;
-    gl.get_uniform_location(_prog, "viewportDimensions") >> _vp_dim_loc;
-}
-//------------------------------------------------------------------------------
-void sketch_program::clean_up(video_context& vc) {
-    const auto& gl = vc.gl_api();
-    gl.delete_program(std::move(_prog));
+void sketch_program::init(video_context& vc) {
+    create(vc)
+      .build(vc, embed(EAGINE_ID(SketchProg), "sketch.oglpprog"))
+      .use(vc)
+      .query(vc, "Model", _model_loc)
+      .query(vc, "View", _view_loc)
+      .query(vc, "Projection", _projection_loc)
+      .query(vc, "viewportDimensions", _vp_dim_loc);
 }
 //------------------------------------------------------------------------------
 void sketch_program::prepare_frame(
@@ -46,37 +36,30 @@ void sketch_program::prepare_frame(
   orbiting_camera& camera,
   float t) {
     const auto [width, height] = vc.surface_size();
-    const auto& gl = vc.gl_api();
-    gl.use_program(_prog);
-    gl.set_uniform(
-      _prog,
-      _model_loc,
-      oglplus::matrix_rotation_x(right_angles_(t * 0.125F))());
-    gl.set_uniform(_prog, _view_loc, camera.transform_matrix());
-    gl.set_uniform(
-      _prog, _projection_loc, camera.perspective_matrix(vc.surface_aspect()));
-    gl.set_uniform(_prog, _vp_dim_loc, oglplus::vec2(width, height));
+    const auto a = t * 0.125F;
+    use(vc)
+      .set(vc, _model_loc, oglplus::matrix_rotation_x(right_angles_(a))())
+      .set(vc, _view_loc, camera.transform_matrix())
+      .set(vc, _projection_loc, camera.perspective_matrix(vc.surface_aspect()))
+      .set(vc, _vp_dim_loc, oglplus::vec2(width, height));
 }
 //------------------------------------------------------------------------------
 void sketch_program::bind_position_location(
   video_context& vc,
   oglplus::vertex_attrib_location loc) {
-    const auto& gl = vc.gl_api();
-    gl.bind_attrib_location(_prog, loc, "Position");
+    bind(vc, loc, "Position");
 }
 //------------------------------------------------------------------------------
 void sketch_program::bind_normal_location(
   video_context& vc,
   oglplus::vertex_attrib_location loc) {
-    const auto& gl = vc.gl_api();
-    gl.bind_attrib_location(_prog, loc, "Normal");
+    bind(vc, loc, "Normal");
 }
 //------------------------------------------------------------------------------
 void sketch_program::bind_coord_location(
   video_context& vc,
   oglplus::vertex_attrib_location loc) {
-    const auto& gl = vc.gl_api();
-    gl.bind_attrib_location(_prog, loc, "Coord");
+    bind(vc, loc, "Coord");
 }
 //------------------------------------------------------------------------------
 // geometry
@@ -98,7 +81,7 @@ void shape_geometry::init(video_context& vc) {
 //------------------------------------------------------------------------------
 // sketch texture
 //------------------------------------------------------------------------------
-void sketch_texture::init(execution_context& ec, video_context& vc) {
+void sketch_texture::init(video_context& vc) {
     const auto& [gl, GL] = vc.gl_api();
     const int side = 512;
     std::vector<float> scratches(std_size(side * side));
@@ -113,7 +96,7 @@ void sketch_texture::init(execution_context& ec, video_context& vc) {
 
     for(const auto i : integer_range(3000)) {
         std::array<float, 6> rand{};
-        ec.random_uniform_01(cover(rand));
+        vc.parent().random_uniform_01(cover(rand));
 
         const auto xmin = std::min(rand[0], rand[1]);
         const auto xmax = std::max(rand[0], rand[1]);
@@ -165,7 +148,7 @@ void sketch_texture::init(execution_context& ec, video_context& vc) {
       as_bytes(view(scratches)));
 }
 //------------------------------------------------------------------------------
-void sketch_texture::clean_up(execution_context&, video_context& vc) {
+void sketch_texture::clean_up(video_context& vc) {
     const auto& gl = vc.gl_api();
     gl.delete_textures(std::move(_tex));
 }

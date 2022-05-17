@@ -14,6 +14,7 @@
 
 #include <eagine/app/fwd.hpp>
 #include <eagine/app/geometry.hpp>
+#include <eagine/app/gpu_program.hpp>
 #include <eagine/oglplus/math/primitives.hpp>
 #include <eagine/quantities.hpp>
 
@@ -21,25 +22,21 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 // programs
 //------------------------------------------------------------------------------
-class depth_program {
+class depth_program : public glsl_program {
 public:
-    void init(execution_context&, video_context&);
-    void clean_up(video_context&);
+    void init(video_context&);
     void set_camera(video_context&, orbiting_camera& camera);
     void update(video_context&);
 
     void bind_position_location(video_context&, oglplus::vertex_attrib_location);
 
 private:
-    oglplus::owned_program_name prog;
-
     oglplus::uniform_location camera_loc;
 };
 //------------------------------------------------------------------------------
-class draw_program {
+class draw_program : public glsl_program {
 public:
-    void init(execution_context&, video_context&);
-    void clean_up(video_context&);
+    void init(video_context&);
     void set_depth_texture(video_context&, oglplus::gl_types::int_type);
     void set_camera(video_context&, orbiting_camera& camera);
     void update(execution_context&, video_context&);
@@ -50,8 +47,6 @@ public:
       oglplus::vertex_attrib_location);
 
 private:
-    oglplus::owned_program_name prog;
-
     oglplus::uniform_location camera_loc;
     oglplus::uniform_location light_pos_loc;
     oglplus::uniform_location depth_tex_loc;

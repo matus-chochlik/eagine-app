@@ -14,16 +14,15 @@
 
 #include <eagine/app/fwd.hpp>
 #include <eagine/app/geometry.hpp>
+#include <eagine/app/gpu_program.hpp>
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
 // program
 //------------------------------------------------------------------------------
-class surface_program {
+class surface_program : public glsl_program {
 public:
-    void init(execution_context&, video_context&);
-    void clean_up(video_context&);
-    void use(video_context&);
+    void init(video_context&);
     void set_projection(video_context&, orbiting_camera& camera);
     void set_model(video_context&, const oglplus::trfmat<4>&);
     void set_texture(video_context&, oglplus::gl_types::int_type);
@@ -41,11 +40,9 @@ private:
     oglplus::uniform_location texture_loc;
 };
 //------------------------------------------------------------------------------
-class hair_program {
+class hair_program : public glsl_program {
 public:
-    void init(execution_context&, video_context&);
-    void clean_up(video_context&);
-    void use(video_context&);
+    void init(video_context&);
     void set_projection(video_context&, orbiting_camera& camera);
     void set_model(
       video_context&,
@@ -84,7 +81,7 @@ public:
 //------------------------------------------------------------------------------
 class shape_textures {
 public:
-    void init(execution_context&, video_context&);
+    void init(video_context&);
     void clean_up(video_context&);
 
     static auto map_unit_zebra() noexcept {

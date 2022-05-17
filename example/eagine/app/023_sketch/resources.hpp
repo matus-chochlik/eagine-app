@@ -14,15 +14,15 @@
 
 #include <eagine/app/fwd.hpp>
 #include <eagine/app/geometry.hpp>
+#include <eagine/app/gpu_program.hpp>
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
 // program
 //------------------------------------------------------------------------------
-class sketch_program {
+class sketch_program : public glsl_program {
 public:
-    void init(execution_context&, video_context&);
-    void clean_up(video_context&);
+    void init(video_context&);
     void prepare_frame(video_context&, orbiting_camera& camera, float t);
 
     void bind_position_location(video_context&, oglplus::vertex_attrib_location);
@@ -30,7 +30,6 @@ public:
     void bind_coord_location(video_context&, oglplus::vertex_attrib_location);
 
 private:
-    oglplus::owned_program_name _prog;
     oglplus::uniform_location _model_loc;
     oglplus::uniform_location _view_loc;
     oglplus::uniform_location _projection_loc;
@@ -48,8 +47,8 @@ public:
 //------------------------------------------------------------------------------
 class sketch_texture {
 public:
-    void init(execution_context&, video_context&);
-    void clean_up(execution_context&, video_context&);
+    void init(video_context&);
+    void clean_up(video_context&);
 
 private:
     oglplus::owned_texture_name _tex;

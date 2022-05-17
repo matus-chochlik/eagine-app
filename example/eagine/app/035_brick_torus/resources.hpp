@@ -14,15 +14,15 @@
 
 #include <eagine/app/fwd.hpp>
 #include <eagine/app/geometry.hpp>
+#include <eagine/app/gpu_program.hpp>
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
 // program
 //------------------------------------------------------------------------------
-class torus_program {
+class torus_program : public glsl_program {
 public:
-    void init(execution_context&, video_context&);
-    void clean_up(video_context&);
+    void init(video_context&);
     void set_camera(video_context&, orbiting_camera& camera);
     void set_model(video_context&, const oglplus::trfmat<4>&);
     void set_light(video_context&, const oglplus::vec3&);
@@ -34,7 +34,6 @@ public:
     void bind_texcoord_location(video_context&, oglplus::vertex_attrib_location);
 
 private:
-    oglplus::owned_program_name prog;
     oglplus::uniform_location light_pos_loc;
     oglplus::uniform_location camera_pos_loc;
     oglplus::uniform_location camera_loc;
@@ -53,7 +52,7 @@ public:
 //------------------------------------------------------------------------------
 class torus_textures {
 public:
-    void init(execution_context&, video_context&);
+    void init(video_context&);
     void clean_up(video_context&);
 
     static auto bricks_map_unit() noexcept {

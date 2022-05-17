@@ -67,11 +67,11 @@ example_arrow::example_arrow(
     depth_tex.init(ec, vc);
     vc.clean_up_later(depth_tex);
 
-    depth_prog.init(ec, vc);
+    depth_prog.init(vc);
     vc.clean_up_later(depth_prog);
     depth_prog.bind_position_location(vc, shape.position_loc());
 
-    draw_prog.init(ec, vc);
+    draw_prog.init(vc);
     vc.clean_up_later(draw_prog);
     draw_prog.bind_position_location(vc, shape.position_loc());
     draw_prog.bind_normal_location(vc, shape.normal_loc());
@@ -120,7 +120,7 @@ void example_arrow::update() noexcept {
     gl.depth_func(GL.greater);
     gl.enable(GL.cull_face);
     gl.cull_face(GL.front);
-    depth_prog.update(_video);
+    depth_prog.use(_video);
     depth_prog.set_camera(_video, camera);
     shape.use(_video);
     shape.draw(_video);
