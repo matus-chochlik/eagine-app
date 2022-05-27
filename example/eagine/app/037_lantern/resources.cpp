@@ -170,7 +170,7 @@ void pumpkin_geometry::init(video_context& vc) {
 void pumpkin_geometry::clean_up(video_context& vc) {
     const auto& gl = vc.gl_api();
 
-    gl.delete_textures(std::move(_tex));
+    gl.clean_up(std::move(_tex));
     geometry_and_bindings::clean_up(vc);
 }
 //------------------------------------------------------------------------------
@@ -255,8 +255,8 @@ void draw_buffers::resize(video_context& vc) {
 //------------------------------------------------------------------------------
 void draw_buffers::clean_up(video_context& vc) {
     const auto& gl = vc.gl_api();
-    gl.delete_renderbuffers(std::move(_rbo));
-    gl.delete_textures(std::move(_tex));
+    gl.clean_up(std::move(_rbo));
+    gl.clean_up(std::move(_tex));
 }
 //------------------------------------------------------------------------------
 void draw_buffers::draw_off_screen(video_context& vc) {

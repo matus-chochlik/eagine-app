@@ -201,8 +201,8 @@ void shape_textures::init(video_context& vc) {
 //------------------------------------------------------------------------------
 void shape_textures::clean_up(video_context& vc) {
     const auto& gl = vc.gl_api();
-    gl.delete_textures(std::move(monkey));
-    gl.delete_textures(std::move(zebra));
+    gl.clean_up(std::move(monkey));
+    gl.clean_up(std::move(zebra));
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app
