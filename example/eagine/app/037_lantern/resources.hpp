@@ -12,6 +12,7 @@
 #include <eagine/oglplus/gl.hpp>
 #include <eagine/oglplus/gl_api.hpp>
 
+#include <eagine/app/framebuffer.hpp>
 #include <eagine/app/fwd.hpp>
 #include <eagine/app/geometry.hpp>
 #include <eagine/app/gpu_program.hpp>
@@ -83,11 +84,12 @@ public:
 //------------------------------------------------------------------------------
 // draw buffers
 //------------------------------------------------------------------------------
-class draw_buffers {
+class draw_buffers : public offscreen_framebuffer {
+    using base = offscreen_framebuffer;
+
 public:
     void init(video_context&);
     void resize(video_context&);
-    void clean_up(video_context&);
 
     void draw_off_screen(video_context&);
     void draw_on_screen(video_context&);
@@ -95,13 +97,6 @@ public:
     auto tex_unit() const noexcept -> oglplus::gl_types::int_type {
         return 1;
     }
-
-private:
-    oglplus::gl_types::sizei_type _width{0};
-    oglplus::gl_types::sizei_type _height{0};
-    oglplus::owned_texture_name _tex{};
-    oglplus::owned_renderbuffer_name _rbo{};
-    oglplus::owned_framebuffer_name _fbo{};
 };
 //------------------------------------------------------------------------------
 } // namespace eagine::app
