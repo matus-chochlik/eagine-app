@@ -36,7 +36,7 @@ public:
 
     auto initialize(
       execution_context&,
-      const oalplus::device_handle,
+      oalplus::owned_device_handle,
       const identifier instance,
       const launch_options&,
       const audio_options&) -> bool;
@@ -54,8 +54,8 @@ public:
 private:
     oalplus::alc_api& _alc_api;
     identifier _instance_id;
-    oalplus::device_handle _device{};
-    oalplus::context_handle _context{};
+    oalplus::owned_device_handle _device{};
+    oalplus::owned_context_handle _context{};
 };
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
@@ -78,17 +78,17 @@ auto oalplus_openal_player::get_context_attribs(
 EAGINE_LIB_FUNC
 auto oalplus_openal_player::initialize(
   execution_context& exec_ctx,
-  const oalplus::device_handle device,
+  oalplus::owned_device_handle device,
   const identifier id,
   const launch_options& opts,
   const audio_options& audio_opts) -> bool {
     _instance_id = id;
-    _device = device;
+    _device = std::move(device);
     const auto& [alc, ALC] = _alc_api;
 
-    if(const ok context{alc.create_context(
+    if(ok context{alc.create_context(
          _device, get_context_attribs(exec_ctx, opts, audio_opts))}) {
-        _context = context;
+        _context = std::move(extract(context));
         return true;
     } else {
         exec_ctx.log_error("failed to create AL context")
@@ -102,9 +102,9 @@ EAGINE_LIB_FUNC
 void oalplus_openal_player::clean_up() {
     if(_device) {
         if(_context) {
-            _alc_api.destroy_context(_device, _context);
+            _alc_api.destroy_context(_device, std::move(_context));
         }
-        _alc_api.close_device(_device);
+        _alc_api.close_device(std::move(_device));
     }
 }
 //------------------------------------------------------------------------------
@@ -199,7 +199,7 @@ auto oalplus_openal_provider::should_initialize(execution_context& exec_ctx)
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
 auto oalplus_openal_provider::initialize(execution_context& exec_ctx) -> bool {
-    if(const ok device{_alc_api.open_device()}) {
+    if(ok device{_alc_api.open_device()}) {
         auto& options = exec_ctx.options();
         for(auto& [inst, audio_opts] : options.audio_requirements()) {
             const bool should_create_player =
@@ -210,7 +210,11 @@ auto oalplus_openal_provider::initialize(execution_context& exec_ctx) -> bool {
                 if(auto player{std::make_shared<oalplus_openal_player>(
                      *this, _alc_api)}) {
                     if(extract(player).initialize(
-                         exec_ctx, device, inst, options, audio_opts)) {
+                         exec_ctx,
+                         std::move(extract(device)),
+                         inst,
+                         options,
+                         audio_opts)) {
                         _players[inst] = std::move(player);
                     } else {
                         extract(player).clean_up();
