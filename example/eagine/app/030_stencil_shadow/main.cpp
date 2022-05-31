@@ -278,15 +278,15 @@ void example_stencil_shadow::clean_up() noexcept {
 
     _bg.clean_up(_video);
 
-    gl.delete_textures(std::move(light_tex));
-    gl.delete_textures(std::move(color_tex));
-    gl.delete_program(std::move(mask_prog));
-    gl.delete_program(std::move(draw_prog));
-    gl.delete_buffers(std::move(indices));
-    gl.delete_buffers(std::move(wrap_coords));
-    gl.delete_buffers(std::move(normals));
-    gl.delete_buffers(std::move(positions));
-    gl.delete_vertex_arrays(std::move(vao));
+    gl.clean_up(std::move(light_tex));
+    gl.clean_up(std::move(color_tex));
+    gl.clean_up(std::move(mask_prog));
+    gl.clean_up(std::move(draw_prog));
+    gl.clean_up(std::move(indices));
+    gl.clean_up(std::move(wrap_coords));
+    gl.clean_up(std::move(normals));
+    gl.clean_up(std::move(positions));
+    gl.clean_up(std::move(vao));
 
     _video.end();
 }

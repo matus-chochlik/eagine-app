@@ -170,7 +170,7 @@ void pumpkin_geometry::init(video_context& vc) {
 void pumpkin_geometry::clean_up(video_context& vc) {
     const auto& gl = vc.gl_api();
 
-    gl.delete_textures(std::move(_tex));
+    gl.clean_up(std::move(_tex));
     geometry_and_bindings::clean_up(vc);
 }
 //------------------------------------------------------------------------------
@@ -189,84 +189,31 @@ void screen_geometry::init(video_context& vc) {
 // draw buffers
 //------------------------------------------------------------------------------
 void draw_buffers::init(video_context& vc) {
-    const auto& [gl, GL] = vc.gl_api();
-    const auto [width, height] = vc.surface_size();
-
-    _width = width;
-    _height = height;
-
-    gl.gen_textures() >> _tex;
-    gl.active_texture(GL.texture0 + tex_unit());
-    gl.bind_texture(GL.texture_rectangle, _tex);
-    gl.tex_parameter_i(GL.texture_rectangle, GL.texture_min_filter, GL.nearest);
-    gl.tex_parameter_i(GL.texture_rectangle, GL.texture_mag_filter, GL.nearest);
-    gl.tex_image2d(
-      GL.texture_rectangle,
-      0,
-      GL.rgba8,
-      _width,
-      _height,
-      0,
-      GL.rgba,
-      GL.unsigned_byte_,
-      memory::const_block());
-
-    gl.gen_renderbuffers() >> _rbo;
-    gl.bind_renderbuffer(GL.renderbuffer, _rbo);
-    gl.renderbuffer_storage(
-      GL.renderbuffer, GL.depth_component, _width, _height);
-
-    gl.gen_framebuffers() >> _fbo;
-    gl.bind_framebuffer(GL.draw_framebuffer, _fbo);
-
-    gl.framebuffer_texture2d(
-      GL.draw_framebuffer, GL.color_attachment0, GL.texture_rectangle, _tex, 0);
-    gl.framebuffer_renderbuffer(
-      GL.draw_framebuffer, GL.depth_attachment, GL.renderbuffer, _rbo);
-
-    gl.bind_framebuffer(GL.draw_framebuffer, oglplus::default_framebuffer);
-
-    vc.clean_up_later(*this);
+    auto& glapi = vc.gl_api();
+    base::init(
+      vc,
+      framebuffer_configuration(vc)
+        .add_color_texture(glapi.rgba, glapi.rgba8)
+        .add_depth_buffer(),
+      view_one(tex_unit()));
 }
 //------------------------------------------------------------------------------
 void draw_buffers::resize(video_context& vc) {
-    const auto& [gl, GL] = vc.gl_api();
-    const auto [width, height] = vc.surface_size();
-
-    if(_width != width || _height != height) {
-        _width = width;
-        _height = height;
-
-        gl.tex_image2d(
-          GL.texture_rectangle,
-          0,
-          GL.rgba8,
-          _width,
-          _height,
-          0,
-          GL.rgba,
-          GL.unsigned_byte_,
-          memory::const_block());
-
-        gl.renderbuffer_storage(
-          GL.renderbuffer, GL.depth_component, _width, _height);
-    }
-}
-//------------------------------------------------------------------------------
-void draw_buffers::clean_up(video_context& vc) {
-    const auto& gl = vc.gl_api();
-    gl.delete_renderbuffers(std::move(_rbo));
-    gl.delete_textures(std::move(_tex));
+    auto& glapi = vc.gl_api();
+    base::resize(
+      vc,
+      framebuffer_configuration(vc)
+        .add_color_texture(glapi.rgba, glapi.rgba8)
+        .add_depth_buffer(),
+      view_one(tex_unit()));
 }
 //------------------------------------------------------------------------------
 void draw_buffers::draw_off_screen(video_context& vc) {
-    const auto& [gl, GL] = vc.gl_api();
-    gl.bind_framebuffer(GL.draw_framebuffer, _fbo);
+    base::bind(vc.gl_api());
 }
 //------------------------------------------------------------------------------
 void draw_buffers::draw_on_screen(video_context& vc) {
-    const auto& [gl, GL] = vc.gl_api();
-    gl.bind_framebuffer(GL.draw_framebuffer, oglplus::default_framebuffer);
+    base::bind_default(vc.gl_api());
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

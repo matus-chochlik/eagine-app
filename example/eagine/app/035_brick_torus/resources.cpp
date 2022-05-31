@@ -136,8 +136,8 @@ void torus_textures::init(video_context& vc) {
 //------------------------------------------------------------------------------
 void torus_textures::clean_up(video_context& vc) {
     const auto& gl = vc.gl_api();
-    gl.delete_textures(std::move(stones));
-    gl.delete_textures(std::move(bricks));
+    gl.clean_up(std::move(stones));
+    gl.clean_up(std::move(bricks));
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

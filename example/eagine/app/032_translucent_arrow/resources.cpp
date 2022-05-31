@@ -121,8 +121,7 @@ void depth_texture::init(execution_context&, video_context& vc) {
 }
 //------------------------------------------------------------------------------
 void depth_texture::clean_up(video_context& vc) {
-    const auto& gl = vc.gl_api();
-    gl.delete_textures(std::move(tex));
+    vc.gl_api().clean_up(std::move(tex));
 }
 //------------------------------------------------------------------------------
 void depth_texture::reshape(video_context& vc) {

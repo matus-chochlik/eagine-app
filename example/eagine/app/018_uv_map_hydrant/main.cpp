@@ -239,15 +239,15 @@ void example_uv_map::update() noexcept {
 void example_uv_map::clean_up() noexcept {
     const auto& gl = _video.gl_api();
 
-    gl.delete_textures(std::move(tex));
-    gl.delete_program(std::move(prog));
-    gl.delete_buffers(std::move(indices));
-    gl.delete_buffers(std::move(wrap_coords));
-    gl.delete_buffers(std::move(bitangents));
-    gl.delete_buffers(std::move(tangents));
-    gl.delete_buffers(std::move(normals));
-    gl.delete_buffers(std::move(positions));
-    gl.delete_vertex_arrays(std::move(vao));
+    gl.clean_up(std::move(tex));
+    gl.clean_up(std::move(prog));
+    gl.clean_up(std::move(indices));
+    gl.clean_up(std::move(wrap_coords));
+    gl.clean_up(std::move(bitangents));
+    gl.clean_up(std::move(tangents));
+    gl.clean_up(std::move(normals));
+    gl.clean_up(std::move(positions));
+    gl.clean_up(std::move(vao));
 
     _video.end();
 }

@@ -250,9 +250,9 @@ void example_tiling::update() noexcept {
 void example_tiling::clean_up() noexcept {
     const auto& gl = _video.gl_api();
 
-    gl.delete_textures(tileset_texs.raw_handles());
-    gl.delete_textures(std::move(tiling_tex));
-    gl.delete_program(std::move(prog));
+    gl.clean_up(tileset_texs);
+    gl.clean_up(std::move(tiling_tex));
+    gl.clean_up(std::move(prog));
     cube.clean_up(gl);
 
     _video.end();
