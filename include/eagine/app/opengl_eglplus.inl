@@ -73,8 +73,8 @@ private:
     eglplus::egl_api& _egl_api;
     identifier _instance_id;
     eglplus::display_handle _display{};
-    eglplus::surface_handle _surface{};
-    eglplus::context_handle _context{};
+    eglplus::owned_surface_handle _surface{};
+    eglplus::owned_context_handle _context{};
 
     int _width{1};
     int _height{1};
@@ -158,9 +158,9 @@ auto eglplus_opengl_surface::initialize(
     _height = video_opts.surface_height() / 1;
 
     const auto surface_attribs = (EGL.width | _width) + (EGL.height | _height);
-    if(const ok surface{
+    if(ok surface{
          egl.create_pbuffer_surface(display, config, surface_attribs)}) {
-        _surface = surface;
+        _surface = std::move(extract(surface));
 
         const auto gl_api = gl_otherwise_gles
                               ? eglplus::client_api(EGL.opengl_api)
@@ -170,9 +170,9 @@ auto eglplus_opengl_surface::initialize(
             const auto context_attribs = get_context_attribs(
               exec_ctx, gl_otherwise_gles, opts, video_opts);
 
-            if(const ok ctxt{egl.create_context(
+            if(ok ctxt{egl.create_context(
                  display, config, eglplus::context_handle{}, context_attribs)}) {
-                _context = ctxt;
+                _context = std::move(extract(ctxt));
                 return true;
             } else {
                 log_error("failed to create context")
@@ -457,10 +457,10 @@ EAGINE_LIB_FUNC
 void eglplus_opengl_surface::clean_up() {
     if(_display) {
         if(_context) {
-            _egl_api.destroy_context(_display, _context);
+            _egl_api.destroy_context(_display, std::move(_context));
         }
         if(_surface) {
-            _egl_api.destroy_surface(_display, _surface);
+            _egl_api.destroy_surface(_display, std::move(_surface));
         }
         _egl_api.terminate(_display);
     }
