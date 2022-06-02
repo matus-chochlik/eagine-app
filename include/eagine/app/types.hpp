@@ -27,7 +27,7 @@ enum class video_context_kind : std::uint8_t {
 #if !EAGINE_CXX_REFLECTION
 template <typename Selector>
 constexpr auto enumerator_mapping(
-  const type_identity<video_context_kind>,
+  const std::type_identity<video_context_kind>,
   const Selector) noexcept {
     return enumerator_map_type<video_context_kind, 2>{
       {{"opengl", video_context_kind::opengl},
@@ -45,7 +45,7 @@ enum class audio_context_kind : std::uint8_t {
 #if !EAGINE_CXX_REFLECTION
 template <typename Selector>
 constexpr auto enumerator_mapping(
-  const type_identity<audio_context_kind>,
+  const std::type_identity<audio_context_kind>,
   const Selector) noexcept {
     return enumerator_map_type<audio_context_kind, 1>{
       {{"openal", audio_context_kind::openal}}};
@@ -66,7 +66,7 @@ enum class video_device_kind : std::uint8_t {
 #if !EAGINE_CXX_REFLECTION
 template <typename Selector>
 constexpr auto enumerator_mapping(
-  const type_identity<video_device_kind>,
+  const std::type_identity<video_device_kind>,
   const Selector) noexcept {
     return enumerator_map_type<video_device_kind, 3>{
       {{"dont_care", video_device_kind::dont_care},
@@ -90,7 +90,7 @@ enum class framedump_data_type : std::uint8_t {
 #if !EAGINE_CXX_REFLECTION
 template <typename Selector>
 constexpr auto enumerator_mapping(
-  const type_identity<framedump_data_type>,
+  const std::type_identity<framedump_data_type>,
   const Selector) noexcept {
     return enumerator_map_type<framedump_data_type, 3>{
       {{"none", framedump_data_type::none},
@@ -100,7 +100,7 @@ constexpr auto enumerator_mapping(
 #endif
 
 constexpr auto enumerator_mapping(
-  const type_identity<framedump_data_type>,
+  const std::type_identity<framedump_data_type>,
   const application_config_tag) noexcept {
     return enumerator_map_type<framedump_data_type, 3>{
       {{"none", framedump_data_type::none},
@@ -125,7 +125,7 @@ enum class framedump_pixel_format : std::uint8_t {
 #if !EAGINE_CXX_REFLECTION
 template <typename Selector>
 constexpr auto enumerator_mapping(
-  const type_identity<framedump_pixel_format>,
+  const std::type_identity<framedump_pixel_format>,
   const Selector) noexcept {
     return enumerator_map_type<framedump_pixel_format, 4>{
       {{"none", framedump_pixel_format::none},
