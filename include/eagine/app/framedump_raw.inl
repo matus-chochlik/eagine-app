@@ -86,10 +86,12 @@ auto raw_framedump::dump_frame(
     std::stringstream path;
     path << _prefix << '-' << width << 'x' << height << 'x' << elements << '-'
          << enumerator_name(
-              format, type_identity<framedump_pixel_format>(), value_tree_tag())
+              format,
+              std::type_identity<framedump_pixel_format>(),
+              value_tree_tag())
          << '-'
          << enumerator_name(
-              type, type_identity<framedump_data_type>(), value_tree_tag())
+              type, std::type_identity<framedump_data_type>(), value_tree_tag())
          << '-' << std::setfill('0') << std::setw(6) << frame_number;
 
     if(const auto packed{main_context().compressor().compress(
