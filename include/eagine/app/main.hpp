@@ -10,7 +10,7 @@
 #define EAGINE_APP_MAIN_HPP
 
 #include "context.hpp"
-#include <eagine/main.hpp>
+#include <eagine/main_ctx.hpp>
 
 namespace eagine {
 
@@ -22,5 +22,11 @@ auto main(main_ctx& ctx) -> int {
 }
 
 } // namespace eagine
+
+#ifndef EAGINE_IMPLEMENTING_CORE_LIBRARY
+auto main(int argc, const char** argv) -> int {
+    return eagine::default_main(argc, argv, eagine::main);
+}
+#endif
 
 #endif
