@@ -9,7 +9,7 @@
 namespace eagine::app {
 //------------------------------------------------------------------------------
 inline context_state::context_state(main_ctx_parent parent)
-  : main_ctx_object{EAGINE_ID(AppliState), parent}
+  : main_ctx_object{"AppliState", parent}
   , _fixed_fps{cfg_extr<valid_if_positive<float>>(
       "application.video.fixed_fps",
       0.F)}
@@ -25,13 +25,13 @@ inline context_state::context_state(main_ctx_parent parent)
     if(app_config().fetch(
          "application.user_idle_interval", _user_idle_interval)) {
         log_info("user idle interval set to ${interval}")
-          .arg(EAGINE_ID(interval), _user_idle_interval);
+          .arg("interval", _user_idle_interval);
     }
     log_info("using ${init} to initialize random generator")
-      .arg(EAGINE_ID(init), _rand_init);
+      .arg("init", _rand_init);
     if(_fixed_fps) {
         log_info("running with fixed ${fps} frames per second")
-          .arg(EAGINE_ID(fps), extract(_fixed_fps));
+          .arg("fps", extract(_fixed_fps));
     }
 }
 //------------------------------------------------------------------------------

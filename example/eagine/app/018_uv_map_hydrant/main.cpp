@@ -71,19 +71,17 @@ example_uv_map::example_uv_map(execution_context& ec, video_context& vc)
     glapi.add_shader(
       prog,
       GL.vertex_shader,
-      oglplus::glsl_string_ref(
-        embed(EAGINE_ID(VertShader), "vertex.glsl").unpack(ec)));
+      oglplus::glsl_string_ref(embed("VertShader", "vertex.glsl").unpack(ec)));
     glapi.add_shader(
       prog,
       GL.fragment_shader,
       oglplus::glsl_string_ref(
-        embed(EAGINE_ID(FragShader), "fragment.glsl").unpack(ec)));
+        embed("FragShader", "fragment.glsl").unpack(ec)));
     gl.link_program(prog);
     gl.use_program(prog);
 
     // geometry
-    auto json_text =
-      as_chars(embed(EAGINE_ID(ShapeJson), "hydrant_1.json").unpack(ec));
+    auto json_text = as_chars(embed("ShapeJson", "hydrant_1.json").unpack(ec));
     oglplus::shape_generator shape(
       glapi,
       shapes::from_value_tree(
@@ -161,7 +159,7 @@ example_uv_map::example_uv_map(execution_context& ec, video_context& vc)
     shape.index_setup(glapi, indices, _ctx.buffer());
 
     // textures
-    const auto tex_src{embed(EAGINE_ID(HydrantTex), "hydrant")};
+    const auto tex_src{embed("HydrantTex", "hydrant")};
 
     gl.gen_textures() >> tex;
     gl.active_texture(GL.texture0);

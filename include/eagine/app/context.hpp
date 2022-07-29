@@ -194,7 +194,7 @@ class execution_context
   , private input_sink {
 public:
     execution_context(main_ctx_parent parent) noexcept
-      : main_ctx_object(EAGINE_ID(AppExecCtx), parent)
+      : main_ctx_object("AppExecCtx", parent)
       , _options{*this} {}
 
     /// @brief Returns the application execution result.
@@ -367,7 +367,7 @@ private:
 
     auto _setup_providers() noexcept -> bool;
 
-    identifier _input_mapping{EAGINE_ID(initial)};
+    identifier _input_mapping{"initial"};
 
     // input id -> handler function reference
     flat_map<message_id, input_handler> _connected_inputs;

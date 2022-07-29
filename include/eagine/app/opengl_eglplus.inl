@@ -25,7 +25,7 @@ class eglplus_opengl_surface
   , public video_provider {
 public:
     eglplus_opengl_surface(main_ctx_parent parent, eglplus::egl_api& egl)
-      : main_ctx_object{EAGINE_ID(EGLPbuffer), parent}
+      : main_ctx_object{"EGLPbuffer", parent}
       , _egl_api{egl} {}
 
     auto get_context_attribs(
@@ -148,9 +148,9 @@ auto eglplus_opengl_surface::initialize(
     }
 
     log_info("display device supports GL APIs")
-      .arg(EAGINE_ID(OpenGL), yes_no_maybe(has_gl))
-      .arg(EAGINE_ID(OpenGL_ES), yes_no_maybe(has_gles))
-      .arg(EAGINE_ID(PreferES), yes_no_maybe(video_opts.prefer_gles()));
+      .arg("OpenGL", yes_no_maybe(has_gl))
+      .arg("OpenGL_ES", yes_no_maybe(has_gles))
+      .arg("PreferES", yes_no_maybe(video_opts.prefer_gles()));
 
     const bool gl_otherwise_gles = has_gl && !video_opts.prefer_gles();
 
@@ -176,17 +176,17 @@ auto eglplus_opengl_surface::initialize(
                 return true;
             } else {
                 log_error("failed to create context")
-                  .arg(EAGINE_ID(message), (!ctxt).message());
+                  .arg("message", (!ctxt).message());
             }
         } else {
             log_error("failed to bind OpenGL API")
-              .arg(EAGINE_ID(message), (!bound).message());
+              .arg("message", (!bound).message());
         }
     } else {
         log_error("failed to create pbuffer ${width}x${height}")
-          .arg(EAGINE_ID(width), _width)
-          .arg(EAGINE_ID(height), _height)
-          .arg(EAGINE_ID(message), (!surface).message());
+          .arg("width", _width)
+          .arg("height", _height)
+          .arg("message", (!surface).message());
     }
     return false;
 }
@@ -201,8 +201,7 @@ auto eglplus_opengl_surface::initialize(
     const auto& [egl, EGL] = _egl_api;
 
     if(device_idx) {
-        log_info("trying EGL device ${index}")
-          .arg(EAGINE_ID(index), extract(device_idx));
+        log_info("trying EGL device ${index}").arg("index", extract(device_idx));
     } else {
         exec_ctx.log_info("trying default EGL display device");
     }
@@ -215,22 +214,14 @@ auto eglplus_opengl_surface::initialize(
                          extract(video_opts.driver_name()),
                          extract(driver_name))) {
                         log_info("using the ${driver} MESA display driver")
-                          .arg(
-                            EAGINE_ID(driver),
-                            EAGINE_ID(Identifier),
-                            extract(driver_name));
+                          .arg("driver", "Identifier", extract(driver_name));
                     } else {
                         log_info(
                           "${current} does not match the configured "
                           "${config} display driver; skipping")
+                          .arg("current", "Identifier", extract(driver_name))
                           .arg(
-                            EAGINE_ID(current),
-                            EAGINE_ID(Identifier),
-                            extract(driver_name))
-                          .arg(
-                            EAGINE_ID(config),
-                            EAGINE_ID(Identifier),
-                            extract(conf_driver_name));
+                            "config", "Identifier", extract(conf_driver_name));
                         return false;
                     }
                 } else {
@@ -241,20 +232,14 @@ auto eglplus_opengl_surface::initialize(
                 log_info(
                   "cannot determine current display driver to match "
                   "with configured ${config} driver; skipping")
-                  .arg(
-                    EAGINE_ID(config),
-                    EAGINE_ID(Identifier),
-                    extract(conf_driver_name));
+                  .arg("config", "Identifier", extract(conf_driver_name));
                 return false;
             }
         } else {
             if(egl.MESA_query_driver(display)) {
                 if(const ok driver_name{egl.get_display_driver_name(display)}) {
                     log_info("using the ${driver} MESA display driver")
-                      .arg(
-                        EAGINE_ID(driver),
-                        EAGINE_ID(Identifier),
-                        extract(driver_name));
+                      .arg("driver", "Identifier", extract(driver_name));
                 }
             }
         }
@@ -274,42 +259,27 @@ auto eglplus_opengl_surface::initialize(
 
         if(const ok count{egl.choose_config.count(_display, config_attribs)}) {
             log_info("found ${count} suitable framebuffer configurations")
-              .arg(EAGINE_ID(count), extract(count));
+              .arg("count", extract(count));
 
             if(const ok config{egl.choose_config(_display, config_attribs)}) {
                 return initialize(exec_ctx, _display, config, opts, video_opts);
             } else {
                 const string_view dont_care{"-"};
                 log_error("no matching framebuffer configuration found")
+                  .arg("color", "integer", video_opts.color_bits(), dont_care)
+                  .arg("alpha", "integer", video_opts.alpha_bits(), dont_care)
+                  .arg("depth", "integer", video_opts.depth_bits(), dont_care)
                   .arg(
-                    EAGINE_ID(color),
-                    EAGINE_ID(integer),
-                    video_opts.color_bits(),
-                    dont_care)
-                  .arg(
-                    EAGINE_ID(alpha),
-                    EAGINE_ID(integer),
-                    video_opts.alpha_bits(),
-                    dont_care)
-                  .arg(
-                    EAGINE_ID(depth),
-                    EAGINE_ID(integer),
-                    video_opts.depth_bits(),
-                    dont_care)
-                  .arg(
-                    EAGINE_ID(stencil),
-                    EAGINE_ID(integer),
-                    video_opts.stencil_bits(),
-                    dont_care)
-                  .arg(EAGINE_ID(message), (!config).message());
+                    "stencil", "integer", video_opts.stencil_bits(), dont_care)
+                  .arg("message", (!config).message());
             }
         } else {
             log_error("failed to query framebuffer configurations")
-              .arg(EAGINE_ID(message), (!count).message());
+              .arg("message", (!count).message());
         }
     } else {
         exec_ctx.log_error("failed to initialize EGL display")
-          .arg(EAGINE_ID(message), (!initialized).message());
+          .arg("message", (!initialized).message());
     }
     return false;
 }
@@ -343,14 +313,14 @@ auto eglplus_opengl_surface::initialize(
                     if(device_idx) {
                         if(std_size(extract(device_idx)) == cur_dev_idx) {
                             log_info("explicitly selected device ${index}")
-                              .arg(EAGINE_ID(index), extract(device_idx));
+                              .arg("index", extract(device_idx));
                         } else {
                             matching_device = false;
                             log_info(
                               "current device index is ${current} but, "
                               "device ${config} requested; skipping")
-                              .arg(EAGINE_ID(current), cur_dev_idx)
-                              .arg(EAGINE_ID(config), extract(device_idx));
+                              .arg("current", cur_dev_idx)
+                              .arg("config", extract(device_idx));
                         }
                     }
 
@@ -360,13 +330,13 @@ auto eglplus_opengl_surface::initialize(
                                 log_info(
                                   "device ${index} seems to be hardware as "
                                   "explicitly specified by configuration")
-                                  .arg(EAGINE_ID(index), cur_dev_idx);
+                                  .arg("index", cur_dev_idx);
                             } else {
                                 matching_device = false;
                                 log_info(
                                   "device ${index} is software but, "
                                   "hardware device requested; skipping")
-                                  .arg(EAGINE_ID(index), cur_dev_idx);
+                                  .arg("index", cur_dev_idx);
                             }
                         } else if(
                           extract(device_kind) == video_device_kind::software) {
@@ -374,13 +344,13 @@ auto eglplus_opengl_surface::initialize(
                                 log_info(
                                   "device ${index} seems to be software as "
                                   "explicitly specified by configuration")
-                                  .arg(EAGINE_ID(index), cur_dev_idx);
+                                  .arg("index", cur_dev_idx);
                             } else {
                                 matching_device = false;
                                 log_info(
                                   "device ${index} is hardware but, "
                                   "software device requested; skipping")
-                                  .arg(EAGINE_ID(index), cur_dev_idx);
+                                  .arg("index", cur_dev_idx);
                             }
                         }
                     }
@@ -394,22 +364,16 @@ auto eglplus_opengl_surface::initialize(
                                     log_info(
                                       "using DRM device ${path} as "
                                       "explicitly specified by configuration")
-                                      .arg(
-                                        EAGINE_ID(path),
-                                        EAGINE_ID(FsPath),
-                                        extract(path));
+                                      .arg("path", "FsPath", extract(path));
                                 } else {
                                     matching_device = false;
                                     log_info(
                                       "device file is ${current}, but "
                                       "${config} was requested; skipping")
+                                      .arg("current", "FsPath", extract(path))
                                       .arg(
-                                        EAGINE_ID(current),
-                                        EAGINE_ID(FsPath),
-                                        extract(path))
-                                      .arg(
-                                        EAGINE_ID(config),
-                                        EAGINE_ID(FsPath),
+                                        "config",
+                                        "FsPath",
                                         extract(device_path));
                                 }
                             }
@@ -417,10 +381,7 @@ auto eglplus_opengl_surface::initialize(
                             log_warning(
                               "${config} requested by config, but cannot "
                               "determine current device file path")
-                              .arg(
-                                EAGINE_ID(config),
-                                EAGINE_ID(FsPath),
-                                extract(device_path));
+                              .arg("config", "FsPath", extract(device_path));
                         }
                     }
 
@@ -447,7 +408,7 @@ auto eglplus_opengl_surface::initialize(
             return initialize(exec_ctx, display, -1, opts, video_opts);
         } else {
             exec_ctx.log_error("failed to get EGL display")
-              .arg(EAGINE_ID(message), (!display).message());
+              .arg("message", (!display).message());
         }
     }
     return false;
@@ -521,7 +482,7 @@ class eglplus_opengl_provider
   , public hmi_provider {
 public:
     eglplus_opengl_provider(main_ctx_parent parent)
-      : main_ctx_object{EAGINE_ID(EGLPPrvdr), parent} {}
+      : main_ctx_object{"EGLPPrvdr", parent} {}
 
     auto is_implemented() const noexcept -> bool final;
     auto implementation_name() const noexcept -> string_view final;

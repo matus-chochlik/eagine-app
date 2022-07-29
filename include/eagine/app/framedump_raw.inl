@@ -22,7 +22,7 @@ class raw_framedump
   , public framedump {
 public:
     raw_framedump(main_ctx_parent parent)
-      : main_ctx_object(EAGINE_ID(RawFrmDump), parent) {}
+      : main_ctx_object("RawFrmDump", parent) {}
 
     auto initialize(execution_context&, const video_options&) -> bool final;
 
@@ -51,8 +51,7 @@ EAGINE_LIB_FUNC
 auto raw_framedump::initialize(execution_context&, const video_options& opts)
   -> bool {
     _prefix = opts.framedump_prefix();
-    log_info("frame dump prefix: ${prefix}")
-      .arg(EAGINE_ID(prefix), EAGINE_ID(FsPath), _prefix);
+    log_info("frame dump prefix: ${prefix}").arg("prefix", "FsPath", _prefix);
     return true;
 }
 //------------------------------------------------------------------------------

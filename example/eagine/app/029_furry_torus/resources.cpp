@@ -19,8 +19,7 @@ namespace eagine::app {
 // surface program
 //------------------------------------------------------------------------------
 void surface_program::init(video_context& vc) {
-    const auto prog_src{
-      embed(EAGINE_ID(SurfProg), "furry_torus_surface.oglpprog")};
+    const auto prog_src{embed("SurfProg", "furry_torus_surface.oglpprog")};
     create(vc)
       .label(vc, "surface program")
       .build(vc, prog_src.unpack(vc.parent()))
@@ -70,8 +69,7 @@ void surface_program::bind_occlusion_location(
 // hair program
 //------------------------------------------------------------------------------
 void hair_program::init(video_context& vc) {
-    const auto prog_src{
-      embed(EAGINE_ID(HairProg), "furry_torus_hair.oglpprog")};
+    const auto prog_src{embed("HairProg", "furry_torus_hair.oglpprog")};
     create(vc)
       .label(vc, "hair program")
       .build(vc, prog_src.unpack(vc.parent()))
@@ -159,7 +157,7 @@ void shape_textures::init(video_context& vc) {
     const auto& [gl, GL] = glapi;
 
     // zebra texture
-    const auto zebra_tex_src{embed(EAGINE_ID(ZebraTex), "zebra_fur")};
+    const auto zebra_tex_src{embed("ZebraTex", "zebra_fur")};
 
     gl.gen_textures() >> zebra;
     gl.active_texture(GL.texture0 + map_unit_zebra());
@@ -179,7 +177,7 @@ void shape_textures::init(video_context& vc) {
     gl.generate_mipmap(GL.texture_2d);
 
     // monkey texture
-    const auto monkey_tex_src{embed(EAGINE_ID(MonkeyTex), "monkey")};
+    const auto monkey_tex_src{embed("MonkeyTex", "monkey")};
 
     gl.gen_textures() >> monkey;
     gl.active_texture(GL.texture0 + map_unit_monkey());

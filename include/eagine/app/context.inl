@@ -256,10 +256,10 @@ static void video_context_debug_callback(
                                  : string_view(message);
     vc.parent()
       .log_debug(msg)
-      .arg(EAGINE_ID(severity), EAGINE_ID(DbgOutSvrt), severity)
-      .arg(EAGINE_ID(source), EAGINE_ID(DbgOutSrce), source)
-      .arg(EAGINE_ID(type), EAGINE_ID(DbgOutType), type)
-      .arg(EAGINE_ID(id), id);
+      .arg("severity", "DbgOutSvrt", severity)
+      .arg("source", "DbgOutSrce", source)
+      .arg("type", "DbgOutType", type)
+      .arg("id", id);
 }
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
@@ -428,12 +428,11 @@ inline auto execution_context::_setup_providers() noexcept -> bool {
                 return true;
             } else {
                 log_error("failed to initialize HMI provider ${name}")
-                  .arg(
-                    EAGINE_ID(name), extract(provider).implementation_name());
+                  .arg("name", extract(provider).implementation_name());
             }
         } else {
             log_debug("skipping initialization of HMI provider ${name}")
-              .arg(EAGINE_ID(name), extract(provider).implementation_name());
+              .arg("name", extract(provider).implementation_name());
             return true;
         }
         return false;
@@ -508,15 +507,11 @@ auto execution_context::prepare(std::unique_ptr<launchpad> pad)
             for(auto& provider : make_all_hmi_providers(*this)) {
                 if(extract(provider).is_implemented()) {
                     log_debug("using ${name} HMI provider")
-                      .arg(
-                        EAGINE_ID(name),
-                        extract(provider).implementation_name());
+                      .arg("name", extract(provider).implementation_name());
                     _hmi_providers.emplace_back(std::move(provider));
                 } else {
                     log_debug("${name} HMI provider is not implemented")
-                      .arg(
-                        EAGINE_ID(name),
-                        extract(provider).implementation_name());
+                      .arg("name", extract(provider).implementation_name());
                 }
             }
 

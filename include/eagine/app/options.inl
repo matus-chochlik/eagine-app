@@ -74,7 +74,7 @@ audio_options::audio_options(
 //------------------------------------------------------------------------------
 EAGINE_LIB_FUNC
 launch_options::launch_options(main_ctx_parent parent) noexcept
-  : main_ctx_object(EAGINE_ID(LaunchOpts), parent) {
+  : main_ctx_object("LaunchOpts", parent) {
     _max_run_time = cfg_init("application.max_run_time", _max_run_time);
     _max_frames = cfg_init("application.max_frames", _max_frames);
     _requires_input = cfg_init("application.input.required", _requires_input);

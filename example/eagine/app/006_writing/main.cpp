@@ -53,7 +53,7 @@ example_writing::example_writing(execution_context& ec, video_context& vc)
     const auto& [gl, GL] = glapi;
 
     // vertex shader
-    auto vs_source = embed(EAGINE_ID(VertShader), "vertex.glsl");
+    auto vs_source = embed("VertShader", "vertex.glsl");
     oglplus::owned_shader_name vs;
     gl.create_shader(GL.vertex_shader) >> vs;
     auto cleanup_vs = gl.delete_shader.raii(vs);
@@ -61,7 +61,7 @@ example_writing::example_writing(execution_context& ec, video_context& vc)
     gl.compile_shader(vs);
 
     // geometry shader
-    auto gs_source = embed(EAGINE_ID(GeomShader), "geometry.glsl");
+    auto gs_source = embed("GeomShader", "geometry.glsl");
     oglplus::owned_shader_name gs;
     gl.create_shader(GL.geometry_shader) >> gs;
     auto cleanup_gs = gl.delete_shader.raii(gs);
@@ -69,7 +69,7 @@ example_writing::example_writing(execution_context& ec, video_context& vc)
     gl.compile_shader(gs);
 
     // fragment shader
-    auto fs_source = embed(EAGINE_ID(FragShader), "fragment.glsl");
+    auto fs_source = embed("FragShader", "fragment.glsl");
     oglplus::owned_shader_name fs;
     gl.create_shader(GL.fragment_shader) >> fs;
     auto cleanup_fs = gl.delete_shader.raii(fs);

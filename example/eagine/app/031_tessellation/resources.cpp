@@ -22,7 +22,7 @@ namespace eagine::app {
 void sphere_program::init(video_context& vc) {
     create(vc)
       .label(vc, "sphere program")
-      .build(vc, embed(EAGINE_ID(TessProg), "sphere_tessellation.oglpprog"))
+      .build(vc, embed("TessProg", "sphere_tessellation.oglpprog"))
       .use(vc)
       .query(vc, "CameraMatrix", camera_matrix_loc)
       .query(vc, "CameraPosition", camera_position_loc)

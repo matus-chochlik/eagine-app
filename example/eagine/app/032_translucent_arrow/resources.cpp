@@ -27,7 +27,7 @@ void depth_program::init(video_context& vc) {
         vc,
         GL.vertex_shader,
         oglplus::glsl_string_ref(
-          embed(EAGINE_ID(VSDepth), "vertex_depth.glsl").unpack(vc.parent())),
+          embed("VSDepth", "vertex_depth.glsl").unpack(vc.parent())),
         "depth vertex shader")
       .link(vc)
       .use(vc)
@@ -53,13 +53,13 @@ void draw_program::init(video_context& vc) {
         vc,
         GL.vertex_shader,
         oglplus::glsl_string_ref(
-          embed(EAGINE_ID(VSDraw), "vertex_draw.glsl").unpack(vc.parent())),
+          embed("VSDraw", "vertex_draw.glsl").unpack(vc.parent())),
         "draw vertex shader")
       .add_shader(
         vc,
         GL.fragment_shader,
         oglplus::glsl_string_ref(
-          embed(EAGINE_ID(FSDraw), "fragment_draw.glsl").unpack(vc.parent())),
+          embed("FSDraw", "fragment_draw.glsl").unpack(vc.parent())),
         "draw fragment shader")
       .link(vc)
       .use(vc)

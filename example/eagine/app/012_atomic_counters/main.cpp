@@ -52,7 +52,7 @@ example_atomics::example_atomics(execution_context& ec, video_context& vc)
     // vertex shader
     oglplus::owned_shader_name vs;
     auto vs_cleanup = gl.delete_shader.raii(vs);
-    auto vs_source = embed(EAGINE_ID(VertShader), "vertex.glsl");
+    auto vs_source = embed("VertShader", "vertex.glsl");
     gl.create_shader(GL.vertex_shader) >> vs;
     gl.shader_source(vs, oglplus::glsl_string_ref(vs_source.unpack(ec)));
     gl.compile_shader(vs);
@@ -60,7 +60,7 @@ example_atomics::example_atomics(execution_context& ec, video_context& vc)
     // geometry shader
     oglplus::owned_shader_name gs;
     auto gs_cleanup = gl.delete_shader.raii(gs);
-    auto gs_source = embed(EAGINE_ID(GeomShader), "geometry.glsl");
+    auto gs_source = embed("GeomShader", "geometry.glsl");
     gl.create_shader(GL.geometry_shader) >> gs;
     gl.shader_source(gs, oglplus::glsl_string_ref(gs_source.unpack(ec)));
     gl.compile_shader(gs);
@@ -68,7 +68,7 @@ example_atomics::example_atomics(execution_context& ec, video_context& vc)
     // fragment shader
     oglplus::owned_shader_name fs;
     auto fs_cleanup = gl.delete_shader.raii(fs);
-    auto fs_source = embed(EAGINE_ID(FragShader), "fragment.glsl");
+    auto fs_source = embed("FragShader", "fragment.glsl");
     gl.create_shader(GL.fragment_shader) >> fs;
     gl.shader_source(fs, oglplus::glsl_string_ref(fs_source.unpack(ec)));
     gl.compile_shader(fs);

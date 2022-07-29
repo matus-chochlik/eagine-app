@@ -60,7 +60,7 @@ example_triangle::example_triangle(execution_context& ec, video_context& vc)
     const auto& [gl, GL] = _video.gl_api();
 
     // vertex shader
-    const auto vs_source = embed(EAGINE_ID(VertShader), "vertex.glsl");
+    const auto vs_source = embed("VertShader", "vertex.glsl");
     oglplus::owned_shader_name vs;
     gl.create_shader(GL.vertex_shader) >> vs;
     const auto cleanup_vs = gl.delete_shader.raii(vs);
@@ -68,7 +68,7 @@ example_triangle::example_triangle(execution_context& ec, video_context& vc)
     gl.compile_shader(vs);
 
     // fragment shader
-    const auto fs_source = embed(EAGINE_ID(FragShader), "fragment.glsl");
+    const auto fs_source = embed("FragShader", "fragment.glsl");
     oglplus::owned_shader_name fs;
     gl.create_shader(GL.fragment_shader) >> fs;
     const auto cleanup_fs = gl.delete_shader.raii(fs);

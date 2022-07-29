@@ -20,7 +20,7 @@ namespace eagine::app {
 // program
 //------------------------------------------------------------------------------
 void torus_program::init(video_context& vc) {
-    const auto prog_src{embed(EAGINE_ID(prog), "brick_torus.oglpprog")};
+    const auto prog_src{embed("prog", "brick_torus.oglpprog")};
     create(vc)
       .build(vc, prog_src.unpack(vc.parent()))
       .use(vc)
@@ -98,7 +98,7 @@ void torus_textures::init(video_context& vc) {
     const auto& [gl, GL] = glapi;
 
     // bricks texture
-    const auto brick_tex_src{embed(EAGINE_ID(BricksTex), "bricks")};
+    const auto brick_tex_src{embed("BricksTex", "bricks")};
 
     gl.gen_textures() >> bricks;
     gl.active_texture(GL.texture0 + bricks_map_unit());
@@ -116,7 +116,7 @@ void torus_textures::init(video_context& vc) {
     gl.generate_mipmap(GL.texture_2d_array);
 
     // stones texture
-    const auto stones_tex_src{embed(EAGINE_ID(StonesTex), "stones")};
+    const auto stones_tex_src{embed("StonesTex", "stones")};
 
     gl.gen_textures() >> stones;
     gl.active_texture(GL.texture0 + stones_map_unit());

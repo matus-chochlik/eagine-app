@@ -23,7 +23,7 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 void sketch_program::init(video_context& vc) {
     create(vc)
-      .build(vc, embed(EAGINE_ID(SketchProg), "sketch.oglpprog"))
+      .build(vc, embed("SketchProg", "sketch.oglpprog"))
       .use(vc)
       .query(vc, "Model", _model_loc)
       .query(vc, "View", _view_loc)
