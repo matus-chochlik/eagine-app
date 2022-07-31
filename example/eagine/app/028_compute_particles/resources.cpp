@@ -117,7 +117,7 @@ void emit_program::init(example& e) {
     gl.create_program() >> _prog;
     gl.object_label(_prog, "emit program");
 
-    const auto prog_src{embed("EmitProg", "compute_particles_emit.oglpprog")};
+    const auto prog_src{embed<"EmitProg">("compute_particles_emit.oglpprog")};
     gl.build_program(_prog, prog_src.unpack(e.ctx()));
     gl.use_program(_prog);
 
@@ -178,7 +178,7 @@ void draw_program::init(example& e) {
     gl.create_program() >> _prog;
     gl.object_label(_prog, "draw program");
 
-    const auto prog_src{embed("DrawProg", "compute_particles_draw.oglpprog")};
+    const auto prog_src{embed<"DrawProg">("compute_particles_draw.oglpprog")};
     gl.build_program(_prog, prog_src.unpack(e.ctx()));
     gl.use_program(_prog);
 

@@ -76,12 +76,12 @@ example_occlusion::example_occlusion(
     glapi.add_shader(
       prog,
       GL.vertex_shader,
-      oglplus::glsl_string_ref(embed("VertShader", "vertex.glsl").unpack(ec)));
+      oglplus::glsl_string_ref(embed<"VertShader">("vertex.glsl").unpack(ec)));
     glapi.add_shader(
       prog,
       GL.fragment_shader,
       oglplus::glsl_string_ref(
-        embed("FragShader", "fragment.glsl").unpack(ec)));
+        embed<"FragShader">("fragment.glsl").unpack(ec)));
     gl.link_program(prog);
     gl.use_program(prog);
 
@@ -94,7 +94,7 @@ example_occlusion::example_occlusion(
                 }
             }
         }
-        const auto json_src{embed("ShapeJson", "traffic_cone.json")};
+        const auto json_src{embed<"ShapeJson">("traffic_cone.json")};
         return valtree::from_json_text(
           as_chars(json_src.unpack(ec)), ec.as_parent());
     };

@@ -23,7 +23,7 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 void edges_program::init(video_context& vc) {
     create(vc)
-      .build(vc, embed("prog", "single_pass_edges.oglpprog"))
+      .build(vc, embed<"prog">("single_pass_edges.oglpprog"))
       .use(vc)
       .query(vc, "Projection", camera_loc)
       .query(vc, "ViewportDimensions", vp_dim_loc);

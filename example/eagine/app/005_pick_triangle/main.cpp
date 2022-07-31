@@ -70,7 +70,7 @@ example_picking::example_picking(execution_context& ec, video_context& vc)
     gl.clear_color(0.4F, 0.4F, 0.4F, 0.0F);
 
     // vertex shader
-    auto vs_source = embed("VertShader", "vertex.glsl");
+    auto vs_source = embed<"VertShader">("vertex.glsl");
     oglplus::owned_shader_name vs;
     gl.create_shader(GL.vertex_shader) >> vs;
     auto cleanup_vs = gl.delete_shader.raii(vs);
@@ -78,7 +78,7 @@ example_picking::example_picking(execution_context& ec, video_context& vc)
     gl.compile_shader(vs);
 
     // fragment shader
-    auto fs_source = embed("FragShader", "fragment.glsl");
+    auto fs_source = embed<"FragShader">("fragment.glsl");
     oglplus::owned_shader_name fs;
     gl.create_shader(GL.fragment_shader) >> fs;
     auto cleanup_fs = gl.delete_shader.raii(fs);

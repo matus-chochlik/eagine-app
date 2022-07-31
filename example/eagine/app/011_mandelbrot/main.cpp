@@ -84,13 +84,13 @@ example_mandelbrot::example_mandelbrot(execution_context& ec, video_context& vc)
     gl.clear_color(0.4F, 0.4F, 0.4F, 0.0F);
 
     // vertex shader
-    auto vs_source = embed("VertShader", "vertex.glsl");
+    auto vs_source = embed<"VertShader">("vertex.glsl");
     gl.create_shader(GL.vertex_shader) >> vs;
     gl.shader_source(vs, oglplus::glsl_string_ref(vs_source));
     gl.compile_shader(vs);
 
     // fragment shader
-    auto fs_source = embed("FragShader", "fragment.glsl");
+    auto fs_source = embed<"FragShader">("fragment.glsl");
     gl.create_shader(GL.fragment_shader) >> fs;
     gl.shader_source(fs, oglplus::glsl_string_ref(fs_source));
     gl.compile_shader(fs);

@@ -70,17 +70,17 @@ example_uv_map::example_uv_map(execution_context& ec, video_context& vc)
     glapi.add_shader(
       prog,
       GL.vertex_shader,
-      oglplus::glsl_string_ref(embed("VertShader", "vertex.glsl").unpack(ec)));
+      oglplus::glsl_string_ref(embed<"VertShader">("vertex.glsl").unpack(ec)));
     glapi.add_shader(
       prog,
       GL.fragment_shader,
       oglplus::glsl_string_ref(
-        embed("FragShader", "fragment.glsl").unpack(ec)));
+        embed<"FragShader">("fragment.glsl").unpack(ec)));
     gl.link_program(prog);
     gl.use_program(prog);
 
     // geometry
-    auto json_text = as_chars(embed("ShapeJson", "barrel_1.json").unpack(ec));
+    auto json_text = as_chars(embed<"ShapeJson">("barrel_1.json").unpack(ec));
     oglplus::shape_generator shape(
       glapi,
       shapes::from_value_tree(
@@ -134,7 +134,7 @@ example_uv_map::example_uv_map(execution_context& ec, video_context& vc)
     shape.index_setup(glapi, indices, _ctx.buffer());
 
     // color texture
-    const auto color_tex_src{embed("ColorTex", "barrel_1_color")};
+    const auto color_tex_src{embed<"ColorTex">("barrel_1_color")};
 
     gl.gen_textures() >> color_tex;
     gl.active_texture(GL.texture0);
@@ -153,7 +153,7 @@ example_uv_map::example_uv_map(execution_context& ec, video_context& vc)
     glapi.set_uniform(prog, color_tex_loc, 0);
 
     // light texture
-    const auto light_tex_src{embed("LightTex", "barrel_1_aoccl")};
+    const auto light_tex_src{embed<"LightTex">("barrel_1_aoccl")};
 
     gl.gen_textures() >> aoccl_tex;
     gl.active_texture(GL.texture0 + 1);
@@ -172,7 +172,7 @@ example_uv_map::example_uv_map(execution_context& ec, video_context& vc)
     glapi.set_uniform(prog, light_tex_loc, 1);
 
     // roughness texture
-    const auto rough_tex_src{embed("RoughTex", "barrel_1_rough")};
+    const auto rough_tex_src{embed<"RoughTex">("barrel_1_rough")};
 
     gl.gen_textures() >> rough_tex;
     gl.active_texture(GL.texture0 + 2);

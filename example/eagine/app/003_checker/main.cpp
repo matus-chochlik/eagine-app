@@ -44,7 +44,7 @@ example_checker::example_checker(execution_context& ec, video_context& vc)
     gl.clear_color(0.4F, 0.4F, 0.4F, 0.0F);
 
     // fragment shader
-    auto fs_source = embed("FragShader", "fragment.glsl");
+    auto fs_source = embed<"FragShader">("fragment.glsl");
     oglplus::owned_shader_name fs;
     gl.create_shader(GL.fragment_shader) >> fs;
     const auto cleanup_fs = gl.delete_shader.raii(fs);

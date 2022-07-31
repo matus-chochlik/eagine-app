@@ -27,7 +27,7 @@ void draw_program::init(example& e) {
     gl.create_program() >> _prog;
     gl.delete_program.later_by(e.cleanup(), _prog);
 
-    const auto prog_src{embed("DrawProg", "overdraw_draw.oglpprog")};
+    const auto prog_src{embed<"DrawProg">("overdraw_draw.oglpprog")};
     gl.build_program(_prog, prog_src.unpack(e.ctx()));
     gl.use_program(_prog);
 
@@ -57,7 +57,7 @@ void screen_program::init(example& e) {
     gl.create_program() >> _prog;
     gl.delete_program.later_by(e.cleanup(), _prog);
 
-    const auto prog_src{embed("ScreenProg", "overdraw_screen.oglpprog")};
+    const auto prog_src{embed<"ScreenProg">("overdraw_screen.oglpprog")};
     gl.build_program(_prog, prog_src.unpack(e.ctx()));
     gl.use_program(_prog);
 
