@@ -70,24 +70,22 @@ example_stencil_shadow::example_stencil_shadow(
   video_context& vc)
   : _ctx{ec}
   , _video{vc}
-  , _bg{_video, embed(EAGINE_ID(CubeMap), "cloudy_day").unpack(ec)} {
+  , _bg{_video, embed<"CubeMap">("cloudy_day").unpack(ec)} {
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
 
     // programs
-    const auto draw_prog_src{
-      embed(EAGINE_ID(DrawProg), "stencil_shadow_draw.oglpprog")};
+    const auto draw_prog_src{embed<"DrawProg">("stencil_shadow_draw.oglpprog")};
     gl.create_program() >> draw_prog;
     glapi.build_program(draw_prog, draw_prog_src.unpack(ec));
 
-    const auto mask_prog_src{
-      embed(EAGINE_ID(MaskProg), "stencil_shadow_mask.oglpprog")};
+    const auto mask_prog_src{embed<"MaskProg">("stencil_shadow_mask.oglpprog")};
     gl.create_program() >> mask_prog;
     glapi.build_program(mask_prog, mask_prog_src.unpack(ec));
 
     // geometry
     const auto json_text =
-      as_chars(embed(EAGINE_ID(ShapeJson), "wheelcart_1.json").unpack(ec));
+      as_chars(embed<"ShapeJson">("wheelcart_1.json").unpack(ec));
     oglplus::shape_generator shape(
       glapi,
       shapes::from_value_tree(
@@ -138,7 +136,7 @@ example_stencil_shadow::example_stencil_shadow(
     shape.index_setup(glapi, indices, _ctx.buffer());
 
     // color texture
-    const auto color_tex_src{embed(EAGINE_ID(ColorTex), "wheelcart_1_color")};
+    const auto color_tex_src{embed<"ColorTex">("wheelcart_1_color")};
 
     gl.gen_textures() >> color_tex;
     gl.active_texture(GL.texture0);
@@ -155,7 +153,7 @@ example_stencil_shadow::example_stencil_shadow(
     oglplus::uniform_location color_tex_loc;
 
     // light texture
-    const auto light_tex_src{embed(EAGINE_ID(LightTex), "wheelcart_1_aoccl")};
+    const auto light_tex_src{embed<"LightTex">("wheelcart_1_aoccl")};
 
     gl.gen_textures() >> light_tex;
     gl.active_texture(GL.texture0 + 1);

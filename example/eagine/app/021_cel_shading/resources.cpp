@@ -20,7 +20,7 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 void cel_program::init(video_context& vc) {
     create(vc)
-      .build(vc, embed(EAGINE_ID(prog), "cel_shading.oglpprog"))
+      .build(vc, embed<"prog">("cel_shading.oglpprog"))
       .use(vc)
       .query(vc, "Projection", projection_loc)
       .query(vc, "Modelview", modelview_loc);

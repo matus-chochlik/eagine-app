@@ -62,7 +62,7 @@ example_fur::example_fur(execution_context& ec, video_context& vc)
     const auto gen = [&]() -> std::shared_ptr<shapes::generator> {
         if(use_monkey_shape) {
             const auto json_text =
-              as_chars(embed(EAGINE_ID(MonkeyJson), "monkey.json").unpack(ec));
+              as_chars(embed<"MonkeyJson">("monkey.json").unpack(ec));
             return shapes::from_value_tree(
               valtree::from_json_text(json_text, ec.as_parent()),
               ec.as_parent());

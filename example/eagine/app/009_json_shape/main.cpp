@@ -61,7 +61,7 @@ example_shape::example_shape(execution_context& ec, video_context& vc)
     const auto& [gl, GL] = glapi;
 
     // vertex shader
-    auto vs_source = embed(EAGINE_ID(VertShader), "vertex.glsl");
+    auto vs_source = embed<"VertShader">("vertex.glsl");
     oglplus::owned_shader_name vs;
     gl.create_shader(GL.vertex_shader) >> vs;
     auto cleanup_vs = gl.delete_shader.raii(vs);
@@ -69,7 +69,7 @@ example_shape::example_shape(execution_context& ec, video_context& vc)
     gl.compile_shader(vs);
 
     // fragment shader
-    auto fs_source = embed(EAGINE_ID(FragShader), "fragment.glsl");
+    auto fs_source = embed<"FragShader">("fragment.glsl");
     oglplus::owned_shader_name fs;
     gl.create_shader(GL.fragment_shader) >> fs;
     auto cleanup_fs = gl.delete_shader.raii(fs);
@@ -84,7 +84,7 @@ example_shape::example_shape(execution_context& ec, video_context& vc)
     gl.use_program(prog);
 
     // geometry
-    auto json_text = as_chars(embed(EAGINE_ID(ShapeJson), "shape.json"));
+    auto json_text = as_chars(embed<"ShapeJson">("shape.json"));
     oglplus::shape_generator shape(
       glapi,
       shapes::from_value_tree(

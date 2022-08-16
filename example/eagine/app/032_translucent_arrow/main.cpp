@@ -145,7 +145,7 @@ public:
 
         if(ctx.args().find("--monkey")) {
             const auto json_text =
-              as_chars(embed(EAGINE_ID(MonkeyJson), "monkey.json").unpack(ctx));
+              as_chars(embed<"MonkeyJson">("monkey.json").unpack(ctx));
             _gen = shapes::from_value_tree(
               valtree::from_json_text(json_text, ctx), ctx);
         } else if(ctx.args().find("--twisted-torus")) {
@@ -165,9 +165,7 @@ public:
         if(!_gen) {
             auto load_shape_data = [&]() {
                 return valtree::from_json_text(
-                  as_chars(
-                    embed(EAGINE_ID(ArrowJson), "arrow.json").unpack(ctx)),
-                  ctx);
+                  as_chars(embed<"ArrowJson">("arrow.json").unpack(ctx)), ctx);
             };
             _gen = shapes::from_value_tree(load_shape_data(), ctx);
         }

@@ -26,7 +26,7 @@ class oalplus_openal_player
   , public audio_provider {
 public:
     oalplus_openal_player(main_ctx_parent parent, oalplus::alc_api& alc)
-      : main_ctx_object{EAGINE_ID(OpenALC), parent}
+      : main_ctx_object{"OpenALC", parent}
       , _alc_api{alc} {}
 
     auto get_context_attribs(
@@ -92,7 +92,7 @@ auto oalplus_openal_player::initialize(
         return true;
     } else {
         exec_ctx.log_error("failed to create AL context")
-          .arg(EAGINE_ID(message), (!context).message());
+          .arg("message", (!context).message());
     }
 
     return false;
@@ -143,7 +143,7 @@ class oalplus_openal_provider
   , public hmi_provider {
 public:
     oalplus_openal_provider(main_ctx_parent parent)
-      : main_ctx_object{EAGINE_ID(EGLPPrvdr), parent} {}
+      : main_ctx_object{"EGLPPrvdr", parent} {}
 
     auto is_implemented() const noexcept -> bool final;
     auto implementation_name() const noexcept -> string_view final;

@@ -31,7 +31,7 @@ void surface_program::init(execution_context& ec, video_context& vc) {
     gl.create_program() >> _prog;
     gl.object_label(_prog, "surface program");
 
-    const auto prog_src{embed(EAGINE_ID(SurfProg), "halo_surface.oglpprog")};
+    const auto prog_src{embed<"SurfProg">("halo_surface.oglpprog")};
     gl.build_program(_prog, prog_src.unpack(ec));
     gl.use_program(_prog);
 
@@ -82,7 +82,7 @@ void halo_program::init(execution_context& ec, video_context& vc) {
     gl.create_program() >> _prog;
     gl.object_label(_prog, "halo program");
 
-    const auto prog_src{embed(EAGINE_ID(HaloProg), "halo_halo.oglpprog")};
+    const auto prog_src{embed<"HaloProg">("halo_halo.oglpprog")};
     gl.build_program(_prog, prog_src.unpack(ec));
     gl.use_program(_prog);
 
@@ -149,8 +149,7 @@ void shape_geometry::init(execution_context& ec, video_context& vc) {
     }
 
     if(!gen) {
-        const auto json_src{
-          embed(EAGINE_ID(SphereJson), "twisted_sphere.json")};
+        const auto json_src{embed<"SphereJson">("twisted_sphere.json")};
         gen = shapes::from_value_tree(
           valtree::from_json_text(as_chars(json_src.unpack(ctx)), ctx), ctx);
     }
