@@ -8,3 +8,5 @@
 export module eagine.app;
 
 export import :types;
+export import :options;
+export import :state;

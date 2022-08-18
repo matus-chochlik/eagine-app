@@ -6,7 +6,15 @@
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
 module eagine.app;
+
+import eagine.core.types;
+import eagine.core.memory;
+import eagine.core.string;
+import eagine.core.identifier;
+import eagine.core.reflection;
 import eagine.core.main_ctx;
+import <map>;
+import <string>;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------

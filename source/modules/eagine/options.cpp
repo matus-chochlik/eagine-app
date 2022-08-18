@@ -8,9 +8,13 @@
 export module eagine.app:options;
 
 import eagine.core.types;
+import eagine.core.memory;
+import eagine.core.identifier;
+import eagine.core.valid_if;
 import eagine.core.main_ctx;
 import :types;
 import <map>;
+import <string>;
 
 namespace eagine::app {
 export class execution_context;
