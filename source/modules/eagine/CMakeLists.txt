@@ -23,6 +23,17 @@ eagine_add_module(
 )
 
 eagine_add_module(
+	eagine.app PARTITION input
+	IMPORTS
+		eagine.core.types
+		eagine.core.memory
+		eagine.core.identifier
+		eagine.core.valid_if
+		eagine.core.utility
+		eagine.core.runtime
+)
+
+eagine_add_module(
 	eagine.app PARTITION state
 	IMPORTS
 		eagine.core.types
@@ -41,6 +52,7 @@ eagine_add_module(
 	PARTITIONS
 		types
 		options
+		input
 		state
 	SOURCES
 		options_impl
