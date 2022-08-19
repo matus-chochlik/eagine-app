@@ -109,6 +109,7 @@ eagine_add_module(
 		openal_oglplus_impl
 		opengl_eglplus_impl
 		opengl_glfw3_impl
+		context_impl
 	IMPORTS
 		eagine.core.string
 		eagine.core.container
