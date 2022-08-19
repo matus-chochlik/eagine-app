@@ -57,6 +57,17 @@ eagine_add_module(
 )
 
 eagine_add_module(
+	eagine.app PARTITION framedump_raw
+	IMPORTS
+		interface
+		eagine.core.types
+		eagine.core.memory
+		eagine.core.reflection
+		eagine.core.runtime
+		eagine.core.main_ctx
+)
+
+eagine_add_module(
 	eagine.app
 	PP_NAME APP
 	INTERFACES app
@@ -66,8 +77,10 @@ eagine_add_module(
 		input
 		state
 		interface
+		framedump_raw
 	SOURCES
 		options_impl
 		state_impl
+		framedump_raw_impl
 )
 
