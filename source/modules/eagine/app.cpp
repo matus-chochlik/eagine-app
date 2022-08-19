@@ -12,4 +12,6 @@ export import :options;
 export import :input;
 export import :state;
 export import :interface;
+export import :implementation;
 export import :framedump_raw;
+export import :context;

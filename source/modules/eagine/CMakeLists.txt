@@ -57,6 +57,13 @@ eagine_add_module(
 )
 
 eagine_add_module(
+	eagine.app PARTITION implementation
+	IMPORTS
+		interface
+		eagine.core.main_ctx
+)
+
+eagine_add_module(
 	eagine.app PARTITION framedump_raw
 	IMPORTS
 		interface
@@ -65,6 +72,21 @@ eagine_add_module(
 		eagine.core.reflection
 		eagine.core.runtime
 		eagine.core.main_ctx
+)
+
+eagine_add_module(
+	eagine.app PARTITION context
+	IMPORTS
+		interface options
+		state input
+		eagine.core.types
+		eagine.core.memory
+		eagine.core.identifier
+		eagine.core.container
+		eagine.core.utility
+		eagine.core.main_ctx
+		eagine.oglplus
+		eagine.oalplus
 )
 
 eagine_add_module(
@@ -77,10 +99,22 @@ eagine_add_module(
 		input
 		state
 		interface
+		implementation
 		framedump_raw
+		context
 	SOURCES
 		options_impl
 		state_impl
 		framedump_raw_impl
+		openal_oglplus_impl
+		opengl_eglplus_impl
+	IMPORTS
+		eagine.core.utility
+		eagine.core.valid_if
+		eagine.core.c_api
+		eagine.core.main_ctx
+		eagine.eglplus
+		eagine.oglplus
+		eagine.oalplus
 )
 
