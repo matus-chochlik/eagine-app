@@ -90,6 +90,20 @@ eagine_add_module(
 )
 
 eagine_add_module(
+	eagine.app PARTITION camera
+	IMPORTS
+		state input context
+		eagine.core.types
+		eagine.core.memory
+		eagine.core.identifier
+		eagine.core.math
+		eagine.core.units
+		eagine.core.utility
+		eagine.core.valid_if
+		eagine.oglplus
+)
+
+eagine_add_module(
 	eagine.app
 	PP_NAME APP
 	INTERFACES app
@@ -102,6 +116,7 @@ eagine_add_module(
 		implementation
 		framedump_raw
 		context
+		camera
 	SOURCES
 		options_impl
 		state_impl
@@ -110,6 +125,7 @@ eagine_add_module(
 		opengl_eglplus_impl
 		opengl_glfw3_impl
 		context_impl
+		camera_impl
 	IMPORTS
 		eagine.core.string
 		eagine.core.container
