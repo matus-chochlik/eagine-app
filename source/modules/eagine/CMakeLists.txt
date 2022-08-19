@@ -46,6 +46,17 @@ eagine_add_module(
 )
 
 eagine_add_module(
+	eagine.app PARTITION interface
+	IMPORTS
+		types options input
+		eagine.core.types
+		eagine.core.memory
+		eagine.core.identifier
+		eagine.core.utility
+		eagine.core.main_ctx
+)
+
+eagine_add_module(
 	eagine.app
 	PP_NAME APP
 	INTERFACES app
@@ -54,6 +65,7 @@ eagine_add_module(
 		options
 		input
 		state
+		interface
 	SOURCES
 		options_impl
 		state_impl

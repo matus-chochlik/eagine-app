@@ -11,3 +11,4 @@ export import :types;
 export import :options;
 export import :input;
 export import :state;
+export import :interface;
