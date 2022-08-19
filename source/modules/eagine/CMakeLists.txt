@@ -108,13 +108,22 @@ eagine_add_module(
 		framedump_raw_impl
 		openal_oglplus_impl
 		opengl_eglplus_impl
+		opengl_glfw3_impl
 	IMPORTS
+		eagine.core.string
+		eagine.core.container
 		eagine.core.utility
 		eagine.core.valid_if
+		eagine.core.logging
+		eagine.core.progress
 		eagine.core.c_api
 		eagine.core.main_ctx
 		eagine.eglplus
 		eagine.oglplus
 		eagine.oalplus
 )
-
+target_link_libraries(
+	eagine.app
+	PUBLIC
+	eagine-app-imgui
+)

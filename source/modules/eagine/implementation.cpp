@@ -19,5 +19,8 @@ export auto make_oalplus_openal_provider(main_ctx_parent)
 export auto make_eglplus_opengl_provider(main_ctx_parent)
   -> std::shared_ptr<hmi_provider>;
 
+export auto make_glfw3_opengl_provider(main_ctx_parent)
+  -> std::shared_ptr<hmi_provider>;
+
 } // namespace eagine::app
 
