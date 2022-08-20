@@ -90,6 +90,16 @@ eagine_add_module(
 )
 
 eagine_add_module(
+	eagine.app PARTITION gpu_program
+	IMPORTS
+		context
+		eagine.core.types
+		eagine.core.memory
+		eagine.core.resource
+		eagine.oglplus
+)
+
+eagine_add_module(
 	eagine.app PARTITION geometry
 	IMPORTS
 		context
@@ -126,6 +136,7 @@ eagine_add_module(
 		implementation
 		framedump_raw
 		context
+		gpu_program
 		geometry
 		camera
 	SOURCES
