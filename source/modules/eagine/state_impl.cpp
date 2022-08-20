@@ -17,7 +17,7 @@ import <random>;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-inline context_state::context_state(main_ctx_parent parent)
+context_state::context_state(main_ctx_parent parent)
   : main_ctx_object{"AppliState", parent}
   , _fixed_fps{cfg_extr<valid_if_positive<float>>(
       "application.video.fixed_fps",

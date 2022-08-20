@@ -391,15 +391,40 @@ private:
     }
 
     template <typename T>
-    void _forward_input(const input_info&, const input_value<T>&) noexcept;
+    void _forward_input(
+      const input_info& info,
+      const input_value<T>& value) noexcept {
+        const auto slot_pos = _mapped_inputs.find(info.signal_id);
+        if(slot_pos != _mapped_inputs.end()) {
+            const auto& [setup, handler] = slot_pos->second;
+            if(setup.is_applicable() && setup.has(info.value_kind)) {
+                handler(input(value, info, setup));
+            }
+        }
+        extract(_state).notice_user_active();
+    }
 
-    void consume(const input_info&, const input_value<bool>&) noexcept final;
-    void consume(const input_info&, const input_value<int>&) noexcept final;
-    void consume(const input_info&, const input_value<float>&) noexcept final;
-    void consume(const input_info&, const input_value<double>&) noexcept final;
+    void consume(
+      const input_info& info,
+      const input_value<bool>& value) noexcept final {
+        _forward_input(info, value);
+    }
+    void consume(const input_info& info, const input_value<int>& value) noexcept
+      final {
+        _forward_input(info, value);
+    }
+    void consume(
+      const input_info& info,
+      const input_value<float>& value) noexcept final {
+        _forward_input(info, value);
+    }
+    void consume(
+      const input_info& info,
+      const input_value<double>& value) noexcept final {
+        _forward_input(info, value);
+    }
 };
 //------------------------------------------------------------------------------
-[[nodiscard]] auto establish(main_ctx&) -> std::unique_ptr<launchpad>;
 
 } // namespace eagine::app
 

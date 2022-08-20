@@ -90,6 +90,13 @@ eagine_add_module(
 )
 
 eagine_add_module(
+	eagine.app PARTITION main
+	IMPORTS
+		interface context
+		eagine.core.main_ctx
+)
+
+eagine_add_module(
 	eagine.app PARTITION gpu_program
 	IMPORTS
 		context
@@ -147,6 +154,7 @@ eagine_add_module(
 		implementation
 		framedump_raw
 		context
+		main
 		gpu_program
 		geometry
 		camera
@@ -155,7 +163,7 @@ eagine_add_module(
 		options_impl
 		state_impl
 		framedump_raw_impl
-		openal_oglplus_impl
+		openal_oalplus_impl
 		opengl_eglplus_impl
 		opengl_glfw3_impl
 		context_impl
@@ -178,4 +186,5 @@ target_link_libraries(
 	eagine.app
 	PUBLIC
 	eagine-app-imgui
+	EAGine::Deps::GLFW3
 )

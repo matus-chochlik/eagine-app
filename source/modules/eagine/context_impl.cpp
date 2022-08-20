@@ -643,42 +643,4 @@ void execution_context::random_normal(span<float> dest) {
     extract(_state).random_normal(dest);
 }
 //------------------------------------------------------------------------------
-template <typename T>
-inline void execution_context::_forward_input(
-  const input_info& info,
-  const input_value<T>& value) noexcept {
-    const auto slot_pos = _mapped_inputs.find(info.signal_id);
-    if(slot_pos != _mapped_inputs.end()) {
-        const auto& [setup, handler] = slot_pos->second;
-        if(setup.is_applicable() && setup.has(info.value_kind)) {
-            handler(input(value, info, setup));
-        }
-    }
-    extract(_state).notice_user_active();
-}
-//------------------------------------------------------------------------------
-void execution_context::consume(
-  const input_info& info,
-  const input_value<bool>& value) noexcept {
-    _forward_input(info, value);
-}
-//------------------------------------------------------------------------------
-void execution_context::consume(
-  const input_info& info,
-  const input_value<int>& value) noexcept {
-    _forward_input(info, value);
-}
-//------------------------------------------------------------------------------
-void execution_context::consume(
-  const input_info& info,
-  const input_value<float>& value) noexcept {
-    _forward_input(info, value);
-}
-//------------------------------------------------------------------------------
-void execution_context::consume(
-  const input_info& info,
-  const input_value<double>& value) noexcept {
-    _forward_input(info, value);
-}
-//------------------------------------------------------------------------------
 } // namespace eagine::app
