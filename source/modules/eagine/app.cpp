@@ -18,3 +18,4 @@ export import :context;
 export import :gpu_program;
 export import :geometry;
 export import :camera;
+export import :background;

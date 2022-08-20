@@ -124,6 +124,17 @@ eagine_add_module(
 )
 
 eagine_add_module(
+	eagine.app PARTITION background
+	IMPORTS
+		camera context
+		eagine.core.types
+		eagine.core.memory
+		eagine.core.c_api
+		eagine.shapes
+		eagine.oglplus
+)
+
+eagine_add_module(
 	eagine.app
 	PP_NAME APP
 	INTERFACES app
@@ -139,6 +150,7 @@ eagine_add_module(
 		gpu_program
 		geometry
 		camera
+		background
 	SOURCES
 		options_impl
 		state_impl
@@ -148,6 +160,7 @@ eagine_add_module(
 		opengl_glfw3_impl
 		context_impl
 		camera_impl
+		#background_impl
 	IMPORTS
 		eagine.core.string
 		eagine.core.container
