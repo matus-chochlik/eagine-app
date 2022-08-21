@@ -5,6 +5,11 @@
 /// See accompanying file LICENSE_1_0.txt or copy at
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
+#if EAGINE_APP_MODULE
+import eagine.core;
+import eagine.oglplus;
+import eagine.app;
+#else
 #include <eagine/app/main.hpp>
 #include <eagine/app_config.hpp>
 #include <eagine/embed.hpp>
@@ -17,6 +22,7 @@
 #include <eagine/oglplus/glsl/string_ref.hpp>
 #include <eagine/oglplus/math/primitives.hpp>
 #include <eagine/oglplus/math/vector.hpp>
+#endif
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
@@ -123,16 +129,18 @@ example_picking::example_picking(execution_context& ec, video_context& vc)
     ec.connect_inputs()
       .map_inputs()
       .connect_input(
-        EAGINE_MSG_ID(Example, MotionX), EAGINE_THIS_MEM_FUNC_REF(motion_x))
+        {"Example", "MotionX"},
+        make_callable_ref<&example_picking::motion_x>(this))
       .map_input(
-        EAGINE_MSG_ID(Example, MotionX),
-        EAGINE_MSG_ID(Cursor, PositionX),
+        {"Example", "MotionX"},
+        {"Cursor", "PositionX"},
         input_setup().multiply(2).absolute_norm())
       .connect_input(
-        EAGINE_MSG_ID(Example, MotionY), EAGINE_THIS_MEM_FUNC_REF(motion_y))
+        {"Example", "MotionY"},
+        make_callable_ref<&example_picking::motion_y>(this))
       .map_input(
-        EAGINE_MSG_ID(Example, MotionY),
-        EAGINE_MSG_ID(Cursor, PositionY),
+        {"Example", "MotionY"},
+        {"Cursor", "PositionY"},
         input_setup().multiply(2).absolute_norm())
       .switch_input_mapping();
 }
@@ -228,4 +236,13 @@ auto establish(main_ctx&) -> std::unique_ptr<launchpad> {
     return {std::make_unique<example_launchpad>()};
 }
 //------------------------------------------------------------------------------
+auto example_main(main_ctx& ctx) -> int {
+    return default_main(ctx, establish(ctx));
+}
 } // namespace eagine::app
+
+#if EAGINE_APP_MODULE
+auto main(int argc, const char** argv) -> int {
+    return eagine::default_main(argc, argv, eagine::app::example_main);
+}
+#endif

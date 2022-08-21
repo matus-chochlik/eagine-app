@@ -5,15 +5,24 @@
 #
 
 add_executable(app-006_writing main.cpp)
+add_dependencies(app-006_writing eagine-app-examples)
+
 eagine_embed_target_resources(TARGET app-006_writing)
 eagine_add_exe_analysis(app-006_writing)
 
-add_dependencies(app-006_writing eagine-app-examples)
-
-target_link_libraries(
-	app-006_writing
-	PUBLIC EAGine::App
-)
+if(${WITH_MODULES})
+	eagine_target_modules(
+		app-006_writing
+		eagine.core
+		eagine.oglplus
+		eagine.app
+	)
+else()
+	target_link_libraries(
+		app-006_writing
+		PUBLIC EAGine::App
+	)
+endif()
 
 set_target_properties(
 	app-006_writing

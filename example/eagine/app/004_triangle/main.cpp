@@ -5,6 +5,11 @@
 /// See accompanying file LICENSE_1_0.txt or copy at
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
+#if EAGINE_APP_MODULE
+import eagine.core;
+import eagine.oglplus;
+import eagine.app;
+#else
 #include <eagine/app/main.hpp>
 #include <eagine/app_config.hpp>
 #include <eagine/embed.hpp>
@@ -17,6 +22,7 @@
 #include <eagine/oglplus/glsl/string_ref.hpp>
 #include <eagine/oglplus/math/primitives.hpp>
 #include <eagine/oglplus/math/vector.hpp>
+#endif
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
@@ -121,13 +127,12 @@ example_triangle::example_triangle(execution_context& ec, video_context& vc)
 
     ec.connect_inputs()
       .map_inputs()
-      .add_ui_button("Reset", EAGINE_MSG_ID(GUI, Reset))
+      .add_ui_button("Reset", {"GUI", "Reset"})
       .connect_input(
-        EAGINE_MSG_ID(Example, Reset), EAGINE_THIS_MEM_FUNC_REF(reset_timeout))
+        {"Example", "Reset"},
+        make_callable_ref<&example_triangle::reset_timeout>(this))
       .map_input(
-        EAGINE_MSG_ID(Example, Reset),
-        EAGINE_MSG_ID(GUI, Reset),
-        input_setup().any_value_kind())
+        {"Example", "Reset"}, {"GUI", "Reset"}, input_setup().any_value_kind())
       .switch_input_mapping();
 }
 //------------------------------------------------------------------------------
@@ -196,4 +201,13 @@ auto establish(main_ctx&) -> std::unique_ptr<launchpad> {
     return {std::make_unique<example_launchpad>()};
 }
 //------------------------------------------------------------------------------
+auto example_main(main_ctx& ctx) -> int {
+    return default_main(ctx, establish(ctx));
+}
 } // namespace eagine::app
+
+#if EAGINE_APP_MODULE
+auto main(int argc, const char** argv) -> int {
+    return eagine::default_main(argc, argv, eagine::app::example_main);
+}
+#endif
