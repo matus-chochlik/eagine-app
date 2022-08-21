@@ -38,13 +38,13 @@ background_icosahedron::background_icosahedron(
         const auto cleanup_fs = gl.delete_shader.raii(fs);
 
         const string_view fs_source = R"(
-            #version 140
-            in  vec4 geomColor;
-            out vec4 fragColor;
+          #version 140
+          in  vec4 geomColor;
+          out vec4 fragColor;
 
-            void main() {
-                fragColor = geomColor;
-            })";
+          void main() {
+              fragColor = geomColor;
+          })";
 
         gl.shader_source(fs, oglplus::glsl_string_ref(fs_source));
         gl.compile_shader(fs);
@@ -60,49 +60,49 @@ background_icosahedron::background_icosahedron(
             const auto cleanup_gs = gl.delete_shader.raii(gs);
 
             const string_view gs_source = R"(
-            #version 330
+          #version 330
 
-            layout(triangles) in;
-            layout(triangle_strip, max_vertices = 3) out;
-            out vec4 geomColor;
-            uniform mat4 Camera;
-            uniform vec4 Color;
+          layout(triangles) in;
+          layout(triangle_strip, max_vertices = 3) out;
+          out vec4 geomColor;
+          uniform mat4 Camera;
+          uniform vec4 Color;
 
-            void main() {
-				float m = mod(gl_PrimitiveIDIn / 1.618, 1.0);
-				geomColor = vec4(mix(0.96, 1.04, m) * Color.rgb, Color.a);
+          void main() {
+              float m = mod(gl_PrimitiveIDIn / 1.618, 1.0);
+              geomColor = vec4(mix(0.96, 1.04, m) * Color.rgb, Color.a);
 
-				for(int i=0; i<3; ++i) {
-					gl_Position = Camera * gl_in[i].gl_Position;
-					EmitVertex();
-				}
-            })";
+              for(int i=0; i<3; ++i) {
+                  gl_Position = Camera * gl_in[i].gl_Position;
+                  EmitVertex();
+              }
+          })";
             gl.shader_source(gs, oglplus::glsl_string_ref(gs_source));
             gl.compile_shader(gs);
             gl.attach_shader(_prog, gs);
 
             const string_view vs_source = R"(
-            #version 140
-            in vec3 Position;
-            uniform float Scale = 1.0;
+          #version 140
+          in vec3 Position;
+          uniform float Scale = 1.0;
 
-            void main() {
-                gl_Position = vec4(Position * Scale, 1.0);
-             })";
+          void main() {
+              gl_Position = vec4(Position * Scale, 1.0);
+           })";
             gl.shader_source(vs, oglplus::glsl_string_ref(vs_source));
         } else {
             const string_view vs_source = R"(
-            #version 140
-            in vec3 Position;
-            out vec4 geomColor;
-            uniform mat4 Camera;
-            uniform vec4 Color;
-            uniform float Scale = 1.0;
+          #version 140
+          in vec3 Position;
+          out vec4 geomColor;
+          uniform mat4 Camera;
+          uniform vec4 Color;
+          uniform float Scale = 1.0;
 
-            void main() {
-                gl_Position = Camera * vec4(Position * Scale, 1.0);
-                geomColor = Color;
-            })";
+          void main() {
+              gl_Position = Camera * vec4(Position * Scale, 1.0);
+              geomColor = Color;
+          })";
             gl.shader_source(vs, oglplus::glsl_string_ref(vs_source));
         }
         gl.compile_shader(vs);
@@ -272,8 +272,8 @@ background_skybox::background_skybox(
 
             void main() {
                 subdivide2(
-                    vec3(1.0, 0.0, 0.0), 
-                    vec3(0.0, 1.0, 0.0), 
+                    vec3(1.0, 0.0, 0.0),
+                    vec3(0.0, 1.0, 0.0),
                     vec3(0.0, 0.0, 1.0));
             })";
             gl.shader_source(gs, oglplus::glsl_string_ref(gs_source));
