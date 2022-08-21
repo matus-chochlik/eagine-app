@@ -6,6 +6,12 @@
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
 
+#if EAGINE_APP_MODULE
+import eagine.core;
+import eagine.shapes;
+import eagine.oglplus;
+import eagine.app;
+#else
 #include <eagine/oglplus/gl.hpp>
 #include <eagine/oglplus/gl_api.hpp>
 
@@ -21,6 +27,7 @@
 #include <eagine/shapes/value_tree.hpp>
 #include <eagine/timeout.hpp>
 #include <eagine/value_tree/yaml.hpp>
+#endif
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
@@ -59,7 +66,7 @@ example_shape::example_shape(execution_context& ec, video_context& vc)
     oglplus::shape_generator shape(
       glapi,
       shapes::from_value_tree(
-        valtree::from_yaml_text(yaml_text, ec.as_parent()), ec.as_parent()));
+        valtree::from_yaml_text(yaml_text, ec.main_context()), ec.as_parent()));
     geom.init(glapi, shape, _ctx.buffer());
 
     // vertex shader
@@ -179,4 +186,13 @@ auto establish(main_ctx&) -> std::unique_ptr<launchpad> {
     return {std::make_unique<example_launchpad>()};
 }
 //------------------------------------------------------------------------------
+auto example_main(main_ctx& ctx) -> int {
+    return default_main(ctx, establish(ctx));
+}
 } // namespace eagine::app
+
+#if EAGINE_APP_MODULE
+auto main(int argc, const char** argv) -> int {
+    return eagine::default_main(argc, argv, eagine::app::example_main);
+}
+#endif

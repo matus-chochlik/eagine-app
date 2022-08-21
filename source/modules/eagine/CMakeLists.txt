@@ -168,7 +168,7 @@ eagine_add_module(
 		opengl_glfw3_impl
 		context_impl
 		camera_impl
-		#background_impl
+		background_impl
 	IMPORTS
 		eagine.core.string
 		eagine.core.container
