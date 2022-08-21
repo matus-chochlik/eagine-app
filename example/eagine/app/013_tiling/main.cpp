@@ -6,6 +6,12 @@
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
 
+#if EAGINE_APP_MODULE
+import eagine.core;
+import eagine.shapes;
+import eagine.oglplus;
+import eagine.app;
+#else
 #include <eagine/oglplus/gl.hpp>
 #include <eagine/oglplus/gl_api.hpp>
 
@@ -21,6 +27,7 @@
 #include <eagine/oglplus/shapes/geometry.hpp>
 #include <eagine/shapes/round_cube.hpp>
 #include <eagine/timeout.hpp>
+#endif
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
@@ -173,18 +180,16 @@ example_tiling::example_tiling(execution_context& ec, video_context& vc)
 
     camera.connect_inputs(ec).basic_input_mapping(ec);
     ec.connect_inputs()
-      .add_ui_button("Change tile-set", EAGINE_MSG_ID(GUI, ChngTilset))
+      .add_ui_button("Change tile-set", {"GUI", "ChngTilset"})
       .connect_input(
-        EAGINE_MSG_ID(Example, ChngTilset),
-        EAGINE_THIS_MEM_FUNC_REF(change_tileset))
+        {"Example", "ChngTilset"},
+        make_callable_ref<&example_tiling::change_tileset>(this))
       .map_inputs()
       .map_input(
-        EAGINE_MSG_ID(Example, ChngTilset),
-        EAGINE_MSG_ID(Keyboard, T),
-        input_setup().trigger())
+        {"Example", "ChngTilset"}, {"Keyboard", "T"}, input_setup().trigger())
       .map_input(
-        EAGINE_MSG_ID(Example, ChngTilset),
-        EAGINE_MSG_ID(GUI, ChngTilset),
+        {"Example", "ChngTilset"},
+        {"GUI", "ChngTilset"},
         input_setup().trigger())
       .switch_input_mapping();
 }
@@ -297,4 +302,13 @@ auto establish(main_ctx&) -> std::unique_ptr<launchpad> {
     return {std::make_unique<example_launchpad>()};
 }
 //------------------------------------------------------------------------------
+auto example_main(main_ctx& ctx) -> int {
+    return default_main(ctx, establish(ctx));
+}
 } // namespace eagine::app
+
+#if EAGINE_APP_MODULE
+auto main(int argc, const char** argv) -> int {
+    return eagine::default_main(argc, argv, eagine::app::example_main);
+}
+#endif

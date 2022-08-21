@@ -5,15 +5,24 @@
 #
 
 add_executable(app-012_atomic_counters main.cpp)
+add_dependencies(app-012_atomic_counters eagine-app-examples)
+
 eagine_embed_target_resources(TARGET app-012_atomic_counters PACKED)
 eagine_add_exe_analysis(app-012_atomic_counters)
 
-add_dependencies(app-012_atomic_counters eagine-app-examples)
-
-target_link_libraries(
-	app-012_atomic_counters
-	PUBLIC EAGine::App
-)
+if(${WITH_MODULES})
+	eagine_target_modules(
+		app-012_atomic_counters
+		eagine.core
+		eagine.oglplus
+		eagine.app
+	)
+else()
+	target_link_libraries(
+		app-012_atomic_counters
+		PUBLIC EAGine::App
+	)
+endif()
 
 set_target_properties(
 	app-012_atomic_counters

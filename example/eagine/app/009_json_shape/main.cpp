@@ -95,7 +95,7 @@ example_shape::example_shape(execution_context& ec, video_context& vc)
     oglplus::shape_generator shape(
       glapi,
       shapes::from_value_tree(
-        valtree::from_json_text(json_text, ec.as_parent()), ec.as_parent()));
+        valtree::from_json_text(json_text, ec.main_context()), ec.as_parent()));
 
     _ops.resize(std_size(shape.operation_count()));
     shape.instructions(glapi, cover(_ops));

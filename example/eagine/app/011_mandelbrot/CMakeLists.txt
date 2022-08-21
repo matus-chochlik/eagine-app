@@ -5,15 +5,24 @@
 #
 
 add_executable(app-011_mandelbrot main.cpp)
+add_dependencies(app-011_mandelbrot eagine-app-examples)
+
 eagine_embed_target_resources(TARGET app-011_mandelbrot)
 eagine_add_exe_analysis(app-011_mandelbrot)
 
-add_dependencies(app-011_mandelbrot eagine-app-examples)
-
-target_link_libraries(
-	app-011_mandelbrot
-	PUBLIC EAGine::App
-)
+if(${WITH_MODULES})
+	eagine_target_modules(
+		app-011_mandelbrot
+		eagine.core
+		eagine.oglplus
+		eagine.app
+	)
+else()
+	target_link_libraries(
+		app-011_mandelbrot
+		PUBLIC EAGine::App
+	)
+endif()
 
 set_target_properties(
 	app-011_mandelbrot

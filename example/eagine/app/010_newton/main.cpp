@@ -5,6 +5,12 @@
 /// See accompanying file LICENSE_1_0.txt or copy at
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
+#if EAGINE_APP_MODULE
+import eagine.core;
+import eagine.oglplus;
+import eagine.app;
+import <cmath>;
+#else
 #include <eagine/app/input_observers.hpp>
 #include <eagine/app/main.hpp>
 #include <eagine/app_config.hpp>
@@ -17,6 +23,7 @@
 #include <eagine/oglplus/glsl/string_ref.hpp>
 #include <eagine/oglplus/math/primitives.hpp>
 #include <eagine/oglplus/math/vector.hpp>
+#endif
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
@@ -150,63 +157,62 @@ example_newton::example_newton(execution_context& ec, video_context& vc)
 
     ec.connect_inputs()
       .connect_input(
-        EAGINE_MSG_ID(Motion, Dampening), EAGINE_THIS_MEM_FUNC_REF(dampening))
+        {"Motion", "Dampening"},
+        make_callable_ref<&example_newton::dampening>(this))
       .connect_input(
-        EAGINE_MSG_ID(Cursor, Dragging), EAGINE_THIS_MEM_FUNC_REF(dragging))
-      .connect_input(EAGINE_MSG_ID(View, Zoom), EAGINE_THIS_MEM_FUNC_REF(zoom))
-      .connect_input(EAGINE_MSG_ID(View, PanX), EAGINE_THIS_MEM_FUNC_REF(pan_x))
-      .connect_input(EAGINE_MSG_ID(View, PanY), EAGINE_THIS_MEM_FUNC_REF(pan_y))
+        {"Cursor", "Dragging"},
+        make_callable_ref<&example_newton::dragging>(this))
       .connect_input(
-        EAGINE_MSG_ID(Example, ChngGrad),
-        EAGINE_THIS_MEM_FUNC_REF(change_gradient))
+        {"View", "Zoom"}, make_callable_ref<&example_newton::zoom>(this))
+      .connect_input(
+        {"View", "PanX"}, make_callable_ref<&example_newton::pan_x>(this))
+      .connect_input(
+        {"View", "PanY"}, make_callable_ref<&example_newton::pan_y>(this))
+      .connect_input(
+        {"Example", "ChngGrad"},
+        make_callable_ref<&example_newton::change_gradient>(this))
       .map_inputs()
       .map_input(
-        EAGINE_MSG_ID(Motion, Dampening),
-        EAGINE_MSG_ID(Keyboard, LeftCtrl),
+        {"Motion", "Dampening"},
+        {"Keyboard", "LeftCtrl"},
         input_setup().trigger())
       .map_input(
-        EAGINE_MSG_ID(Cursor, Dragging),
-        EAGINE_MSG_ID(Cursor, Button0),
-        input_setup().trigger())
+        {"Cursor", "Dragging"}, {"Cursor", "Button0"}, input_setup().trigger())
       .map_input(
-        EAGINE_MSG_ID(View, Zoom),
-        EAGINE_MSG_ID(Wheel, ScrollY),
-        input_setup().relative())
+        {"View", "Zoom"}, {"Wheel", "ScrollY"}, input_setup().relative())
       .map_input(
-        EAGINE_MSG_ID(View, Zoom),
-        EAGINE_MSG_ID(Keyboard, KpPlus),
+        {"View", "Zoom"},
+        {"Keyboard", "KpPlus"},
         input_setup().trigger().multiply(0.25))
       .map_input(
-        EAGINE_MSG_ID(View, Zoom),
-        EAGINE_MSG_ID(Keyboard, KpMinus),
+        {"View", "Zoom"},
+        {"Keyboard", "KpMinus"},
         input_setup().trigger().multiply(0.25).invert())
       .map_input(
-        EAGINE_MSG_ID(View, PanX),
-        EAGINE_MSG_ID(Keyboard, Left),
+        {"View", "PanX"},
+        {"Keyboard", "Left"},
         input_setup().trigger().multiply(0.25))
       .map_input(
-        EAGINE_MSG_ID(View, PanX),
-        EAGINE_MSG_ID(Keyboard, Right),
+        {"View", "PanX"},
+        {"Keyboard", "Right"},
         input_setup().trigger().multiply(0.25).invert())
       .map_input(
-        EAGINE_MSG_ID(View, PanY),
-        EAGINE_MSG_ID(Keyboard, Down),
+        {"View", "PanY"},
+        {"Keyboard", "Down"},
         input_setup().trigger().multiply(0.25))
       .map_input(
-        EAGINE_MSG_ID(View, PanY),
-        EAGINE_MSG_ID(Keyboard, Up),
+        {"View", "PanY"},
+        {"Keyboard", "Up"},
         input_setup().trigger().multiply(0.25).invert())
       .map_input(
-        EAGINE_MSG_ID(Example, ChngGrad),
-        EAGINE_MSG_ID(Keyboard, G),
-        input_setup().trigger())
+        {"Example", "ChngGrad"}, {"Keyboard", "G"}, input_setup().trigger())
       .map_input(
-        EAGINE_MSG_ID(View, PanX),
-        EAGINE_MSG_ID(Cursor, MotionX),
+        {"View", "PanX"},
+        {"Cursor", "MotionX"},
         input_setup().relative().multiply(2).only_if(is_dragging))
       .map_input(
-        EAGINE_MSG_ID(View, PanY),
-        EAGINE_MSG_ID(Cursor, MotionY),
+        {"View", "PanY"},
+        {"Cursor", "MotionY"},
         input_setup().relative().multiply(2).only_if(is_dragging))
       .switch_input_mapping();
 }
@@ -341,4 +347,13 @@ auto establish(main_ctx&) -> std::unique_ptr<launchpad> {
     return {std::make_unique<example_launchpad>()};
 }
 //------------------------------------------------------------------------------
+auto example_main(main_ctx& ctx) -> int {
+    return default_main(ctx, establish(ctx));
+}
 } // namespace eagine::app
+
+#if EAGINE_APP_MODULE
+auto main(int argc, const char** argv) -> int {
+    return eagine::default_main(argc, argv, eagine::app::example_main);
+}
+#endif
