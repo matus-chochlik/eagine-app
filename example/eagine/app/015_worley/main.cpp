@@ -5,6 +5,12 @@
 /// See accompanying file LICENSE_1_0.txt or copy at
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
+#if EAGINE_APP_MODULE
+import eagine.core;
+import eagine.oglplus;
+import eagine.app;
+import <cmath>;
+#else
 #include <eagine/app/main.hpp>
 #include <eagine/app_config.hpp>
 #include <eagine/embed.hpp>
@@ -16,14 +22,15 @@
 #include <eagine/oglplus/glsl/string_ref.hpp>
 #include <eagine/oglplus/math/primitives.hpp>
 #include <eagine/oglplus/math/vector.hpp>
+#endif
 
 #include "resources.hpp"
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-class example_voronoi : public application {
+class example_worley : public application {
 public:
-    example_voronoi(execution_context& ctx, video_context&);
+    example_worley(execution_context& ctx, video_context&);
 
     auto is_done() noexcept -> bool final {
         return _is_done.is_expired();
@@ -45,7 +52,7 @@ private:
     timeout _is_done{std::chrono::seconds(30)};
 
     screen_geometry screen;
-    voronoi_program voi_prog;
+    worley_program voi_prog;
     random_texture rand_tex;
 
     float ofs_x_dir{1.F};
@@ -66,7 +73,7 @@ private:
     static constexpr const float max_scale{100.0F};
 };
 //------------------------------------------------------------------------------
-example_voronoi::example_voronoi(execution_context& ec, video_context& vc)
+example_worley::example_worley(execution_context& ec, video_context& vc)
   : _ctx{ec}
   , _video{vc} {
 
@@ -81,61 +88,62 @@ example_voronoi::example_voronoi(execution_context& ec, video_context& vc)
 
     ec.connect_inputs()
       .connect_input(
-        EAGINE_MSG_ID(Motion, Dampening), EAGINE_THIS_MEM_FUNC_REF(dampening))
+        {"Motion", "Dampening"},
+        make_callable_ref<&example_worley::dampening>(this))
       .connect_input(
-        EAGINE_MSG_ID(Cursor, Dragging), EAGINE_THIS_MEM_FUNC_REF(dragging))
-      .connect_input(EAGINE_MSG_ID(View, Zoom), EAGINE_THIS_MEM_FUNC_REF(zoom))
-      .connect_input(EAGINE_MSG_ID(View, PanX), EAGINE_THIS_MEM_FUNC_REF(pan_x))
-      .connect_input(EAGINE_MSG_ID(View, PanY), EAGINE_THIS_MEM_FUNC_REF(pan_y))
+        {"Cursor", "Dragging"},
+        make_callable_ref<&example_worley::dragging>(this))
+      .connect_input(
+        {"View", "Zoom"}, make_callable_ref<&example_worley::zoom>(this))
+      .connect_input(
+        {"View", "PanX"}, make_callable_ref<&example_worley::pan_x>(this))
+      .connect_input(
+        {"View", "PanY"}, make_callable_ref<&example_worley::pan_y>(this))
       .map_inputs()
       .map_input(
-        EAGINE_MSG_ID(Motion, Dampening),
-        EAGINE_MSG_ID(Keyboard, LeftCtrl),
+        {"Motion", "Dampening"},
+        {"Keyboard", "LeftCtrl"},
         input_setup().trigger())
       .map_input(
-        EAGINE_MSG_ID(Cursor, Dragging),
-        EAGINE_MSG_ID(Cursor, Button0),
-        input_setup().trigger())
+        {"Cursor", "Dragging"}, {"Cursor", "Button0"}, input_setup().trigger())
       .map_input(
-        EAGINE_MSG_ID(View, Zoom),
-        EAGINE_MSG_ID(Wheel, ScrollY),
-        input_setup().relative())
+        {"View", "Zoom"}, {"Wheel", "ScrollY"}, input_setup().relative())
       .map_input(
-        EAGINE_MSG_ID(View, Zoom),
-        EAGINE_MSG_ID(Keyboard, KpPlus),
+        {"View", "Zoom"},
+        {"Keyboard", "KpPlus"},
         input_setup().trigger().multiply(0.25))
       .map_input(
-        EAGINE_MSG_ID(View, Zoom),
-        EAGINE_MSG_ID(Keyboard, KpMinus),
+        {"View", "Zoom"},
+        {"Keyboard", "KpMinus"},
         input_setup().trigger().multiply(0.25).invert())
       .map_input(
-        EAGINE_MSG_ID(View, PanX),
-        EAGINE_MSG_ID(Keyboard, Left),
+        {"View", "PanX"},
+        {"Keyboard", "Left"},
         input_setup().trigger().multiply(0.25))
       .map_input(
-        EAGINE_MSG_ID(View, PanX),
-        EAGINE_MSG_ID(Keyboard, Right),
+        {"View", "PanX"},
+        {"Keyboard", "Right"},
         input_setup().trigger().multiply(0.25).invert())
       .map_input(
-        EAGINE_MSG_ID(View, PanY),
-        EAGINE_MSG_ID(Keyboard, Down),
+        {"View", "PanY"},
+        {"Keyboard", "Down"},
         input_setup().trigger().multiply(0.25))
       .map_input(
-        EAGINE_MSG_ID(View, PanY),
-        EAGINE_MSG_ID(Keyboard, Up),
+        {"View", "PanY"},
+        {"Keyboard", "Up"},
         input_setup().trigger().multiply(0.25).invert())
       .map_input(
-        EAGINE_MSG_ID(View, PanX),
-        EAGINE_MSG_ID(Cursor, MotionX),
+        {"View", "PanX"},
+        {"Cursor", "MotionX"},
         input_setup().relative().multiply(2).only_if(is_dragging))
       .map_input(
-        EAGINE_MSG_ID(View, PanY),
-        EAGINE_MSG_ID(Cursor, MotionY),
+        {"View", "PanY"},
+        {"Cursor", "MotionY"},
         input_setup().relative().multiply(2).only_if(is_dragging))
       .switch_input_mapping();
 }
 //------------------------------------------------------------------------------
-void example_voronoi::on_video_resize() noexcept {
+void example_worley::on_video_resize() noexcept {
     const auto& gl = _video.gl_api();
 
     aspect = _video.surface_aspect();
@@ -143,15 +151,15 @@ void example_voronoi::on_video_resize() noexcept {
     gl.uniform2f(voi_prog.scale_loc, scale * aspect, scale);
 }
 //------------------------------------------------------------------------------
-void example_voronoi::dampening(const input& i) noexcept {
+void example_worley::dampening(const input& i) noexcept {
     dampen_motion = bool(i);
 }
 //------------------------------------------------------------------------------
-void example_voronoi::dragging(const input& i) noexcept {
+void example_worley::dragging(const input& i) noexcept {
     is_dragging = bool(i);
 }
 //------------------------------------------------------------------------------
-void example_voronoi::zoom(const input& i) noexcept {
+void example_worley::zoom(const input& i) noexcept {
     scale *= float(std::pow(2, -i.get() * motion_adjust()));
     if(scale < min_scale) {
         scale = min_scale;
@@ -164,21 +172,21 @@ void example_voronoi::zoom(const input& i) noexcept {
     gl.uniform2f(voi_prog.scale_loc, scale * aspect, scale);
 }
 //------------------------------------------------------------------------------
-void example_voronoi::pan_x(const input& i) noexcept {
+void example_worley::pan_x(const input& i) noexcept {
     offset_x -= float(i.get() * scale * motion_adjust());
 
     const auto& gl = _video.gl_api();
     gl.uniform2f(voi_prog.offset_loc, offset_x, offset_y);
 }
 //------------------------------------------------------------------------------
-void example_voronoi::pan_y(const input& i) noexcept {
+void example_worley::pan_y(const input& i) noexcept {
     offset_y -= float(i.get() * scale * motion_adjust());
 
     const auto& gl = _video.gl_api();
     gl.uniform2f(voi_prog.offset_loc, offset_x, offset_y);
 }
 //------------------------------------------------------------------------------
-void example_voronoi::update() noexcept {
+void example_worley::update() noexcept {
     auto& state = _ctx.state();
     const auto& [gl, GL] = _video.gl_api();
 
@@ -215,7 +223,7 @@ void example_voronoi::update() noexcept {
     _video.commit();
 }
 //------------------------------------------------------------------------------
-void example_voronoi::clean_up() noexcept {
+void example_worley::clean_up() noexcept {
     screen.init(_ctx, _video);
     voi_prog.init(_ctx, _video);
     rand_tex.init(_ctx, _video);
@@ -248,7 +256,7 @@ public:
             vc.begin();
             if(vc.init_gl_api()) {
                 if(check_requirements(vc)) {
-                    return {std::make_unique<example_voronoi>(ec, vc)};
+                    return {std::make_unique<example_worley>(ec, vc)};
                 }
             }
         }
@@ -260,4 +268,13 @@ auto establish(main_ctx&) -> std::unique_ptr<launchpad> {
     return {std::make_unique<example_launchpad>()};
 }
 //------------------------------------------------------------------------------
+auto example_main(main_ctx& ctx) -> int {
+    return default_main(ctx, establish(ctx));
+}
 } // namespace eagine::app
+
+#if EAGINE_APP_MODULE
+auto main(int argc, const char** argv) -> int {
+    return eagine::default_main(argc, argv, eagine::app::example_main);
+}
+#endif

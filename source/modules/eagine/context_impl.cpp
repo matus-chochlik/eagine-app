@@ -250,6 +250,7 @@ static void video_context_debug_callback(
                                  : string_view(message);
     vc.parent()
       .log_debug(msg)
+      .tag("glDbgOutpt")
       .arg("severity", "DbgOutSvrt", severity)
       .arg("source", "DbgOutSrce", source)
       .arg("type", "DbgOutType", type)
