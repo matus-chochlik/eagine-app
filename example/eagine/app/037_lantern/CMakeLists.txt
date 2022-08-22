@@ -9,6 +9,7 @@ configure_file(
 )
 
 add_executable(app-037_lantern main.cpp resources.cpp)
+add_dependencies(app-037_lantern eagine-app-examples)
 
 eagine_embed_target_resources(
 	TARGET app-037_lantern
@@ -17,12 +18,20 @@ eagine_embed_target_resources(
 )
 eagine_add_exe_analysis(app-037_lantern)
 
-add_dependencies(app-037_lantern eagine-app-examples)
-
-target_link_libraries(
-	app-037_lantern
-	PUBLIC EAGine::App
-)
+if(${WITH_MODULES})
+	eagine_target_modules(
+		app-037_lantern
+		eagine.core
+		eagine.shapes
+		eagine.oglplus
+		eagine.app
+	)
+else()
+	target_link_libraries(
+		app-037_lantern
+		PUBLIC EAGine::App
+	)
+endif()
 
 set_target_properties(
 	app-037_lantern

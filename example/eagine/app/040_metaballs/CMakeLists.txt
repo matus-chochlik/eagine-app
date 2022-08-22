@@ -8,6 +8,8 @@ oglplus_add_glsl_program(metaballs_field)
 oglplus_add_glsl_program(metaballs_surface)
 
 add_executable(app-040_metaballs main.cpp resources.cpp)
+add_dependencies(app-040_metaballs eagine-app-examples)
+
 eagine_embed_target_resources(
 	TARGET app-040_metaballs
 	INPUT_TARGETS metaballs_metaball metaballs_field metaballs_surface
@@ -15,12 +17,20 @@ eagine_embed_target_resources(
 )
 eagine_add_exe_analysis(app-040_metaballs)
 
-add_dependencies(app-040_metaballs eagine-app-examples)
-
-target_link_libraries(
-	app-040_metaballs
-	PUBLIC EAGine::App
-)
+if(${WITH_MODULES})
+	eagine_target_modules(
+		app-040_metaballs
+		eagine.core
+		eagine.shapes
+		eagine.oglplus
+		eagine.app
+	)
+else()
+	target_link_libraries(
+		app-040_metaballs
+		PUBLIC EAGine::App
+	)
+endif()
 
 set_target_properties(
 	app-040_metaballs

@@ -17,6 +17,7 @@ export import :framedump_raw;
 export import :context;
 export import :main;
 export import :gpu_program;
+export import :framebuffer;
 export import :geometry;
 export import :camera;
 export import :background;
