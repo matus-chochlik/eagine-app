@@ -9,6 +9,7 @@
 #include "resources.hpp"
 #include "main.hpp"
 
+#if !EAGINE_APP_MODULE
 #include <eagine/app/camera.hpp>
 #include <eagine/app/context.hpp>
 #include <eagine/embed.hpp>
@@ -16,6 +17,7 @@
 #include <eagine/oglplus/shapes/generator.hpp>
 #include <eagine/shapes/cube.hpp>
 #include <eagine/shapes/screen.hpp>
+#endif
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
