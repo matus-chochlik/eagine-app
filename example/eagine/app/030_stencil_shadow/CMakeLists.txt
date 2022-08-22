@@ -11,6 +11,7 @@ configure_file(
 oglplus_add_glsl_program(stencil_shadow_draw)
 oglplus_add_glsl_program(stencil_shadow_mask)
 add_executable(app-030_stencil_shadow main.cpp)
+add_dependencies(app-030_stencil_shadow eagine-app-examples)
 
 eagine_embed_target_resources(
 	TARGET app-030_stencil_shadow
@@ -24,12 +25,20 @@ eagine_embed_target_resources(
 )
 eagine_add_exe_analysis(app-030_stencil_shadow)
 
-add_dependencies(app-030_stencil_shadow eagine-app-examples)
-
-target_link_libraries(
-	app-030_stencil_shadow
-	PUBLIC EAGine::App
-)
+if(${WITH_MODULES})
+	eagine_target_modules(
+		app-030_stencil_shadow
+		eagine.core
+		eagine.shapes
+		eagine.oglplus
+		eagine.app
+	)
+else()
+	target_link_libraries(
+		app-030_stencil_shadow
+		PUBLIC EAGine::App
+	)
+endif()
 
 set_target_properties(
 	app-030_stencil_shadow
