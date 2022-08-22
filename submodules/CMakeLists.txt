@@ -43,7 +43,7 @@ if(NOT TARGET EAGine::EGLplus)
 	add_subdirectory(eagine-eglplus EXCLUDE_FROM_ALL)
 endif()
 
-if(NOT TARGET EAGine::OGLplus)
+if(NOT TARGET EAGine::OGLplus AND NOT TARGET eagine.oglplus)
 	if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/eagine-oglplus/CMakeLists.txt")
 		unset(SUBMODULE_INIT_ARG)
 	else()
