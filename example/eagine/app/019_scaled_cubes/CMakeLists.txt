@@ -18,6 +18,7 @@ if(${WITH_MODULES})
 	eagine_target_modules(
 		app-019_scaled_cubes
 		eagine.core
+		eagine.shapes
 		eagine.oglplus
 		eagine.app
 	)

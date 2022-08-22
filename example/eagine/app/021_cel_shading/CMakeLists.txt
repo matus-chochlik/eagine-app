@@ -5,6 +5,8 @@
 #
 oglplus_add_glsl_program(cel_shading)
 add_executable(app-021_cel_shading main.cpp resources.cpp)
+add_dependencies(app-021_cel_shading eagine-app-examples)
+
 eagine_embed_target_resources(
 	TARGET app-021_cel_shading
 	INPUT_TARGETS cel_shading
@@ -12,12 +14,20 @@ eagine_embed_target_resources(
 )
 eagine_add_exe_analysis(app-021_cel_shading)
 
-add_dependencies(app-021_cel_shading eagine-app-examples)
-
-target_link_libraries(
-	app-021_cel_shading
-	PUBLIC EAGine::App
-)
+if(${WITH_MODULES})
+	eagine_target_modules(
+		app-021_cel_shading
+		eagine.core
+		eagine.shapes
+		eagine.oglplus
+		eagine.app
+	)
+else()
+	target_link_libraries(
+		app-021_cel_shading
+		PUBLIC EAGine::App
+	)
+endif()
 
 set_target_properties(
 	app-021_cel_shading

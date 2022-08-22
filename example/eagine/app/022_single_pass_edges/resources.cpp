@@ -8,6 +8,7 @@
 
 #include "resources.hpp"
 
+#if !EAGINE_APP_MODULE
 #include <eagine/app/camera.hpp>
 #include <eagine/app/context.hpp>
 #include <eagine/embed.hpp>
@@ -16,6 +17,7 @@
 #include <eagine/shapes/centered.hpp>
 #include <eagine/shapes/icosahedron.hpp>
 #include <eagine/shapes/scaled.hpp>
+#endif
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
