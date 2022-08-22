@@ -8,6 +8,7 @@
 
 #include "resources.hpp"
 
+#if !EAGINE_APP_MODULE
 #include <eagine/app/camera.hpp>
 #include <eagine/app/context.hpp>
 #include <eagine/embed.hpp>
@@ -20,6 +21,7 @@
 #include <eagine/shapes/twisted_torus.hpp>
 #include <eagine/shapes/value_tree.hpp>
 #include <eagine/value_tree/json.hpp>
+#endif
 
 namespace eagine::app {
 //------------------------------------------------------------------------------

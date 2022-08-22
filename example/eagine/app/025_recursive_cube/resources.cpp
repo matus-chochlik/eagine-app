@@ -8,12 +8,14 @@
 
 #include "resources.hpp"
 
+#if !EAGINE_APP_MODULE
 #include <eagine/app/camera.hpp>
 #include <eagine/app/context.hpp>
 #include <eagine/embed.hpp>
 #include <eagine/math/matrix_ctr.hpp>
 #include <eagine/oglplus/shapes/generator.hpp>
 #include <eagine/shapes/cube.hpp>
+#endif
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
