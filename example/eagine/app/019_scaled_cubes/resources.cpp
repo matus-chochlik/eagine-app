@@ -7,7 +7,9 @@
 ///
 
 #include "resources.hpp"
+import <cmath>;
 
+#if !EAGINE_APP_MODULE
 #include <eagine/app/camera.hpp>
 #include <eagine/app/context.hpp>
 #include <eagine/embed.hpp>
@@ -18,6 +20,7 @@
 #include <eagine/shapes/centered.hpp>
 #include <eagine/shapes/cube.hpp>
 #include <eagine/shapes/reboxed.hpp>
+#endif
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
