@@ -7,9 +7,10 @@
 ///
 
 #include "resources.hpp"
-import <cmath>;
 
-#if !EAGINE_APP_MODULE
+#if EAGINE_APP_MODULE
+import <cmath>;
+#else
 #include <eagine/app/camera.hpp>
 #include <eagine/app/context.hpp>
 #include <eagine/embed.hpp>
