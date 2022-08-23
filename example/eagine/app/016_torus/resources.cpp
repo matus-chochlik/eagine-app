@@ -75,7 +75,13 @@ void torus_geometry::init(execution_context& ec, video_context& vc) {
     oglplus::shape_generator shape(
       glapi,
       shapes::scale_wrap_coords(
-        shapes::unit_torus(attrib_kinds()), 36.F, 12.F, 1.F));
+        shapes::unit_torus(
+          shapes::vertex_attrib_kind::position |
+          shapes::vertex_attrib_kind::normal |
+          shapes::vertex_attrib_kind::wrap_coord),
+        36.F,
+        12.F,
+        1.F));
     geometry::init(
       glapi,
       shape,

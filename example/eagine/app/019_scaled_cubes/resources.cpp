@@ -105,8 +105,7 @@ void cubes_geometry::init(execution_context& ec, video_context& vc) {
       shapes::rebox(shapes::center(eagine::shapes::ortho_array_xyz(
         shapes::unit_cube(
           shapes::vertex_attrib_kind::position |
-          shapes::vertex_attrib_kind::pivot |
-          shapes::vertex_attrib_kind::box_coord),
+          shapes::vertex_attrib_kind::pivot),
         {1.F, 1.F, 1.F},
         {10, 10, 10}))));
 
