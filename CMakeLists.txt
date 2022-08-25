@@ -21,6 +21,7 @@ add_subdirectory(submodules)
 
 include(EAGineCoreCommon)
 include(OGLplusBaking)
+find_package(EAGineGLFW3)
 
 add_subdirectory(assets)
 add_subdirectory(include)

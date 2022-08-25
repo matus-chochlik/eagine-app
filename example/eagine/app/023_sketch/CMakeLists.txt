@@ -6,18 +6,28 @@
 oglplus_add_glsl_program(sketch)
 
 add_executable(app-023_sketch main.cpp resources.cpp)
+add_dependencies(app-023_sketch eagine-app-examples)
+
 eagine_embed_target_resources(
 	TARGET app-023_sketch
 	INPUT_TARGETS sketch
 )
 eagine_add_exe_analysis(app-023_sketch)
 
-add_dependencies(app-023_sketch eagine-app-examples)
-
-target_link_libraries(
-	app-023_sketch
-	PUBLIC EAGine::App
-)
+if(${WITH_MODULES})
+	eagine_target_modules(
+		app-023_sketch
+		eagine.core
+		eagine.shapes
+		eagine.oglplus
+		eagine.app
+	)
+else()
+	target_link_libraries(
+		app-023_sketch
+		PUBLIC EAGine::App
+	)
+endif()
 
 set_target_properties(
 	app-023_sketch

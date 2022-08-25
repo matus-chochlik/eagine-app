@@ -5,15 +5,24 @@
 #
 
 add_executable(app-003_checker main.cpp)
+add_dependencies(app-003_checker eagine-app-examples)
+
 eagine_embed_target_resources(TARGET app-003_checker)
 eagine_add_exe_analysis(app-003_checker)
 
-add_dependencies(app-003_checker eagine-app-examples)
-
-target_link_libraries(
-	app-003_checker
-	PUBLIC EAGine::App
-)
+if(${WITH_MODULES})
+	eagine_target_modules(
+		app-003_checker
+		eagine.core
+		eagine.oglplus
+		eagine.app
+	)
+else()
+	target_link_libraries(
+		app-003_checker
+		PUBLIC EAGine::App
+	)
+endif()
 
 set_target_properties(
 	app-003_checker

@@ -9,6 +9,7 @@ configure_file(
 )
 
 add_executable(app-018_uv_map_hydrant main.cpp)
+add_dependencies(app-018_uv_map_hydrant eagine-app-examples)
 
 eagine_embed_target_resources(
 	TARGET app-018_uv_map_hydrant
@@ -17,12 +18,20 @@ eagine_embed_target_resources(
 )
 eagine_add_exe_analysis(app-018_uv_map_hydrant)
 
-add_dependencies(app-018_uv_map_hydrant eagine-app-examples)
-
-target_link_libraries(
-	app-018_uv_map_hydrant
-	PUBLIC EAGine::App
-)
+if(${WITH_MODULES})
+	eagine_target_modules(
+		app-018_uv_map_hydrant
+		eagine.core
+		eagine.shapes
+		eagine.oglplus
+		eagine.app
+	)
+else()
+	target_link_libraries(
+		app-018_uv_map_hydrant
+		PUBLIC EAGine::App
+	)
+endif()
 
 set_target_properties(
 	app-018_uv_map_hydrant

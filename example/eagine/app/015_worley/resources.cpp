@@ -8,9 +8,11 @@
 
 #include "resources.hpp"
 
+#if !EAGINE_APP_MODULE
 #include <eagine/app/context.hpp>
 #include <eagine/embed.hpp>
 #include <eagine/oglplus/glsl/string_ref.hpp>
+#endif
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
@@ -45,9 +47,9 @@ void random_texture::clean_up(execution_context&, video_context& vc) {
     gl.delete_textures(std::move(random));
 }
 //------------------------------------------------------------------------------
-// voronoi program
+// worley program
 //------------------------------------------------------------------------------
-void voronoi_program::init(execution_context&, video_context& vc) {
+void worley_program::init(execution_context&, video_context& vc) {
     const auto& [gl, GL] = vc.gl_api();
 
     // vertex shader
@@ -73,7 +75,7 @@ void voronoi_program::init(execution_context&, video_context& vc) {
     gl.get_uniform_location(prog, "Scale") >> scale_loc;
 }
 //------------------------------------------------------------------------------
-void voronoi_program::clean_up(execution_context&, video_context& vc) {
+void worley_program::clean_up(execution_context&, video_context& vc) {
     const auto& gl = vc.gl_api();
     gl.delete_shader(std::move(fs));
     gl.delete_shader(std::move(vs));

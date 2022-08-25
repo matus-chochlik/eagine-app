@@ -8,15 +8,25 @@ configure_file(
 	"${CMAKE_CURRENT_BINARY_DIR}/monkey.json"
 )
 add_executable(app-032_translucent_arrow main.cpp resources.cpp)
+add_dependencies(app-032_translucent_arrow eagine-app-examples)
+
 eagine_embed_target_resources(TARGET app-032_translucent_arrow PACKED)
 eagine_add_exe_analysis(app-032_translucent_arrow)
 
-add_dependencies(app-032_translucent_arrow eagine-app-examples)
-
-target_link_libraries(
-	app-032_translucent_arrow
-	PUBLIC EAGine::App
-)
+if(${WITH_MODULES})
+	eagine_target_modules(
+		app-032_translucent_arrow
+		eagine.core
+		eagine.shapes
+		eagine.oglplus
+		eagine.app
+	)
+else()
+	target_link_libraries(
+		app-032_translucent_arrow
+		PUBLIC EAGine::App
+	)
+endif()
 
 set_target_properties(
 	app-032_translucent_arrow

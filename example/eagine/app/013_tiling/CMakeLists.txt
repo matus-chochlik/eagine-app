@@ -5,6 +5,7 @@
 #
 
 add_executable(app-013_tiling main.cpp)
+add_dependencies(app-013_tiling eagine-app-examples)
 
 eagine_embed_target_resources(
 	TARGET app-013_tiling
@@ -18,12 +19,20 @@ eagine_embed_target_resources(
 )
 eagine_add_exe_analysis(app-013_tiling)
 
-add_dependencies(app-013_tiling eagine-app-examples)
-
-target_link_libraries(
-	app-013_tiling
-	PUBLIC EAGine::App
-)
+if(${WITH_MODULES})
+	eagine_target_modules(
+		app-013_tiling
+		eagine.core
+		eagine.shapes
+		eagine.oglplus
+		eagine.app
+	)
+else()
+	target_link_libraries(
+		app-013_tiling
+		PUBLIC EAGine::App
+	)
+endif()
 
 set_target_properties(
 	app-013_tiling

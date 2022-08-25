@@ -6,6 +6,12 @@
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
 
+#if EAGINE_APP_MODULE
+import eagine.core;
+import eagine.shapes;
+import eagine.oglplus;
+import eagine.app;
+#else
 #include <eagine/oglplus/gl.hpp>
 #include <eagine/oglplus/gl_api.hpp>
 
@@ -21,6 +27,7 @@
 #include <eagine/shapes/value_tree.hpp>
 #include <eagine/timeout.hpp>
 #include <eagine/value_tree/json.hpp>
+#endif
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
@@ -90,13 +97,14 @@ example_occlusion::example_occlusion(
         if(shape_file_path) {
             if(const auto json_content{file_contents(shape_file_path)}) {
                 if(const auto json_text = as_chars(json_content.block())) {
-                    return valtree::from_json_text(json_text, ec.as_parent());
+                    return valtree::from_json_text(
+                      json_text, ec.main_context());
                 }
             }
         }
         const auto json_src{embed<"ShapeJson">("traffic_cone.json")};
         return valtree::from_json_text(
-          as_chars(json_src.unpack(ec)), ec.as_parent());
+          as_chars(json_src.unpack(ec)), ec.main_context());
     };
 
     oglplus::shape_generator shape(
@@ -283,4 +291,13 @@ auto establish(main_ctx&) -> std::unique_ptr<launchpad> {
     return {std::make_unique<example_launchpad>()};
 }
 //------------------------------------------------------------------------------
+auto example_main(main_ctx& ctx) -> int {
+    return default_main(ctx, establish(ctx));
+}
 } // namespace eagine::app
+
+#if EAGINE_APP_MODULE
+auto main(int argc, const char** argv) -> int {
+    return eagine::default_main(argc, argv, eagine::app::example_main);
+}
+#endif

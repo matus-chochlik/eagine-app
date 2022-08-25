@@ -5,6 +5,8 @@
 #
 oglplus_add_glsl_program(single_pass_edges)
 add_executable(app-022_single_pass_edges main.cpp resources.cpp)
+add_dependencies(app-022_single_pass_edges eagine-app-examples)
+
 eagine_embed_target_resources(
 	TARGET app-022_single_pass_edges
 	INPUT_TARGETS single_pass_edges
@@ -12,12 +14,20 @@ eagine_embed_target_resources(
 )
 eagine_add_exe_analysis(app-022_single_pass_edges)
 
-add_dependencies(app-022_single_pass_edges eagine-app-examples)
-
-target_link_libraries(
-	app-022_single_pass_edges
-	PUBLIC EAGine::App
-)
+if(${WITH_MODULES})
+	eagine_target_modules(
+		app-022_single_pass_edges
+		eagine.core
+		eagine.shapes
+		eagine.oglplus
+		eagine.app
+	)
+else()
+	target_link_libraries(
+		app-022_single_pass_edges
+		PUBLIC EAGine::App
+	)
+endif()
 
 set_target_properties(
 	app-022_single_pass_edges

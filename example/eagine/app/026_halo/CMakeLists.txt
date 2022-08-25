@@ -7,6 +7,8 @@ oglplus_add_glsl_program(halo_surface)
 oglplus_add_glsl_program(halo_halo)
 
 add_executable(app-026_halo main.cpp resources.cpp)
+add_dependencies(app-026_halo eagine-app-examples)
+
 eagine_embed_target_resources(
 	TARGET app-026_halo
 	INPUT_TARGETS halo_surface halo_halo
@@ -14,12 +16,20 @@ eagine_embed_target_resources(
 )
 eagine_add_exe_analysis(app-026_halo)
 
-add_dependencies(app-026_halo eagine-app-examples)
-
-target_link_libraries(
-	app-026_halo
-	PUBLIC EAGine::App
-)
+if(${WITH_MODULES})
+	eagine_target_modules(
+		app-026_halo
+		eagine.core
+		eagine.shapes
+		eagine.oglplus
+		eagine.app
+	)
+else()
+	target_link_libraries(
+		app-026_halo
+		PUBLIC EAGine::App
+	)
+endif()
 
 set_target_properties(
 	app-026_halo

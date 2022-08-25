@@ -5,15 +5,25 @@
 #
 
 add_executable(app-007_cube main.cpp)
+add_dependencies(app-007_cube eagine-app-examples)
+
 eagine_embed_target_resources(TARGET app-007_cube)
 eagine_add_exe_analysis(app-007_cube)
 
-add_dependencies(app-007_cube eagine-app-examples)
-
-target_link_libraries(
-	app-007_cube
-	PUBLIC EAGine::App
-)
+if(${WITH_MODULES})
+	eagine_target_modules(
+		app-007_cube
+		eagine.core
+		eagine.shapes
+		eagine.oglplus
+		eagine.app
+	)
+else()
+	target_link_libraries(
+		app-007_cube
+		PUBLIC EAGine::App
+	)
+endif()
 
 set_target_properties(
 	app-007_cube

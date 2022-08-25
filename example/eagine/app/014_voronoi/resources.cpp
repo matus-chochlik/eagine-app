@@ -8,9 +8,11 @@
 
 #include "resources.hpp"
 
+#if !EAGINE_APP_MODULE
 #include <eagine/app/context.hpp>
 #include <eagine/embed.hpp>
 #include <eagine/oglplus/glsl/string_ref.hpp>
+#endif
 
 namespace eagine::app {
 //------------------------------------------------------------------------------

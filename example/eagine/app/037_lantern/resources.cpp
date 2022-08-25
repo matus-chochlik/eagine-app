@@ -8,6 +8,7 @@
 
 #include "resources.hpp"
 
+#if !EAGINE_APP_MODULE
 #include <eagine/app/camera.hpp>
 #include <eagine/app/context.hpp>
 #include <eagine/embed.hpp>
@@ -16,6 +17,7 @@
 #include <eagine/shapes/screen.hpp>
 #include <eagine/shapes/value_tree.hpp>
 #include <eagine/value_tree/json.hpp>
+#endif
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
@@ -140,7 +142,8 @@ void pumpkin_geometry::init(video_context& vc) {
     oglplus::shape_generator shape(
       glapi,
       shapes::from_value_tree(
-        valtree::from_json_text(json_text, vc.parent()), vc.parent()));
+        valtree::from_json_text(json_text, vc.parent().main_context()),
+        vc.parent()));
     _bounding_sphere = shape.bounding_sphere();
 
     // geometry

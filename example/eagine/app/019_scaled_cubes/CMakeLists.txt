@@ -5,6 +5,8 @@
 #
 oglplus_add_glsl_program(scaled_cubes)
 add_executable(app-019_scaled_cubes main.cpp resources.cpp)
+add_dependencies(app-019_scaled_cubes eagine-app-examples)
+
 eagine_embed_target_resources(
 	TARGET app-019_scaled_cubes
 	INPUT_TARGETS scaled_cubes
@@ -12,12 +14,20 @@ eagine_embed_target_resources(
 )
 eagine_add_exe_analysis(app-019_scaled_cubes)
 
-add_dependencies(app-019_scaled_cubes eagine-app-examples)
-
-target_link_libraries(
-	app-019_scaled_cubes
-	PUBLIC EAGine::App
-)
+if(${WITH_MODULES})
+	eagine_target_modules(
+		app-019_scaled_cubes
+		eagine.core
+		eagine.shapes
+		eagine.oglplus
+		eagine.app
+	)
+else()
+	target_link_libraries(
+		app-019_scaled_cubes
+		PUBLIC EAGine::App
+	)
+endif()
 
 set_target_properties(
 	app-019_scaled_cubes

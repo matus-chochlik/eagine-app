@@ -5,14 +5,23 @@
 #
 
 add_executable(app-001_clear main.cpp)
-eagine_add_exe_analysis(app-001_clear)
-
 add_dependencies(app-001_clear eagine-app-examples)
 
-target_link_libraries(
-	app-001_clear
-	PUBLIC EAGine::App
-)
+eagine_add_exe_analysis(app-001_clear)
+
+if(${WITH_MODULES})
+	eagine_target_modules(
+		app-001_clear
+		eagine.core
+		eagine.oglplus
+		eagine.app
+	)
+else()
+	target_link_libraries(
+		app-001_clear
+		PUBLIC EAGine::App
+	)
+endif()
 
 set_target_properties(
 	app-001_clear

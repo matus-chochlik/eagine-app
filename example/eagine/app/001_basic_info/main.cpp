@@ -5,6 +5,12 @@
 /// See accompanying file LICENSE_1_0.txt or copy at
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
+#if EAGINE_APP_MODULE
+import eagine.core;
+import eagine.oglplus;
+import eagine.oalplus;
+import eagine.app;
+#else
 #include <eagine/app/main.hpp>
 #include <eagine/app_config.hpp>
 #include <eagine/timeout.hpp>
@@ -14,6 +20,7 @@
 
 #include <eagine/oalplus/al.hpp>
 #include <eagine/oalplus/al_api.hpp>
+#endif
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
@@ -160,11 +167,26 @@ public:
                     if(ac.init_al_api()) {
                         if(check_requirements(ac)) {
                             return {std::make_unique<example_info>(ec, vc, ac)};
+                        } else {
+                            ec.log_error("AL requirements not met");
                         }
                         ac.end();
+                    } else {
+                        ec.log_error("failed to initialize AL API");
                     }
+                } else {
+                    ec.log_error("GL requirements not met");
                 }
                 vc.end();
+            } else {
+                ec.log_error("failed to initialize GL API");
+            }
+        } else {
+            if(!opt_vc) {
+                ec.log_error("missing video context");
+            }
+            if(!opt_ac) {
+                ec.log_error("missing audio context");
             }
         }
         return {};
@@ -175,4 +197,14 @@ auto establish(main_ctx&) -> std::unique_ptr<launchpad> {
     return {std::make_unique<example_launchpad>()};
 }
 //------------------------------------------------------------------------------
+auto example_main(main_ctx& ctx) -> int {
+    return default_main(ctx, establish(ctx));
+}
+
 } // namespace eagine::app
+
+#if EAGINE_APP_MODULE
+auto main(int argc, const char** argv) -> int {
+    return eagine::default_main(argc, argv, eagine::app::example_main);
+}
+#endif

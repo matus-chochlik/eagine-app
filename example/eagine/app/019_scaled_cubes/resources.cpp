@@ -8,6 +8,9 @@
 
 #include "resources.hpp"
 
+#if EAGINE_APP_MODULE
+import <cmath>;
+#else
 #include <eagine/app/camera.hpp>
 #include <eagine/app/context.hpp>
 #include <eagine/embed.hpp>
@@ -18,6 +21,7 @@
 #include <eagine/shapes/centered.hpp>
 #include <eagine/shapes/cube.hpp>
 #include <eagine/shapes/reboxed.hpp>
+#endif
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
@@ -101,8 +105,7 @@ void cubes_geometry::init(execution_context& ec, video_context& vc) {
       shapes::rebox(shapes::center(eagine::shapes::ortho_array_xyz(
         shapes::unit_cube(
           shapes::vertex_attrib_kind::position |
-          shapes::vertex_attrib_kind::pivot |
-          shapes::vertex_attrib_kind::box_coord),
+          shapes::vertex_attrib_kind::pivot),
         {1.F, 1.F, 1.F},
         {10, 10, 10}))));
 

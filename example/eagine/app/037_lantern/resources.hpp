@@ -9,6 +9,12 @@
 #ifndef OGLPLUS_EXAMPLE_RESOURCES_HPP // NOLINT(llvm-header-guard)
 #define OGLPLUS_EXAMPLE_RESOURCES_HPP
 
+#if EAGINE_APP_MODULE
+import eagine.core;
+import eagine.shapes;
+import eagine.oglplus;
+import eagine.app;
+#else
 #include <eagine/oglplus/gl.hpp>
 #include <eagine/oglplus/gl_api.hpp>
 
@@ -17,6 +23,7 @@
 #include <eagine/app/geometry.hpp>
 #include <eagine/app/gpu_program.hpp>
 #include <eagine/oglplus/math/primitives.hpp>
+#endif
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
