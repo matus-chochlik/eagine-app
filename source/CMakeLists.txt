@@ -8,30 +8,22 @@ else()
 	add_subdirectory(lib)
 endif()
 
-add_library(EAGine::App INTERFACE IMPORTED GLOBAL)
-target_link_libraries(EAGine::App INTERFACE eagine-app-headers)
+set(EAGINE_APP_EXPORT_TARGETS)
 
 if(TARGET eagine-app)
+	add_library(EAGine::App INTERFACE IMPORTED GLOBAL)
 	target_link_libraries(
 		EAGine::App
 		INTERFACE
+			eagine-app-headers
 			eagine-app
 	)
-
-	get_target_property(EAGINE_CORE_LIBS EAGine::Core INTERFACE_LINK_LIBRARIES)
-
-	install(
-		TARGETS
+	list(
+		APPEND EAGINE_APP_EXPORT_TARGETS
 			eagine-app-imgui
 			eagine-app-private-headers
 			eagine-app-headers
 			eagine-app
-			EXPORT App
-		LIBRARY DESTINATION lib
-		ARCHIVE DESTINATION lib
-		RUNTIME DESTINATION bin
-		INCLUDES DESTINATION include
-		PUBLIC_HEADER DESTINATION include
 	)
 
 	install(
@@ -41,3 +33,14 @@ if(TARGET eagine-app)
 		DESTINATION lib/cmake/EAGine
 	)
 endif()
+
+install(
+	TARGETS ${EAGINE_APP_EXPORT_TARGETS}
+	EXPORT App
+	LIBRARY DESTINATION lib
+	ARCHIVE DESTINATION lib
+	RUNTIME DESTINATION bin
+	INCLUDES DESTINATION include
+	PUBLIC_HEADER DESTINATION include
+)
+
