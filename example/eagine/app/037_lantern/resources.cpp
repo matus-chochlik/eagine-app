@@ -25,8 +25,8 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 void draw_program::init(video_context& vc) {
     // vertex shader
-    auto vs_source = embed<"DrawVert">("draw_vertex.glsl");
-    auto fs_source = embed<"DrawFrag">("draw_fragment.glsl");
+    const auto vs_source = search_resource("DrawVert");
+    const auto fs_source = search_resource("DrawFrag");
 
     const auto& GL = vc.gl_api();
 
@@ -86,8 +86,8 @@ void draw_program::bind_wrap_coord_location(
 //------------------------------------------------------------------------------
 void screen_program::init(video_context& vc) {
     // vertex shader
-    auto vs_source = embed<"ScreenVert">("screen_vertex.glsl");
-    auto fs_source = embed<"ScreenFrag">("screen_fragment.glsl");
+    const auto vs_source = search_resource("ScreenVert");
+    const auto fs_source = search_resource("ScreenFrag");
 
     const auto& GL = vc.gl_api();
 
@@ -137,7 +137,7 @@ void pumpkin_geometry::init(video_context& vc) {
     const auto& [gl, GL] = glapi;
 
     const auto json_text =
-      as_chars(embed<"ShapeJson">("pumpkin.json").unpack(vc.parent()));
+      as_chars(search_resource("ShapeJson").unpack(vc.parent()));
 
     oglplus::shape_generator shape(
       glapi,
@@ -150,7 +150,7 @@ void pumpkin_geometry::init(video_context& vc) {
     geometry_and_bindings::init(shape, vc);
 
     // textures
-    const auto tex_src{embed<"PumpkinTex">("pumpkin")};
+    const auto tex_src{search_resource("PumpkinTex")};
 
     gl.gen_textures() >> _tex;
     gl.active_texture(GL.texture0 + tex_unit());

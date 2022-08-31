@@ -14,6 +14,13 @@ add_dependencies(app-037_lantern eagine-app-examples)
 eagine_embed_target_resources(
 	TARGET app-037_lantern
 	INPUT_TARGETS pumpkin
+	RESOURCES
+		DrawVert "draw_vertex.glsl"
+		DrawFrag "draw_fragment.glsl"
+		ScreenVert "screen_vertex.glsl"
+		ScreenFrag "screen_fragment.glsl"
+		ShapeJson "pumpkin.json"
+		PumpkinTex "pumpkin"
 	PACKED
 )
 eagine_add_exe_analysis(app-037_lantern)
