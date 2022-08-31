@@ -88,7 +88,7 @@ example_tiling::example_tiling(execution_context& ec, video_context& vc)
     cube.use(glapi);
 
     // vertex shader
-    auto vs_source = embed<"VertShader">("vertex.glsl");
+    auto vs_source = search_resource("VertShader");
     oglplus::owned_shader_name vs;
     gl.create_shader(GL.vertex_shader) >> vs;
     auto cleanup_vs = gl.delete_shader.raii(vs);
@@ -96,7 +96,7 @@ example_tiling::example_tiling(execution_context& ec, video_context& vc)
     gl.compile_shader(vs);
 
     // fragment shader
-    auto fs_source = embed<"FragShader">("fragment.glsl");
+    auto fs_source = search_resource("FragShader");
     oglplus::owned_shader_name fs;
     gl.create_shader(GL.fragment_shader) >> fs;
     auto cleanup_fs = gl.delete_shader.raii(fs);
@@ -122,7 +122,7 @@ example_tiling::example_tiling(execution_context& ec, video_context& vc)
       "TexCoord");
 
     // tiling texture
-    const auto tiling_tex_src{embed<"TilingTex">("tiles_r4_s1024_a6")};
+    const auto tiling_tex_src{search_resource("TilingTex")};
     const auto tiling_img{
       oglplus::texture_image_block(tiling_tex_src.unpack(ec))};
 
@@ -140,10 +140,10 @@ example_tiling::example_tiling(execution_context& ec, video_context& vc)
 
     // tile-set textures
     const std::array<embedded_resource, 4> tileset_srcs{
-      embed<"Nodes512">("tileset_nodes16"),
-      embed<"Blocks512">("tileset_blocks16"),
-      embed<"Conncts512">("tileset_connections16"),
-      embed<"Thicket512">("tileset_thicket16")};
+      search_resource("Nodes512"),
+      search_resource("Blocks512"),
+      search_resource("Conncts512"),
+      search_resource("Thicket512")};
 
     gl.gen_textures(tileset_texs.raw_handles());
     for(const auto idx : integer_range(tileset_srcs.size())) {
