@@ -15,6 +15,14 @@ eagine_embed_target_resources(
 	tileset_blocks16
 	tileset_nodes16
 	tileset_connections16
+	RESOURCES
+    	VertShader "vertex.glsl"
+		FragShader "fragment.glsl"
+		TilingTex "tiles_r4_s1024_a6"
+		Nodes512 "tileset_nodes16"
+		Blocks512 "tileset_blocks16"
+		Conncts51 "tileset_connections16"
+		Thicket512 "tileset_thicket16"
 	PACKED
 )
 eagine_add_exe_analysis(app-013_tiling)
