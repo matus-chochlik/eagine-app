@@ -151,6 +151,17 @@ eagine_add_module(
 )
 
 eagine_add_module(
+	eagine.app PARTITION resource_transfer
+	IMPORTS
+		eagine.core.types
+		eagine.core.memory
+		eagine.core.utility
+		eagine.core.runtime
+		eagine.shapes
+		eagine.oglplus
+)
+
+eagine_add_module(
 	eagine.app
 	PP_NAME APP
 	INTERFACES app
@@ -169,6 +180,7 @@ eagine_add_module(
 		geometry
 		camera
 		background
+		resource_transfer
 	SOURCES
 		options_impl
 		state_impl
@@ -179,6 +191,7 @@ eagine_add_module(
 		context_impl
 		camera_impl
 		background_impl
+		resource_transfer_impl
 	IMPORTS
 		eagine.core.string
 		eagine.core.container

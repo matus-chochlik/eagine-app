@@ -21,3 +21,4 @@ export import :framebuffer;
 export import :geometry;
 export import :camera;
 export import :background;
+export import :resource_transfer;
