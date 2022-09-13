@@ -32,7 +32,7 @@ export struct resource_loader_signals {
     signal<void(identifier_t, oglplus::program_name) noexcept> program_loaded;
 };
 //------------------------------------------------------------------------------
-export class resource_loader {
+export class resource_loader : public resource_loader_signals {
 public:
     auto request_gl_buffer(const url& locator) noexcept
       -> std::pair<identifier_t, const url&>;

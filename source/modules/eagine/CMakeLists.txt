@@ -75,10 +75,22 @@ eagine_add_module(
 )
 
 eagine_add_module(
+	eagine.app PARTITION resource_transfer
+	IMPORTS
+		eagine.core.types
+		eagine.core.memory
+		eagine.core.utility
+		eagine.core.runtime
+		eagine.shapes
+		eagine.oglplus
+)
+
+eagine_add_module(
 	eagine.app PARTITION context
 	IMPORTS
 		interface options
 		state input
+		resource_transfer
 		eagine.core.types
 		eagine.core.memory
 		eagine.core.identifier
@@ -151,17 +163,6 @@ eagine_add_module(
 )
 
 eagine_add_module(
-	eagine.app PARTITION resource_transfer
-	IMPORTS
-		eagine.core.types
-		eagine.core.memory
-		eagine.core.utility
-		eagine.core.runtime
-		eagine.shapes
-		eagine.oglplus
-)
-
-eagine_add_module(
 	eagine.app
 	PP_NAME APP
 	INTERFACES app
@@ -173,6 +174,7 @@ eagine_add_module(
 		interface
 		implementation
 		framedump_raw
+		resource_transfer
 		context
 		main
 		gpu_program
@@ -180,7 +182,6 @@ eagine_add_module(
 		geometry
 		camera
 		background
-		resource_transfer
 	SOURCES
 		options_impl
 		state_impl
@@ -188,10 +189,10 @@ eagine_add_module(
 		openal_oalplus_impl
 		opengl_eglplus_impl
 		opengl_glfw3_impl
+		resource_transfer_impl
 		context_impl
 		camera_impl
 		background_impl
-		resource_transfer_impl
 	IMPORTS
 		eagine.core.string
 		eagine.core.container
