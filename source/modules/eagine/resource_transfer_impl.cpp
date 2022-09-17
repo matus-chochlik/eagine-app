@@ -24,10 +24,8 @@ auto resource_loader::request_shape_generator(url locator) noexcept
     shapes::vertex_attrib_kinds attrs;
     for(const auto& info : enumerator_mapping(
           std::type_identity<shapes::vertex_attrib_kind>{}, default_selector)) {
-        if(const auto pos{args.find(info.name)}; pos != args.end()) {
-            if(string_has_value(std::get<1>(*pos), true)) {
-                attrs.set(info.enumerator);
-            }
+        if(args.arg_has_value(info.name, true)) {
+            attrs.set(info.enumerator);
         }
     }
 
