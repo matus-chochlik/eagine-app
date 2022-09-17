@@ -9,6 +9,7 @@ module eagine.app;
 
 import eagine.core.types;
 import eagine.core.memory;
+import eagine.core.string;
 import eagine.core.reflection;
 import eagine.core.utility;
 import eagine.core.runtime;
@@ -24,6 +25,9 @@ auto resource_loader::request_shape_generator(url locator) noexcept
     for(const auto& info : enumerator_mapping(
           std::type_identity<shapes::vertex_attrib_kind>{}, default_selector)) {
         if(const auto pos{args.find(info.name)}; pos != args.end()) {
+            if(string_has_value(std::get<1>(*pos), true)) {
+                attrs.set(info.enumerator);
+            }
         }
     }
 
