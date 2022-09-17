@@ -79,10 +79,12 @@ eagine_add_module(
 	IMPORTS
 		eagine.core.types
 		eagine.core.memory
+		eagine.core.reflection
 		eagine.core.utility
 		eagine.core.runtime
 		eagine.shapes
 		eagine.oglplus
+		eagine.msgbus
 )
 
 eagine_add_module(
