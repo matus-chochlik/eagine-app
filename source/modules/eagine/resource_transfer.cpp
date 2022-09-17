@@ -80,6 +80,8 @@ public:
     auto request_gl_program(url locator) noexcept -> resource_request_result;
 
 private:
+    std::vector<std::tuple<identifier_t, std::shared_ptr<shapes::generator>>>
+      _shape_generators;
 };
 //------------------------------------------------------------------------------
 } // namespace eagine::app

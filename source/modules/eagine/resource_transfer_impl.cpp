@@ -32,6 +32,18 @@ auto resource_loader::request_shape_generator(url locator) noexcept
     std::shared_ptr<shapes::generator> gen;
     if(locator.has_path("/cube")) {
         gen = shapes::unit_cube(attrs);
+    } else if(locator.has_path("/skybox")) {
+        gen = shapes::skybox(attrs);
+    } else if(locator.has_path("/torus")) {
+        gen = shapes::unit_torus(attrs);
+    } else if(locator.has_path("/sphere")) {
+        gen = shapes::unit_sphere(attrs);
+    }
+
+    if(gen) {
+        const auto request_id{get_request_id()};
+        _shape_generators.emplace_back(request_id, std::move(gen));
+        return {request_id, std::move(locator)};
     }
     return {0, std::move(locator)};
 }
@@ -63,6 +75,11 @@ auto resource_loader::request_gl_program(url locator) noexcept
 //------------------------------------------------------------------------------
 auto resource_loader::update() noexcept -> work_done {
     some_true something_done{base::update()};
+
+    for(auto& [request_id, shape_gen] : _shape_generators) {
+        shape_loaded(request_id, shape_gen);
+    }
+    _shape_generators.clear();
 
     return something_done;
 }
