@@ -20,27 +20,7 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 auto resource_loader::request_shape_generator(url locator) noexcept
   -> resource_request_result {
-    const auto args{locator.query()};
-    shapes::vertex_attrib_kinds attrs;
-    for(const auto& info : enumerator_mapping(
-          std::type_identity<shapes::vertex_attrib_kind>{}, default_selector)) {
-        if(args.arg_has_value(info.name, true)) {
-            attrs.set(info.enumerator);
-        }
-    }
-
-    std::shared_ptr<shapes::generator> gen;
-    if(locator.has_path("/cube")) {
-        gen = shapes::unit_cube(attrs);
-    } else if(locator.has_path("/skybox")) {
-        gen = shapes::skybox(attrs);
-    } else if(locator.has_path("/torus")) {
-        gen = shapes::unit_torus(attrs);
-    } else if(locator.has_path("/sphere")) {
-        gen = shapes::unit_sphere(attrs);
-    }
-
-    if(gen) {
+    if(auto gen{shapes::shape_from(url, main_context())}) {
         const auto request_id{get_request_id()};
         _shape_generators.emplace_back(request_id, std::move(gen));
         return {request_id, std::move(locator)};
