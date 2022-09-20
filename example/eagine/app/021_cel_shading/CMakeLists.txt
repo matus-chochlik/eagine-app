@@ -14,20 +14,13 @@ eagine_embed_target_resources(
 )
 eagine_add_exe_analysis(app-021_cel_shading)
 
-if(${WITH_MODULES})
-	eagine_target_modules(
-		app-021_cel_shading
-		eagine.core
-		eagine.shapes
-		eagine.oglplus
-		eagine.app
-	)
-else()
-	target_link_libraries(
-		app-021_cel_shading
-		PUBLIC EAGine::App
-	)
-endif()
+eagine_target_modules(
+	app-021_cel_shading
+	eagine.core
+	eagine.shapes
+	eagine.oglplus
+	eagine.app
+)
 
 set_target_properties(
 	app-021_cel_shading

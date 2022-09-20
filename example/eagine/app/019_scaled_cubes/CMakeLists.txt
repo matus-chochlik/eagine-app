@@ -14,20 +14,13 @@ eagine_embed_target_resources(
 )
 eagine_add_exe_analysis(app-019_scaled_cubes)
 
-if(${WITH_MODULES})
-	eagine_target_modules(
-		app-019_scaled_cubes
-		eagine.core
-		eagine.shapes
-		eagine.oglplus
-		eagine.app
-	)
-else()
-	target_link_libraries(
-		app-019_scaled_cubes
-		PUBLIC EAGine::App
-	)
-endif()
+eagine_target_modules(
+	app-019_scaled_cubes
+	eagine.core
+	eagine.shapes
+	eagine.oglplus
+	eagine.app
+)
 
 set_target_properties(
 	app-019_scaled_cubes

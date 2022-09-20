@@ -14,19 +14,12 @@ add_dependencies(app-017_occlusion eagine-app-examples)
 eagine_embed_target_resources(TARGET app-017_occlusion PACKED)
 eagine_add_exe_analysis(app-017_occlusion)
 
-if(${WITH_MODULES})
-	eagine_target_modules(
-		app-017_occlusion
-		eagine.core
-		eagine.oglplus
-		eagine.app
-	)
-else()
-	target_link_libraries(
-		app-017_occlusion
-		PUBLIC EAGine::App
-	)
-endif()
+eagine_target_modules(
+	app-017_occlusion
+	eagine.core
+	eagine.oglplus
+	eagine.app
+)
 
 set_target_properties(
 	app-017_occlusion

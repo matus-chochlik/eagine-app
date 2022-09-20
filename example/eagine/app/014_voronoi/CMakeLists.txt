@@ -10,19 +10,12 @@ add_dependencies(app-014_voronoi eagine-app-examples)
 eagine_embed_target_resources(TARGET app-014_voronoi)
 eagine_add_exe_analysis(app-014_voronoi)
 
-if(${WITH_MODULES})
-	eagine_target_modules(
-		app-014_voronoi
-		eagine.core
-		eagine.oglplus
-		eagine.app
-	)
-else()
-	target_link_libraries(
-		app-014_voronoi
-		PUBLIC EAGine::App
-	)
-endif()
+eagine_target_modules(
+	app-014_voronoi
+	eagine.core
+	eagine.oglplus
+	eagine.app
+)
 
 set_target_properties(
 	app-014_voronoi

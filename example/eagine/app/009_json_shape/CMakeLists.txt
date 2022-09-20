@@ -10,20 +10,13 @@ add_dependencies(app-009_json_shape eagine-app-examples)
 eagine_embed_target_resources(TARGET app-009_json_shape)
 eagine_add_exe_analysis(app-009_json_shape)
 
-if(${WITH_MODULES})
-	eagine_target_modules(
-		app-009_json_shape
-		eagine.core
-		eagine.shapes
-		eagine.oglplus
-		eagine.app
-	)
-else()
-	target_link_libraries(
-		app-009_json_shape
-		PUBLIC EAGine::App
-	)
-endif()
+eagine_target_modules(
+	app-009_json_shape
+	eagine.core
+	eagine.shapes
+	eagine.oglplus
+	eagine.app
+)
 
 set_target_properties(
 	app-009_json_shape

@@ -10,20 +10,13 @@ add_dependencies(app-007_cube eagine-app-examples)
 eagine_embed_target_resources(TARGET app-007_cube)
 eagine_add_exe_analysis(app-007_cube)
 
-if(${WITH_MODULES})
-	eagine_target_modules(
-		app-007_cube
-		eagine.core
-		eagine.shapes
-		eagine.oglplus
-		eagine.app
-	)
-else()
-	target_link_libraries(
-		app-007_cube
-		PUBLIC EAGine::App
-	)
-endif()
+eagine_target_modules(
+	app-007_cube
+	eagine.core
+	eagine.shapes
+	eagine.oglplus
+	eagine.app
+)
 
 set_target_properties(
 	app-007_cube

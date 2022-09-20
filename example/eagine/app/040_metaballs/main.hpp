@@ -11,18 +11,9 @@
 
 #include "resources.hpp"
 
-#if EAGINE_APP_MODULE
 import eagine.core;
 import eagine.oglplus;
 import eagine.app;
-#else
-#include <eagine/app/background/icosahedron.hpp>
-#include <eagine/app/camera.hpp>
-#include <eagine/app/interface.hpp>
-#include <eagine/cleanup_group.hpp>
-#include <eagine/oglplus/math/vector.hpp>
-#include <eagine/timeout.hpp>
-#endif
 
 namespace eagine::app {
 //------------------------------------------------------------------------------

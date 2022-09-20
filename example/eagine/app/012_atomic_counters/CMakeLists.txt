@@ -10,19 +10,12 @@ add_dependencies(app-012_atomic_counters eagine-app-examples)
 eagine_embed_target_resources(TARGET app-012_atomic_counters PACKED)
 eagine_add_exe_analysis(app-012_atomic_counters)
 
-if(${WITH_MODULES})
-	eagine_target_modules(
-		app-012_atomic_counters
-		eagine.core
-		eagine.oglplus
-		eagine.app
-	)
-else()
-	target_link_libraries(
-		app-012_atomic_counters
-		PUBLIC EAGine::App
-	)
-endif()
+eagine_target_modules(
+	app-012_atomic_counters
+	eagine.core
+	eagine.oglplus
+	eagine.app
+)
 
 set_target_properties(
 	app-012_atomic_counters

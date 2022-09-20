@@ -10,19 +10,12 @@ add_dependencies(app-010_newton eagine-app-examples)
 eagine_embed_target_resources(TARGET app-010_newton)
 eagine_add_exe_analysis(app-010_newton)
 
-if(${WITH_MODULES})
-	eagine_target_modules(
-		app-010_newton
-		eagine.core
-		eagine.oglplus
-		eagine.app
-	)
-else()
-	target_link_libraries(
-		app-010_newton
-		PUBLIC EAGine::App
-	)
-endif()
+eagine_target_modules(
+	app-010_newton
+	eagine.core
+	eagine.oglplus
+	eagine.app
+)
 
 set_target_properties(
 	app-010_newton

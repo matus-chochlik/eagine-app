@@ -9,10 +9,6 @@
 #include "main.hpp"
 #include "resources.hpp"
 
-#if !EAGINE_APP_MODULE
-#include <eagine/app/main.hpp>
-#endif
-
 namespace eagine::app {
 //------------------------------------------------------------------------------
 // example
@@ -149,8 +145,6 @@ auto example_main(main_ctx& ctx) -> int {
 }
 } // namespace eagine::app
 
-#if EAGINE_APP_MODULE
 auto main(int argc, const char** argv) -> int {
     return eagine::default_main(argc, argv, eagine::app::example_main);
 }
-#endif

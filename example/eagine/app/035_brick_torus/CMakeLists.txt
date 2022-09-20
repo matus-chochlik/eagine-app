@@ -15,20 +15,13 @@ eagine_embed_target_resources(
 )
 eagine_add_exe_analysis(app-035_brick_torus)
 
-if(${WITH_MODULES})
-	eagine_target_modules(
-		app-035_brick_torus
-		eagine.core
-		eagine.shapes
-		eagine.oglplus
-		eagine.app
-	)
-else()
-	target_link_libraries(
-		app-035_brick_torus
-		PUBLIC EAGine::App
-	)
-endif()
+eagine_target_modules(
+	app-035_brick_torus
+	eagine.core
+	eagine.shapes
+	eagine.oglplus
+	eagine.app
+)
 
 set_target_properties(
 	app-035_brick_torus

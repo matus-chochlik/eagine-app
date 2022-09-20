@@ -6,15 +6,6 @@
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
 
-#if !EAGINE_APP_MODULE
-#include <eagine/oglplus/gl.hpp>
-#include <eagine/oglplus/gl_api.hpp>
-
-#include <eagine/app/camera.hpp>
-#include <eagine/app/main.hpp>
-#include <eagine/oglplus/math/matrix.hpp>
-#endif
-
 #include "main.hpp"
 
 namespace eagine::app {
@@ -140,8 +131,6 @@ auto example_main(main_ctx& ctx) -> int {
 }
 } // namespace eagine::app
 
-#if EAGINE_APP_MODULE
 auto main(int argc, const char** argv) -> int {
     return eagine::default_main(argc, argv, eagine::app::example_main);
 }
-#endif

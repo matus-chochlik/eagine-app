@@ -16,20 +16,13 @@ eagine_embed_target_resources(
 )
 eagine_add_exe_analysis(app-024_overdraw)
 
-if(${WITH_MODULES})
-	eagine_target_modules(
-		app-024_overdraw
-		eagine.core
-		eagine.shapes
-		eagine.oglplus
-		eagine.app
-	)
-else()
-	target_link_libraries(
-		app-024_overdraw
-		PUBLIC EAGine::App
-	)
-endif()
+eagine_target_modules(
+	app-024_overdraw
+	eagine.core
+	eagine.shapes
+	eagine.oglplus
+	eagine.app
+)
 
 set_target_properties(
 	app-024_overdraw

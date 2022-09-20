@@ -11,16 +11,6 @@
 
 #include "resources.hpp"
 
-#if !EAGINE_APP_MODULE
-#include <eagine/app/background/icosahedron.hpp>
-#include <eagine/app/camera.hpp>
-#include <eagine/app/interface.hpp>
-#include <eagine/cleanup_group.hpp>
-#include <eagine/math/curve.hpp>
-#include <eagine/oglplus/math/vector.hpp>
-#include <eagine/timeout.hpp>
-#endif
-
 namespace eagine::app {
 //------------------------------------------------------------------------------
 class example : public application {

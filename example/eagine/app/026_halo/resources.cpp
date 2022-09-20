@@ -8,21 +8,6 @@
 
 #include "resources.hpp"
 
-#if !EAGINE_APP_MODULE
-#include <eagine/app/camera.hpp>
-#include <eagine/app/context.hpp>
-#include <eagine/embed.hpp>
-#include <eagine/oglplus/glsl/string_ref.hpp>
-#include <eagine/oglplus/math/matrix_ctrs.hpp>
-#include <eagine/oglplus/shapes/generator.hpp>
-#include <eagine/shapes/adjacency.hpp>
-#include <eagine/shapes/icosahedron.hpp>
-#include <eagine/shapes/torus.hpp>
-#include <eagine/shapes/twisted_torus.hpp>
-#include <eagine/shapes/value_tree.hpp>
-#include <eagine/value_tree/json.hpp>
-#endif
-
 namespace eagine::app {
 //------------------------------------------------------------------------------
 // surface program
