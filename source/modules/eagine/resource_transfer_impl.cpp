@@ -20,7 +20,7 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 auto resource_loader::request_shape_generator(url locator) noexcept
   -> resource_request_result {
-    if(auto gen{shapes::shape_from(url, main_context())}) {
+    if(auto gen{shapes::shape_from(locator, main_context())}) {
         const auto request_id{get_request_id()};
         _shape_generators.emplace_back(request_id, std::move(gen));
         return {request_id, std::move(locator)};
