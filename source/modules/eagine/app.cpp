@@ -14,6 +14,7 @@ export import :state;
 export import :interface;
 export import :implementation;
 export import :framedump_raw;
+export import :resource_transfer;
 export import :context;
 export import :main;
 export import :gpu_program;
