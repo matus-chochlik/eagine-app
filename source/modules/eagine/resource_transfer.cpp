@@ -11,6 +11,7 @@ import eagine.core.types;
 import eagine.core.memory;
 import eagine.core.utility;
 import eagine.core.runtime;
+import eagine.core.main_ctx;
 import eagine.shapes;
 import eagine.oglplus;
 import eagine.msgbus;
@@ -63,23 +64,34 @@ export class resource_loader
     using base = msgbus::resource_data_consumer_node;
 
 public:
+    resource_loader(main_ctx&);
+
     auto update() noexcept -> work_done;
 
     auto request_shape_generator(url locator) noexcept
+      -> resource_request_result;
+
+    auto request_gl_shader_source(url locator) noexcept
       -> resource_request_result;
 
     auto request_gl_buffer(url locator) noexcept -> resource_request_result;
 
     auto request_gl_texture(url locator) noexcept -> resource_request_result;
 
-    auto request_gl_shader_source(url locator) noexcept
-      -> resource_request_result;
-
     auto request_gl_shader(url locator) noexcept -> resource_request_result;
 
     auto request_gl_program(url locator) noexcept -> resource_request_result;
 
 private:
+    void _handle_stream_data_appended(
+      identifier_t blob_id,
+      const span_size_t offset,
+      const memory::span<const memory::const_block>,
+      const msgbus::blob_info& info) noexcept;
+
+    void _handle_stream_finished(identifier_t blob_id) noexcept;
+    void _handle_stream_cancelled(identifier_t blob_id) noexcept;
+
     std::vector<std::tuple<identifier_t, std::shared_ptr<shapes::generator>>>
       _shape_generators;
 };

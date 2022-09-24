@@ -13,10 +13,40 @@ import eagine.core.string;
 import eagine.core.reflection;
 import eagine.core.utility;
 import eagine.core.runtime;
+import eagine.core.main_ctx;
 import eagine.shapes;
 import eagine.oglplus;
+import eagine.msgbus;
 
 namespace eagine::app {
+//------------------------------------------------------------------------------
+void resource_loader::_handle_stream_data_appended(
+  identifier_t blob_id,
+  const span_size_t offset,
+  const memory::span<const memory::const_block>,
+  const msgbus::blob_info& info) noexcept {
+    (void)blob_id;
+    (void)offset;
+    (void)info;
+}
+//------------------------------------------------------------------------------
+void resource_loader::_handle_stream_finished(identifier_t blob_id) noexcept {
+    (void)blob_id;
+}
+//------------------------------------------------------------------------------
+void resource_loader::_handle_stream_cancelled(identifier_t blob_id) noexcept {
+    (void)blob_id;
+}
+//------------------------------------------------------------------------------
+resource_loader::resource_loader(main_ctx& ctx)
+  : resource_data_consumer_node{ctx} {
+    connect<&resource_loader::_handle_stream_data_appended>(
+      this, blob_stream_data_appended);
+    connect<&resource_loader::_handle_stream_finished>(
+      this, blob_stream_finished);
+    connect<&resource_loader::_handle_stream_cancelled>(
+      this, blob_stream_cancelled);
+}
 //------------------------------------------------------------------------------
 auto resource_loader::request_shape_generator(url locator) noexcept
   -> resource_request_result {
@@ -28,17 +58,17 @@ auto resource_loader::request_shape_generator(url locator) noexcept
     return {0, std::move(locator)};
 }
 //------------------------------------------------------------------------------
+auto resource_loader::request_gl_shader_source(url locator) noexcept
+  -> resource_request_result {
+    return {0, std::move(locator)};
+}
+//------------------------------------------------------------------------------
 auto resource_loader::request_gl_buffer(url locator) noexcept
   -> resource_request_result {
     return {0, std::move(locator)};
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request_gl_texture(url locator) noexcept
-  -> resource_request_result {
-    return {0, std::move(locator)};
-}
-//------------------------------------------------------------------------------
-auto resource_loader::request_gl_shader_source(url locator) noexcept
   -> resource_request_result {
     return {0, std::move(locator)};
 }
