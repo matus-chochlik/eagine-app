@@ -26,8 +26,9 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 void resource_loader::_handle_glsl_src_data(
   const identifier_t blob_id,
+  const pending_resource_info& rinfo,
   const memory::span<const memory::const_block> data,
-  const msgbus::blob_info& info) noexcept {
+  const msgbus::blob_info&) noexcept {
     _gl_strs.clear();
     _gl_strs.reserve(std_size(data.size()));
     _gl_ints.clear();
@@ -40,7 +41,7 @@ void resource_loader::_handle_glsl_src_data(
     }
     const oglplus::glsl_source_ref src{
       data.size(), _gl_strs.data(), _gl_ints.data()};
-    shader_source_loaded(blob_id, src);
+    shader_source_loaded(blob_id, src, rinfo.locator);
 }
 //------------------------------------------------------------------------------
 void resource_loader::_handle_stream_data_appended(
@@ -54,7 +55,7 @@ void resource_loader::_handle_stream_data_appended(
         switch(rinfo.kind) {
             case resource_kind::glsl_strings:
                 assert(offset == 0);
-                _handle_glsl_src_data(blob_id, data, binfo);
+                _handle_glsl_src_data(blob_id, rinfo, data, binfo);
                 break;
             default:
                 break;
@@ -89,7 +90,11 @@ void resource_loader::_handle_stream_finished(identifier_t blob_id) noexcept {
 }
 //------------------------------------------------------------------------------
 void resource_loader::_handle_stream_cancelled(identifier_t blob_id) noexcept {
-    _forget_resource(blob_id);
+    if(const auto pos{_pending.find(blob_id)}; pos != _pending.end()) {
+        const auto& rinfo{std::get<1>(*pos)};
+        resource_cancelled(blob_id, rinfo.kind, rinfo.locator);
+        _pending.erase(pos);
+    }
 }
 //------------------------------------------------------------------------------
 void resource_loader::_init() noexcept {
@@ -106,8 +111,8 @@ auto resource_loader::request_shape_generator(url locator) noexcept
     const auto request_id{get_request_id()};
     if(auto gen{shapes::shape_from(locator, main_context())}) {
         _shape_generators.emplace_back(request_id, std::move(gen));
-        return _new_resource(
-          request_id, locator, resource_kind::shape_generator);
+        auto res{
+          _new_resource(request_id, locator, resource_kind::shape_generator)};
     }
     return _cancelled_resource(
       request_id, locator, resource_kind::shape_generator);
@@ -128,22 +133,22 @@ auto resource_loader::request_gl_shader_source(url locator) noexcept
     return {_cancelled_resource(locator)};
 }
 //------------------------------------------------------------------------------
-auto resource_loader::request_gl_buffer(url locator) noexcept
+auto resource_loader::request_gl_buffer(url locator, video_context&) noexcept
   -> resource_request_result {
     return {_cancelled_resource(locator)};
 }
 //------------------------------------------------------------------------------
-auto resource_loader::request_gl_texture(url locator) noexcept
+auto resource_loader::request_gl_texture(url locator, video_context&) noexcept
   -> resource_request_result {
     return {_cancelled_resource(locator)};
 }
 //------------------------------------------------------------------------------
-auto resource_loader::request_gl_shader(url locator) noexcept
+auto resource_loader::request_gl_shader(url locator, video_context&) noexcept
   -> resource_request_result {
     return {_cancelled_resource(locator)};
 }
 //------------------------------------------------------------------------------
-auto resource_loader::request_gl_program(url locator) noexcept
+auto resource_loader::request_gl_program(url locator, video_context&) noexcept
   -> resource_request_result {
     return {_cancelled_resource(locator)};
 }
@@ -157,11 +162,17 @@ auto resource_loader::update() noexcept -> work_done {
     }
     _cancelled.clear();
 
-    for(auto& [request_id, shape_gen] : _shape_generators) {
-        shape_loaded(request_id, shape_gen);
-        something_done();
+    for(auto pos{_pending.begin()}; pos != _pending.end();) {
+        auto& [request_id, info] = *pos;
+        using ssg_t = std::shared_ptr<shapes::generator>;
+        if(std::holds_alternative<ssg_t>(info.state)) {
+            shape_loaded(request_id, std::get<ssg_t>(info.state), info.locator);
+            pos = _pending.erase(pos);
+            something_done();
+        } else {
+            ++pos;
+        }
     }
-    _shape_generators.clear();
 
     return something_done;
 }

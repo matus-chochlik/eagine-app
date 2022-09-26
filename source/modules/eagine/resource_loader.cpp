@@ -18,17 +18,26 @@ import eagine.oglplus;
 import eagine.msgbus;
 import <map>;
 import <utility>;
+import <variant>;
 
 namespace eagine::app {
 
 export class video_context;
 export class audio_context;
 //------------------------------------------------------------------------------
+/// @brief Resource kind enumeration.
+/// @see resource_loader
+/// @see resource_loader_signals
 export enum class resource_kind {
+    /// @brief Shape generator.
     shape_generator,
+    /// @brief GLSL string collection.
     glsl_strings,
+    /// @brief GL shader object.
     gl_shader,
+    ///@brief GL program object.
     gl_program,
+    /// @brief Unknown resource types.
     unknown
 };
 //------------------------------------------------------------------------------
@@ -39,8 +48,11 @@ struct pending_resource_info {
 
     const url locator;
     resource_kind kind{resource_kind::unknown};
+    std::variant<std::monostate, std::shared_ptr<shapes::generator>> state;
 };
 //------------------------------------------------------------------------------
+/// @brief Result of resource request operation.
+/// @see resource_kind
 export class resource_request_result {
 public:
     resource_request_result(
@@ -53,14 +65,17 @@ public:
       const std::pair<const identifier_t, pending_resource_info>& init) noexcept
       : resource_request_result{std::get<0>(init), std::get<1>(init)} {}
 
+    /// @brief Indicates if the request is valid.
     explicit operator bool() const noexcept {
         return _request_id != 0;
     }
 
+    /// @brief Returns the unique id of the request.
     auto request_id() const noexcept -> identifier_t {
         return _request_id;
     }
 
+    /// @brief Returns the locator of the requested resource.
     auto locator() const noexcept -> const url& {
         return _info.locator;
     }
@@ -70,59 +85,83 @@ private:
     const pending_resource_info& _info;
 };
 //------------------------------------------------------------------------------
+/// @brief Collection of signals emitted by the resource loader.
+/// @see resource_loader
 export struct resource_loader_signals {
+    /// @brief Emitted then the loading of a resource is cancelled.
     signal<void(identifier_t, resource_kind, const url&) noexcept>
       resource_cancelled;
 
-    signal<void(identifier_t, const std::shared_ptr<shapes::generator>&) noexcept>
+    /// @brief Emitted when a shape generator is loaded.
+    signal<void(
+      identifier_t,
+      const std::shared_ptr<shapes::generator>&,
+      const url&) noexcept>
       shape_loaded;
 
-    signal<void(identifier_t, const oglplus::glsl_source_ref&) noexcept>
+    /// @brief Emitted when a GLSL source code is loaded.
+    signal<
+      void(identifier_t, const oglplus::glsl_source_ref&, const url&) noexcept>
       shader_source_loaded;
 
-    signal<void(identifier_t, oglplus::buffer_name) noexcept> buffer_loaded;
+    signal<void(identifier_t, oglplus::buffer_name, const url&) noexcept>
+      buffer_loaded;
 
-    signal<void(identifier_t, oglplus::texture_name) noexcept> texture_loaded;
+    signal<void(identifier_t, oglplus::texture_name, const url&) noexcept>
+      texture_loaded;
 
-    signal<void(identifier_t, oglplus::shader_name) noexcept> shader_loaded;
+    signal<void(identifier_t, oglplus::shader_name, const url&) noexcept>
+      shader_loaded;
 
-    signal<void(identifier_t, oglplus::program_name) noexcept> program_loaded;
+    signal<void(identifier_t, oglplus::program_name, const url&) noexcept>
+      program_loaded;
 };
 //------------------------------------------------------------------------------
+/// @brief Loader of resources of various types.
+/// @see resource_request_result
 export class resource_loader
   : public msgbus::resource_data_consumer_node
   , public resource_loader_signals {
     using base = msgbus::resource_data_consumer_node;
 
 public:
+    /// @brief Initializing constructor
     resource_loader(main_ctx& ctx)
       : resource_data_consumer_node{ctx} {
         _init();
     }
 
+    /// @brief Does some work and updates internal state (should be called periodically).
     auto update() noexcept -> work_done;
 
+    /// @brief Requests a shape geometry generator / loader resource.
     auto request_shape_generator(url locator) noexcept
       -> resource_request_result;
 
+    /// @brief Requests GLSL shader source code resource.
     auto request_gl_shader_source(url locator) noexcept
       -> resource_request_result;
 
-    auto request_gl_buffer(url locator) noexcept -> resource_request_result;
+    auto request_gl_buffer(url locator, video_context&) noexcept
+      -> resource_request_result;
 
-    auto request_gl_texture(url locator) noexcept -> resource_request_result;
+    auto request_gl_texture(url locator, video_context&) noexcept
+      -> resource_request_result;
 
-    auto request_gl_shader(url locator) noexcept -> resource_request_result;
+    auto request_gl_shader(url locator, video_context&) noexcept
+      -> resource_request_result;
 
-    auto request_gl_program(url locator) noexcept -> resource_request_result;
+    auto request_gl_program(url locator, video_context&) noexcept
+      -> resource_request_result;
 
 private:
     void _init() noexcept;
 
     void _handle_glsl_src_data(
       const identifier_t blob_id,
+      const pending_resource_info&,
       const memory::span<const memory::const_block> data,
-      const msgbus::blob_info& info) noexcept;
+      const msgbus::blob_info&) noexcept;
 
     void _handle_stream_data_appended(
       const identifier_t blob_id,
