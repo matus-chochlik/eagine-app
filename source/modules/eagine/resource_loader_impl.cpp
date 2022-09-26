@@ -5,6 +5,10 @@
 /// See accompanying file LICENSE_1_0.txt or copy at
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
+module;
+
+#include <cassert>
+
 module eagine.app;
 
 import eagine.core.types;
@@ -20,26 +24,75 @@ import eagine.msgbus;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
+void resource_loader::_handle_glsl_src_data(
+  const identifier_t blob_id,
+  const memory::span<const memory::const_block> data,
+  const msgbus::blob_info& info) noexcept {
+    _gl_strs.clear();
+    _gl_strs.reserve(std_size(data.size()));
+    _gl_ints.clear();
+    _gl_ints.reserve(std_size(data.size()));
+    for(const auto& blk : data) {
+        _gl_strs.emplace_back(
+          reinterpret_cast<const oglplus::gl_types::char_type*>(blk.data()));
+        _gl_ints.emplace_back(
+          static_cast<const oglplus::gl_types::int_type>(blk.size()));
+    }
+    const oglplus::glsl_source_ref src{
+      data.size(), _gl_strs.data(), _gl_ints.data()};
+    shader_source_loaded(blob_id, src);
+}
+//------------------------------------------------------------------------------
 void resource_loader::_handle_stream_data_appended(
   identifier_t blob_id,
   const span_size_t offset,
-  const memory::span<const memory::const_block>,
-  const msgbus::blob_info& info) noexcept {
-    (void)blob_id;
+  const memory::span<const memory::const_block> data,
+  const msgbus::blob_info& binfo) noexcept {
     (void)offset;
-    (void)info;
+    if(const auto pos{_pending.find(blob_id)}; pos != _pending.end()) {
+        const auto& rinfo{std::get<1>(*pos)};
+        switch(rinfo.kind) {
+            case resource_kind::glsl_strings:
+                assert(offset == 0);
+                _handle_glsl_src_data(blob_id, data, binfo);
+                break;
+            default:
+                break;
+        }
+    }
+}
+//------------------------------------------------------------------------------
+auto resource_loader::_cancelled_resource(
+  const identifier_t blob_id,
+  url& locator,
+  const resource_kind kind) noexcept
+  -> std::pair<const identifier_t, pending_resource_info>& {
+    _cancelled.push_back({blob_id, {std::move(locator), kind}});
+    return _cancelled.back();
+}
+//------------------------------------------------------------------------------
+auto resource_loader::_new_resource(
+  const identifier_t blob_id,
+  const url& locator,
+  resource_kind kind) noexcept
+  -> std::pair<const identifier_t, pending_resource_info>& {
+    auto result{_pending.insert({blob_id, {locator, kind}})};
+    return *std::get<0>(result);
+}
+//------------------------------------------------------------------------------
+void resource_loader::_forget_resource(const identifier_t blob_id) noexcept {
+    _pending.erase(blob_id);
 }
 //------------------------------------------------------------------------------
 void resource_loader::_handle_stream_finished(identifier_t blob_id) noexcept {
-    (void)blob_id;
+    _forget_resource(blob_id);
 }
 //------------------------------------------------------------------------------
 void resource_loader::_handle_stream_cancelled(identifier_t blob_id) noexcept {
-    (void)blob_id;
+    _forget_resource(blob_id);
 }
 //------------------------------------------------------------------------------
-resource_loader::resource_loader(main_ctx& ctx)
-  : resource_data_consumer_node{ctx} {
+void resource_loader::_init() noexcept {
     connect<&resource_loader::_handle_stream_data_appended>(
       this, blob_stream_data_appended);
     connect<&resource_loader::_handle_stream_finished>(
@@ -50,44 +103,63 @@ resource_loader::resource_loader(main_ctx& ctx)
 //------------------------------------------------------------------------------
 auto resource_loader::request_shape_generator(url locator) noexcept
   -> resource_request_result {
+    const auto request_id{get_request_id()};
     if(auto gen{shapes::shape_from(locator, main_context())}) {
-        const auto request_id{get_request_id()};
         _shape_generators.emplace_back(request_id, std::move(gen));
-        return {request_id, std::move(locator)};
+        return _new_resource(
+          request_id, locator, resource_kind::shape_generator);
     }
-    return {0, std::move(locator)};
+    return _cancelled_resource(
+      request_id, locator, resource_kind::shape_generator);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request_gl_shader_source(url locator) noexcept
   -> resource_request_result {
-    return {0, std::move(locator)};
+    if(locator.has_scheme("glsl")) {
+        return {_new_resource(
+          fetch_resource_chunks(
+            std::move(locator),
+            2048,
+            msgbus::message_priority::normal,
+            std::chrono::seconds{15}),
+          resource_kind::glsl_strings)};
+    }
+
+    return {_cancelled_resource(locator)};
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request_gl_buffer(url locator) noexcept
   -> resource_request_result {
-    return {0, std::move(locator)};
+    return {_cancelled_resource(locator)};
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request_gl_texture(url locator) noexcept
   -> resource_request_result {
-    return {0, std::move(locator)};
+    return {_cancelled_resource(locator)};
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request_gl_shader(url locator) noexcept
   -> resource_request_result {
-    return {0, std::move(locator)};
+    return {_cancelled_resource(locator)};
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request_gl_program(url locator) noexcept
   -> resource_request_result {
-    return {0, std::move(locator)};
+    return {_cancelled_resource(locator)};
 }
 //------------------------------------------------------------------------------
 auto resource_loader::update() noexcept -> work_done {
     some_true something_done{base::update()};
 
+    for(auto& [request_id, rinfo] : _cancelled) {
+        resource_cancelled(request_id, rinfo.kind, rinfo.locator);
+        something_done();
+    }
+    _cancelled.clear();
+
     for(auto& [request_id, shape_gen] : _shape_generators) {
         shape_loaded(request_id, shape_gen);
+        something_done();
     }
     _shape_generators.clear();
 
