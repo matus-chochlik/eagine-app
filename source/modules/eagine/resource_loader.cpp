@@ -48,7 +48,45 @@ struct pending_resource_info {
 
     const url locator;
     resource_kind kind{resource_kind::unknown};
-    std::variant<std::monostate, std::shared_ptr<shapes::generator>> state;
+
+    struct _pending_shape_generator_state {
+        std::shared_ptr<shapes::generator> generator;
+    };
+
+    void add_shape_generator(std::shared_ptr<shapes::generator> gen) noexcept {
+        state = _pending_shape_generator_state{.generator = std::move(gen)};
+    }
+
+    auto get_shape_generator() const noexcept
+      -> std::shared_ptr<shapes::generator> {
+        if(std::holds_alternative<_pending_shape_generator_state>(state)) {
+            return std::get<_pending_shape_generator_state>(state).generator;
+        }
+        return {};
+    }
+
+    struct _pending_gl_shader_state {
+        identifier_t glsl_source_request_id{0};
+    };
+
+    void add_glsl_source_request_id(identifier_t request_id) noexcept {
+        state = _pending_gl_shader_state{.glsl_source_request_id = request_id};
+    }
+
+    auto has_glsl_source_request_id(identifier_t request_id) const noexcept
+      -> bool {
+        if(std::holds_alternative<_pending_gl_shader_state>(state)) {
+            return std::get<_pending_gl_shader_state>(state)
+                     .glsl_source_request_id == request_id;
+        }
+        return false;
+    }
+
+    std::variant<
+      std::monostate,
+      _pending_shape_generator_state,
+      _pending_gl_shader_state>
+      state;
 };
 //------------------------------------------------------------------------------
 /// @brief Result of resource request operation.
@@ -57,12 +95,12 @@ export class resource_request_result {
 public:
     resource_request_result(
       identifier_t req_id,
-      const pending_resource_info& info) noexcept
+      pending_resource_info& info) noexcept
       : _request_id{req_id}
       , _info{info} {}
 
     resource_request_result(
-      const std::pair<const identifier_t, pending_resource_info>& init) noexcept
+      std::pair<const identifier_t, pending_resource_info>& init) noexcept
       : resource_request_result{std::get<0>(init), std::get<1>(init)} {}
 
     /// @brief Indicates if the request is valid.
@@ -75,6 +113,10 @@ public:
         return _request_id;
     }
 
+    auto info() noexcept -> pending_resource_info& {
+        return _info;
+    }
+
     /// @brief Returns the locator of the requested resource.
     auto locator() const noexcept -> const url& {
         return _info.locator;
@@ -82,7 +124,7 @@ public:
 
 private:
     identifier_t _request_id;
-    const pending_resource_info& _info;
+    pending_resource_info& _info;
 };
 //------------------------------------------------------------------------------
 /// @brief Collection of signals emitted by the resource loader.
@@ -172,11 +214,9 @@ private:
     auto _cancelled_resource(
       const identifier_t blob_id,
       url& locator,
-      const resource_kind) noexcept
-      -> const std::pair<const identifier_t, pending_resource_info>&;
+      const resource_kind) noexcept -> resource_request_result;
 
-    auto _cancelled_resource(url& locator) noexcept
-      -> const std::pair<const identifier_t, pending_resource_info>& {
+    auto _cancelled_resource(url& locator) noexcept -> resource_request_result {
         return _cancelled_resource(
           get_request_id(), locator, resource_kind::unknown);
     }
@@ -184,13 +224,11 @@ private:
     auto _new_resource(
       const identifier_t blob_id,
       url locator,
-      resource_kind) noexcept
-      -> std::pair<const identifier_t, pending_resource_info>&;
+      resource_kind) noexcept -> resource_request_result;
 
     auto _new_resource(
       const std::pair<identifier_t, const url&>& id_and_loc,
-      resource_kind kind) noexcept
-      -> std::pair<const identifier_t, pending_resource_info>& {
+      resource_kind kind) noexcept -> resource_request_result {
         return _new_resource(
           std::get<0>(id_and_loc), std::get<1>(id_and_loc), kind);
     }
