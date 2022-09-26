@@ -183,7 +183,7 @@ private:
 
     auto _new_resource(
       const identifier_t blob_id,
-      const url& locator,
+      url locator,
       resource_kind) noexcept
       -> std::pair<const identifier_t, pending_resource_info>&;
 
@@ -202,9 +202,6 @@ private:
 
     std::vector<std::pair<const identifier_t, pending_resource_info>> _cancelled;
     std::map<identifier_t, pending_resource_info> _pending;
-
-    std::vector<std::tuple<identifier_t, std::shared_ptr<shapes::generator>>>
-      _shape_generators;
 
     std::vector<const oglplus::gl_types::char_type*> _gl_strs;
     std::vector<oglplus::gl_types::int_type> _gl_ints;

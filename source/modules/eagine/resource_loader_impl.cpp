@@ -74,10 +74,10 @@ auto resource_loader::_cancelled_resource(
 //------------------------------------------------------------------------------
 auto resource_loader::_new_resource(
   const identifier_t blob_id,
-  const url& locator,
+  url locator,
   resource_kind kind) noexcept
   -> std::pair<const identifier_t, pending_resource_info>& {
-    auto result{_pending.insert({blob_id, {locator, kind}})};
+    auto result{_pending.insert({blob_id, {std::move(locator), kind}})};
     return *std::get<0>(result);
 }
 //------------------------------------------------------------------------------
@@ -110,9 +110,10 @@ auto resource_loader::request_shape_generator(url locator) noexcept
   -> resource_request_result {
     const auto request_id{get_request_id()};
     if(auto gen{shapes::shape_from(locator, main_context())}) {
-        _shape_generators.emplace_back(request_id, std::move(gen));
-        auto res{
-          _new_resource(request_id, locator, resource_kind::shape_generator)};
+        auto new_res{_new_resource(
+          request_id, std::move(locator), resource_kind::shape_generator)};
+        std::get<1>(new_res).state = std::move(gen);
+        return {std::move(new_res)};
     }
     return _cancelled_resource(
       request_id, locator, resource_kind::shape_generator);
