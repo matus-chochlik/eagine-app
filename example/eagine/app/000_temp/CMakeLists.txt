@@ -7,7 +7,13 @@
 add_executable(app-000_temp main.cpp)
 add_dependencies(app-000_temp eagine-app-examples)
 
-eagine_embed_target_resources(TARGET app-000_temp)
+eagine_embed_target_resources(
+	TARGET app-000_temp
+	RESOURCES
+		VertShader vertex.glsl
+		FragShader fragment.glsl
+	ENABLE_SEARCH
+)
 eagine_add_exe_analysis(app-000_temp)
 
 eagine_target_modules(

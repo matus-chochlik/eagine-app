@@ -5,7 +5,7 @@
 /// See accompanying file LICENSE_1_0.txt or copy at
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
-export module eagine.app:resource_transfer;
+export module eagine.app:resource_loader;
 
 import eagine.core.types;
 import eagine.core.memory;

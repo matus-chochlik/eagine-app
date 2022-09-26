@@ -75,7 +75,7 @@ eagine_add_module(
 )
 
 eagine_add_module(
-	eagine.app PARTITION resource_transfer
+	eagine.app PARTITION resource_loader
 	IMPORTS
 		eagine.core.types
 		eagine.core.memory
@@ -92,7 +92,7 @@ eagine_add_module(
 	IMPORTS
 		interface options
 		state input
-		resource_transfer
+		resource_loader
 		eagine.core.types
 		eagine.core.memory
 		eagine.core.identifier
@@ -176,7 +176,7 @@ eagine_add_module(
 		interface
 		implementation
 		framedump_raw
-		resource_transfer
+		resource_loader
 		context
 		main
 		gpu_program
@@ -191,7 +191,7 @@ eagine_add_module(
 		openal_oalplus_impl
 		opengl_eglplus_impl
 		opengl_glfw3_impl
-		resource_transfer_impl
+		resource_loader_impl
 		context_impl
 		camera_impl
 		background_impl
