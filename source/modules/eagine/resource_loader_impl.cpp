@@ -104,6 +104,21 @@ void resource_loader::_init() noexcept {
       this, blob_stream_cancelled);
 }
 //------------------------------------------------------------------------------
+auto resource_loader::request_value_tree(url locator) noexcept
+  -> resource_request_result {
+    if(locator.has_scheme("json")) {
+        return _new_resource(
+          fetch_resource_chunks(
+            std::move(locator),
+            2048,
+            msgbus::message_priority::normal,
+            std::chrono::seconds{15}),
+          resource_kind::json_text);
+    }
+
+    return _cancelled_resource(locator);
+}
+//------------------------------------------------------------------------------
 auto resource_loader::request_shape_generator(url locator) noexcept
   -> resource_request_result {
     const auto request_id{get_request_id()};

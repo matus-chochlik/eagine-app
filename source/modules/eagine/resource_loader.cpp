@@ -31,6 +31,10 @@ export class audio_context;
 export enum class resource_kind {
     /// @brief Shape generator.
     shape_generator,
+    /// @brief JSON text.
+    json_text,
+    /// @brief YAML text.
+    yaml_text,
     /// @brief GLSL string collection.
     glsl_strings,
     /// @brief GL shader object.
@@ -141,6 +145,10 @@ export struct resource_loader_signals {
       const url&) noexcept>
       shape_loaded;
 
+    /// @brief Emitted when a value tree is loaded.
+    signal<void(identifier_t, const valtree::compound&, const url&) noexcept>
+      value_tree_loaded;
+
     /// @brief Emitted when a GLSL source code is loaded.
     signal<
       void(identifier_t, const oglplus::glsl_source_ref&, const url&) noexcept>
@@ -175,6 +183,9 @@ public:
 
     /// @brief Does some work and updates internal state (should be called periodically).
     auto update() noexcept -> work_done;
+
+    /// @brief Requests a value tree object resource.
+    auto request_value_tree(url locator) noexcept -> resource_request_result;
 
     /// @brief Requests a shape geometry generator / loader resource.
     auto request_shape_generator(url locator) noexcept
