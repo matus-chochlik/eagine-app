@@ -7,7 +7,7 @@
 add_executable(app-009_json_shape main.cpp)
 add_dependencies(app-009_json_shape eagine-app-examples)
 
-eagine_embed_target_resources(TARGET app-009_json_shape)
+eagine_embed_target_resources(TARGET app-009_json_shape PACKED)
 eagine_add_exe_analysis(app-009_json_shape)
 
 eagine_target_modules(

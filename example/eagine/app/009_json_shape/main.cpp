@@ -54,7 +54,8 @@ example_shape::example_shape(execution_context& ec, video_context& vc)
     oglplus::owned_shader_name vs;
     gl.create_shader(GL.vertex_shader) >> vs;
     auto cleanup_vs = gl.delete_shader.raii(vs);
-    gl.shader_source(vs, oglplus::glsl_string_ref(vs_source));
+    gl.shader_source(
+      vs, oglplus::glsl_string_ref(vs_source.unpack(vc.parent())));
     gl.compile_shader(vs);
 
     // fragment shader
@@ -62,7 +63,8 @@ example_shape::example_shape(execution_context& ec, video_context& vc)
     oglplus::owned_shader_name fs;
     gl.create_shader(GL.fragment_shader) >> fs;
     auto cleanup_fs = gl.delete_shader.raii(fs);
-    gl.shader_source(fs, oglplus::glsl_string_ref(fs_source));
+    gl.shader_source(
+      fs, oglplus::glsl_string_ref(fs_source.unpack(vc.parent())));
     gl.compile_shader(fs);
 
     // program
@@ -73,11 +75,13 @@ example_shape::example_shape(execution_context& ec, video_context& vc)
     gl.use_program(prog);
 
     // geometry
-    auto json_text = as_chars(embed<"ShapeJson">("shape.json"));
+    auto json_source = embed<"ShapeJson">("shape.json");
     oglplus::shape_generator shape(
       glapi,
       shapes::from_value_tree(
-        valtree::from_json_text(json_text, ec.main_context()), ec.as_parent()));
+        valtree::from_json_text(
+          as_chars(json_source.unpack(vc.parent())), ec.main_context()),
+        ec.as_parent()));
 
     _ops.resize(std_size(shape.operation_count()));
     shape.instructions(glapi, cover(_ops));
