@@ -12,6 +12,7 @@ eagine_embed_target_resources(
 	RESOURCES
 		VertShader vertex.glsl
 		FragShader fragment.glsl
+	PACKED
 	ENABLE_SEARCH
 )
 eagine_add_exe_analysis(app-000_temp)

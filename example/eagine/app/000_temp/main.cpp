@@ -28,6 +28,16 @@ public:
     void clean_up() noexcept final;
 
 private:
+    void _handle_stream_data(
+      identifier_t request_id,
+      const span_size_t,
+      const memory::span<const memory::const_block> data,
+      const msgbus::blob_info&) noexcept {
+        _ctx.cio_print("request ${requestId} data: (${data})")
+          .arg("requestId", request_id)
+          .arg("data", data.size());
+    }
+
     void _handle_glsl_source(
       identifier_t request_id,
       const oglplus::glsl_source_ref& src,
@@ -56,6 +66,8 @@ example_cube::example_cube(execution_context& ec, video_context& vc)
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
 
+    connect<&example_cube::_handle_stream_data>(
+      this, _loader.blob_stream_data_appended);
     connect<&example_cube::_handle_glsl_source>(
       this, _loader.shader_source_loaded);
 
