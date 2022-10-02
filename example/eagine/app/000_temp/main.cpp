@@ -75,6 +75,7 @@ example_cube::example_cube(execution_context& ec, video_context& vc)
       url{"glsl:///VertShader?kind=shader_type=vertex"});
     _loader.request_gl_shader_source(
       url{"glsl:///FragShader?shader_type=fragment"});
+    _loader.stream_resource(url{"glsl:///ShapeJson"});
 
     camera.set_near(0.1F)
       .set_far(50.F)
