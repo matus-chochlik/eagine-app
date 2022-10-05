@@ -24,19 +24,27 @@ namespace eagine::app {
 
 export class video_context;
 export class audio_context;
+export class resource_request_result;
+export class resource_loader;
 //------------------------------------------------------------------------------
 /// @brief Resource kind enumeration.
 /// @see resource_loader
 /// @see resource_loader_signals
 export enum class resource_kind {
-    /// @brief Shape generator.
-    shape_generator,
     /// @brief JSON text.
     json_text,
     /// @brief YAML text.
     yaml_text,
-    /// @brief GLSL string collection.
-    glsl_strings,
+    /// @brief GLSL text.
+    glsl_text,
+    /// @brief Shape generator.
+    shape_generator,
+    /// @brief Value tree.
+    value_tree,
+    /// @brief Value tree stream traversal.
+    value_tree_traversal,
+    /// @brief GLSL source string collection.
+    glsl_source,
     /// @brief GL shader object.
     gl_shader,
     ///@brief GL program object.
@@ -45,51 +53,76 @@ export enum class resource_kind {
     unknown
 };
 //------------------------------------------------------------------------------
-struct pending_resource_info {
-    pending_resource_info(url loc, resource_kind k) noexcept
-      : locator{std::move(loc)}
+class pending_resource_info {
+    pending_resource_info(
+      resource_loader& loader,
+      identifier_t req_id,
+      url loc,
+      resource_kind k) noexcept
+      : parent{loader}
+      , request_id{req_id}
+      , locator{std::move(loc)}
       , kind{k} {}
 
+    resource_loader& parent;
+    const identifier_t request_id;
     const url locator;
     resource_kind kind{resource_kind::unknown};
+
+    void add_valtree_stream_input(
+      valtree::value_tree_stream_input input) noexcept;
+
+    void add_shape_generator(std::shared_ptr<shapes::generator> gen) noexcept;
+
+    auto update() noexcept -> work_done;
+
+    // continuation handlers
+    void handle_source_data(
+      const msgbus::blob_info&,
+      const pending_resource_info& source,
+      const span_size_t offset,
+      const memory::span<const memory::const_block> data) noexcept;
+
+    void handle_source_finished(const pending_resource_info&) noexcept;
+    void handle_source_cancelled(const pending_resource_info&) noexcept;
+
+private:
+    friend class resource_loader;
+    friend class resource_request_result;
+
+    void _handle_json_text(
+      const msgbus::blob_info&,
+      const pending_resource_info& source,
+      const span_size_t offset,
+      const memory::span<const memory::const_block> data) noexcept;
+
+    void _handle_yaml_text(
+      const msgbus::blob_info&,
+      const pending_resource_info& source,
+      const span_size_t offset,
+      const memory::span<const memory::const_block> data) noexcept;
+
+    void _handle_glsl_strings(
+      const msgbus::blob_info&,
+      const pending_resource_info& source,
+      const span_size_t offset,
+      const memory::span<const memory::const_block> data) noexcept;
+
+    pending_resource_info* _continuation{nullptr};
+
+    // the pending resource state
+    struct _pending_valtree_traversal_state {
+        valtree::value_tree_stream_input input;
+    };
 
     struct _pending_shape_generator_state {
         std::shared_ptr<shapes::generator> generator;
     };
 
-    void add_shape_generator(std::shared_ptr<shapes::generator> gen) noexcept {
-        state = _pending_shape_generator_state{.generator = std::move(gen)};
-    }
-
-    auto get_shape_generator() const noexcept
-      -> std::shared_ptr<shapes::generator> {
-        if(std::holds_alternative<_pending_shape_generator_state>(state)) {
-            return std::get<_pending_shape_generator_state>(state).generator;
-        }
-        return {};
-    }
-
-    struct _pending_gl_shader_state {
-        identifier_t glsl_source_request_id{0};
-    };
-
-    void add_glsl_source_request_id(identifier_t request_id) noexcept {
-        state = _pending_gl_shader_state{.glsl_source_request_id = request_id};
-    }
-
-    auto has_glsl_source_request_id(identifier_t request_id) const noexcept
-      -> bool {
-        if(std::holds_alternative<_pending_gl_shader_state>(state)) {
-            return std::get<_pending_gl_shader_state>(state)
-                     .glsl_source_request_id == request_id;
-        }
-        return false;
-    }
-
     std::variant<
       std::monostate,
-      _pending_shape_generator_state,
-      _pending_gl_shader_state>
+      _pending_valtree_traversal_state,
+      _pending_shape_generator_state>
       state;
 };
 //------------------------------------------------------------------------------
@@ -97,24 +130,21 @@ struct pending_resource_info {
 /// @see resource_kind
 export class resource_request_result {
 public:
-    resource_request_result(
-      identifier_t req_id,
-      pending_resource_info& info) noexcept
-      : _request_id{req_id}
-      , _info{info} {}
+    resource_request_result(pending_resource_info& info) noexcept
+      : _info{info} {}
 
     resource_request_result(
       std::pair<const identifier_t, pending_resource_info>& init) noexcept
-      : resource_request_result{std::get<0>(init), std::get<1>(init)} {}
+      : resource_request_result{std::get<1>(init)} {}
 
     /// @brief Indicates if the request is valid.
     explicit operator bool() const noexcept {
-        return _request_id != 0;
+        return _info.request_id != 0;
     }
 
     /// @brief Returns the unique id of the request.
     auto request_id() const noexcept -> identifier_t {
-        return _request_id;
+        return _info.request_id;
     }
 
     auto info() noexcept -> pending_resource_info& {
@@ -126,8 +156,14 @@ public:
         return _info.locator;
     }
 
+    /// @brief Sets the reference to the continuation request of this request.
+    auto set_continuation(resource_request_result& cont) const noexcept
+      -> const resource_request_result& {
+        _info._continuation = &cont._info;
+        return *this;
+    }
+
 private:
-    identifier_t _request_id;
     pending_resource_info& _info;
 };
 //------------------------------------------------------------------------------
@@ -181,11 +217,18 @@ public:
         _init();
     }
 
+    void forget_resource(identifier_t request_id) noexcept;
+
     /// @brief Does some work and updates internal state (should be called periodically).
     auto update() noexcept -> work_done;
 
     /// @brief Requests a value tree object resource.
     auto request_value_tree(url locator) noexcept -> resource_request_result;
+
+    auto request_value_tree_traversal(
+      url locator,
+      std::shared_ptr<valtree::value_tree_visitor>,
+      span_size_t max_token_size) noexcept -> resource_request_result;
 
     /// @brief Requests a shape geometry generator / loader resource.
     auto request_shape_generator(url locator) noexcept
@@ -208,13 +251,9 @@ public:
       -> resource_request_result;
 
 private:
-    void _init() noexcept;
+    friend class pending_resource_info;
 
-    void _handle_glsl_src_data(
-      const identifier_t blob_id,
-      const pending_resource_info&,
-      const memory::span<const memory::const_block> data,
-      const msgbus::blob_info&) noexcept;
+    void _init() noexcept;
 
     void _handle_stream_data_appended(
       const identifier_t blob_id,
@@ -222,14 +261,21 @@ private:
       const memory::span<const memory::const_block>,
       const msgbus::blob_info& info) noexcept;
 
+    void _handle_stream_finished(identifier_t blob_id) noexcept;
+    void _handle_stream_cancelled(identifier_t blob_id) noexcept;
+
     auto _cancelled_resource(
       const identifier_t blob_id,
       url& locator,
       const resource_kind) noexcept -> resource_request_result;
 
+    auto _cancelled_resource(url& locator, const resource_kind kind) noexcept
+      -> resource_request_result {
+        return _cancelled_resource(get_request_id(), locator, kind);
+    }
+
     auto _cancelled_resource(url& locator) noexcept -> resource_request_result {
-        return _cancelled_resource(
-          get_request_id(), locator, resource_kind::unknown);
+        return _cancelled_resource(locator, resource_kind::unknown);
     }
 
     auto _new_resource(
@@ -244,16 +290,14 @@ private:
           std::get<0>(id_and_loc), std::get<1>(id_and_loc), kind);
     }
 
-    void _forget_resource(const identifier_t blob_id) noexcept;
+    auto _new_resource(url locator, resource_kind kind) noexcept
+      -> resource_request_result {
+        return _new_resource(get_request_id(), std::move(locator), kind);
+    }
 
-    void _handle_stream_finished(identifier_t blob_id) noexcept;
-    void _handle_stream_cancelled(identifier_t blob_id) noexcept;
-
-    std::vector<std::pair<const identifier_t, pending_resource_info>> _cancelled;
     std::map<identifier_t, pending_resource_info> _pending;
-
-    std::vector<const oglplus::gl_types::char_type*> _gl_strs;
-    std::vector<oglplus::gl_types::int_type> _gl_ints;
+    std::map<identifier_t, pending_resource_info> _cancelled;
+    flat_set<identifier_t> _deleted;
 };
 //------------------------------------------------------------------------------
 } // namespace eagine::app
