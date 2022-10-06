@@ -53,8 +53,16 @@ void pending_resource_info::_handle_json_text(
   const msgbus::blob_info&,
   const pending_resource_info&,
   const span_size_t,
-  const memory::span<const memory::const_block>) noexcept {
+  const memory::span<const memory::const_block> data) noexcept {
     if(kind == resource_kind::value_tree_traversal) {
+        if(std::holds_alternative<_pending_valtree_traversal_state>(state)) {
+            for(auto chunk : data) {
+                std::get<_pending_valtree_traversal_state>(state)
+                  .input.consume_data(chunk);
+            }
+        } else {
+            parent.forget_resource(request_id);
+        }
     }
 }
 //------------------------------------------------------------------------------
