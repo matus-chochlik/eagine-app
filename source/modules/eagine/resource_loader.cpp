@@ -17,6 +17,7 @@ import eagine.shapes;
 import eagine.oglplus;
 import eagine.msgbus;
 import <map>;
+import <functional>;
 import <utility>;
 import <variant>;
 
@@ -74,6 +75,8 @@ class pending_resource_info {
 
     void add_shape_generator(std::shared_ptr<shapes::generator> gen) noexcept;
 
+    void add_gl_shader_context(video_context&, oglplus::shader_type) noexcept;
+
     auto update() noexcept -> work_done;
 
     // continuation handlers
@@ -108,6 +111,10 @@ private:
       const span_size_t offset,
       const memory::span<const memory::const_block> data) noexcept;
 
+    void _handle_glsl_source(
+      const pending_resource_info& source,
+      const oglplus::glsl_source_ref& glsl_src) noexcept;
+
     pending_resource_info* _continuation{nullptr};
 
     // the pending resource state
@@ -119,10 +126,21 @@ private:
         std::shared_ptr<shapes::generator> generator;
     };
 
+    struct _pending_gl_shader_state {
+        std::reference_wrapper<video_context> video;
+        oglplus::shader_type shdr_type;
+    };
+
+    struct _pending_gl_program_state {
+        std::reference_wrapper<video_context> video;
+    };
+
     std::variant<
       std::monostate,
       _pending_valtree_traversal_state,
-      _pending_shape_generator_state>
+      _pending_shape_generator_state,
+      _pending_gl_shader_state,
+      _pending_gl_program_state>
       state;
 };
 //------------------------------------------------------------------------------
@@ -188,16 +206,22 @@ export struct resource_loader_signals {
     /// @brief Emitted when a GLSL source code is loaded.
     signal<
       void(identifier_t, const oglplus::glsl_source_ref&, const url&) noexcept>
-      shader_source_loaded;
+      glsl_source_loaded;
+
+    /// @brief Emitted when a GL shader is successfully created and compiled.
+    signal<void(
+      identifier_t,
+      oglplus::shader_type,
+      oglplus::shader_name,
+      std::reference_wrapper<oglplus::owned_shader_name>,
+      const url&) noexcept>
+      gl_shader_loaded;
 
     signal<void(identifier_t, oglplus::buffer_name, const url&) noexcept>
       buffer_loaded;
 
     signal<void(identifier_t, oglplus::texture_name, const url&) noexcept>
       texture_loaded;
-
-    signal<void(identifier_t, oglplus::shader_name, const url&) noexcept>
-      shader_loaded;
 
     signal<void(identifier_t, oglplus::program_name, const url&) noexcept>
       program_loaded;
@@ -235,14 +259,18 @@ public:
       -> resource_request_result;
 
     /// @brief Requests GLSL shader source code resource.
-    auto request_gl_shader_source(url locator) noexcept
-      -> resource_request_result;
+    auto request_glsl_source(url locator) noexcept -> resource_request_result;
 
     auto request_gl_buffer(url locator, video_context&) noexcept
       -> resource_request_result;
 
     auto request_gl_texture(url locator, video_context&) noexcept
       -> resource_request_result;
+
+    auto request_gl_shader(
+      url locator,
+      oglplus::shader_type,
+      video_context&) noexcept -> resource_request_result;
 
     auto request_gl_shader(url locator, video_context&) noexcept
       -> resource_request_result;

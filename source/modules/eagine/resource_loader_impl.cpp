@@ -36,6 +36,12 @@ void pending_resource_info::add_shape_generator(
     state = _pending_shape_generator_state{.generator = std::move(gen)};
 }
 //------------------------------------------------------------------------------
+void pending_resource_info::add_gl_shader_context(
+  video_context& video,
+  oglplus::shader_type shdr_type) noexcept {
+    state = _pending_gl_shader_state{.video = video, .shdr_type = shdr_type};
+}
+//------------------------------------------------------------------------------
 auto pending_resource_info::update() noexcept -> work_done {
     some_true something_done;
     if(std::holds_alternative<_pending_shape_generator_state>(state)) {
@@ -95,7 +101,34 @@ void pending_resource_info::_handle_glsl_strings(
         }
         const oglplus::glsl_source_ref glsl_src{
           data.size(), gl_strs.data(), gl_ints.data()};
-        parent.shader_source_loaded(request_id, glsl_src, locator);
+        if(_continuation) {
+            extract(_continuation)._handle_glsl_source(*this, glsl_src);
+        }
+        parent.glsl_source_loaded(request_id, glsl_src, locator);
+    }
+}
+//------------------------------------------------------------------------------
+void pending_resource_info::_handle_glsl_source(
+  const pending_resource_info& source,
+  const oglplus::glsl_source_ref& glsl_src) noexcept {
+    if(kind == resource_kind::gl_shader) {
+        if(std::holds_alternative<_pending_gl_shader_state>(state)) {
+            auto& pgss = std::get<_pending_gl_shader_state>(state);
+            const auto& [gl, GL] = pgss.video.get().gl_api();
+
+            oglplus::owned_shader_name shdr;
+            gl.create_shader(pgss.shdr_type) >> shdr;
+            gl.shader_source(shdr, glsl_src);
+            gl.compile_shader(shdr);
+            parent.gl_shader_loaded(
+              request_id, pgss.shdr_type, shdr, {shdr}, locator);
+
+            if(shdr) {
+                gl.delete_shader(std::move(shdr));
+            }
+        } else {
+            parent.forget_resource(request_id);
+        }
     }
 }
 //------------------------------------------------------------------------------
@@ -250,7 +283,7 @@ auto resource_loader::request_shape_generator(url locator) noexcept
     return _cancelled_resource(locator, resource_kind::shape_generator);
 }
 //------------------------------------------------------------------------------
-auto resource_loader::request_gl_shader_source(url locator) noexcept
+auto resource_loader::request_glsl_source(url locator) noexcept
   -> resource_request_result {
     if(locator.has_path_suffix(".glsl") || locator.has_scheme("glsl")) {
         if(const auto src_request{_new_resource(
@@ -280,13 +313,45 @@ auto resource_loader::request_gl_texture(url locator, video_context&) noexcept
     return _cancelled_resource(locator);
 }
 //------------------------------------------------------------------------------
-auto resource_loader::request_gl_shader(url locator, video_context&) noexcept
-  -> resource_request_result {
-    if(const auto src_request{request_gl_shader_source(locator)}) {
+auto resource_loader::request_gl_shader(
+  url locator,
+  oglplus::shader_type shdr_type,
+  video_context& vc) noexcept -> resource_request_result {
+    if(const auto src_request{request_glsl_source(locator)}) {
         auto new_request{
           _new_resource(std::move(locator), resource_kind::gl_shader)};
+        new_request.info().add_gl_shader_context(vc, shdr_type);
         src_request.set_continuation(new_request);
         return new_request;
+    }
+    return _cancelled_resource(locator, resource_kind::gl_shader);
+}
+//------------------------------------------------------------------------------
+auto resource_loader::request_gl_shader(url locator, video_context& vc) noexcept
+  -> resource_request_result {
+    if(const auto type_arg{locator.argument("shader_type")}) {
+        const auto& GL = vc.gl_api().constants();
+        auto delegate = [&GL, &locator, &vc, this](auto shdr_type) {
+            return request_gl_shader(std::move(locator), shdr_type, vc);
+        };
+        if(type_arg == string_view{"vertex"}) {
+            return delegate(GL.vertex_shader);
+        }
+        if(type_arg == string_view{"fragment"}) {
+            return delegate(GL.fragment_shader);
+        }
+        if(type_arg == string_view{"geometry"}) {
+            return delegate(GL.geometry_shader);
+        }
+        if(type_arg == string_view{"compute"}) {
+            return delegate(GL.compute_shader);
+        }
+        if(type_arg == string_view{"tess_evaluation"}) {
+            return delegate(GL.tess_evaluation_shader);
+        }
+        if(type_arg == string_view{"tess_control"}) {
+            return delegate(GL.tess_control_shader);
+        }
     }
     return _cancelled_resource(locator, resource_kind::gl_shader);
 }
