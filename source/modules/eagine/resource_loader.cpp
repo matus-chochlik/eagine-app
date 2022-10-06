@@ -55,6 +55,7 @@ export enum class resource_kind {
 };
 //------------------------------------------------------------------------------
 class pending_resource_info {
+public:
     pending_resource_info(
       resource_loader& loader,
       identifier_t req_id,
@@ -76,8 +77,16 @@ class pending_resource_info {
     void add_shape_generator(std::shared_ptr<shapes::generator> gen) noexcept;
 
     void add_gl_shader_context(video_context&, oglplus::shader_type) noexcept;
+    void add_gl_program_context(video_context&) noexcept;
+    auto add_gl_program_shader_request(identifier_t request_id) noexcept
+      -> bool;
+    auto add_gl_program_shader(
+      identifier_t request_id,
+      oglplus::owned_shader_name& shdr) noexcept -> bool;
 
     auto update() noexcept -> work_done;
+
+    void cancel() noexcept;
 
     // continuation handlers
     void handle_source_data(
@@ -115,6 +124,10 @@ private:
       const pending_resource_info& source,
       const oglplus::glsl_source_ref& glsl_src) noexcept;
 
+    void _handle_gl_shader(
+      const pending_resource_info& source,
+      oglplus::owned_shader_name& shdr) noexcept;
+
     pending_resource_info* _continuation{nullptr};
 
     // the pending resource state
@@ -133,6 +146,8 @@ private:
 
     struct _pending_gl_program_state {
         std::reference_wrapper<video_context> video;
+        oglplus::owned_program_name prog;
+        flat_set<identifier_t> pending_requests;
     };
 
     std::variant<
@@ -172,6 +187,13 @@ public:
     /// @brief Returns the locator of the requested resource.
     auto locator() const noexcept -> const url& {
         return _info.locator;
+    }
+
+    /// @brief Sets the reference to the continuation request of this request.
+    auto set_continuation(pending_resource_info& cont) const noexcept
+      -> const resource_request_result& {
+        _info._continuation = &cont;
+        return *this;
     }
 
     /// @brief Sets the reference to the continuation request of this request.
@@ -217,14 +239,19 @@ export struct resource_loader_signals {
       const url&) noexcept>
       gl_shader_loaded;
 
+    /// @brief Emitted when a GL program is successfully created and linked.
+    signal<void(
+      identifier_t,
+      oglplus::program_name,
+      std::reference_wrapper<oglplus::owned_program_name>,
+      const url&) noexcept>
+      gl_program_loaded;
+
     signal<void(identifier_t, oglplus::buffer_name, const url&) noexcept>
       buffer_loaded;
 
     signal<void(identifier_t, oglplus::texture_name, const url&) noexcept>
       texture_loaded;
-
-    signal<void(identifier_t, oglplus::program_name, const url&) noexcept>
-      program_loaded;
 };
 //------------------------------------------------------------------------------
 /// @brief Loader of resources of various types.
@@ -252,6 +279,11 @@ public:
     auto request_value_tree_traversal(
       url locator,
       std::shared_ptr<valtree::value_tree_visitor>,
+      span_size_t max_token_size) noexcept -> resource_request_result;
+
+    auto request_value_tree_traversal(
+      url locator,
+      std::shared_ptr<valtree::object_builder>,
       span_size_t max_token_size) noexcept -> resource_request_result;
 
     /// @brief Requests a shape geometry generator / loader resource.
