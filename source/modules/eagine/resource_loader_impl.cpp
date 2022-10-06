@@ -159,7 +159,10 @@ void pending_resource_info::_handle_json_text(
   const pending_resource_info&,
   const span_size_t,
   const memory::span<const memory::const_block> data) noexcept {
-    if(kind == resource_kind::value_tree_traversal) {
+    if(kind == resource_kind::value_tree) {
+        auto tree{valtree::from_json_data(data, parent.main_context().log())};
+        parent.value_tree_loaded(request_id, tree, locator);
+    } else if(kind == resource_kind::value_tree_traversal) {
         if(std::holds_alternative<_pending_valtree_traversal_state>(state)) {
             for(auto chunk : data) {
                 std::get<_pending_valtree_traversal_state>(state)
@@ -369,14 +372,19 @@ void resource_loader::_init() noexcept {
 auto resource_loader::request_value_tree(url locator) noexcept
   -> resource_request_result {
     if(locator.has_path_suffix(".json") || locator.has_scheme("json")) {
-        return _new_resource(
-          fetch_resource_chunks(
-            std::move(locator),
-            2048,
-            msgbus::message_priority::normal,
-            std::chrono::seconds{15}),
-          resource_kind::json_text);
-        // TODO:
+        if(const auto src_request{_new_resource(
+             fetch_resource_chunks(
+               locator,
+               4096,
+               msgbus::message_priority::normal,
+               std::chrono::seconds{15}),
+             resource_kind::json_text)}) {
+            auto new_request{
+              _new_resource(std::move(locator), resource_kind::value_tree)};
+            src_request.set_continuation(new_request);
+
+            return new_request;
+        }
     }
 
     return _cancelled_resource(locator);
