@@ -73,7 +73,7 @@ public:
         }
     }
 
-    void failed() final {
+    void failed() noexcept final {
         parent.parent.forget_resource(parent.request_id);
     }
 
