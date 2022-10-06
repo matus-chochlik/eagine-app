@@ -48,6 +48,27 @@ private:
           .arg("parts", src.count());
     }
 
+    void _handle_gl_shader(
+      identifier_t request_id,
+      oglplus::shader_type,
+      oglplus::shader_name,
+      std::reference_wrapper<oglplus::owned_shader_name>,
+      const url& locator) noexcept {
+        _ctx.cio_print("request ${requestId}: shader ${locator}")
+          .arg("requestId", request_id)
+          .arg("locator", locator.str());
+    }
+
+    void _handle_gl_program(
+      identifier_t request_id,
+      oglplus::program_name,
+      std::reference_wrapper<oglplus::owned_program_name>,
+      const url& locator) noexcept {
+        _ctx.cio_print("request ${requestId}: program ${locator}")
+          .arg("requestId", request_id)
+          .arg("locator", locator.str());
+    }
+
     execution_context& _ctx;
     video_context& _video;
     resource_loader _loader;
@@ -69,13 +90,15 @@ example_cube::example_cube(execution_context& ec, video_context& vc)
     connect<&example_cube::_handle_stream_data>(
       this, _loader.blob_stream_data_appended);
     connect<&example_cube::_handle_glsl_source>(
-      this, _loader.shader_source_loaded);
+      this, _loader.glsl_source_loaded);
+    connect<&example_cube::_handle_gl_shader>(this, _loader.gl_shader_loaded);
+    connect<&example_cube::_handle_gl_program>(this, _loader.gl_program_loaded);
 
-    _loader.request_gl_shader_source(
-      url{"glsl:///VertShader?kind=shader_type=vertex"});
-    _loader.request_gl_shader_source(
-      url{"glsl:///FragShader?shader_type=fragment"});
-    _loader.stream_resource(url{"glsl:///ShapeJson"});
+    _loader.request_value_tree_traversal(
+      url{"json:///ShapeJson"},
+      valtree::make_printing_value_tree_visitor(ec.main_context().cio()),
+      64);
+    _loader.request_gl_program(url{"json:///GLProgram"}, _video);
 
     camera.set_near(0.1F)
       .set_far(50.F)

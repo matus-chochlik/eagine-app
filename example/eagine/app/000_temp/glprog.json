@@ -1,0 +1,4 @@
+{"urls":
+{"vertex":   "glsl:///VertShader"
+,"fragment": "glsl:///FragShader"}
+}

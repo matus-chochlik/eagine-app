@@ -12,6 +12,7 @@ eagine_embed_target_resources(
 	RESOURCES
 		VertShader vertex.glsl
 		FragShader fragment.glsl
+		GLProgram glprog.json
 		ShapeJson shape.json
 	PACKED
 	ENABLE_SEARCH
