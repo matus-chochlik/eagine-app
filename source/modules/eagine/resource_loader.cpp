@@ -277,6 +277,80 @@ export struct resource_loader_signals {
       texture_loaded;
 };
 //------------------------------------------------------------------------------
+template <typename T>
+concept resource_cancelled_observer =
+  requires(
+    T v,
+    identifier_t request_id,
+    resource_kind kind,
+    const url& locator) {
+      v.handle_resource_cancelled(request_id, kind, locator);
+  };
+
+template <typename T>
+concept resource_blob_stream_data_appended_observer =
+  requires(
+    T v,
+    identifier_t request_id,
+    const span_size_t offset,
+    const memory::span<const memory::const_block> data,
+    const msgbus::blob_info& binfo) {
+      v.handle_blob_stream_data_appended(request_id, offset, data, binfo);
+  };
+
+template <typename T>
+concept resource_shape_generator_loaded_observer =
+  requires(
+    T v,
+    identifier_t request_id,
+    const std::shared_ptr<shapes::generator>& gen,
+    const url& locator) {
+      v.handle_shape_generator_loaded(request_id, gen, locator);
+  };
+
+template <typename T>
+concept resource_value_tree_loaded_observer =
+  requires(
+    T v,
+    identifier_t request_id,
+    const valtree::compound& tree,
+    const url& locator) {
+      v.handle_value_tree_loaded(request_id, tree, locator);
+  };
+
+template <typename T>
+concept resource_glsl_source_loaded_observer =
+  requires(
+    T v,
+    identifier_t request_id,
+    const oglplus::glsl_source_ref& glsl_src,
+    const url& locator) {
+      v.handle_glsl_source_loaded(request_id, glsl_src, locator);
+  };
+
+template <typename T>
+concept resource_gl_shader_loaded_observer =
+  requires(
+    T v,
+    identifier_t request_id,
+    oglplus::shader_type type,
+    oglplus::shader_name name,
+    std::reference_wrapper<oglplus::owned_shader_name> ref,
+    const url& locator) {
+      v.handle_gl_shader_loaded(request_id, type, name, ref, locator);
+  };
+
+template <typename T>
+concept resource_gl_program_loaded_observer =
+  requires(
+    T v,
+    identifier_t request_id,
+    oglplus::program_name name,
+    std::reference_wrapper<oglplus::owned_program_name> ref,
+    const url& locator) {
+      v.handle_gl_program_loaded(request_id, name, ref, locator);
+  };
+//------------------------------------------------------------------------------
 /// @brief Loader of resources of various types.
 /// @see resource_request_result
 export class resource_loader
@@ -289,6 +363,38 @@ public:
     resource_loader(main_ctx& ctx)
       : resource_data_consumer_node{ctx} {
         _init();
+    }
+
+    template <typename O>
+    void connect_observer(O& observer) noexcept {
+        if constexpr(resource_blob_stream_data_appended_observer<O>) {
+            connect<&O::handle_blob_stream_data_appended>(
+              &observer, this->blob_stream_data_appended);
+        }
+        if constexpr(resource_cancelled_observer<O>) {
+            connect<&O::handle_resource_cancelled>(
+              &observer, this->resource_cancelled);
+        }
+        if constexpr(resource_shape_generator_loaded_observer<O>) {
+            connect<&O::handle_shape_generator_loaded>(
+              &observer, this->shape_generator_loaded);
+        }
+        if constexpr(resource_value_tree_loaded_observer<O>) {
+            connect<&O::handle_value_tree_loaded>(
+              &observer, this->value_tree_loaded);
+        }
+        if constexpr(resource_glsl_source_loaded_observer<O>) {
+            connect<&O::handle_glsl_source_loaded>(
+              &observer, this->glsl_source_loaded);
+        }
+        if constexpr(resource_gl_shader_loaded_observer<O>) {
+            connect<&O::handle_gl_shader_loaded>(
+              &observer, this->gl_shader_loaded);
+        }
+        if constexpr(resource_gl_program_loaded_observer<O>) {
+            connect<&O::handle_gl_program_loaded>(
+              &observer, this->gl_program_loaded);
+        }
     }
 
     void forget_resource(identifier_t request_id) noexcept;
