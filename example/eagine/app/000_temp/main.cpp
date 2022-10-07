@@ -28,17 +28,9 @@ public:
     void clean_up() noexcept final;
 
 private:
-    void _handle_stream_data(
-      identifier_t request_id,
-      const span_size_t,
-      const memory::span<const memory::const_block> data,
-      const msgbus::blob_info&) noexcept {
-        _ctx.cio_print("request ${requestId} data: (${data})")
-          .arg("requestId", request_id)
-          .arg("data", data.size());
-    }
+    friend class app::resource_loader;
 
-    void _handle_glsl_source(
+    void handle_glsl_source_loaded(
       identifier_t request_id,
       const oglplus::glsl_source_ref& src,
       const url& locator) noexcept {
@@ -48,7 +40,7 @@ private:
           .arg("parts", src.count());
     }
 
-    void _handle_gl_shader(
+    void handle_gl_shader_loaded(
       identifier_t request_id,
       oglplus::shader_type,
       oglplus::shader_name,
@@ -59,12 +51,32 @@ private:
           .arg("locator", locator.str());
     }
 
-    void _handle_gl_program(
+    void handle_gl_program_loaded(
       identifier_t request_id,
       oglplus::program_name,
       std::reference_wrapper<oglplus::owned_program_name>,
       const url& locator) noexcept {
         _ctx.cio_print("request ${requestId}: program ${locator}")
+          .arg("requestId", request_id)
+          .arg("locator", locator.str());
+    }
+
+    void handle_value_tree_loaded(
+      identifier_t request_id,
+      const valtree::compound& tree,
+      const url& locator) noexcept {
+        _ctx.cio_print("request ${requestId}: valtree ${locator} (${nested})")
+          .arg("nested", tree.root().nested_count())
+          .arg("requestId", request_id)
+          .arg("locator", locator.str());
+    }
+
+    void handle_shape_generator_loaded(
+      identifier_t request_id,
+      const std::shared_ptr<shapes::generator>& shape_gen,
+      const url& locator) noexcept {
+        _ctx.cio_print("request ${requestId}: shape ${locator} (${vertices})")
+          .arg("vertices", shape_gen->vertex_count())
           .arg("requestId", request_id)
           .arg("locator", locator.str());
     }
@@ -87,17 +99,9 @@ example_cube::example_cube(execution_context& ec, video_context& vc)
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
 
-    connect<&example_cube::_handle_stream_data>(
-      this, _loader.blob_stream_data_appended);
-    connect<&example_cube::_handle_glsl_source>(
-      this, _loader.glsl_source_loaded);
-    connect<&example_cube::_handle_gl_shader>(this, _loader.gl_shader_loaded);
-    connect<&example_cube::_handle_gl_program>(this, _loader.gl_program_loaded);
+    _loader.connect_observer(*this);
 
-    _loader.request_value_tree_traversal(
-      url{"json:///ShapeJson"},
-      valtree::make_printing_value_tree_visitor(ec.main_context().cio()),
-      64);
+    _loader.request_shape_generator(url{"json:///ShapeJson"});
     _loader.request_gl_program(url{"json:///GLProgram"}, _video);
 
     camera.set_near(0.1F)
