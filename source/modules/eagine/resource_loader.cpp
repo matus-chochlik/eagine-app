@@ -32,6 +32,8 @@ export class resource_loader;
 /// @see resource_loader
 /// @see resource_loader_signals
 export enum class resource_kind {
+    /// @brief Unknown resource type.
+    unknown,
     /// @brief JSON text.
     json_text,
     /// @brief YAML text.
@@ -50,8 +52,8 @@ export enum class resource_kind {
     gl_shader,
     ///@brief GL program object.
     gl_program,
-    /// @brief Unknown resource types.
-    unknown
+    /// @brief Marks that resource request is finished.
+    finished
 };
 //------------------------------------------------------------------------------
 class pending_resource_info {
@@ -61,15 +63,25 @@ public:
       identifier_t req_id,
       url loc,
       resource_kind k) noexcept
-      : parent{loader}
-      , request_id{req_id}
-      , locator{std::move(loc)}
-      , kind{k} {}
+      : _parent{loader}
+      , _request_id{req_id}
+      , _locator{std::move(loc)}
+      , _kind{k} {}
 
-    resource_loader& parent;
-    const identifier_t request_id;
-    const url locator;
-    resource_kind kind{resource_kind::unknown};
+    auto request_id() const noexcept -> identifier_t {
+        return _request_id;
+    }
+
+    auto is(resource_kind kind) const noexcept -> bool {
+        return _kind == kind;
+    }
+
+    auto loader() noexcept -> resource_loader& {
+        return _parent;
+    }
+
+    void mark_finished() noexcept;
+    auto is_done() const noexcept -> bool;
 
     void add_valtree_stream_input(
       valtree::value_tree_stream_input input) noexcept;
@@ -85,8 +97,7 @@ public:
       oglplus::owned_shader_name& shdr) noexcept -> bool;
 
     auto update() noexcept -> work_done;
-
-    void cancel() noexcept;
+    void cleanup() noexcept;
 
     // continuation handlers
     void handle_source_data(
@@ -114,6 +125,10 @@ private:
       const span_size_t offset,
       const memory::span<const memory::const_block> data) noexcept;
 
+    void _handle_value_tree(
+      const pending_resource_info& source,
+      const valtree::compound& tree) noexcept;
+
     void _handle_glsl_strings(
       const msgbus::blob_info&,
       const pending_resource_info& source,
@@ -127,8 +142,6 @@ private:
     void _handle_gl_shader(
       const pending_resource_info& source,
       oglplus::owned_shader_name& shdr) noexcept;
-
-    pending_resource_info* _continuation{nullptr};
 
     // the pending resource state
     struct _pending_valtree_traversal_state {
@@ -150,34 +163,43 @@ private:
         flat_set<identifier_t> pending_requests;
     };
 
+    resource_loader& _parent;
+    const identifier_t _request_id;
+    pending_resource_info* _continuation{nullptr};
+    const url _locator;
+
     std::variant<
       std::monostate,
       _pending_valtree_traversal_state,
       _pending_shape_generator_state,
       _pending_gl_shader_state,
       _pending_gl_program_state>
-      state;
+      _state;
+
+    resource_kind _kind{resource_kind::unknown};
 };
 //------------------------------------------------------------------------------
 /// @brief Result of resource request operation.
 /// @see resource_kind
 export class resource_request_result {
 public:
-    resource_request_result(pending_resource_info& info) noexcept
-      : _info{info} {}
+    resource_request_result(pending_resource_info& info, bool cancelled) noexcept
+      : _info{info}
+      , _was_cancelled{cancelled} {}
 
     resource_request_result(
-      std::pair<const identifier_t, pending_resource_info>& init) noexcept
-      : resource_request_result{std::get<1>(init)} {}
+      std::pair<const identifier_t, pending_resource_info>& init,
+      bool cancelled) noexcept
+      : resource_request_result{std::get<1>(init), cancelled} {}
 
     /// @brief Indicates if the request is valid.
     explicit operator bool() const noexcept {
-        return _info.request_id != 0;
+        return !_was_cancelled;
     }
 
     /// @brief Returns the unique id of the request.
     auto request_id() const noexcept -> identifier_t {
-        return _info.request_id;
+        return _info._request_id;
     }
 
     auto info() noexcept -> pending_resource_info& {
@@ -186,7 +208,7 @@ public:
 
     /// @brief Returns the locator of the requested resource.
     auto locator() const noexcept -> const url& {
-        return _info.locator;
+        return _info._locator;
     }
 
     /// @brief Sets the reference to the continuation request of this request.
@@ -205,6 +227,7 @@ public:
 
 private:
     pending_resource_info& _info;
+    bool _was_cancelled;
 };
 //------------------------------------------------------------------------------
 /// @brief Collection of signals emitted by the resource loader.
@@ -219,7 +242,7 @@ export struct resource_loader_signals {
       identifier_t,
       const std::shared_ptr<shapes::generator>&,
       const url&) noexcept>
-      shape_loaded;
+      shape_generator_loaded;
 
     /// @brief Emitted when a value tree is loaded.
     signal<void(identifier_t, const valtree::compound&, const url&) noexcept>

@@ -44,16 +44,16 @@ public:
       const basic_string_path& path,
       span<const string_view> data) noexcept {
         if((path.size() == 2) && (path.front() == "urls")) {
-            auto& loader = parent.parent;
+            auto& loader = parent.loader();
             auto& GL = video.gl_api().constants();
             const auto delegate = [&, this](oglplus::shader_type shdr_type) {
-                if(const auto src_request{loader.request_gl_shader(
+                if(auto src_request{loader.request_gl_shader(
                      url{to_string(extract(data))}, shdr_type, video)}) {
                     src_request.set_continuation(parent);
                     if(!parent.add_gl_program_shader_request(
                          src_request.request_id())) [[unlikely]] {
-                        loader.forget_resource(src_request.request_id());
-                        loader.forget_resource(parent.request_id);
+                        src_request.info().mark_finished();
+                        parent.mark_finished();
                     }
                 }
             };
@@ -74,7 +74,7 @@ public:
     }
 
     void failed() noexcept final {
-        parent.parent.forget_resource(parent.request_id);
+        parent.mark_finished();
     }
 
 private:
@@ -84,32 +84,41 @@ private:
 //------------------------------------------------------------------------------
 // pending_resource_info
 //------------------------------------------------------------------------------
+void pending_resource_info::mark_finished() noexcept {
+    _parent.forget_resource(_request_id);
+    _kind = resource_kind::finished;
+}
+//------------------------------------------------------------------------------
+auto pending_resource_info::is_done() const noexcept -> bool {
+    return _kind == resource_kind::finished;
+}
+//------------------------------------------------------------------------------
 void pending_resource_info::add_valtree_stream_input(
   valtree::value_tree_stream_input input) noexcept {
-    state = _pending_valtree_traversal_state{.input = std::move(input)};
+    _state = _pending_valtree_traversal_state{.input = std::move(input)};
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::add_shape_generator(
   std::shared_ptr<shapes::generator> gen) noexcept {
-    state = _pending_shape_generator_state{.generator = std::move(gen)};
+    _state = _pending_shape_generator_state{.generator = std::move(gen)};
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::add_gl_shader_context(
   video_context& video,
   oglplus::shader_type shdr_type) noexcept {
-    state = _pending_gl_shader_state{.video = video, .shdr_type = shdr_type};
+    _state = _pending_gl_shader_state{.video = video, .shdr_type = shdr_type};
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::add_gl_program_context(video_context& vc) noexcept {
     oglplus::owned_program_name prog;
     vc.gl_api().create_program() >> prog;
-    state = _pending_gl_program_state{.video = vc, .prog = std::move(prog)};
+    _state = _pending_gl_program_state{.video = vc, .prog = std::move(prog)};
 }
 //------------------------------------------------------------------------------
 auto pending_resource_info::add_gl_program_shader_request(
   identifier_t request_id) noexcept -> bool {
-    if(std::holds_alternative<_pending_gl_program_state>(state)) {
-        auto& pgps = std::get<_pending_gl_program_state>(state);
+    if(std::holds_alternative<_pending_gl_program_state>(_state)) {
+        auto& pgps = std::get<_pending_gl_program_state>(_state);
         pgps.pending_requests.insert(request_id);
         return true;
     }
@@ -119,8 +128,8 @@ auto pending_resource_info::add_gl_program_shader_request(
 auto pending_resource_info::add_gl_program_shader(
   identifier_t request_id,
   oglplus::owned_shader_name& shdr) noexcept -> bool {
-    if(std::holds_alternative<_pending_gl_program_state>(state)) {
-        auto& pgps = std::get<_pending_gl_program_state>(state);
+    if(std::holds_alternative<_pending_gl_program_state>(_state)) {
+        auto& pgps = std::get<_pending_gl_program_state>(_state);
         if(const auto pos{pgps.pending_requests.find(request_id)};
            pos != pgps.pending_requests.end()) {
             pgps.pending_requests.erase(pos);
@@ -134,23 +143,25 @@ auto pending_resource_info::add_gl_program_shader(
 //------------------------------------------------------------------------------
 auto pending_resource_info::update() noexcept -> work_done {
     some_true something_done;
-    if(std::holds_alternative<_pending_shape_generator_state>(state)) {
+    if(std::holds_alternative<_pending_shape_generator_state>(_state)) {
         if(const auto shape_gen{
-             std::get<_pending_shape_generator_state>(state).generator}) {
-            parent.shape_loaded(request_id, shape_gen, locator);
+             std::get<_pending_shape_generator_state>(_state).generator}) {
+            _parent.shape_generator_loaded(_request_id, shape_gen, _locator);
             something_done();
         }
-        parent.forget_resource(request_id);
+        _state = std::monostate{};
+        mark_finished();
     }
     return something_done;
 }
 //------------------------------------------------------------------------------
-void pending_resource_info::cancel() noexcept {
-    if(std::holds_alternative<_pending_gl_program_state>(state)) {
-        auto& pgps = std::get<_pending_gl_program_state>(state);
+void pending_resource_info::cleanup() noexcept {
+    if(std::holds_alternative<_pending_gl_program_state>(_state)) {
+        auto& pgps = std::get<_pending_gl_program_state>(_state);
         if(pgps.prog) {
             pgps.video.get().gl_api().delete_program(std::move(pgps.prog));
         }
+        _state = std::monostate{};
     }
 }
 //------------------------------------------------------------------------------
@@ -159,18 +170,21 @@ void pending_resource_info::_handle_json_text(
   const pending_resource_info&,
   const span_size_t,
   const memory::span<const memory::const_block> data) noexcept {
-    if(kind == resource_kind::value_tree) {
-        auto tree{valtree::from_json_data(data, parent.main_context().log())};
-        parent.value_tree_loaded(request_id, tree, locator);
-    } else if(kind == resource_kind::value_tree_traversal) {
-        if(std::holds_alternative<_pending_valtree_traversal_state>(state)) {
+    if(is(resource_kind::value_tree)) {
+        auto tree{valtree::from_json_data(data, _parent.main_context().log())};
+        if(_continuation) {
+            extract(_continuation)._handle_value_tree(*this, tree);
+        }
+        _parent.value_tree_loaded(_request_id, tree, _locator);
+        mark_finished();
+    } else if(is(resource_kind::value_tree_traversal)) {
+        if(std::holds_alternative<_pending_valtree_traversal_state>(_state)) {
             for(auto chunk : data) {
-                std::get<_pending_valtree_traversal_state>(state)
+                std::get<_pending_valtree_traversal_state>(_state)
                   .input.consume_data(chunk);
             }
-        } else {
-            parent.forget_resource(request_id);
         }
+        mark_finished();
     }
 }
 //------------------------------------------------------------------------------
@@ -179,7 +193,17 @@ void pending_resource_info::_handle_yaml_text(
   const pending_resource_info&,
   const span_size_t,
   const memory::span<const memory::const_block>) noexcept {
-    if(kind == resource_kind::value_tree) {
+    if(is(resource_kind::value_tree)) {
+    }
+}
+//------------------------------------------------------------------------------
+void pending_resource_info::_handle_value_tree(
+  const pending_resource_info& source,
+  const valtree::compound& tree) noexcept {
+    if(is(resource_kind::shape_generator)) {
+        if(auto gen{shapes::from_value_tree(tree, _parent)}) {
+            add_shape_generator(std::move(gen));
+        }
     }
 }
 //------------------------------------------------------------------------------
@@ -188,7 +212,7 @@ void pending_resource_info::_handle_glsl_strings(
   const pending_resource_info& source,
   [[maybe_unused]] const span_size_t offset,
   const memory::span<const memory::const_block> data) noexcept {
-    if(kind == resource_kind::glsl_source) {
+    if(is(resource_kind::glsl_source)) {
         std::vector<const oglplus::gl_types::char_type*> gl_strs;
         std::vector<oglplus::gl_types::int_type> gl_ints;
         gl_strs.reserve(std_size(data.size()));
@@ -206,16 +230,17 @@ void pending_resource_info::_handle_glsl_strings(
         if(_continuation) {
             extract(_continuation)._handle_glsl_source(*this, glsl_src);
         }
-        parent.glsl_source_loaded(request_id, glsl_src, locator);
+        _parent.glsl_source_loaded(_request_id, glsl_src, _locator);
+        mark_finished();
     }
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::_handle_glsl_source(
   const pending_resource_info& source,
   const oglplus::glsl_source_ref& glsl_src) noexcept {
-    if(kind == resource_kind::gl_shader) {
-        if(std::holds_alternative<_pending_gl_shader_state>(state)) {
-            auto& pgss = std::get<_pending_gl_shader_state>(state);
+    if(is(resource_kind::gl_shader)) {
+        if(std::holds_alternative<_pending_gl_shader_state>(_state)) {
+            auto& pgss = std::get<_pending_gl_shader_state>(_state);
             const auto& [gl, GL] = pgss.video.get().gl_api();
 
             oglplus::owned_shader_name shdr;
@@ -225,48 +250,48 @@ void pending_resource_info::_handle_glsl_source(
             if(_continuation) {
                 extract(_continuation)._handle_gl_shader(*this, shdr);
             }
-            parent.gl_shader_loaded(
-              request_id, pgss.shdr_type, shdr, {shdr}, locator);
+            _parent.gl_shader_loaded(
+              _request_id, pgss.shdr_type, shdr, {shdr}, _locator);
 
             if(shdr) {
                 gl.delete_shader(std::move(shdr));
             }
-        } else {
-            parent.forget_resource(request_id);
         }
+        mark_finished();
     }
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::_handle_gl_shader(
   const pending_resource_info& source,
   oglplus::owned_shader_name& shdr) noexcept {
-    if(kind == resource_kind::gl_program) {
-        if(std::holds_alternative<_pending_gl_program_state>(state)) {
-            auto& pgps = std::get<_pending_gl_program_state>(state);
+    if(is(resource_kind::gl_program)) {
+        if(std::holds_alternative<_pending_gl_program_state>(_state)) {
+            auto& pgps = std::get<_pending_gl_program_state>(_state);
             if(pgps.prog) [[likely]] {
                 const auto& gl = pgps.video.get().gl_api().operations();
 
                 if(const auto pos{
-                     pgps.pending_requests.find(source.request_id)};
+                     pgps.pending_requests.find(source.request_id())};
                    pos != pgps.pending_requests.end()) {
                     gl.attach_shader(pgps.prog, shdr);
 
                     pgps.pending_requests.erase(pos);
                     if(pgps.pending_requests.empty()) {
                         gl.link_program(pgps.prog);
-                        parent.gl_program_loaded(
-                          request_id, pgps.prog, {pgps.prog}, locator);
+                        _parent.gl_program_loaded(
+                          _request_id, pgps.prog, {pgps.prog}, _locator);
 
                         if(pgps.prog) {
                             gl.delete_program(std::move(pgps.prog));
                         }
+                        mark_finished();
                     }
                 }
             } else {
-                parent.forget_resource(request_id);
+                mark_finished();
             }
         } else {
-            parent.forget_resource(request_id);
+            mark_finished();
         }
     }
 }
@@ -276,7 +301,7 @@ void pending_resource_info::handle_source_data(
   const pending_resource_info& rinfo,
   const span_size_t offset,
   const memory::span<const memory::const_block> data) noexcept {
-    switch(rinfo.kind) {
+    switch(rinfo._kind) {
         case resource_kind::json_text:
             _handle_json_text(binfo, rinfo, offset, data);
             break;
@@ -293,13 +318,13 @@ void pending_resource_info::handle_source_data(
 //------------------------------------------------------------------------------
 void pending_resource_info::handle_source_finished(
   const pending_resource_info&) noexcept {
-    parent.forget_resource(request_id);
+    mark_finished();
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::handle_source_cancelled(
   const pending_resource_info&) noexcept {
-    parent.resource_cancelled(request_id, kind, locator);
-    parent.forget_resource(request_id);
+    _parent.resource_cancelled(_request_id, _kind, _locator);
+    mark_finished();
 }
 //------------------------------------------------------------------------------
 // resource_loader
@@ -335,7 +360,7 @@ void resource_loader::_handle_stream_cancelled(
         if(rinfo._continuation) {
             extract(rinfo._continuation).handle_source_cancelled(rinfo);
         }
-        resource_cancelled(request_id, rinfo.kind, rinfo.locator);
+        resource_cancelled(request_id, rinfo._kind, rinfo._locator);
         _pending.erase(pos);
     }
 }
@@ -347,7 +372,7 @@ auto resource_loader::_cancelled_resource(
     auto result{_cancelled.emplace(
       request_id,
       pending_resource_info{*this, request_id, std::move(locator), kind})};
-    return {*std::get<0>(result)};
+    return {*std::get<0>(result), true};
 }
 //------------------------------------------------------------------------------
 auto resource_loader::_new_resource(
@@ -357,7 +382,7 @@ auto resource_loader::_new_resource(
     auto result{_pending.emplace(
       request_id,
       pending_resource_info{*this, request_id, std::move(locator), kind})};
-    return {*std::get<0>(result)};
+    return {*std::get<0>(result), false};
 }
 //------------------------------------------------------------------------------
 void resource_loader::_init() noexcept {
@@ -433,6 +458,11 @@ auto resource_loader::request_shape_generator(url locator) noexcept
           _new_resource(std::move(locator), resource_kind::shape_generator)};
         new_request.info().add_shape_generator(std::move(gen));
         return new_request;
+    } else if(const auto src_request{request_value_tree(locator)}) {
+        auto new_request{
+          _new_resource(std::move(locator), resource_kind::shape_generator)};
+        src_request.set_continuation(new_request);
+        return new_request;
     }
     return _cancelled_resource(locator, resource_kind::shape_generator);
 }
@@ -443,7 +473,7 @@ auto resource_loader::request_glsl_source(url locator) noexcept
         if(const auto src_request{_new_resource(
              fetch_resource_chunks(
                locator,
-               2048,
+               4096,
                msgbus::message_priority::normal,
                std::chrono::seconds{15}),
              resource_kind::glsl_text)}) {
@@ -521,7 +551,7 @@ auto resource_loader::request_gl_program(url locator, video_context& vc) noexcep
          1024)}) {
         return new_request;
     }
-    forget_resource(new_request.request_id());
+    new_request.info().mark_finished();
     return _cancelled_resource(locator, resource_kind::gl_program);
 }
 //------------------------------------------------------------------------------
@@ -533,15 +563,15 @@ auto resource_loader::update() noexcept -> work_done {
     some_true something_done{base::update()};
 
     for(auto& [request_id, rinfo] : _cancelled) {
-        resource_cancelled(request_id, rinfo.kind, rinfo.locator);
+        resource_cancelled(request_id, rinfo._kind, rinfo._locator);
         something_done();
     }
     _cancelled.clear();
 
     for(auto pos{_pending.begin()}; pos != _pending.end();) {
         auto& [request_id, info] = *pos;
-        if(_deleted.contains(request_id)) {
-            info.cancel();
+        if(info.is_done() || _deleted.contains(request_id)) {
+            info.cleanup();
             pos = _pending.erase(pos);
             something_done();
         } else {
