@@ -45,11 +45,13 @@ example_shape::example_shape(execution_context& ec, video_context& vc)
     const auto& [gl, GL] = glapi;
 
     auto yaml_text = as_chars(embed<"ShapeYaml">("shape.yaml"));
-    oglplus::shape_generator shape(
-      glapi,
-      shapes::from_value_tree(
-        valtree::from_yaml_text(yaml_text, ec.main_context()), ec.as_parent()));
-    geom.init(glapi, shape, _ctx.buffer());
+    geom.init(
+      {oglplus::shape_generator(
+         glapi,
+         shapes::from_value_tree(
+           valtree::from_yaml_text(yaml_text, ec.main_context()),
+           ec.as_parent())),
+       vc});
 
     // vertex shader
     auto vs_source = embed<"VertShader">("vertex.glsl");

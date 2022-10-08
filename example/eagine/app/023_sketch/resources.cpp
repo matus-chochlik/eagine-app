@@ -57,17 +57,17 @@ void sketch_program::bind_coord_location(
 //------------------------------------------------------------------------------
 void shape_geometry::init(video_context& vc) {
     geometry_and_bindings::init(
-      shapes::add_triangle_adjacency(
-        shapes::unit_twisted_torus(
-          shapes::vertex_attrib_kind::position |
-            shapes::vertex_attrib_kind::normal |
-            shapes::vertex_attrib_kind::wrap_coord,
-          9,
-          13,
-          9,
-          0.5F),
-        vc.parent()),
-      vc);
+      {shapes::add_triangle_adjacency(
+         shapes::unit_twisted_torus(
+           shapes::vertex_attrib_kind::position |
+             shapes::vertex_attrib_kind::normal |
+             shapes::vertex_attrib_kind::wrap_coord,
+           9,
+           13,
+           9,
+           0.5F),
+         vc.parent()),
+       vc});
 }
 //------------------------------------------------------------------------------
 // sketch texture

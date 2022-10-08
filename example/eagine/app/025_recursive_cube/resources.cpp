@@ -79,11 +79,11 @@ void cube_program::bind_tex_coord_location(
 //------------------------------------------------------------------------------
 void cube_geometry::init(video_context& vc) {
     geometry_and_bindings::init(
-      shapes::unit_cube(
-        shapes::vertex_attrib_kind::position |
-        shapes::vertex_attrib_kind::normal |
-        shapes::vertex_attrib_kind::face_coord),
-      vc);
+      {shapes::unit_cube(
+         shapes::vertex_attrib_kind::position |
+         shapes::vertex_attrib_kind::normal |
+         shapes::vertex_attrib_kind::face_coord),
+       vc});
 }
 //------------------------------------------------------------------------------
 void cube_draw_buffers::init(execution_context&, video_context& vc) {

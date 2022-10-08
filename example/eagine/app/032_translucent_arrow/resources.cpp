@@ -103,7 +103,7 @@ void shape_geometry::init(
     oglplus::shape_generator shape(glapi, gen);
     bound_sphere = shape.bounding_sphere();
 
-    geometry_and_bindings::init(glapi, shape, vc.parent().buffer());
+    geometry_and_bindings::init({shape, vc});
 }
 //------------------------------------------------------------------------------
 // texture

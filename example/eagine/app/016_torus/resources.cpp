@@ -59,7 +59,7 @@ void torus_program::bind_texcoord_location(
 //------------------------------------------------------------------------------
 // geometry
 //------------------------------------------------------------------------------
-void torus_geometry::init(execution_context& ec, video_context& vc) {
+void torus_geometry::init(execution_context&, video_context& vc) {
     const auto& glapi = vc.gl_api();
 
     oglplus::shape_generator shape(
@@ -72,14 +72,13 @@ void torus_geometry::init(execution_context& ec, video_context& vc) {
         36.F,
         12.F,
         1.F));
-    geometry::init(
-      glapi,
-      shape,
-      vertex_attrib_bindings(
-        {(shapes::vertex_attrib_kind::position / 3),
-         (shapes::vertex_attrib_kind::normal / 3),
-         (shapes::vertex_attrib_kind::wrap_coord / 0)}),
-      ec.buffer());
+    geometry_and_bindings::init(
+      {shape,
+       vertex_attrib_bindings(
+         {(shapes::vertex_attrib_kind::position / 3),
+          (shapes::vertex_attrib_kind::normal / 3),
+          (shapes::vertex_attrib_kind::wrap_coord / 0)}),
+       vc});
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

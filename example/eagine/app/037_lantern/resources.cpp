@@ -136,7 +136,7 @@ void pumpkin_geometry::init(video_context& vc) {
     _bounding_sphere = shape.bounding_sphere();
 
     // geometry
-    geometry_and_bindings::init(shape, vc);
+    geometry_and_bindings::init({shape, vc});
 
     // textures
     const auto tex_src{search_resource("PumpkinTex")};
@@ -170,10 +170,10 @@ void pumpkin_geometry::clean_up(video_context& vc) {
 //------------------------------------------------------------------------------
 void screen_geometry::init(video_context& vc) {
     geometry_and_bindings::init(
-      shapes::unit_screen(
-        shapes::vertex_attrib_kind::position |
-        shapes::vertex_attrib_kind::wrap_coord),
-      vc);
+      {shapes::unit_screen(
+         shapes::vertex_attrib_kind::position |
+         shapes::vertex_attrib_kind::wrap_coord),
+       vc});
 
     vc.clean_up_later(*this);
 }

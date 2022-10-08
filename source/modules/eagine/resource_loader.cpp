@@ -270,11 +270,21 @@ export struct resource_loader_signals {
       const url&) noexcept>
       gl_program_loaded;
 
-    signal<void(identifier_t, oglplus::buffer_name, const url&) noexcept>
-      buffer_loaded;
+    /// @brief Emitted when a GL texture is successfully created and set-up.
+    signal<void(
+      identifier_t,
+      oglplus::texture_name,
+      std::reference_wrapper<oglplus::owned_texture_name>,
+      const url&) noexcept>
+      gl_texture_loaded;
 
-    signal<void(identifier_t, oglplus::texture_name, const url&) noexcept>
-      texture_loaded;
+    /// @brief Emitted when a GL buffer is successfully created and set-up.
+    signal<void(
+      identifier_t,
+      oglplus::buffer_name,
+      std::reference_wrapper<oglplus::owned_buffer_name>,
+      const url&) noexcept>
+      gl_buffer_loaded;
 };
 //------------------------------------------------------------------------------
 template <typename T>
@@ -405,19 +415,28 @@ public:
     /// @brief Requests a value tree object resource.
     auto request_value_tree(url locator) noexcept -> resource_request_result;
 
+    /// @brief Requests a value tree object traversal by the specified visitor.
     auto request_value_tree_traversal(
       url locator,
       std::shared_ptr<valtree::value_tree_visitor>,
       span_size_t max_token_size) noexcept -> resource_request_result;
 
+    /// @brief Requests a value tree object traversal by the specified builder.
     auto request_value_tree_traversal(
       url locator,
       std::shared_ptr<valtree::object_builder>,
       span_size_t max_token_size) noexcept -> resource_request_result;
 
-    /// @brief Requests a shape geometry generator / loader resource.
+    /// @brief Requests a shape geometry generator / loader object.
     auto request_shape_generator(url locator) noexcept
       -> resource_request_result;
+
+    /// @brief Requests a shape geometry and attrib bindings object.
+    auto request_geometry_and_bindings(
+      url locator,
+      video_context&,
+      oglplus::vertex_attrib_bindings,
+      shapes::drawing_variant) noexcept -> resource_request_result;
 
     /// @brief Requests GLSL shader source code resource.
     auto request_glsl_source(url locator) noexcept -> resource_request_result;

@@ -53,9 +53,7 @@ private:
 //------------------------------------------------------------------------------
 // geometry
 //------------------------------------------------------------------------------
-class shape_geometry
-  : public oglplus::vertex_attrib_bindings
-  , public oglplus::geometry {
+class shape_geometry : public geometry_and_bindings {
 public:
     void init(execution_context&, video_context&);
     void clean_up(video_context&);

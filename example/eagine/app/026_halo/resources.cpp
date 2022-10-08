@@ -122,9 +122,6 @@ void shape_geometry::init(execution_context& ec, video_context& vc) {
     const auto& glapi = vc.gl_api();
     auto& ctx = ec.main_context();
     const auto& args = ctx.args();
-    vertex_attrib_bindings::init(
-      {shapes::vertex_attrib_kind::position,
-       shapes::vertex_attrib_kind::normal});
     std::shared_ptr<shapes::generator> gen;
 
     if(args.find("--icosahedron")) {
@@ -143,7 +140,14 @@ void shape_geometry::init(execution_context& ec, video_context& vc) {
 
     oglplus::shape_generator shape(
       glapi, shapes::add_triangle_adjacency(std::move(gen), ctx));
-    geometry::init(glapi, shape, *this, ec.buffer());
+
+    geometry_and_bindings::init(
+      {shape,
+       vertex_attrib_bindings{
+         {shapes::vertex_attrib_kind::position,
+          shapes::vertex_attrib_kind::normal}},
+       vc,
+       ec.buffer()});
 
     vc.clean_up_later(*this);
 }

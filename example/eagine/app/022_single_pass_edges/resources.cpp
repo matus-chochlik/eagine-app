@@ -36,13 +36,13 @@ void edges_program::bind_position_location(
 //------------------------------------------------------------------------------
 void icosahedron_geometry::init(video_context& vc) {
     geometry_and_bindings::init(
-      shapes::center(eagine::shapes::ortho_array_xyz(
-        shapes::scale(
-          shapes::unit_icosahedron(shapes::vertex_attrib_kind::position),
-          {0.5F, 0.5F, 0.5F}),
-        {1.F, 1.F, 1.F},
-        {3, 3, 3})),
-      vc);
+      {shapes::center(eagine::shapes::ortho_array_xyz(
+         shapes::scale(
+           shapes::unit_icosahedron(shapes::vertex_attrib_kind::position),
+           {0.5F, 0.5F, 0.5F}),
+         {1.F, 1.F, 1.F},
+         {3, 3, 3})),
+       vc});
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

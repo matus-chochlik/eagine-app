@@ -47,7 +47,7 @@ void cel_program::bind_position_location(
 //------------------------------------------------------------------------------
 void icosahedron_geometry::init(video_context& vc) {
     geometry_and_bindings::init(
-      shapes::unit_icosahedron(shapes::vertex_attrib_kind::position), vc);
+      {shapes::unit_icosahedron(shapes::vertex_attrib_kind::position), vc});
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

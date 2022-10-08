@@ -1,4 +1,7 @@
-{"urls":
+{"attribs":{
+"position": "Position",
+"normal": "Normal"}
+,"urls":
 {"vertex":   "glsl:///VertShader"
 ,"fragment": "glsl:///FragShader"}
 }

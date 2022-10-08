@@ -73,15 +73,15 @@ void torus_program::bind_texcoord_location(
 //------------------------------------------------------------------------------
 void torus_geometry::init(video_context& vc) {
     geometry_and_bindings::init(
-      shapes::unit_torus(
-        shapes::vertex_attrib_kind::position |
-          shapes::vertex_attrib_kind::normal |
-          shapes::vertex_attrib_kind::tangent |
-          shapes::vertex_attrib_kind::wrap_coord,
-        48,
-        72,
-        0.5F),
-      vc);
+      {shapes::unit_torus(
+         shapes::vertex_attrib_kind::position |
+           shapes::vertex_attrib_kind::normal |
+           shapes::vertex_attrib_kind::tangent |
+           shapes::vertex_attrib_kind::wrap_coord,
+         48,
+         72,
+         0.5F),
+       vc});
 }
 //------------------------------------------------------------------------------
 // textures
