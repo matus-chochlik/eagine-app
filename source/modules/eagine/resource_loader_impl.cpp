@@ -103,6 +103,10 @@ void pending_resource_info::add_shape_generator(
     _state = _pending_shape_generator_state{.generator = std::move(gen)};
 }
 //------------------------------------------------------------------------------
+void pending_resource_info::add_gl_shape_context(video_context& video) noexcept {
+    _state = _pending_gl_shape_state{.video = video};
+}
+//------------------------------------------------------------------------------
 void pending_resource_info::add_gl_shader_context(
   video_context& video,
   oglplus::shader_type shdr_type) noexcept {
@@ -146,6 +150,9 @@ auto pending_resource_info::update() noexcept -> work_done {
     if(std::holds_alternative<_pending_shape_generator_state>(_state)) {
         if(const auto shape_gen{
              std::get<_pending_shape_generator_state>(_state).generator}) {
+            if(_continuation) {
+                _continuation->_handle_shape_generator(*this, shape_gen);
+            }
             _parent.shape_generator_loaded(_request_id, shape_gen, _locator);
             something_done();
         }
@@ -204,6 +211,20 @@ void pending_resource_info::_handle_value_tree(
         if(auto gen{shapes::from_value_tree(tree, _parent)}) {
             add_shape_generator(std::move(gen));
         }
+    }
+}
+//------------------------------------------------------------------------------
+void pending_resource_info::_handle_shape_generator(
+  const pending_resource_info& source,
+  const std::shared_ptr<shapes::generator>& gen) noexcept {
+    if(is(resource_kind::gl_shape)) {
+        if(std::holds_alternative<_pending_gl_shape_state>(_state)) {
+            auto& pgss = std::get<_pending_gl_shape_state>(_state);
+            const oglplus::shape_generator shape{
+              pgss.video.get().gl_api(), gen};
+            _parent.gl_shape_loaded(_request_id, shape, _locator);
+        }
+        mark_finished();
     }
 }
 //------------------------------------------------------------------------------
@@ -465,6 +486,18 @@ auto resource_loader::request_shape_generator(url locator) noexcept
         return new_request;
     }
     return _cancelled_resource(locator, resource_kind::shape_generator);
+}
+//------------------------------------------------------------------------------
+auto resource_loader::request_gl_shape(url locator, video_context& vc) noexcept
+  -> resource_request_result {
+    if(const auto src_request{request_shape_generator(locator)}) {
+        auto new_request{
+          _new_resource(std::move(locator), resource_kind::gl_shape)};
+        new_request.info().add_gl_shape_context(vc);
+        src_request.set_continuation(new_request);
+        return new_request;
+    }
+    return _cancelled_resource(locator, resource_kind::gl_shape);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request_glsl_source(url locator) noexcept

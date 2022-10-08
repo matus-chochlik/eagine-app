@@ -71,12 +71,12 @@ private:
           .arg("locator", locator.str());
     }
 
-    void handle_shape_generator_loaded(
+    void handle_gl_shape_loaded(
       identifier_t request_id,
-      const std::shared_ptr<shapes::generator>& shape_gen,
+      const oglplus::shape_generator& shape_gen,
       const url& locator) noexcept {
         _ctx.cio_print("request ${requestId}: shape ${locator} (${vertices})")
-          .arg("vertices", shape_gen->vertex_count())
+          .arg("vertices", shape_gen.vertex_count())
           .arg("requestId", request_id)
           .arg("locator", locator.str());
     }
