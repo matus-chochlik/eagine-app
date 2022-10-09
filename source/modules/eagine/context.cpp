@@ -19,10 +19,12 @@ import eagine.core.utility;
 import eagine.core.main_ctx;
 import eagine.oglplus;
 import eagine.oalplus;
+import eagine.msgbus;
 import :interface;
 import :options;
 import :state;
 import :input;
+import :resource_loader;
 import <map>;
 
 namespace eagine::app {
@@ -198,7 +200,9 @@ export class execution_context
 public:
     execution_context(main_ctx_parent parent) noexcept
       : main_ctx_object("AppExecCtx", parent)
-      , _options{*this} {}
+      , _options{*this}
+      , _registry{*this}
+      , _loader{_registry.emplace<resource_loader>("RsrsLoadr")} {}
 
     /// @brief Returns the application execution result.
     auto result() const noexcept -> int {
@@ -208,6 +212,11 @@ public:
     /// @brief Returns a reference to the launch options.
     auto options() const noexcept -> const launch_options& {
         return _options;
+    }
+
+    /// @brief Returns a reference to the resource loader.
+    auto loader() const noexcept -> resource_loader& {
+        return _loader;
     }
 
     /// @brief Returns a references to a multi-purpose memory buffer.
@@ -359,14 +368,17 @@ public:
 private:
     int _exec_result{0};
     launch_options _options;
+    msgbus::registry _registry;
     std::shared_ptr<context_state> _state;
     std::unique_ptr<application> _app;
-    bool _keep_running{true};
 
+    resource_loader& _loader;
     std::vector<std::shared_ptr<hmi_provider>> _hmi_providers;
     std::vector<std::shared_ptr<input_provider>> _input_providers;
     std::vector<std::unique_ptr<video_context>> _video_contexts;
     std::vector<std::unique_ptr<audio_context>> _audio_contexts;
+
+    bool _keep_running{true};
 
     auto _setup_providers() noexcept -> bool;
 

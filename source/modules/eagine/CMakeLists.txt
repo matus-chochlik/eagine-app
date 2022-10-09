@@ -101,6 +101,7 @@ eagine_add_module(
 		eagine.core.main_ctx
 		eagine.oglplus
 		eagine.oalplus
+		eagine.msgbus
 )
 
 eagine_add_module(

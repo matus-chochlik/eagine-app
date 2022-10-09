@@ -428,8 +428,8 @@ export class resource_loader
 
 public:
     /// @brief Initializing constructor
-    resource_loader(main_ctx& ctx)
-      : resource_data_consumer_node{ctx} {
+    resource_loader(msgbus::endpoint& bus)
+      : resource_data_consumer_node{bus} {
         _init();
     }
 

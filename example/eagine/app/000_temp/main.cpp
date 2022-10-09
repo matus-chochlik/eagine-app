@@ -95,7 +95,7 @@ private:
 
     execution_context& _ctx;
     video_context& _video;
-    resource_loader _loader;
+    resource_loader& _loader;
     background_color_depth _bg;
     timeout _is_done{std::chrono::seconds{30}};
 
@@ -106,7 +106,7 @@ private:
 example_cube::example_cube(execution_context& ec, video_context& vc)
   : _ctx{ec}
   , _video{vc}
-  , _loader{ec.main_context()}
+  , _loader{ec.loader()}
   , _bg{0.4F, 0.F, 1.F} {
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;

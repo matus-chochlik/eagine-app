@@ -550,6 +550,7 @@ void execution_context::clean_up() noexcept {
 }
 //------------------------------------------------------------------------------
 void execution_context::update() noexcept {
+    _registry.update_all();
     extract(_state).update_activity();
     for(auto& provider : _hmi_providers) {
         extract(provider).update(*this);
