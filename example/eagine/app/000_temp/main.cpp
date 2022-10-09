@@ -101,7 +101,7 @@ example_cube::example_cube(execution_context& ec, video_context& vc)
 
     _loader.connect_observer(*this);
 
-    _loader.request_shape_generator(url{"json:///ShapeJson"});
+    _loader.request_gl_shape(url{"json:///ShapeJson"}, _video);
     _loader.request_gl_program(url{"json:///GLProgram"}, _video);
 
     camera.set_near(0.1F)

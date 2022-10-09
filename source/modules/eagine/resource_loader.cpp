@@ -25,6 +25,7 @@ namespace eagine::app {
 
 export class video_context;
 export class audio_context;
+export class geometry_and_bindings;
 export class resource_request_result;
 export class resource_loader;
 //------------------------------------------------------------------------------
@@ -44,6 +45,8 @@ export enum class resource_kind {
     shape_generator,
     /// @brief OGLplus shape wrapper.
     gl_shape,
+    /// @brief Shape geometry buffers, vao instructions and attribute bindings.
+    gl_geometry_and_bindings,
     /// @brief Value tree.
     value_tree,
     /// @brief Value tree stream traversal.
@@ -90,6 +93,10 @@ public:
 
     void add_shape_generator(std::shared_ptr<shapes::generator> gen) noexcept;
     void add_gl_shape_context(video_context&) noexcept;
+    void add_gl_geometry_and_bindings_context(
+      video_context&,
+      oglplus::vertex_attrib_bindings,
+      shapes::drawing_variant) noexcept;
 
     void add_gl_shader_context(video_context&, oglplus::shader_type) noexcept;
     void add_gl_program_context(video_context&) noexcept;
@@ -135,6 +142,9 @@ private:
     void _handle_shape_generator(
       const pending_resource_info& source,
       const std::shared_ptr<shapes::generator>& gen) noexcept;
+    void _handle_gl_shape(
+      const pending_resource_info& source,
+      const oglplus::shape_generator& shape) noexcept;
 
     void _handle_glsl_strings(
       const msgbus::blob_info&,
@@ -163,6 +173,12 @@ private:
         std::reference_wrapper<video_context> video;
     };
 
+    struct _pending_gl_geometry_and_bindings_state {
+        std::reference_wrapper<video_context> video;
+        oglplus::vertex_attrib_bindings bindings;
+        shapes::drawing_variant draw_var;
+    };
+
     struct _pending_gl_shader_state {
         std::reference_wrapper<video_context> video;
         oglplus::shader_type shdr_type;
@@ -184,6 +200,7 @@ private:
       _pending_valtree_traversal_state,
       _pending_shape_generator_state,
       _pending_gl_shape_state,
+      _pending_gl_geometry_and_bindings_state,
       _pending_gl_shader_state,
       _pending_gl_program_state>
       _state;
@@ -260,6 +277,13 @@ export struct resource_loader_signals {
     signal<
       void(identifier_t, const oglplus::shape_generator&, const url&) noexcept>
       gl_shape_loaded;
+
+    /// @brief Emitted when a geometry and attribute bindings wrapper is loaded.
+    signal<void(
+      identifier_t,
+      std::reference_wrapper<geometry_and_bindings>,
+      const url&) noexcept>
+      gl_geometry_and_bindings_loaded;
 
     /// @brief Emitted when a value tree is loaded.
     signal<void(identifier_t, const valtree::compound&, const url&) noexcept>
@@ -343,6 +367,16 @@ concept resource_gl_shape_loaded_observer = requires(
   const url& locator) { v.handle_gl_shape_loaded(request_id, shape, locator); };
 
 template <typename T>
+concept resource_gl_geometry_and_bindings_loaded_observer =
+  requires(
+    T v,
+    identifier_t request_id,
+    const geometry_and_bindings& geom,
+    const url& locator) {
+      v.handle_gl_geometry_and_bindings_loaded(request_id, geom, locator);
+  };
+
+template <typename T>
 concept resource_value_tree_loaded_observer =
   requires(
     T v,
@@ -414,8 +448,12 @@ public:
               &observer, this->shape_generator_loaded);
         }
         if constexpr(resource_gl_shape_loaded_observer<O>) {
-            connect<&O::handle_gl_shape__loaded>(
+            connect<&O::handle_gl_shape_loaded>(
               &observer, this->gl_shape_loaded);
+        }
+        if constexpr(resource_gl_geometry_and_bindings_loaded_observer<O>) {
+            connect<&O::handle_gl_geometry_and_bindings_loaded>(
+              &observer, this->gl_geometry_and_bindings_loaded);
         }
         if constexpr(resource_value_tree_loaded_observer<O>) {
             connect<&O::handle_value_tree_loaded>(
@@ -464,7 +502,7 @@ public:
       -> resource_request_result;
 
     /// @brief Requests a shape geometry and attrib bindings object.
-    auto request_geometry_and_bindings(
+    auto request_gl_geometry_and_bindings(
       url locator,
       video_context&,
       oglplus::vertex_attrib_bindings,

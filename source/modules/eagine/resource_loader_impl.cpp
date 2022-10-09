@@ -107,6 +107,14 @@ void pending_resource_info::add_gl_shape_context(video_context& video) noexcept 
     _state = _pending_gl_shape_state{.video = video};
 }
 //------------------------------------------------------------------------------
+void pending_resource_info::add_gl_geometry_and_bindings_context(
+  video_context& video,
+  oglplus::vertex_attrib_bindings bindings,
+  shapes::drawing_variant draw_var) noexcept {
+    _state = _pending_gl_geometry_and_bindings_state{
+      .video = video, .bindings = std::move(bindings), .draw_var = draw_var};
+}
+//------------------------------------------------------------------------------
 void pending_resource_info::add_gl_shader_context(
   video_context& video,
   oglplus::shader_type shdr_type) noexcept {
@@ -183,7 +191,6 @@ void pending_resource_info::_handle_json_text(
             extract(_continuation)._handle_value_tree(*this, tree);
         }
         _parent.value_tree_loaded(_request_id, tree, _locator);
-        mark_finished();
     } else if(is(resource_kind::value_tree_traversal)) {
         if(std::holds_alternative<_pending_valtree_traversal_state>(_state)) {
             for(auto chunk : data) {
@@ -191,8 +198,8 @@ void pending_resource_info::_handle_json_text(
                   .input.consume_data(chunk);
             }
         }
-        mark_finished();
     }
+    mark_finished();
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::_handle_yaml_text(
@@ -202,6 +209,7 @@ void pending_resource_info::_handle_yaml_text(
   const memory::span<const memory::const_block>) noexcept {
     if(is(resource_kind::value_tree)) {
     }
+    mark_finished();
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::_handle_value_tree(
@@ -222,10 +230,35 @@ void pending_resource_info::_handle_shape_generator(
             auto& pgss = std::get<_pending_gl_shape_state>(_state);
             const oglplus::shape_generator shape{
               pgss.video.get().gl_api(), gen};
+            if(_continuation) {
+                extract(_continuation)._handle_gl_shape(*this, shape);
+            }
             _parent.gl_shape_loaded(_request_id, shape, _locator);
         }
-        mark_finished();
     }
+    mark_finished();
+}
+//------------------------------------------------------------------------------
+void pending_resource_info::_handle_gl_shape(
+  const pending_resource_info& source,
+  const oglplus::shape_generator& shape) noexcept {
+    if(is(resource_kind::gl_geometry_and_bindings)) {
+        if(std::holds_alternative<_pending_gl_geometry_and_bindings_state>(
+             _state)) {
+            auto temp{_parent.buffers().get()};
+            auto& pggbs =
+              std::get<_pending_gl_geometry_and_bindings_state>(_state);
+            geometry_and_bindings geom{
+              shape, pggbs.bindings, pggbs.draw_var, pggbs.video, temp};
+            _parent.gl_geometry_and_bindings_loaded(
+              _request_id, {geom}, _locator);
+            if(geom) {
+                geom.clean_up(pggbs.video);
+            }
+            _parent.buffers().eat(std::move(temp));
+        }
+    }
+    mark_finished();
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::_handle_glsl_strings(
@@ -252,8 +285,8 @@ void pending_resource_info::_handle_glsl_strings(
             extract(_continuation)._handle_glsl_source(*this, glsl_src);
         }
         _parent.glsl_source_loaded(_request_id, glsl_src, _locator);
-        mark_finished();
     }
+    mark_finished();
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::_handle_glsl_source(
@@ -278,8 +311,8 @@ void pending_resource_info::_handle_glsl_source(
                 gl.delete_shader(std::move(shdr));
             }
         }
-        mark_finished();
     }
+    mark_finished();
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::_handle_gl_shader(
@@ -305,16 +338,14 @@ void pending_resource_info::_handle_gl_shader(
                         if(pgps.prog) {
                             gl.delete_program(std::move(pgps.prog));
                         }
-                        mark_finished();
+                    } else {
+                        return;
                     }
                 }
-            } else {
-                mark_finished();
             }
-        } else {
-            mark_finished();
         }
     }
+    mark_finished();
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::handle_source_data(
@@ -498,6 +529,23 @@ auto resource_loader::request_gl_shape(url locator, video_context& vc) noexcept
         return new_request;
     }
     return _cancelled_resource(locator, resource_kind::gl_shape);
+}
+//------------------------------------------------------------------------------
+auto resource_loader::request_gl_geometry_and_bindings(
+  url locator,
+  video_context& vc,
+  oglplus::vertex_attrib_bindings bindins,
+  shapes::drawing_variant draw_var) noexcept -> resource_request_result {
+    if(const auto src_request{request_gl_shape(locator, vc)}) {
+        auto new_request{_new_resource(
+          std::move(locator), resource_kind::gl_geometry_and_bindings)};
+        new_request.info().add_gl_geometry_and_bindings_context(
+          vc, std::move(bindins), draw_var);
+        src_request.set_continuation(new_request);
+        return new_request;
+    }
+    return _cancelled_resource(
+      locator, resource_kind::gl_geometry_and_bindings);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request_glsl_source(url locator) noexcept
