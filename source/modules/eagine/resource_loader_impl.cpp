@@ -110,9 +110,11 @@ void pending_resource_info::add_gl_shape_context(video_context& video) noexcept 
 void pending_resource_info::add_gl_geometry_and_bindings_context(
   video_context& video,
   oglplus::vertex_attrib_bindings bindings,
-  shapes::drawing_variant draw_var) noexcept {
+  span_size_t draw_var_idx) noexcept {
     _state = _pending_gl_geometry_and_bindings_state{
-      .video = video, .bindings = std::move(bindings), .draw_var = draw_var};
+      .video = video,
+      .bindings = std::move(bindings),
+      .draw_var_idx = draw_var_idx};
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::add_gl_shader_context(
@@ -246,16 +248,23 @@ void pending_resource_info::_handle_gl_shape(
         if(std::holds_alternative<_pending_gl_geometry_and_bindings_state>(
              _state)) {
             auto temp{_parent.buffers().get()};
+            const auto cleanup_temp{_parent.buffers().eat_later(temp)};
             auto& pggbs =
               std::get<_pending_gl_geometry_and_bindings_state>(_state);
+            if(!pggbs.bindings) {
+                pggbs.bindings = oglplus::vertex_attrib_bindings{shape};
+            }
             geometry_and_bindings geom{
-              shape, pggbs.bindings, pggbs.draw_var, pggbs.video, temp};
+              shape,
+              pggbs.bindings,
+              shape.draw_variant(pggbs.draw_var_idx),
+              pggbs.video,
+              temp};
             _parent.gl_geometry_and_bindings_loaded(
               _request_id, {geom}, _locator);
             if(geom) {
                 geom.clean_up(pggbs.video);
             }
-            _parent.buffers().eat(std::move(temp));
         }
     }
     mark_finished();
@@ -534,18 +543,26 @@ auto resource_loader::request_gl_shape(url locator, video_context& vc) noexcept
 auto resource_loader::request_gl_geometry_and_bindings(
   url locator,
   video_context& vc,
-  oglplus::vertex_attrib_bindings bindins,
-  shapes::drawing_variant draw_var) noexcept -> resource_request_result {
+  oglplus::vertex_attrib_bindings bindings,
+  span_size_t draw_var_idx) noexcept -> resource_request_result {
     if(const auto src_request{request_gl_shape(locator, vc)}) {
         auto new_request{_new_resource(
           std::move(locator), resource_kind::gl_geometry_and_bindings)};
         new_request.info().add_gl_geometry_and_bindings_context(
-          vc, std::move(bindins), draw_var);
+          vc, std::move(bindings), draw_var_idx);
         src_request.set_continuation(new_request);
         return new_request;
     }
     return _cancelled_resource(
       locator, resource_kind::gl_geometry_and_bindings);
+}
+//------------------------------------------------------------------------------
+auto resource_loader::request_gl_geometry_and_bindings(
+  url locator,
+  video_context& vc,
+  span_size_t draw_var_idx) noexcept -> resource_request_result {
+    return request_gl_geometry_and_bindings(
+      std::move(locator), vc, {}, draw_var_idx);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request_glsl_source(url locator) noexcept

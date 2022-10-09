@@ -176,7 +176,7 @@ private:
     struct _pending_gl_geometry_and_bindings_state {
         std::reference_wrapper<video_context> video;
         oglplus::vertex_attrib_bindings bindings;
-        shapes::drawing_variant draw_var;
+        span_size_t draw_var_idx;
     };
 
     struct _pending_gl_shader_state {
@@ -371,9 +371,9 @@ concept resource_gl_geometry_and_bindings_loaded_observer =
   requires(
     T v,
     identifier_t request_id,
-    const geometry_and_bindings& geom,
+    std::reference_wrapper<geometry_and_bindings> ref,
     const url& locator) {
-      v.handle_gl_geometry_and_bindings_loaded(request_id, geom, locator);
+      v.handle_gl_geometry_and_bindings_loaded(request_id, ref, locator);
   };
 
 template <typename T>
@@ -506,7 +506,13 @@ public:
       url locator,
       video_context&,
       oglplus::vertex_attrib_bindings,
-      shapes::drawing_variant) noexcept -> resource_request_result;
+      span_size_t draw_var_idx = 0) noexcept -> resource_request_result;
+
+    /// @brief Requests a shape geometry and attrib bindings object.
+    auto request_gl_geometry_and_bindings(
+      url locator,
+      video_context&,
+      span_size_t draw_var_idx = 0) noexcept -> resource_request_result;
 
     /// @brief Requests GLSL shader source code resource.
     auto request_glsl_source(url locator) noexcept -> resource_request_result;

@@ -81,6 +81,18 @@ private:
           .arg("locator", locator.str());
     }
 
+    void handle_gl_geometry_and_bindings_loaded(
+      identifier_t request_id,
+      std::reference_wrapper<geometry_and_bindings> ref,
+      const url& locator) noexcept {
+        auto& geom = ref.get();
+        _ctx.cio_print("request ${requestId}: geometry ${locator} (${attribs})")
+          .arg("attribs", geom.attrib_count())
+          .arg("requestId", request_id)
+          .arg("locator", locator.str());
+        geom.clean_up(_video);
+    }
+
     execution_context& _ctx;
     video_context& _video;
     resource_loader _loader;
@@ -101,7 +113,7 @@ example_cube::example_cube(execution_context& ec, video_context& vc)
 
     _loader.connect_observer(*this);
 
-    _loader.request_gl_shape(url{"json:///ShapeJson"}, _video);
+    _loader.request_gl_geometry_and_bindings(url{"json:///ShapeJson"}, _video);
     _loader.request_gl_program(url{"json:///GLProgram"}, _video);
 
     camera.set_near(0.1F)
