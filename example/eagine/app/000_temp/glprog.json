@@ -1,6 +1,6 @@
-{"attribs":{
-"position": "Position",
-"normal": "Normal"}
+{"inputs":{
+"Position": {"attrib":"position","variant":0},
+"Normal": {"attrib":"normal","variant":0}}
 ,"urls":
 {"vertex":   "glsl:///VertShader"
 ,"fragment": "glsl:///FragShader"}

@@ -38,39 +38,86 @@ public:
       : parent{info}
       , video{vc} {}
 
-    void do_add(const basic_string_path&, const auto&) noexcept {}
+    void request_shader(
+      const basic_string_path& path,
+      span<const string_view> data) noexcept {
+        auto& loader = parent.loader();
+        auto& GL = video.gl_api().constants();
+        const auto delegate = [&, this](oglplus::shader_type shdr_type) {
+            if(auto src_request{loader.request_gl_shader(
+                 url{to_string(extract(data))}, shdr_type, video)}) {
+                src_request.set_continuation(parent);
+                if(!parent.add_gl_program_shader_request(
+                     src_request.request_id())) [[unlikely]] {
+                    src_request.info().mark_finished();
+                    parent.mark_finished();
+                }
+            }
+        };
+        if(path.back() == "fragment") {
+            delegate(GL.fragment_shader);
+        } else if(path.back() == "vertex") {
+            delegate(GL.vertex_shader);
+        } else if(path.back() == "geometry") {
+            delegate(GL.geometry_shader);
+        } else if(path.back() == "compute") {
+            delegate(GL.compute_shader);
+        } else if(path.back() == "tess_evaluation") {
+            delegate(GL.tess_evaluation_shader);
+        } else if(path.back() == "tess_control") {
+            delegate(GL.tess_control_shader);
+        }
+    }
 
     void do_add(
       const basic_string_path& path,
       span<const string_view> data) noexcept {
-        if((path.size() == 2) && (path.front() == "urls")) {
-            auto& loader = parent.loader();
-            auto& GL = video.gl_api().constants();
-            const auto delegate = [&, this](oglplus::shader_type shdr_type) {
-                if(auto src_request{loader.request_gl_shader(
-                     url{to_string(extract(data))}, shdr_type, video)}) {
-                    src_request.set_continuation(parent);
-                    if(!parent.add_gl_program_shader_request(
-                         src_request.request_id())) [[unlikely]] {
-                        src_request.info().mark_finished();
-                        parent.mark_finished();
-                    }
+        if(path.size() == 2) {
+            if(path.front() == "urls") {
+                request_shader(path, data);
+            }
+        } else if((path.size() == 3) && data) {
+            if((path.front() == "inputs") && (path.back() == "attrib")) {
+                if(const auto kind{
+                     from_string<shapes::vertex_attrib_kind>(extract(data))}) {
+                    attrib_kind = extract(kind);
+                } else {
+                    input_name.clear();
                 }
-            };
-            if(path.back() == "fragment") {
-                delegate(GL.fragment_shader);
-            } else if(path.back() == "vertex") {
-                delegate(GL.vertex_shader);
-            } else if(path.back() == "geometry") {
-                delegate(GL.geometry_shader);
-            } else if(path.back() == "compute") {
-                delegate(GL.compute_shader);
-            } else if(path.back() == "tess_evaluation") {
-                delegate(GL.tess_evaluation_shader);
-            } else if(path.back() == "tess_control") {
-                delegate(GL.tess_control_shader);
             }
         }
+    }
+
+    template <std::integral T>
+    void do_add(const basic_string_path& path, span<const T>& data) noexcept {
+        if((path.size() == 3) && data) {
+            if((path.front() == "inputs") && (path.back() == "variant")) {
+                attrib_variant_index = span_size(extract(data));
+            }
+        }
+    }
+
+    void do_add(const basic_string_path&, const auto&) noexcept {}
+
+    void add_object(const basic_string_path& path) noexcept final {
+        if((path.size() == 2) && (path.front() == "inputs")) {
+            input_name = to_string(path.back());
+            attrib_kind = shapes::vertex_attrib_kind::position;
+            attrib_variant_index = 0;
+        }
+    }
+
+    void finish_object(const basic_string_path& path) noexcept final {
+        if((path.size() == 2) && (path.front() == "inputs")) {
+            if(!input_name.empty()) {
+                parent.add_gl_program_input_binding(
+                  std::move(input_name), {attrib_kind, attrib_variant_index});
+            }
+        }
+    }
+
+    void finish() noexcept final {
+        parent.mark_loaded();
     }
 
     void failed() noexcept final {
@@ -80,9 +127,20 @@ public:
 private:
     pending_resource_info& parent;
     video_context& video;
+    std::string input_name;
+    shapes::vertex_attrib_kind attrib_kind;
+    span_size_t attrib_variant_index{0};
 };
 //------------------------------------------------------------------------------
 // pending_resource_info
+//------------------------------------------------------------------------------
+void pending_resource_info::mark_loaded() noexcept {
+    if(std::holds_alternative<_pending_gl_program_state>(_state)) {
+        auto& pgps = std::get<_pending_gl_program_state>(_state);
+        pgps.loaded = true;
+        _finish_gl_program(pgps);
+    }
+}
 //------------------------------------------------------------------------------
 void pending_resource_info::mark_finished() noexcept {
     _parent.forget_resource(_request_id);
@@ -151,6 +209,16 @@ auto pending_resource_info::add_gl_program_shader(
             }
             return true;
         }
+    }
+    return false;
+}
+//------------------------------------------------------------------------------
+auto pending_resource_info::add_gl_program_input_binding(
+  std::string name,
+  shapes::vertex_attrib_variant vav) noexcept -> bool {
+    if(std::holds_alternative<_pending_gl_program_state>(_state)) {
+        auto& pgps = std::get<_pending_gl_program_state>(_state);
+        pgps.input_bindings.add(std::move(name), vav);
     }
     return false;
 }
@@ -324,6 +392,22 @@ void pending_resource_info::_handle_glsl_source(
     mark_finished();
 }
 //------------------------------------------------------------------------------
+auto pending_resource_info::_finish_gl_program(
+  _pending_gl_program_state& pgps) noexcept -> bool {
+    if(pgps.loaded && pgps.pending_requests.empty()) {
+        const auto& gl = pgps.video.get().gl_api().operations();
+        gl.link_program(pgps.prog);
+        _parent.gl_program_loaded(
+          _request_id, pgps.prog, {pgps.prog}, pgps.input_bindings, _locator);
+
+        if(pgps.prog) {
+            gl.delete_program(std::move(pgps.prog));
+        }
+        return true;
+    }
+    return false;
+}
+//------------------------------------------------------------------------------
 void pending_resource_info::_handle_gl_shader(
   const pending_resource_info& source,
   oglplus::owned_shader_name& shdr) noexcept {
@@ -339,15 +423,7 @@ void pending_resource_info::_handle_gl_shader(
                     gl.attach_shader(pgps.prog, shdr);
 
                     pgps.pending_requests.erase(pos);
-                    if(pgps.pending_requests.empty()) {
-                        gl.link_program(pgps.prog);
-                        _parent.gl_program_loaded(
-                          _request_id, pgps.prog, {pgps.prog}, _locator);
-
-                        if(pgps.prog) {
-                            gl.delete_program(std::move(pgps.prog));
-                        }
-                    } else {
+                    if(!_finish_gl_program(pgps)) {
                         return;
                     }
                 }

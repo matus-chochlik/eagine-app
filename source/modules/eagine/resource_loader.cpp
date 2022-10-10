@@ -85,6 +85,7 @@ public:
         return _parent;
     }
 
+    void mark_loaded() noexcept;
     void mark_finished() noexcept;
     auto is_done() const noexcept -> bool;
 
@@ -105,6 +106,9 @@ public:
     auto add_gl_program_shader(
       identifier_t request_id,
       oglplus::owned_shader_name& shdr) noexcept -> bool;
+    auto add_gl_program_input_binding(
+      std::string name,
+      shapes::vertex_attrib_variant) noexcept -> bool;
 
     auto update() noexcept -> work_done;
     void cleanup() noexcept;
@@ -123,6 +127,39 @@ private:
     friend class resource_loader;
     friend class resource_request_result;
 
+    // the pending resource state
+    struct _pending_valtree_traversal_state {
+        valtree::value_tree_stream_input input;
+    };
+
+    struct _pending_shape_generator_state {
+        std::shared_ptr<shapes::generator> generator;
+    };
+
+    struct _pending_gl_shape_state {
+        std::reference_wrapper<video_context> video;
+    };
+
+    struct _pending_gl_geometry_and_bindings_state {
+        std::reference_wrapper<video_context> video;
+        oglplus::vertex_attrib_bindings bindings;
+        span_size_t draw_var_idx;
+    };
+
+    struct _pending_gl_shader_state {
+        std::reference_wrapper<video_context> video;
+        oglplus::shader_type shdr_type;
+    };
+
+    struct _pending_gl_program_state {
+        std::reference_wrapper<video_context> video;
+        oglplus::owned_program_name prog;
+        oglplus::program_input_bindings input_bindings;
+        flat_set<identifier_t> pending_requests;
+        bool loaded{false};
+    };
+
+    // resource loaded handlers
     void _handle_json_text(
       const msgbus::blob_info&,
       const pending_resource_info& source,
@@ -156,39 +193,10 @@ private:
       const pending_resource_info& source,
       const oglplus::glsl_source_ref& glsl_src) noexcept;
 
+    auto _finish_gl_program(_pending_gl_program_state&) noexcept -> bool;
     void _handle_gl_shader(
       const pending_resource_info& source,
       oglplus::owned_shader_name& shdr) noexcept;
-
-    // the pending resource state
-    struct _pending_valtree_traversal_state {
-        valtree::value_tree_stream_input input;
-    };
-
-    struct _pending_shape_generator_state {
-        std::shared_ptr<shapes::generator> generator;
-    };
-
-    struct _pending_gl_shape_state {
-        std::reference_wrapper<video_context> video;
-    };
-
-    struct _pending_gl_geometry_and_bindings_state {
-        std::reference_wrapper<video_context> video;
-        oglplus::vertex_attrib_bindings bindings;
-        span_size_t draw_var_idx;
-    };
-
-    struct _pending_gl_shader_state {
-        std::reference_wrapper<video_context> video;
-        oglplus::shader_type shdr_type;
-    };
-
-    struct _pending_gl_program_state {
-        std::reference_wrapper<video_context> video;
-        oglplus::owned_program_name prog;
-        flat_set<identifier_t> pending_requests;
-    };
 
     resource_loader& _parent;
     const identifier_t _request_id;
@@ -308,6 +316,7 @@ export struct resource_loader_signals {
       identifier_t,
       oglplus::program_name,
       std::reference_wrapper<oglplus::owned_program_name>,
+      const oglplus::program_input_bindings&,
       const url&) noexcept>
       gl_program_loaded;
 
@@ -415,8 +424,9 @@ concept resource_gl_program_loaded_observer =
     identifier_t request_id,
     oglplus::program_name name,
     std::reference_wrapper<oglplus::owned_program_name> ref,
+    const oglplus::program_input_bindings& bnd,
     const url& locator) {
-      v.handle_gl_program_loaded(request_id, name, ref, locator);
+      v.handle_gl_program_loaded(request_id, name, ref, bnd, locator);
   };
 //------------------------------------------------------------------------------
 /// @brief Loader of resources of various types.
