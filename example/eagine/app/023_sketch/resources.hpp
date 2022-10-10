@@ -18,7 +18,7 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 // program
 //------------------------------------------------------------------------------
-class sketch_program : public glsl_program {
+class sketch_program : public gpu_program {
 public:
     void init(video_context&);
     void prepare_frame(video_context&, orbiting_camera& camera, float t);

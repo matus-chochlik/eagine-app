@@ -18,7 +18,7 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 // program
 //------------------------------------------------------------------------------
-class surface_program : public glsl_program {
+class surface_program : public gpu_program {
 public:
     void init(video_context&);
     void set_projection(video_context&, orbiting_camera& camera);
@@ -38,7 +38,7 @@ private:
     oglplus::uniform_location texture_loc;
 };
 //------------------------------------------------------------------------------
-class hair_program : public glsl_program {
+class hair_program : public gpu_program {
 public:
     void init(video_context&);
     void set_projection(video_context&, orbiting_camera& camera);

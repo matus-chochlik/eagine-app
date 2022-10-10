@@ -18,7 +18,7 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 // program
 //------------------------------------------------------------------------------
-class torus_program : public glsl_program {
+class torus_program : public gpu_program {
 public:
     void init(video_context&);
     void set_camera(video_context&, orbiting_camera& camera);

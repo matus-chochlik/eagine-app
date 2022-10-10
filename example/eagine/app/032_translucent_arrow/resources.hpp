@@ -18,7 +18,7 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 // programs
 //------------------------------------------------------------------------------
-class depth_program : public glsl_program {
+class depth_program : public gpu_program {
 public:
     void init(video_context&);
     void set_camera(video_context&, orbiting_camera& camera);
@@ -30,7 +30,7 @@ private:
     oglplus::uniform_location camera_loc;
 };
 //------------------------------------------------------------------------------
-class draw_program : public glsl_program {
+class draw_program : public gpu_program {
 public:
     void init(video_context&);
     void set_depth_texture(video_context&, oglplus::gl_types::int_type);

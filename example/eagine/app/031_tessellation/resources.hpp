@@ -18,7 +18,7 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 // program
 //------------------------------------------------------------------------------
-class sphere_program : public glsl_program {
+class sphere_program : public gpu_program {
 public:
     void init(video_context&);
     void set_projection(video_context&, orbiting_camera&);

@@ -15,20 +15,20 @@ import :context;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-export class glsl_program : public oglplus::glsl_program {
-    using base = oglplus::glsl_program;
+export class gpu_program : public oglplus::gpu_program {
+    using base = oglplus::gpu_program;
 
 public:
     using base::create;
 
-    auto create(video_context& vc) -> glsl_program& {
+    auto create(video_context& vc) -> gpu_program& {
         base::create(vc.gl_api());
         return *this;
     }
 
     using base::label;
 
-    auto label(video_context& vc, string_view lbl) -> glsl_program& {
+    auto label(video_context& vc, string_view lbl) -> gpu_program& {
         base::label(vc.gl_api(), lbl);
         return *this;
     }
@@ -38,7 +38,7 @@ public:
     auto add_shader(
       video_context& vc,
       oglplus::shader_type shdr_type,
-      const oglplus::glsl_source_ref& shdr_src) -> glsl_program& {
+      const oglplus::glsl_source_ref& shdr_src) -> gpu_program& {
         base::add_shader(vc.gl_api(), shdr_type, shdr_src);
         return *this;
     }
@@ -47,14 +47,14 @@ public:
       video_context& vc,
       oglplus::shader_type shdr_type,
       const oglplus::glsl_source_ref& shdr_src,
-      const string_view label) -> glsl_program& {
+      const string_view label) -> gpu_program& {
         base::add_shader(vc.gl_api(), shdr_type, shdr_src, label);
         return *this;
     }
 
     auto add_shader(
       video_context& vc,
-      const oglplus::shader_source_block& shdr_src_blk) -> glsl_program& {
+      const oglplus::shader_source_block& shdr_src_blk) -> gpu_program& {
         base::add_shader(vc.gl_api(), shdr_src_blk);
         return *this;
     }
@@ -62,7 +62,7 @@ public:
     auto add_shader(
       video_context& vc,
       const oglplus::shader_source_block& shdr_src_blk,
-      const string_view label) -> glsl_program& {
+      const string_view label) -> gpu_program& {
         base::add_shader(vc.gl_api(), shdr_src_blk, label);
         return *this;
     }
@@ -70,7 +70,7 @@ public:
     auto add_shader(
       video_context& vc,
       oglplus::shader_type shdr_type,
-      const embedded_resource& shdr_src_res) -> glsl_program& {
+      const embedded_resource& shdr_src_res) -> gpu_program& {
         return add_shader(
           vc,
           shdr_type,
@@ -81,7 +81,7 @@ public:
       video_context& vc,
       oglplus::shader_type shdr_type,
       const embedded_resource& shdr_src_res,
-      const string_view label) -> glsl_program& {
+      const string_view label) -> gpu_program& {
         return add_shader(
           vc,
           shdr_type,
@@ -90,7 +90,7 @@ public:
     }
 
     auto add_shader(video_context& vc, const embedded_resource& shdr_src_res)
-      -> glsl_program& {
+      -> gpu_program& {
         return add_shader(
           vc, oglplus::shader_source_block{shdr_src_res.unpack(vc.parent())});
     }
@@ -98,7 +98,7 @@ public:
     auto add_shader(
       video_context& vc,
       const embedded_resource& shdr_src_res,
-      const string_view label) -> glsl_program& {
+      const string_view label) -> gpu_program& {
         return add_shader(
           vc,
           oglplus::shader_source_block{shdr_src_res.unpack(vc.parent())},
@@ -107,7 +107,7 @@ public:
 
     using base::link;
 
-    auto link(video_context& vc) -> glsl_program& {
+    auto link(video_context& vc) -> gpu_program& {
         base::link(vc.gl_api());
         return *this;
     }
@@ -116,13 +116,13 @@ public:
 
     auto build(
       video_context& vc,
-      const oglplus::program_source_block& prog_src_blk) -> glsl_program& {
+      const oglplus::program_source_block& prog_src_blk) -> gpu_program& {
         base::build(vc.gl_api(), prog_src_blk);
         return *this;
     }
 
     auto build(video_context& vc, const embedded_resource& prog_src_res)
-      -> glsl_program& {
+      -> gpu_program& {
         return build(
           vc, oglplus::program_source_block{prog_src_res.unpack(vc.parent())});
     }
@@ -131,14 +131,14 @@ public:
 
     auto init(
       video_context& vc,
-      const oglplus::program_source_block& prog_src_blk) -> glsl_program& {
+      const oglplus::program_source_block& prog_src_blk) -> gpu_program& {
         base::init(vc.gl_api(), prog_src_blk);
         return *this;
     }
 
     using base::use;
 
-    auto use(video_context& vc) -> glsl_program& {
+    auto use(video_context& vc) -> gpu_program& {
         base::use(vc.gl_api());
         return *this;
     }
@@ -160,7 +160,7 @@ public:
     auto query(
       video_context& vc,
       string_view name,
-      oglplus::uniform_location& loc) -> glsl_program& {
+      oglplus::uniform_location& loc) -> gpu_program& {
         base::query(vc.gl_api(), name, loc);
         return *this;
     }
@@ -168,7 +168,7 @@ public:
     auto query(
       video_context& vc,
       string_view name,
-      oglplus::uniform_block_index& ubi) -> glsl_program& {
+      oglplus::uniform_block_index& ubi) -> gpu_program& {
         base::query(vc.gl_api(), name, ubi);
         return *this;
     }
@@ -177,7 +177,7 @@ public:
 
     template <typename T>
     auto set(video_context& vc, oglplus::uniform_location loc, T&& value)
-      -> glsl_program& {
+      -> gpu_program& {
         base::set(vc.gl_api(), loc, std::forward<T>(value));
         return *this;
     }
@@ -187,7 +187,7 @@ public:
     auto bind(
       video_context& vc,
       oglplus::vertex_attrib_location loc,
-      string_view name) -> glsl_program& {
+      string_view name) -> gpu_program& {
         base::bind(vc.gl_api(), loc, name);
         return *this;
     }
@@ -195,19 +195,19 @@ public:
     auto bind(
       video_context& vc,
       oglplus::uniform_block_index blk_idx,
-      oglplus::gl_types::uint_type binding) -> glsl_program& {
+      oglplus::gl_types::uint_type binding) -> gpu_program& {
         base::bind(vc.gl_api(), blk_idx, binding);
         return *this;
     }
 
     using base::clean_up;
 
-    auto clean_up(video_context& vc) -> glsl_program& {
+    auto clean_up(video_context& vc) -> gpu_program& {
         base::clean_up(vc.gl_api());
         return *this;
     }
 
-    auto clean_up_later(video_context& vc) -> glsl_program& {
+    auto clean_up_later(video_context& vc) -> gpu_program& {
         vc.clean_up_later(*this);
         return *this;
     }

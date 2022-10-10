@@ -30,26 +30,7 @@ public:
 private:
     friend class app::resource_loader;
 
-    void handle_glsl_source_loaded(
-      identifier_t request_id,
-      const oglplus::glsl_source_ref& src,
-      const url& locator) noexcept {
-        _ctx.cio_print("request ${requestId}: ${locator} (${parts})")
-          .arg("requestId", request_id)
-          .arg("locator", locator.str())
-          .arg("parts", src.count());
-    }
-
-    void handle_gl_shader_loaded(
-      identifier_t request_id,
-      oglplus::shader_type,
-      oglplus::shader_name,
-      std::reference_wrapper<oglplus::owned_shader_name>,
-      const url& locator) noexcept {
-        _ctx.cio_print("request ${requestId}: shader ${locator}")
-          .arg("requestId", request_id)
-          .arg("locator", locator.str());
-    }
+    geometry_and_bindings _geom;
 
     void handle_gl_program_loaded(
       identifier_t request_id,
@@ -57,26 +38,6 @@ private:
       std::reference_wrapper<oglplus::owned_program_name>,
       const url& locator) noexcept {
         _ctx.cio_print("request ${requestId}: program ${locator}")
-          .arg("requestId", request_id)
-          .arg("locator", locator.str());
-    }
-
-    void handle_value_tree_loaded(
-      identifier_t request_id,
-      const valtree::compound& tree,
-      const url& locator) noexcept {
-        _ctx.cio_print("request ${requestId}: valtree ${locator} (${nested})")
-          .arg("nested", tree.root().nested_count())
-          .arg("requestId", request_id)
-          .arg("locator", locator.str());
-    }
-
-    void handle_gl_shape_loaded(
-      identifier_t request_id,
-      const oglplus::shape_generator& shape_gen,
-      const url& locator) noexcept {
-        _ctx.cio_print("request ${requestId}: shape ${locator} (${vertices})")
-          .arg("vertices", shape_gen.vertex_count())
           .arg("requestId", request_id)
           .arg("locator", locator.str());
     }
@@ -90,7 +51,7 @@ private:
           .arg("attribs", geom.attrib_count())
           .arg("requestId", request_id)
           .arg("locator", locator.str());
-        geom.clean_up(_video);
+        _geom = std::move(geom);
     }
 
     execution_context& _ctx;
@@ -153,6 +114,7 @@ void example_cube::update() noexcept {
 }
 //------------------------------------------------------------------------------
 void example_cube::clean_up() noexcept {
+    _geom.clean_up(_video);
 
     _video.end();
 }

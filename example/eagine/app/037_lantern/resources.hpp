@@ -18,7 +18,7 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 // programs
 //------------------------------------------------------------------------------
-class draw_program : public glsl_program {
+class draw_program : public gpu_program {
 public:
     void init(video_context&);
     void set_camera(video_context&, const orbiting_camera& camera);
@@ -39,7 +39,7 @@ private:
     oglplus::uniform_location _tex_loc;
 };
 //------------------------------------------------------------------------------
-class screen_program : public glsl_program {
+class screen_program : public gpu_program {
 public:
     void init(video_context&);
     void set_screen_size(video_context& vc);
