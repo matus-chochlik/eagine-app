@@ -255,6 +255,10 @@ void pending_resource_info::_handle_json_text(
   const pending_resource_info&,
   const span_size_t,
   const memory::span<const memory::const_block> data) noexcept {
+    _parent.log_debug("loaded JSON text")
+      .arg("requestId", _request_id)
+      .arg("locator", _locator.str());
+
     if(is(resource_kind::value_tree)) {
         auto tree{valtree::from_json_data(data, _parent.main_context().log())};
         if(_continuation) {
@@ -277,6 +281,10 @@ void pending_resource_info::_handle_yaml_text(
   const pending_resource_info&,
   const span_size_t,
   const memory::span<const memory::const_block>) noexcept {
+    _parent.log_debug("loaded YAML text")
+      .arg("requestId", _request_id)
+      .arg("locator", _locator.str());
+
     if(is(resource_kind::value_tree)) {
     }
     mark_finished();
@@ -285,6 +293,10 @@ void pending_resource_info::_handle_yaml_text(
 void pending_resource_info::_handle_value_tree(
   const pending_resource_info& source,
   const valtree::compound& tree) noexcept {
+    _parent.log_info("loaded value tree")
+      .arg("requestId", _request_id)
+      .arg("locator", _locator.str());
+
     if(is(resource_kind::shape_generator)) {
         if(auto gen{shapes::from_value_tree(tree, _parent)}) {
             add_shape_generator(std::move(gen));
@@ -295,6 +307,10 @@ void pending_resource_info::_handle_value_tree(
 void pending_resource_info::_handle_shape_generator(
   const pending_resource_info& source,
   const std::shared_ptr<shapes::generator>& gen) noexcept {
+    _parent.log_info("loaded shape geometry generator")
+      .arg("requestId", _request_id)
+      .arg("locator", _locator.str());
+
     if(is(resource_kind::gl_shape)) {
         if(std::holds_alternative<_pending_gl_shape_state>(_state)) {
             auto& pgss = std::get<_pending_gl_shape_state>(_state);
@@ -312,6 +328,10 @@ void pending_resource_info::_handle_shape_generator(
 void pending_resource_info::_handle_gl_shape(
   const pending_resource_info& source,
   const oglplus::shape_generator& shape) noexcept {
+    _parent.log_info("loaded shape generator wrapper")
+      .arg("requestId", _request_id)
+      .arg("locator", _locator.str());
+
     if(is(resource_kind::gl_geometry_and_bindings)) {
         if(std::holds_alternative<_pending_gl_geometry_and_bindings_state>(
              _state)) {
@@ -343,6 +363,10 @@ void pending_resource_info::_handle_glsl_strings(
   const pending_resource_info& source,
   [[maybe_unused]] const span_size_t offset,
   const memory::span<const memory::const_block> data) noexcept {
+    _parent.log_info("loaded GLSL string collection")
+      .arg("requestId", _request_id)
+      .arg("locator", _locator.str());
+
     if(is(resource_kind::glsl_source)) {
         std::vector<const oglplus::gl_types::char_type*> gl_strs;
         std::vector<oglplus::gl_types::int_type> gl_ints;
@@ -369,6 +393,10 @@ void pending_resource_info::_handle_glsl_strings(
 void pending_resource_info::_handle_glsl_source(
   const pending_resource_info& source,
   const oglplus::glsl_source_ref& glsl_src) noexcept {
+    _parent.log_info("loaded GLSL source object")
+      .arg("requestId", _request_id)
+      .arg("locator", _locator.str());
+
     if(is(resource_kind::gl_shader)) {
         if(std::holds_alternative<_pending_gl_shader_state>(_state)) {
             auto& pgss = std::get<_pending_gl_shader_state>(_state);
@@ -395,6 +423,10 @@ void pending_resource_info::_handle_glsl_source(
 auto pending_resource_info::_finish_gl_program(
   _pending_gl_program_state& pgps) noexcept -> bool {
     if(pgps.loaded && pgps.pending_requests.empty()) {
+        _parent.log_info("loaded and linked GL program object")
+          .arg("requestId", _request_id)
+          .arg("locator", _locator.str());
+
         const auto& gl = pgps.video.get().gl_api().operations();
         gl.link_program(pgps.prog);
         _parent.gl_program_loaded(
@@ -411,6 +443,10 @@ auto pending_resource_info::_finish_gl_program(
 void pending_resource_info::_handle_gl_shader(
   const pending_resource_info& source,
   oglplus::owned_shader_name& shdr) noexcept {
+    _parent.log_info("loaded and compiled GL shader object")
+      .arg("requestId", _request_id)
+      .arg("locator", _locator.str());
+
     if(is(resource_kind::gl_program)) {
         if(std::holds_alternative<_pending_gl_program_state>(_state)) {
             auto& pgps = std::get<_pending_gl_program_state>(_state);
