@@ -36,10 +36,11 @@ private:
       identifier_t request_id,
       oglplus::program_name,
       std::reference_wrapper<oglplus::owned_program_name>,
-      const oglplus::program_input_bindings&,
+      const oglplus::program_input_bindings& bindings,
       const url& locator) noexcept {
-        _ctx.cio_print("request ${requestId}: program ${locator}")
+        _ctx.cio_print("request ${requestId}: program ${locator} (${inputs})")
           .arg("requestId", request_id)
+          .arg("inputs", bindings.count())
           .arg("locator", locator.str());
     }
 
