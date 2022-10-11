@@ -110,6 +110,10 @@ public:
       std::string name,
       shapes::vertex_attrib_variant) noexcept -> bool;
 
+    void add_gl_texture_context(video_context&) noexcept;
+    auto append_gl_texture_data(span<const memory::const_block>) noexcept
+      -> bool;
+
     auto update() noexcept -> work_done;
     void cleanup() noexcept;
 
@@ -156,6 +160,12 @@ private:
         oglplus::owned_program_name prog;
         oglplus::program_input_bindings input_bindings;
         flat_set<identifier_t> pending_requests;
+        bool loaded{false};
+    };
+
+    struct _pending_gl_texture_state {
+        std::reference_wrapper<video_context> video;
+        oglplus::owned_texture_name tex;
         bool loaded{false};
     };
 
@@ -210,7 +220,8 @@ private:
       _pending_gl_shape_state,
       _pending_gl_geometry_and_bindings_state,
       _pending_gl_shader_state,
-      _pending_gl_program_state>
+      _pending_gl_program_state,
+      _pending_gl_texture_state>
       _state;
 
     resource_kind _kind{resource_kind::unknown};

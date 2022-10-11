@@ -132,6 +132,36 @@ private:
     span_size_t attrib_variant_index{0};
 };
 //------------------------------------------------------------------------------
+// valtree_gl_texture_builder
+//------------------------------------------------------------------------------
+class valtree_gl_texture_builder
+  : public valtree::object_builder_impl<valtree_gl_texture_builder> {
+public:
+    valtree_gl_texture_builder(
+      pending_resource_info& info,
+      video_context& vc) noexcept
+      : parent{info}
+      , video{vc} {}
+
+    void do_add(const basic_string_path&, const auto&) noexcept {}
+
+    void unparsed_data(span<const memory::const_block> data) noexcept final {
+        parent.append_gl_texture_data(data);
+    }
+
+    void finish() noexcept final {
+        parent.mark_loaded();
+    }
+
+    void failed() noexcept final {
+        parent.mark_finished();
+    }
+
+private:
+    pending_resource_info& parent;
+    video_context& video;
+};
+//------------------------------------------------------------------------------
 // pending_resource_info
 //------------------------------------------------------------------------------
 void pending_resource_info::mark_loaded() noexcept {
@@ -139,6 +169,10 @@ void pending_resource_info::mark_loaded() noexcept {
         auto& pgps = std::get<_pending_gl_program_state>(_state);
         pgps.loaded = true;
         _finish_gl_program(pgps);
+    }
+    if(std::holds_alternative<_pending_gl_texture_state>(_state)) {
+        auto& pgts = std::get<_pending_gl_texture_state>(_state);
+        pgts.loaded = true;
     }
 }
 //------------------------------------------------------------------------------
@@ -223,6 +257,17 @@ auto pending_resource_info::add_gl_program_input_binding(
     return false;
 }
 //------------------------------------------------------------------------------
+void pending_resource_info::add_gl_texture_context(video_context& vc) noexcept {
+    oglplus::owned_texture_name tex;
+    vc.gl_api().gen_textures() >> tex;
+    _state = _pending_gl_texture_state{.video = vc, .tex = std::move(tex)};
+}
+//------------------------------------------------------------------------------
+auto pending_resource_info::append_gl_texture_data(
+  span<const memory::const_block>) noexcept -> bool {
+    return false;
+}
+//------------------------------------------------------------------------------
 auto pending_resource_info::update() noexcept -> work_done {
     some_true something_done;
     if(std::holds_alternative<_pending_shape_generator_state>(_state)) {
@@ -247,6 +292,12 @@ void pending_resource_info::cleanup() noexcept {
             pgps.video.get().gl_api().delete_program(std::move(pgps.prog));
         }
         _state = std::monostate{};
+    } else if(std::holds_alternative<_pending_gl_texture_state>(_state)) {
+        auto& pgts = std::get<_pending_gl_texture_state>(_state);
+        if(pgts.tex) {
+            pgts.video.get().gl_api().delete_textures(std::move(pgts.tex));
+        }
+        _state = std::monostate{};
     }
 }
 //------------------------------------------------------------------------------
@@ -267,9 +318,15 @@ void pending_resource_info::_handle_json_text(
         _parent.value_tree_loaded(_request_id, tree, _locator);
     } else if(is(resource_kind::value_tree_traversal)) {
         if(std::holds_alternative<_pending_valtree_traversal_state>(_state)) {
+            auto& pvts = std::get<_pending_valtree_traversal_state>(_state);
+            bool should_continue{true};
             for(auto chunk : data) {
-                std::get<_pending_valtree_traversal_state>(_state)
-                  .input.consume_data(chunk);
+                if(!pvts.input.consume_data(chunk)) {
+                    should_continue = false;
+                }
+            }
+            if(should_continue) {
+                return;
             }
         }
     }
