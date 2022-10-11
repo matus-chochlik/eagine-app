@@ -143,14 +143,127 @@ public:
       : parent{info}
       , video{vc} {}
 
+    template <std::integral T>
+    void do_add(
+      const basic_string_path& path,
+      const span<const T> data) noexcept {
+        if(path.size() == 1) {
+            if(path.front() == "channels") {
+                _success &= assign_if_fits(data, _channels);
+            } else if(path.front() == "width") {
+                _success &= assign_if_fits(data, _width);
+            } else if(path.front() == "height") {
+                _success &= assign_if_fits(data, _height);
+            } else if(path.front() == "depth") {
+                _success &= assign_if_fits(data, _depth);
+            } else if(path.front() == "data_type") {
+                _success &= assign_if_fits(data, _data_type);
+            } else if(path.front() == "format") {
+                _success &= assign_if_fits(data, _format);
+            } else if(path.front() == "iformat") {
+                _success &= assign_if_fits(data, _iformat);
+            }
+        }
+    }
+
+    static auto convert_data_type(
+      span<const string_view> data,
+      oglplus::gl_types::enum_type& v) noexcept -> bool {
+        if(data.has_single_value()) {
+            const auto str{extract(data)};
+            if(str == "unsigned_byte") {
+                v = 0x1401;
+                return true;
+            } else if(str == "unsigned_short") {
+                v = 0x1403;
+                return true;
+            } else if(str == "unsigned_int") {
+                v = 0x1405;
+                return true;
+            } else if(str == "float") {
+                v = 0x1406;
+                return true;
+            }
+            // TODO
+        }
+        return false;
+    }
+
+    static auto convert_format(
+      span<const string_view> data,
+      oglplus::gl_types::enum_type& v) noexcept -> bool {
+        if(data.has_single_value()) {
+            const auto str{extract(data)};
+            if(str == "rgba") {
+                v = 0x1908;
+                return true;
+            } else if(str == "rgb") {
+                v = 0x1907;
+                return true;
+            } else if(str == "red") {
+                v = 0x1903;
+                return true;
+            }
+            // TODO
+        }
+        return false;
+    }
+
+    static auto convert_iformat(
+      span<const string_view> data,
+      oglplus::gl_types::enum_type& v) noexcept -> bool {
+        if(data.has_single_value()) {
+            const auto str{extract(data)};
+            if(str == "rgba8") {
+                v = 0x8058;
+                return true;
+            } else if(str == "rgb8") {
+                v = 0x8051;
+                return true;
+            } else if(str == "r8") {
+                v = 0x8229;
+                return true;
+            }
+            // TODO
+        }
+        return false;
+    }
+
+    void do_add(
+      const basic_string_path& path,
+      const span<const string_view> data) noexcept {
+        if(path.size() == 1) {
+            if(path.front() == "data_type") {
+                _success &= convert_data_type(data, _data_type);
+            } else if(path.front() == "format") {
+                _success &= convert_format(data, _format);
+            } else if(path.front() == "iformat") {
+                _success &= convert_iformat(data, _iformat);
+            }
+        }
+    }
+
     void do_add(const basic_string_path&, const auto&) noexcept {}
+
+    void finish_object(const basic_string_path& path) noexcept final {
+        if(path.empty()) {
+            if(_success) {
+                std::cout << _width << "|" << _height << "|" << _channels << "|"
+                          << std::endl;
+            }
+        }
+    }
 
     void unparsed_data(span<const memory::const_block> data) noexcept final {
         parent.append_gl_texture_data(data);
     }
 
     void finish() noexcept final {
-        parent.mark_loaded();
+        if(_success) {
+            parent.mark_loaded();
+        } else {
+            parent.mark_finished();
+        }
     }
 
     void failed() noexcept final {
@@ -160,6 +273,14 @@ public:
 private:
     pending_resource_info& parent;
     video_context& video;
+    oglplus::gl_types::sizei_type _channels{0};
+    oglplus::gl_types::sizei_type _width{0};
+    oglplus::gl_types::sizei_type _height{0};
+    oglplus::gl_types::sizei_type _depth{1};
+    oglplus::gl_types::enum_type _format{0};
+    oglplus::gl_types::enum_type _iformat{0};
+    oglplus::gl_types::enum_type _data_type{0};
+    bool _success{true};
 };
 //------------------------------------------------------------------------------
 // pending_resource_info
@@ -754,16 +875,6 @@ auto resource_loader::request_glsl_source(url locator) noexcept
     return _cancelled_resource(locator);
 }
 //------------------------------------------------------------------------------
-auto resource_loader::request_gl_buffer(url locator, video_context&) noexcept
-  -> resource_request_result {
-    return _cancelled_resource(locator);
-}
-//------------------------------------------------------------------------------
-auto resource_loader::request_gl_texture(url locator, video_context&) noexcept
-  -> resource_request_result {
-    return _cancelled_resource(locator);
-}
-//------------------------------------------------------------------------------
 auto resource_loader::request_gl_shader(
   url locator,
   oglplus::shader_type shdr_type,
@@ -815,11 +926,31 @@ auto resource_loader::request_gl_program(url locator, video_context& vc) noexcep
     if(const auto src_request{request_value_tree_traversal(
          locator,
          std::make_unique<valtree_gl_program_builder>(new_request.info(), vc),
-         1024)}) {
+         128)}) {
         return new_request;
     }
     new_request.info().mark_finished();
     return _cancelled_resource(locator, resource_kind::gl_program);
+}
+//------------------------------------------------------------------------------
+auto resource_loader::request_gl_texture(url locator, video_context& vc) noexcept
+  -> resource_request_result {
+    auto new_request{_new_resource(locator, resource_kind::gl_texture)};
+    new_request.info().add_gl_texture_context(vc);
+
+    if(const auto src_request{request_value_tree_traversal(
+         locator,
+         std::make_unique<valtree_gl_texture_builder>(new_request.info(), vc),
+         128)}) {
+        return new_request;
+    }
+    new_request.info().mark_finished();
+    return _cancelled_resource(locator);
+}
+//------------------------------------------------------------------------------
+auto resource_loader::request_gl_buffer(url locator, video_context&) noexcept
+  -> resource_request_result {
+    return _cancelled_resource(locator);
 }
 //------------------------------------------------------------------------------
 void resource_loader::forget_resource(identifier_t request_id) noexcept {

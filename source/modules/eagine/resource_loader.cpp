@@ -57,6 +57,8 @@ export enum class resource_kind {
     gl_shader,
     ///@brief GL program object.
     gl_program,
+    ///@brief GL texture object.
+    gl_texture,
     /// @brief Marks that resource request is finished.
     finished
 };
@@ -538,21 +540,25 @@ public:
     /// @brief Requests GLSL shader source code resource.
     auto request_glsl_source(url locator) noexcept -> resource_request_result;
 
-    auto request_gl_buffer(url locator, video_context&) noexcept
-      -> resource_request_result;
-
-    auto request_gl_texture(url locator, video_context&) noexcept
-      -> resource_request_result;
-
+    /// @brief Requests a compiled GL shader object of a specified type.
     auto request_gl_shader(
       url locator,
       oglplus::shader_type,
       video_context&) noexcept -> resource_request_result;
 
+    /// @brief Requests a compiled GL shader object of a type specified in URL.
     auto request_gl_shader(url locator, video_context&) noexcept
       -> resource_request_result;
 
+    /// @brief Requests a linked GL program object.
     auto request_gl_program(url locator, video_context&) noexcept
+      -> resource_request_result;
+
+    /// @brief Requests a set-up GL texture object.
+    auto request_gl_texture(url locator, video_context&) noexcept
+      -> resource_request_result;
+
+    auto request_gl_buffer(url locator, video_context&) noexcept
       -> resource_request_result;
 
 private:
