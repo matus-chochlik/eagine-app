@@ -134,6 +134,16 @@ private:
 //------------------------------------------------------------------------------
 // valtree_gl_texture_builder
 //------------------------------------------------------------------------------
+struct resource_texture_params {
+    oglplus::gl_types::sizei_type channels{0};
+    oglplus::gl_types::sizei_type width{0};
+    oglplus::gl_types::sizei_type height{0};
+    oglplus::gl_types::sizei_type depth{1};
+    oglplus::gl_types::enum_type format{0};
+    oglplus::gl_types::enum_type iformat{0};
+    oglplus::gl_types::enum_type data_type{0};
+};
+//------------------------------------------------------------------------------
 class valtree_gl_texture_builder
   : public valtree::object_builder_impl<valtree_gl_texture_builder> {
 public:
@@ -149,19 +159,19 @@ public:
       const span<const T> data) noexcept {
         if(path.size() == 1) {
             if(path.front() == "channels") {
-                _success &= assign_if_fits(data, _channels);
+                _success &= assign_if_fits(data, _params.channels);
             } else if(path.front() == "width") {
-                _success &= assign_if_fits(data, _width);
+                _success &= assign_if_fits(data, _params.width);
             } else if(path.front() == "height") {
-                _success &= assign_if_fits(data, _height);
+                _success &= assign_if_fits(data, _params.height);
             } else if(path.front() == "depth") {
-                _success &= assign_if_fits(data, _depth);
+                _success &= assign_if_fits(data, _params.depth);
             } else if(path.front() == "data_type") {
-                _success &= assign_if_fits(data, _data_type);
+                _success &= assign_if_fits(data, _params.data_type);
             } else if(path.front() == "format") {
-                _success &= assign_if_fits(data, _format);
+                _success &= assign_if_fits(data, _params.format);
             } else if(path.front() == "iformat") {
-                _success &= assign_if_fits(data, _iformat);
+                _success &= assign_if_fits(data, _params.iformat);
             }
         }
     }
@@ -234,11 +244,11 @@ public:
       const span<const string_view> data) noexcept {
         if(path.size() == 1) {
             if(path.front() == "data_type") {
-                _success &= convert_data_type(data, _data_type);
+                _success &= convert_data_type(data, _params.data_type);
             } else if(path.front() == "format") {
-                _success &= convert_format(data, _format);
+                _success &= convert_format(data, _params.format);
             } else if(path.front() == "iformat") {
-                _success &= convert_iformat(data, _iformat);
+                _success &= convert_iformat(data, _params.iformat);
             }
         }
     }
@@ -248,8 +258,7 @@ public:
     void finish_object(const basic_string_path& path) noexcept final {
         if(path.empty()) {
             if(_success) {
-                std::cout << _width << "|" << _height << "|" << _channels << "|"
-                          << std::endl;
+                parent.add_gl_texture_params(_params);
             }
         }
     }
@@ -273,13 +282,7 @@ public:
 private:
     pending_resource_info& parent;
     video_context& video;
-    oglplus::gl_types::sizei_type _channels{0};
-    oglplus::gl_types::sizei_type _width{0};
-    oglplus::gl_types::sizei_type _height{0};
-    oglplus::gl_types::sizei_type _depth{1};
-    oglplus::gl_types::enum_type _format{0};
-    oglplus::gl_types::enum_type _iformat{0};
-    oglplus::gl_types::enum_type _data_type{0};
+    resource_texture_params _params{};
     bool _success{true};
 };
 //------------------------------------------------------------------------------
@@ -374,6 +377,7 @@ auto pending_resource_info::add_gl_program_input_binding(
     if(std::holds_alternative<_pending_gl_program_state>(_state)) {
         auto& pgps = std::get<_pending_gl_program_state>(_state);
         pgps.input_bindings.add(std::move(name), vav);
+        return true;
     }
     return false;
 }
@@ -384,8 +388,25 @@ void pending_resource_info::add_gl_texture_context(video_context& vc) noexcept {
     _state = _pending_gl_texture_state{.video = vc, .tex = std::move(tex)};
 }
 //------------------------------------------------------------------------------
+auto pending_resource_info::add_gl_texture_params(
+  const resource_texture_params&) noexcept -> bool {
+    if(std::holds_alternative<_pending_gl_texture_state>(_state)) {
+        auto& pgts = std::get<_pending_gl_texture_state>(_state);
+        (void)pgts;
+        // TODO
+        return true;
+    }
+    return false;
+}
+//------------------------------------------------------------------------------
 auto pending_resource_info::append_gl_texture_data(
   span<const memory::const_block>) noexcept -> bool {
+    if(std::holds_alternative<_pending_gl_texture_state>(_state)) {
+        auto& pgts = std::get<_pending_gl_texture_state>(_state);
+        (void)pgts;
+        // TODO
+        return true;
+    }
     return false;
 }
 //------------------------------------------------------------------------------

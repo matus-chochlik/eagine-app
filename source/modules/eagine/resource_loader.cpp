@@ -28,6 +28,8 @@ export class audio_context;
 export class geometry_and_bindings;
 export class resource_request_result;
 export class resource_loader;
+//
+struct resource_texture_params;
 //------------------------------------------------------------------------------
 /// @brief Resource kind enumeration.
 /// @see resource_loader
@@ -113,6 +115,7 @@ public:
       shapes::vertex_attrib_variant) noexcept -> bool;
 
     void add_gl_texture_context(video_context&) noexcept;
+    auto add_gl_texture_params(const resource_texture_params&) noexcept -> bool;
     auto append_gl_texture_data(span<const memory::const_block>) noexcept
       -> bool;
 
