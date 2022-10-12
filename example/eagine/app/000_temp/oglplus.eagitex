@@ -6,5 +6,5 @@
 ,"format":"rgb"
 ,"iformat":"rgb8"
 ,"label":"oglplus"
-,"image_urls":["eagires:///OGLplusImg"]
+,"images":[{"url":"eagires:///OGLplusImg","target":"texture_2d"}]
 }

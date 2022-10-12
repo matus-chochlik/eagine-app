@@ -141,6 +141,47 @@ private:
 //------------------------------------------------------------------------------
 // valtree_gl_texture_image_loader
 //------------------------------------------------------------------------------
+static auto texture_target_from_string(
+  span<const string_view> data,
+  oglplus::gl_types::enum_type& v) noexcept -> bool {
+    if(data.has_single_value()) {
+        const auto str{extract(data)};
+        if(str == "texture_2d") {
+            v = 0x0DE1;
+            return true;
+        } else if(str == "texture_3d") {
+            v = 0x806F;
+            return true;
+        } else if(str == "texture_1d") {
+            v = 0x0DE0;
+            return true;
+        } else if(str == "texture_cube_map") {
+            v = 0x8513;
+            return true;
+        } else if(str == "texture_cube_map_positive_x") {
+            v = 0x8515;
+            return true;
+        } else if(str == "texture_cube_map_negative_x") {
+            v = 0x8516;
+            return true;
+        } else if(str == "texture_cube_map_positive_y") {
+            v = 0x8517;
+            return true;
+        } else if(str == "texture_cube_map_negative_y") {
+            v = 0x8518;
+            return true;
+        } else if(str == "texture_cube_map_positive_z") {
+            v = 0x8519;
+            return true;
+        } else if(str == "texture_cube_map_negative_z") {
+            v = 0x851A;
+            return true;
+        }
+        // TODO
+    }
+    return false;
+}
+//------------------------------------------------------------------------------
 static auto texture_data_type_from_string(
   span<const string_view> data,
   oglplus::gl_types::enum_type& v) noexcept -> bool {
@@ -326,9 +367,13 @@ class valtree_gl_texture_builder
 public:
     valtree_gl_texture_builder(
       pending_resource_info& info,
-      video_context& vc) noexcept
+      video_context& vc,
+      oglplus::texture_target tex_target,
+      oglplus::texture_unit tex_unit) noexcept
       : _parent{info}
-      , _video{vc} {}
+      , _video{vc}
+      , _tex_target{tex_target}
+      , _tex_unit{tex_unit} {}
 
     template <std::integral T>
     void do_add(
@@ -376,15 +421,53 @@ public:
             } else if(path.front() == "iformat") {
                 _success &= texture_iformat_from_string(data, _params.iformat);
             }
+        } else if(path.size() == 3) {
+            if(path.front() == "images") {
+                if(path.back() == "url") {
+                    if(has_value(data)) {
+                        _image_locator = {to_string(extract(data))};
+                    } else {
+                        _success = false;
+                    }
+                } else if(path.back() == "target") {
+                    oglplus::gl_types::enum_type tgt{0};
+                    if(texture_target_from_string(data, tgt)) {
+                        _image_target = oglplus::texture_target{tgt};
+                    } else {
+                        _success = false;
+                    }
+                }
+            }
         }
     }
 
     void do_add(const basic_string_path&, const auto&) noexcept {}
 
+    void add_object(const basic_string_path& path) noexcept final {
+        if(path.size() == 2) {
+            if(path.front() == "images") {
+                _image_locator = {};
+                _image_target = _tex_target;
+            }
+        }
+    }
+
     void finish_object(const basic_string_path& path) noexcept final {
         if(path.empty()) {
             if(_success) {
                 _parent.add_gl_texture_params(_params);
+            }
+        } else if(path.size() == 2) {
+            if(path.front() == "images") {
+                if(_image_locator) {
+                    /* TODO
+                    parent.request_gl_texture_image(
+                      std::move(_image_locator),
+                      _video,
+                      _image_target,
+                      _tex_unit);
+                      */
+                }
             }
         }
     }
@@ -405,6 +488,10 @@ private:
     pending_resource_info& _parent;
     video_context& _video;
     resource_texture_params _params{};
+    url _image_locator;
+    oglplus::texture_target _tex_target;
+    oglplus::texture_target _image_target;
+    oglplus::texture_unit _tex_unit;
     bool _success{true};
 };
 //------------------------------------------------------------------------------
@@ -1267,7 +1354,8 @@ auto resource_loader::request_gl_texture(
 
     if(const auto src_request{request_json_traversal(
          locator,
-         std::make_shared<valtree_gl_texture_builder>(new_request.info(), vc),
+         std::make_shared<valtree_gl_texture_builder>(
+           new_request.info(), vc, target, unit),
          128)}) {
         return new_request;
     }
