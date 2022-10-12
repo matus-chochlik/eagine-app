@@ -121,12 +121,17 @@ public:
 
     void add_gl_texture_image_context(
       video_context&,
+      oglplus::texture_target,
+      oglplus::texture_unit,
       oglplus::texture_name) noexcept;
     auto add_gl_texture_image_data(
       const resource_texture_image_params&,
       const memory::const_block) noexcept -> bool;
 
-    void add_gl_texture_context(video_context&) noexcept;
+    void add_gl_texture_context(
+      video_context&,
+      oglplus::texture_target,
+      oglplus::texture_unit) noexcept;
     auto add_gl_texture_params(const resource_texture_params&) noexcept -> bool;
 
     auto update() noexcept -> work_done;
@@ -180,11 +185,15 @@ private:
 
     struct _pending_gl_texture_image_state {
         std::reference_wrapper<video_context> video;
+        oglplus::texture_target tex_target;
+        oglplus::texture_unit tex_unit;
         oglplus::texture_name tex;
     };
 
     struct _pending_gl_texture_state {
         std::reference_wrapper<video_context> video;
+        oglplus::texture_target tex_target;
+        oglplus::texture_unit tex_unit;
         oglplus::owned_texture_name tex;
         bool loaded{false};
     };
@@ -352,13 +361,17 @@ export struct resource_loader_signals {
       const url&) noexcept>
       gl_program_loaded;
 
-    /// @brief Emitted when a GL texture is successfully created and set-up.
+    /// @brief Emitted when a GL texture is successfully created and its parameters set-up.
     signal<void(
       identifier_t,
       oglplus::texture_name,
       std::reference_wrapper<oglplus::owned_texture_name>,
       const url&) noexcept>
       gl_texture_loaded;
+
+    /// @brief Emitted when all GL texture images are successfully loaded.
+    signal<void(identifier_t, oglplus::texture_name, const url&) noexcept>
+      gl_texture_images_loaded;
 
     /// @brief Emitted when a GL buffer is successfully created and set-up.
     signal<void(
@@ -587,11 +600,16 @@ public:
     auto request_gl_texture_image(
       url locator,
       video_context&,
+      oglplus::texture_target,
+      oglplus::texture_unit,
       oglplus::texture_name) noexcept -> resource_request_result;
 
     /// @brief Requests a set-up GL texture object.
-    auto request_gl_texture(url locator, video_context&) noexcept
-      -> resource_request_result;
+    auto request_gl_texture(
+      url locator,
+      video_context&,
+      oglplus::texture_target,
+      oglplus::texture_unit) noexcept -> resource_request_result;
 
     auto request_gl_buffer(url locator, video_context&) noexcept
       -> resource_request_result;

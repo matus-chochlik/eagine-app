@@ -76,7 +76,8 @@ example_cube::example_cube(execution_context& ec, video_context& vc)
     _loader.request_gl_geometry_and_bindings(
       url{"json:///ShapeJson"}, _video, _attrib_bindings);
     _loader.request_gl_program(url{"json:///GLProgram"}, _video);
-    _loader.request_gl_texture(url{"json:///OGLplusTex"}, _video);
+    _loader.request_gl_texture(
+      url{"json:///OGLplusTex"}, _video, GL.texture_2d, GL.texture0);
 
     _camera.set_near(0.1F)
       .set_far(50.F)
