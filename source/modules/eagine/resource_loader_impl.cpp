@@ -455,7 +455,7 @@ public:
     void finish_object(const basic_string_path& path) noexcept final {
         if(path.empty()) {
             if(_success) {
-                _parent.add_gl_texture_params(_params);
+                _success &= _parent.add_gl_texture_params(_params);
             }
         } else if(path.size() == 2) {
             if(path.front() == "images") {
