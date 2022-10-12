@@ -30,62 +30,61 @@ public:
 private:
     friend class app::resource_loader;
 
-    geometry_and_bindings _geom;
-
     void handle_gl_program_loaded(
-      identifier_t request_id,
+      identifier_t,
       oglplus::program_name,
-      std::reference_wrapper<oglplus::owned_program_name>,
-      const oglplus::program_input_bindings& bindings,
-      const url& locator) noexcept {
-        _ctx.cio_print("request ${requestId}: program ${locator} (${inputs})")
-          .arg("requestId", request_id)
-          .arg("inputs", bindings.count())
-          .arg("locator", locator.str());
+      std::reference_wrapper<oglplus::owned_program_name> ref,
+      const oglplus::program_input_bindings& input_bindings,
+      const url&) noexcept {
+        auto& glapi = _video.gl_api();
+        _prog = std::move(ref.get());
+        input_bindings.apply(glapi, _prog, _attrib_bindings);
+        glapi.get_uniform_location(_prog, "Camera") >> _camera_loc;
     }
 
     void handle_gl_geometry_and_bindings_loaded(
-      identifier_t request_id,
+      identifier_t,
       std::reference_wrapper<geometry_and_bindings> ref,
-      const url& locator) noexcept {
-        auto& geom = ref.get();
-        _ctx.cio_print("request ${requestId}: geometry ${locator} (${attribs})")
-          .arg("attribs", geom.attrib_count())
-          .arg("requestId", request_id)
-          .arg("locator", locator.str());
-        _geom = std::move(geom);
+      const url&) noexcept {
+        _geom = std::move(ref.get());
     }
 
     execution_context& _ctx;
     video_context& _video;
     resource_loader& _loader;
+    oglplus::vertex_attrib_bindings _attrib_bindings;
+    geometry_and_bindings _geom;
+    oglplus::owned_program_name _prog;
     background_color_depth _bg;
     timeout _is_done{std::chrono::seconds{30}};
 
-    orbiting_camera camera;
-    oglplus::uniform_location camera_loc;
+    orbiting_camera _camera;
+    oglplus::uniform_location _camera_loc;
 };
 //------------------------------------------------------------------------------
 example_cube::example_cube(execution_context& ec, video_context& vc)
   : _ctx{ec}
   , _video{vc}
   , _loader{ec.loader()}
+  , _attrib_bindings{shapes::vertex_attrib_kind::position, shapes::vertex_attrib_kind::normal}
   , _bg{0.4F, 0.F, 1.F} {
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
 
     _loader.connect_observer(*this);
 
-    _loader.request_gl_geometry_and_bindings(url{"json:///ShapeJson"}, _video);
+    _loader.request_gl_geometry_and_bindings(
+      url{"json:///ShapeJson"}, _video, _attrib_bindings);
     _loader.request_gl_program(url{"json:///GLProgram"}, _video);
+    _loader.request_gl_texture(url{"json:///OGLplusTex"}, _video);
 
-    camera.set_near(0.1F)
+    _camera.set_near(0.1F)
       .set_far(50.F)
       .set_orbit_min(1.1F)
       .set_orbit_max(3.5F)
       .set_fov(right_angle_());
 
-    camera.connect_inputs(ec).basic_input_mapping(ec);
+    _camera.connect_inputs(ec).basic_input_mapping(ec);
     ec.setup_inputs().switch_input_mapping();
 
     gl.enable(GL.depth_test);
@@ -103,19 +102,26 @@ void example_cube::update() noexcept {
         _is_done.reset();
     }
     if(state.user_idle_too_long()) {
-        camera.idle_update(state);
+        _camera.idle_update(state);
     }
 
     _bg.clear(_video);
 
-    if(camera.has_changed()) {
-        // glapi.set_uniform(prog, camera_loc, camera.matrix(_video));
+    const auto& glapi = _video.gl_api();
+    glapi.use_program(_prog);
+
+    if(_camera.has_changed()) {
+        glapi.set_uniform(_prog, _camera_loc, _camera.matrix(_video));
     }
+
+    _geom.draw(glapi);
 
     _video.commit();
 }
 //------------------------------------------------------------------------------
 void example_cube::clean_up() noexcept {
+    const auto& glapi = _video.gl_api();
+    glapi.clean_up(std::move(_prog));
     _geom.clean_up(_video);
 
     _video.end();

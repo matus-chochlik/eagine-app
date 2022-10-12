@@ -14,6 +14,8 @@ eagine_embed_target_resources(
 		FragShader fragment.glsl
 		GLProgram glprog.json
 		ShapeJson shape.json
+		OGLplusImg oglplus.eagitexi
+		OGLplusTex oglplus.eagitex
 	PACKED
 	ENABLE_SEARCH
 )

@@ -1,0 +1,10 @@
+{"levels":1
+,"width":128
+,"height":128
+,"channels":3
+,"data_type":"unsigned_byte"
+,"format":"rgb"
+,"iformat":"rgb8"
+,"label":"oglplus"
+,"image_urls":["eagires:///OGLplusImg"]
+}
