@@ -35,22 +35,22 @@ public:
     valtree_gl_program_builder(
       pending_resource_info& info,
       video_context& vc) noexcept
-      : parent{info}
-      , video{vc} {}
+      : _parent{info}
+      , _video{vc} {}
 
     void request_shader(
       const basic_string_path& path,
       span<const string_view> data) noexcept {
-        auto& loader = parent.loader();
-        auto& GL = video.gl_api().constants();
+        auto& loader = _parent.loader();
+        auto& GL = _video.gl_api().constants();
         const auto delegate = [&, this](oglplus::shader_type shdr_type) {
             if(auto src_request{loader.request_gl_shader(
-                 url{to_string(extract(data))}, shdr_type, video)}) {
-                src_request.set_continuation(parent);
-                if(!parent.add_gl_program_shader_request(
+                 url{to_string(extract(data))}, shdr_type, _video)}) {
+                src_request.set_continuation(_parent);
+                if(!_parent.add_gl_program_shader_request(
                      src_request.request_id())) [[unlikely]] {
                     src_request.info().mark_finished();
-                    parent.mark_finished();
+                    _parent.mark_finished();
                 }
             }
         };
@@ -72,7 +72,13 @@ public:
     void do_add(
       const basic_string_path& path,
       span<const string_view> data) noexcept {
-        if(path.size() == 2) {
+        if(path.size() == 1) {
+            if(path.front() == "label") {
+                if(has_value(data)) {
+                    _parent.add_label(extract(data));
+                }
+            }
+        } else if(path.size() == 2) {
             if(path.front() == "urls") {
                 request_shader(path, data);
             }
@@ -80,9 +86,9 @@ public:
             if((path.front() == "inputs") && (path.back() == "attrib")) {
                 if(const auto kind{
                      from_string<shapes::vertex_attrib_kind>(extract(data))}) {
-                    attrib_kind = extract(kind);
+                    _attrib_kind = extract(kind);
                 } else {
-                    input_name.clear();
+                    _input_name.clear();
                 }
             }
         }
@@ -92,7 +98,7 @@ public:
     void do_add(const basic_string_path& path, span<const T>& data) noexcept {
         if((path.size() == 3) && data) {
             if((path.front() == "inputs") && (path.back() == "variant")) {
-                attrib_variant_index = span_size(extract(data));
+                _attrib_variant_index = span_size(extract(data));
             }
         }
     }
@@ -101,35 +107,36 @@ public:
 
     void add_object(const basic_string_path& path) noexcept final {
         if((path.size() == 2) && (path.front() == "inputs")) {
-            input_name = to_string(path.back());
-            attrib_kind = shapes::vertex_attrib_kind::position;
-            attrib_variant_index = 0;
+            _input_name = to_string(path.back());
+            _attrib_kind = shapes::vertex_attrib_kind::position;
+            _attrib_variant_index = 0;
         }
     }
 
     void finish_object(const basic_string_path& path) noexcept final {
         if((path.size() == 2) && (path.front() == "inputs")) {
-            if(!input_name.empty()) {
-                parent.add_gl_program_input_binding(
-                  std::move(input_name), {attrib_kind, attrib_variant_index});
+            if(!_input_name.empty()) {
+                _parent.add_gl_program_input_binding(
+                  std::move(_input_name),
+                  {_attrib_kind, _attrib_variant_index});
             }
         }
     }
 
     void finish() noexcept final {
-        parent.mark_loaded();
+        _parent.mark_loaded();
     }
 
     void failed() noexcept final {
-        parent.mark_finished();
+        _parent.mark_finished();
     }
 
 private:
-    pending_resource_info& parent;
-    video_context& video;
-    std::string input_name;
-    shapes::vertex_attrib_kind attrib_kind;
-    span_size_t attrib_variant_index{0};
+    pending_resource_info& _parent;
+    video_context& _video;
+    std::string _input_name;
+    shapes::vertex_attrib_kind _attrib_kind;
+    span_size_t _attrib_variant_index{0};
 };
 //------------------------------------------------------------------------------
 // valtree_gl_texture_image_loader
@@ -319,8 +326,8 @@ public:
     valtree_gl_texture_builder(
       pending_resource_info& info,
       video_context& vc) noexcept
-      : parent{info}
-      , video{vc} {}
+      : _parent{info}
+      , _video{vc} {}
 
     template <std::integral T>
     void do_add(
@@ -349,7 +356,11 @@ public:
       const basic_string_path& path,
       const span<const string_view> data) noexcept {
         if(path.size() == 1) {
-            if(path.front() == "data_type") {
+            if(path.front() == "label") {
+                if(has_value(data)) {
+                    _parent.add_label(extract(data));
+                }
+            } else if(path.front() == "data_type") {
                 _success &=
                   texture_data_type_from_string(data, _params.data_type);
             } else if(path.front() == "format") {
@@ -365,26 +376,26 @@ public:
     void finish_object(const basic_string_path& path) noexcept final {
         if(path.empty()) {
             if(_success) {
-                parent.add_gl_texture_params(_params);
+                _parent.add_gl_texture_params(_params);
             }
         }
     }
 
     void finish() noexcept final {
         if(_success) {
-            parent.mark_loaded();
+            _parent.mark_loaded();
         } else {
-            parent.mark_finished();
+            _parent.mark_finished();
         }
     }
 
     void failed() noexcept final {
-        parent.mark_finished();
+        _parent.mark_finished();
     }
 
 private:
-    pending_resource_info& parent;
-    video_context& video;
+    pending_resource_info& _parent;
+    video_context& _video;
     resource_texture_params _params{};
     bool _success{true};
 };
@@ -410,6 +421,16 @@ void pending_resource_info::mark_finished() noexcept {
 //------------------------------------------------------------------------------
 auto pending_resource_info::is_done() const noexcept -> bool {
     return _kind == resource_kind::finished;
+}
+//------------------------------------------------------------------------------
+void pending_resource_info::add_label(const string_view label) noexcept {
+    if(std::holds_alternative<_pending_gl_program_state>(_state)) {
+        auto& pgps = std::get<_pending_gl_program_state>(_state);
+        pgps.video.get().gl_api().object_label(pgps.prog, label);
+    } else if(std::holds_alternative<_pending_gl_texture_state>(_state)) {
+        auto& pgts = std::get<_pending_gl_texture_state>(_state);
+        pgts.video.get().gl_api().object_label(pgts.tex, label);
+    }
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::add_valtree_stream_input(

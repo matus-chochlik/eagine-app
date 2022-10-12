@@ -96,6 +96,8 @@ public:
     void mark_finished() noexcept;
     auto is_done() const noexcept -> bool;
 
+    void add_label(const string_view) noexcept;
+
     void add_valtree_stream_input(
       valtree::value_tree_stream_input input) noexcept;
 
