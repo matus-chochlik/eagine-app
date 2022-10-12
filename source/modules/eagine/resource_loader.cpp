@@ -29,6 +29,7 @@ export class geometry_and_bindings;
 export class resource_request_result;
 export class resource_loader;
 //
+struct resource_texture_image_params;
 struct resource_texture_params;
 //------------------------------------------------------------------------------
 /// @brief Resource kind enumeration.
@@ -61,6 +62,8 @@ export enum class resource_kind {
     gl_program,
     ///@brief GL texture object.
     gl_texture,
+    ///@brief GL texture image.
+    gl_texture_image,
     /// @brief Marks that resource request is finished.
     finished
 };
@@ -114,10 +117,15 @@ public:
       std::string name,
       shapes::vertex_attrib_variant) noexcept -> bool;
 
+    void add_gl_texture_image_context(
+      video_context&,
+      oglplus::texture_name) noexcept;
+    auto add_gl_texture_image_data(
+      const resource_texture_image_params&,
+      const memory::const_block) noexcept -> bool;
+
     void add_gl_texture_context(video_context&) noexcept;
     auto add_gl_texture_params(const resource_texture_params&) noexcept -> bool;
-    auto append_gl_texture_data(span<const memory::const_block>) noexcept
-      -> bool;
 
     auto update() noexcept -> work_done;
     void cleanup() noexcept;
@@ -166,6 +174,11 @@ private:
         oglplus::program_input_bindings input_bindings;
         flat_set<identifier_t> pending_requests;
         bool loaded{false};
+    };
+
+    struct _pending_gl_texture_image_state {
+        std::reference_wrapper<video_context> video;
+        oglplus::texture_name tex;
     };
 
     struct _pending_gl_texture_state {
@@ -226,6 +239,7 @@ private:
       _pending_gl_geometry_and_bindings_state,
       _pending_gl_shader_state,
       _pending_gl_program_state,
+      _pending_gl_texture_image_state,
       _pending_gl_texture_state>
       _state;
 
@@ -507,6 +521,16 @@ public:
     /// @brief Requests a value tree object resource.
     auto request_value_tree(url locator) noexcept -> resource_request_result;
 
+    auto request_json_traversal(
+      url locator,
+      std::shared_ptr<valtree::value_tree_visitor>,
+      span_size_t max_token_size) noexcept -> resource_request_result;
+
+    auto request_json_traversal(
+      url locator,
+      std::shared_ptr<valtree::object_builder>,
+      span_size_t max_token_size) noexcept -> resource_request_result;
+
     /// @brief Requests a value tree object traversal by the specified visitor.
     auto request_value_tree_traversal(
       url locator,
@@ -556,6 +580,12 @@ public:
     /// @brief Requests a linked GL program object.
     auto request_gl_program(url locator, video_context&) noexcept
       -> resource_request_result;
+
+    /// @brief Requests image data for a GL textures.
+    auto request_gl_texture_image(
+      url locator,
+      video_context&,
+      oglplus::texture_name) noexcept -> resource_request_result;
 
     /// @brief Requests a set-up GL texture object.
     auto request_gl_texture(url locator, video_context&) noexcept

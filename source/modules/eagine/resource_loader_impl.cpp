@@ -132,33 +132,109 @@ private:
     span_size_t attrib_variant_index{0};
 };
 //------------------------------------------------------------------------------
-// valtree_gl_texture_builder
+// valtree_gl_texture_image_loader
 //------------------------------------------------------------------------------
-struct resource_texture_params {
+static auto texture_data_type_from_string(
+  span<const string_view> data,
+  oglplus::gl_types::enum_type& v) noexcept -> bool {
+    if(data.has_single_value()) {
+        const auto str{extract(data)};
+        if(str == "unsigned_byte") {
+            v = 0x1401;
+            return true;
+        } else if(str == "unsigned_short") {
+            v = 0x1403;
+            return true;
+        } else if(str == "unsigned_int") {
+            v = 0x1405;
+            return true;
+        } else if(str == "float") {
+            v = 0x1406;
+            return true;
+        }
+        // TODO
+    }
+    return false;
+}
+//------------------------------------------------------------------------------
+static auto texture_iformat_from_string(
+  span<const string_view> data,
+  oglplus::gl_types::int_type& v) noexcept -> bool {
+    if(data.has_single_value()) {
+        const auto str{extract(data)};
+        if(str == "rgba8") {
+            v = 0x8058;
+            return true;
+        } else if(str == "rgb8") {
+            v = 0x8051;
+            return true;
+        } else if(str == "r8") {
+            v = 0x8229;
+            return true;
+        }
+        // TODO
+    }
+    return false;
+}
+//------------------------------------------------------------------------------
+static auto texture_format_from_string(
+  span<const string_view> data,
+  oglplus::gl_types::enum_type& v) noexcept -> bool {
+    if(data.has_single_value()) {
+        const auto str{extract(data)};
+        if(str == "rgba") {
+            v = 0x1908;
+            return true;
+        } else if(str == "rgb") {
+            v = 0x1907;
+            return true;
+        } else if(str == "red") {
+            v = 0x1903;
+            return true;
+        }
+        // TODO
+    }
+    return false;
+}
+//------------------------------------------------------------------------------
+struct resource_texture_image_params {
+    oglplus::gl_types::int_type x_offs{0};
+    oglplus::gl_types::int_type y_offs{0};
+    oglplus::gl_types::int_type z_offs{0};
+    oglplus::gl_types::int_type level{0};
+    oglplus::gl_types::int_type iformat{0};
     oglplus::gl_types::sizei_type channels{0};
     oglplus::gl_types::sizei_type width{0};
-    oglplus::gl_types::sizei_type height{0};
+    oglplus::gl_types::sizei_type height{1};
     oglplus::gl_types::sizei_type depth{1};
     oglplus::gl_types::enum_type format{0};
-    oglplus::gl_types::enum_type iformat{0};
     oglplus::gl_types::enum_type data_type{0};
 };
 //------------------------------------------------------------------------------
-class valtree_gl_texture_builder
-  : public valtree::object_builder_impl<valtree_gl_texture_builder> {
+class valtree_gl_texture_image_loader
+  : public valtree::object_builder_impl<valtree_gl_texture_image_loader> {
 public:
-    valtree_gl_texture_builder(
+    valtree_gl_texture_image_loader(
       pending_resource_info& info,
       video_context& vc) noexcept
-      : parent{info}
-      , video{vc} {}
+      : _parent{info}
+      , _video{vc}
+      , _temp{_parent.loader().buffers().get(512 * 512)} {}
 
     template <std::integral T>
     void do_add(
       const basic_string_path& path,
       const span<const T> data) noexcept {
         if(path.size() == 1) {
-            if(path.front() == "channels") {
+            if(path.front() == "level") {
+                _success &= assign_if_fits(data, _params.level);
+            } else if(path.front() == "x_offs") {
+                _success &= assign_if_fits(data, _params.x_offs);
+            } else if(path.front() == "y_offs") {
+                _success &= assign_if_fits(data, _params.y_offs);
+            } else if(path.front() == "z_offs") {
+                _success &= assign_if_fits(data, _params.z_offs);
+            } else if(path.front() == "channels") {
                 _success &= assign_if_fits(data, _params.channels);
             } else if(path.front() == "width") {
                 _success &= assign_if_fits(data, _params.width);
@@ -176,67 +252,97 @@ public:
         }
     }
 
-    static auto convert_data_type(
-      span<const string_view> data,
-      oglplus::gl_types::enum_type& v) noexcept -> bool {
-        if(data.has_single_value()) {
-            const auto str{extract(data)};
-            if(str == "unsigned_byte") {
-                v = 0x1401;
-                return true;
-            } else if(str == "unsigned_short") {
-                v = 0x1403;
-                return true;
-            } else if(str == "unsigned_int") {
-                v = 0x1405;
-                return true;
-            } else if(str == "float") {
-                v = 0x1406;
-                return true;
+    void do_add(
+      const basic_string_path& path,
+      const span<const string_view> data) noexcept {
+        if(path.size() == 1) {
+            if(path.front() == "data_type") {
+                _success &=
+                  texture_data_type_from_string(data, _params.data_type);
+            } else if(path.front() == "format") {
+                _success &= texture_format_from_string(data, _params.format);
+            } else if(path.front() == "iformat") {
+                _success &= texture_iformat_from_string(data, _params.iformat);
             }
-            // TODO
         }
-        return false;
     }
 
-    static auto convert_format(
-      span<const string_view> data,
-      oglplus::gl_types::enum_type& v) noexcept -> bool {
-        if(data.has_single_value()) {
-            const auto str{extract(data)};
-            if(str == "rgba") {
-                v = 0x1908;
-                return true;
-            } else if(str == "rgb") {
-                v = 0x1907;
-                return true;
-            } else if(str == "red") {
-                v = 0x1903;
-                return true;
-            }
-            // TODO
+    void do_add(const basic_string_path&, const auto&) noexcept {}
+
+    void unparsed_data(span<const memory::const_block> data) noexcept final {
+        for(const auto& blk : data) {
+            memory::append_to(blk, _temp);
+            // TODO: progressive image specification once we have enough data
+            // for width * some constant so that the temp buffer doesn't get
+            // too big
         }
-        return false;
     }
 
-    static auto convert_iformat(
-      span<const string_view> data,
-      oglplus::gl_types::enum_type& v) noexcept -> bool {
-        if(data.has_single_value()) {
-            const auto str{extract(data)};
-            if(str == "rgba8") {
-                v = 0x8058;
-                return true;
-            } else if(str == "rgb8") {
-                v = 0x8051;
-                return true;
-            } else if(str == "r8") {
-                v = 0x8229;
-                return true;
-            }
-            // TODO
+    void finish() noexcept final {
+        if(_success) {
+            _parent.add_gl_texture_image_data(_params, _temp);
+            _parent.mark_loaded();
+        } else {
+            _parent.mark_finished();
         }
-        return false;
+        _parent.loader().buffers().eat(std::move(_temp));
+    }
+
+    void failed() noexcept final {
+        _parent.mark_finished();
+        _parent.loader().buffers().eat(std::move(_temp));
+    }
+
+private:
+    pending_resource_info& _parent;
+    video_context& _video;
+    resource_texture_image_params _params{};
+    memory::buffer _temp;
+    bool _success{true};
+};
+//------------------------------------------------------------------------------
+// valtree_gl_texture_builder
+//------------------------------------------------------------------------------
+struct resource_texture_params {
+    oglplus::gl_types::int_type levels{0};
+    oglplus::gl_types::int_type iformat{0};
+    oglplus::gl_types::sizei_type width{0};
+    oglplus::gl_types::sizei_type height{1};
+    oglplus::gl_types::sizei_type depth{1};
+    oglplus::gl_types::enum_type format{0};
+    oglplus::gl_types::enum_type data_type{0};
+};
+//------------------------------------------------------------------------------
+class valtree_gl_texture_builder
+  : public valtree::object_builder_impl<valtree_gl_texture_builder> {
+public:
+    valtree_gl_texture_builder(
+      pending_resource_info& info,
+      video_context& vc) noexcept
+      : parent{info}
+      , video{vc} {}
+
+    template <std::integral T>
+    void do_add(
+      const basic_string_path& path,
+      const span<const T> data) noexcept {
+        if(path.size() == 1) {
+            if(path.front() == "levels") {
+                _success &= assign_if_fits(data, _params.levels);
+            } else if(path.front() == "width") {
+                _success &= assign_if_fits(data, _params.width);
+            } else if(path.front() == "height") {
+                _success &= assign_if_fits(data, _params.height);
+            } else if(path.front() == "depth") {
+                _success &= assign_if_fits(data, _params.depth);
+            } else if(path.front() == "data_type") {
+                _success &= assign_if_fits(data, _params.data_type);
+            } else if(path.front() == "format") {
+                _success &= assign_if_fits(data, _params.format);
+            } else if(path.front() == "iformat") {
+                _success &= assign_if_fits(data, _params.iformat);
+            }
+        }
     }
 
     void do_add(
@@ -244,11 +350,12 @@ public:
       const span<const string_view> data) noexcept {
         if(path.size() == 1) {
             if(path.front() == "data_type") {
-                _success &= convert_data_type(data, _params.data_type);
+                _success &=
+                  texture_data_type_from_string(data, _params.data_type);
             } else if(path.front() == "format") {
-                _success &= convert_format(data, _params.format);
+                _success &= texture_format_from_string(data, _params.format);
             } else if(path.front() == "iformat") {
-                _success &= convert_iformat(data, _params.iformat);
+                _success &= texture_iformat_from_string(data, _params.iformat);
             }
         }
     }
@@ -261,10 +368,6 @@ public:
                 parent.add_gl_texture_params(_params);
             }
         }
-    }
-
-    void unparsed_data(span<const memory::const_block> data) noexcept final {
-        parent.append_gl_texture_data(data);
     }
 
     void finish() noexcept final {
@@ -382,6 +485,24 @@ auto pending_resource_info::add_gl_program_input_binding(
     return false;
 }
 //------------------------------------------------------------------------------
+void pending_resource_info::add_gl_texture_image_context(
+  video_context& vc,
+  oglplus::texture_name tex) noexcept {
+    _state = _pending_gl_texture_image_state{.video = vc, .tex = tex};
+}
+//------------------------------------------------------------------------------
+auto pending_resource_info::add_gl_texture_image_data(
+  const resource_texture_image_params&,
+  const memory::const_block) noexcept -> bool {
+    if(std::holds_alternative<_pending_gl_texture_image_state>(_state)) {
+        auto& pgtis = std::get<_pending_gl_texture_image_state>(_state);
+        (void)pgtis;
+        // TODO
+        return true;
+    }
+    return false;
+}
+//------------------------------------------------------------------------------
 void pending_resource_info::add_gl_texture_context(video_context& vc) noexcept {
     oglplus::owned_texture_name tex;
     vc.gl_api().gen_textures() >> tex;
@@ -390,17 +511,6 @@ void pending_resource_info::add_gl_texture_context(video_context& vc) noexcept {
 //------------------------------------------------------------------------------
 auto pending_resource_info::add_gl_texture_params(
   const resource_texture_params&) noexcept -> bool {
-    if(std::holds_alternative<_pending_gl_texture_state>(_state)) {
-        auto& pgts = std::get<_pending_gl_texture_state>(_state);
-        (void)pgts;
-        // TODO
-        return true;
-    }
-    return false;
-}
-//------------------------------------------------------------------------------
-auto pending_resource_info::append_gl_texture_data(
-  span<const memory::const_block>) noexcept -> bool {
     if(std::holds_alternative<_pending_gl_texture_state>(_state)) {
         auto& pgts = std::get<_pending_gl_texture_state>(_state);
         (void)pgts;
@@ -787,28 +897,44 @@ auto resource_loader::request_value_tree(url locator) noexcept
     return _cancelled_resource(locator);
 }
 //------------------------------------------------------------------------------
+auto resource_loader::request_json_traversal(
+  url locator,
+  std::shared_ptr<valtree::value_tree_visitor> visitor,
+  span_size_t max_token_size) noexcept -> resource_request_result {
+    if(const auto src_request{_new_resource(
+         stream_resource(
+           std::move(locator),
+           msgbus::message_priority::normal,
+           std::chrono::hours{1}),
+         resource_kind::json_text)}) {
+
+        auto new_request{_new_resource(
+          std::move(locator), resource_kind::value_tree_traversal)};
+        new_request.info().add_valtree_stream_input(traverse_json_stream(
+          std::move(visitor), max_token_size, buffers(), main_context().log()));
+        src_request.set_continuation(new_request);
+        return new_request;
+    }
+    return _cancelled_resource(locator);
+}
+//------------------------------------------------------------------------------
+auto resource_loader::request_json_traversal(
+  url locator,
+  std::shared_ptr<valtree::object_builder> builder,
+  span_size_t max_token_size) noexcept -> resource_request_result {
+    return request_json_traversal(
+      std::move(locator),
+      valtree::make_building_value_tree_visitor(std::move(builder)),
+      max_token_size);
+}
+//------------------------------------------------------------------------------
 auto resource_loader::request_value_tree_traversal(
   url locator,
   std::shared_ptr<valtree::value_tree_visitor> visitor,
   span_size_t max_token_size) noexcept -> resource_request_result {
     if(locator.has_path_suffix(".json") || locator.has_scheme("json")) {
-        if(const auto src_request{_new_resource(
-             stream_resource(
-               std::move(locator),
-               msgbus::message_priority::normal,
-               std::chrono::hours{1}),
-             resource_kind::json_text)}) {
-
-            auto new_request{_new_resource(
-              std::move(locator), resource_kind::value_tree_traversal)};
-            new_request.info().add_valtree_stream_input(traverse_json_stream(
-              std::move(visitor),
-              max_token_size,
-              buffers(),
-              main_context().log()));
-            src_request.set_continuation(new_request);
-            return new_request;
-        }
+        return request_json_traversal(
+          std::move(locator), std::move(visitor), max_token_size);
     }
     return _cancelled_resource(locator);
 }
@@ -954,19 +1080,37 @@ auto resource_loader::request_gl_program(url locator, video_context& vc) noexcep
     return _cancelled_resource(locator, resource_kind::gl_program);
 }
 //------------------------------------------------------------------------------
+auto resource_loader::request_gl_texture_image(
+  url locator,
+  video_context& vc,
+  oglplus::texture_name tex) noexcept -> resource_request_result {
+    auto new_request{_new_resource(locator, resource_kind::gl_texture_image)};
+    new_request.info().add_gl_texture_image_context(vc, tex);
+
+    if(const auto src_request{request_json_traversal(
+         locator,
+         std::make_shared<valtree_gl_texture_image_loader>(
+           new_request.info(), vc),
+         128)}) {
+        return new_request;
+    }
+    new_request.info().mark_finished();
+    return _cancelled_resource(locator, resource_kind::gl_texture_image);
+}
+//------------------------------------------------------------------------------
 auto resource_loader::request_gl_texture(url locator, video_context& vc) noexcept
   -> resource_request_result {
     auto new_request{_new_resource(locator, resource_kind::gl_texture)};
     new_request.info().add_gl_texture_context(vc);
 
-    if(const auto src_request{request_value_tree_traversal(
+    if(const auto src_request{request_json_traversal(
          locator,
-         std::make_unique<valtree_gl_texture_builder>(new_request.info(), vc),
+         std::make_shared<valtree_gl_texture_builder>(new_request.info(), vc),
          128)}) {
         return new_request;
     }
     new_request.info().mark_finished();
-    return _cancelled_resource(locator);
+    return _cancelled_resource(locator, resource_kind::gl_texture);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request_gl_buffer(url locator, video_context&) noexcept
