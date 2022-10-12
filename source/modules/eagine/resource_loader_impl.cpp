@@ -574,22 +574,6 @@ auto pending_resource_info::add_gl_program_shader_request(
     return false;
 }
 //------------------------------------------------------------------------------
-auto pending_resource_info::add_gl_program_shader(
-  identifier_t request_id,
-  oglplus::owned_shader_name& shdr) noexcept -> bool {
-    if(std::holds_alternative<_pending_gl_program_state>(_state)) {
-        auto& pgps = std::get<_pending_gl_program_state>(_state);
-        if(const auto pos{pgps.pending_requests.find(request_id)};
-           pos != pgps.pending_requests.end()) {
-            pgps.pending_requests.erase(pos);
-            if(pgps.pending_requests.empty()) {
-            }
-            return true;
-        }
-    }
-    return false;
-}
-//------------------------------------------------------------------------------
 auto pending_resource_info::add_gl_program_input_binding(
   std::string name,
   shapes::vertex_attrib_variant vav) noexcept -> bool {

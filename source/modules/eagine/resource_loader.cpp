@@ -112,9 +112,6 @@ public:
     void add_gl_program_context(video_context&) noexcept;
     auto add_gl_program_shader_request(identifier_t request_id) noexcept
       -> bool;
-    auto add_gl_program_shader(
-      identifier_t request_id,
-      oglplus::owned_shader_name& shdr) noexcept -> bool;
     auto add_gl_program_input_binding(
       std::string name,
       shapes::vertex_attrib_variant) noexcept -> bool;
