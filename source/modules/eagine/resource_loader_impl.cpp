@@ -33,7 +33,7 @@ class valtree_gl_program_builder
   : public valtree::object_builder_impl<valtree_gl_program_builder> {
 public:
     valtree_gl_program_builder(
-      pending_resource_info& info,
+      const std::shared_ptr<pending_resource_info>& info,
       video_context& vc) noexcept
       : _parent{info}
       , _video{vc} {}
@@ -41,31 +41,33 @@ public:
     void request_shader(
       const basic_string_path& path,
       span<const string_view> data) noexcept {
-        auto& loader = _parent.loader();
-        auto& GL = _video.gl_api().constants();
-        const auto delegate = [&, this](oglplus::shader_type shdr_type) {
-            if(auto src_request{loader.request_gl_shader(
-                 url{to_string(extract(data))}, shdr_type, _video)}) {
-                src_request.set_continuation(_parent);
-                if(!_parent.add_gl_program_shader_request(
-                     src_request.request_id())) [[unlikely]] {
-                    src_request.info().mark_finished();
-                    _parent.mark_finished();
+        if(auto parent{_parent.lock()}) {
+            auto& loader = extract(parent).loader();
+            auto& GL = _video.gl_api().constants();
+            const auto delegate = [&, this](oglplus::shader_type shdr_type) {
+                if(auto src_request{loader.request_gl_shader(
+                     url{to_string(extract(data))}, shdr_type, _video)}) {
+                    src_request.set_continuation(parent);
+                    if(!extract(parent).add_gl_program_shader_request(
+                         src_request.request_id())) [[unlikely]] {
+                        src_request.info().mark_finished();
+                        extract(parent).mark_finished();
+                    }
                 }
+            };
+            if(path.back() == "fragment") {
+                delegate(GL.fragment_shader);
+            } else if(path.back() == "vertex") {
+                delegate(GL.vertex_shader);
+            } else if(path.back() == "geometry") {
+                delegate(GL.geometry_shader);
+            } else if(path.back() == "compute") {
+                delegate(GL.compute_shader);
+            } else if(path.back() == "tess_evaluation") {
+                delegate(GL.tess_evaluation_shader);
+            } else if(path.back() == "tess_control") {
+                delegate(GL.tess_control_shader);
             }
-        };
-        if(path.back() == "fragment") {
-            delegate(GL.fragment_shader);
-        } else if(path.back() == "vertex") {
-            delegate(GL.vertex_shader);
-        } else if(path.back() == "geometry") {
-            delegate(GL.geometry_shader);
-        } else if(path.back() == "compute") {
-            delegate(GL.compute_shader);
-        } else if(path.back() == "tess_evaluation") {
-            delegate(GL.tess_evaluation_shader);
-        } else if(path.back() == "tess_control") {
-            delegate(GL.tess_control_shader);
         }
     }
 
@@ -75,7 +77,9 @@ public:
         if(path.size() == 1) {
             if(path.front() == "label") {
                 if(has_value(data)) {
-                    _parent.add_label(extract(data));
+                    if(auto parent{_parent.lock()}) {
+                        extract(parent).add_label(extract(data));
+                    }
                 }
             }
         } else if(path.size() == 2) {
@@ -116,23 +120,29 @@ public:
     void finish_object(const basic_string_path& path) noexcept final {
         if((path.size() == 2) && (path.front() == "inputs")) {
             if(!_input_name.empty()) {
-                _parent.add_gl_program_input_binding(
-                  std::move(_input_name),
-                  {_attrib_kind, _attrib_variant_index});
+                if(auto parent{_parent.lock()}) {
+                    extract(parent).add_gl_program_input_binding(
+                      std::move(_input_name),
+                      {_attrib_kind, _attrib_variant_index});
+                }
             }
         }
     }
 
     void finish() noexcept final {
-        _parent.mark_loaded();
+        if(auto parent{_parent.lock()}) {
+            extract(parent).mark_loaded();
+        }
     }
 
     void failed() noexcept final {
-        _parent.mark_finished();
+        if(auto parent{_parent.lock()}) {
+            extract(parent).mark_finished();
+        }
     }
 
 private:
-    pending_resource_info& _parent;
+    std::weak_ptr<pending_resource_info> _parent;
     video_context& _video;
     std::string _input_name;
     shapes::vertex_attrib_kind _attrib_kind;
@@ -365,7 +375,7 @@ class valtree_gl_texture_builder
   : public valtree::object_builder_impl<valtree_gl_texture_builder> {
 public:
     valtree_gl_texture_builder(
-      pending_resource_info& info,
+      const std::shared_ptr<pending_resource_info>& info,
       video_context& vc,
       oglplus::texture_target tex_target,
       oglplus::texture_unit tex_unit) noexcept
@@ -410,7 +420,9 @@ public:
         if(path.size() == 1) {
             if(path.front() == "label") {
                 if(has_value(data)) {
-                    _parent.add_label(extract(data));
+                    if(const auto parent{_parent.lock()}) {
+                        extract(parent).add_label(extract(data));
+                    }
                 }
             } else if(path.front() == "data_type") {
                 _success &=
@@ -454,14 +466,22 @@ public:
     void finish_object(const basic_string_path& path) noexcept final {
         if(path.empty()) {
             if(_success) {
-                _success &= _parent.handle_gl_texture_params(_params);
+                if(const auto parent{_parent.lock()}) {
+                    _success &=
+                      extract(parent).handle_gl_texture_params(_params);
+                } else {
+                    _success = false;
+                }
             }
         } else if(path.size() == 2) {
             if(path.front() == "images") {
                 if(_image_locator) {
-                    auto img_request{_parent.loader().request_gl_texture_image(
-                      std::move(_image_locator), _image_target)};
-                    img_request.set_continuation(_parent);
+                    if(const auto parent{_parent.lock()}) {
+                        auto img_request{
+                          extract(parent).loader().request_gl_texture_image(
+                            std::move(_image_locator), _image_target)};
+                        img_request.set_continuation(parent);
+                    }
                 }
             }
         }
@@ -469,18 +489,24 @@ public:
 
     void finish() noexcept final {
         if(_success) {
-            _parent.mark_loaded();
+            if(const auto parent{_parent.lock()}) {
+                extract(parent).mark_loaded();
+            }
         } else {
-            _parent.mark_finished();
+            if(const auto parent{_parent.lock()}) {
+                extract(parent).mark_finished();
+            }
         }
     }
 
     void failed() noexcept final {
-        _parent.mark_finished();
+        if(const auto parent{_parent.lock()}) {
+            extract(parent).mark_finished();
+        }
     }
 
 private:
-    pending_resource_info& _parent;
+    std::weak_ptr<pending_resource_info> _parent;
     video_context& _video;
     resource_texture_params _params{};
     url _image_locator;
@@ -505,7 +531,6 @@ void pending_resource_info::mark_loaded() noexcept {
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::mark_finished() noexcept {
-    _parent.forget_resource(_request_id);
     _kind = resource_kind::finished;
 }
 //------------------------------------------------------------------------------
@@ -584,8 +609,8 @@ void pending_resource_info::handle_gl_texture_image(
   const oglplus::texture_target target,
   const resource_texture_image_params& params,
   const memory::const_block data) noexcept {
-    if(has_continuation()) {
-        extract(_continuation)._handle_gl_texture_image(target, params, data);
+    if(const auto cont{continuation()}) {
+        extract(cont)._handle_gl_texture_image(target, params, data);
     }
 }
 //------------------------------------------------------------------------------
@@ -745,8 +770,8 @@ auto pending_resource_info::update() noexcept -> work_done {
     if(std::holds_alternative<_pending_shape_generator_state>(_state)) {
         if(const auto shape_gen{
              std::get<_pending_shape_generator_state>(_state).generator}) {
-            if(has_continuation()) {
-                extract(_continuation)._handle_shape_generator(*this, shape_gen);
+            if(const auto cont{continuation()}) {
+                extract(cont)._handle_shape_generator(*this, shape_gen);
             }
             _parent.shape_generator_loaded(_request_id, shape_gen, _locator);
             something_done();
@@ -784,8 +809,8 @@ void pending_resource_info::_handle_json_text(
 
     if(is(resource_kind::value_tree)) {
         auto tree{valtree::from_json_data(data, _parent.main_context().log())};
-        if(has_continuation()) {
-            extract(_continuation)._handle_value_tree(*this, tree);
+        if(const auto cont{continuation()}) {
+            extract(cont)._handle_value_tree(*this, tree);
         }
         _parent.value_tree_loaded(_request_id, tree, _locator);
     } else if(is(resource_kind::value_tree_traversal)) {
@@ -845,8 +870,8 @@ void pending_resource_info::_handle_shape_generator(
             auto& pgss = std::get<_pending_gl_shape_state>(_state);
             const oglplus::shape_generator shape{
               pgss.video.get().gl_api(), gen};
-            if(has_continuation()) {
-                extract(_continuation)._handle_gl_shape(*this, shape);
+            if(const auto cont{continuation()}) {
+                extract(cont)._handle_gl_shape(*this, shape);
             }
             _parent.gl_shape_loaded(_request_id, shape, _locator);
         }
@@ -911,8 +936,8 @@ void pending_resource_info::_handle_glsl_strings(
         }
         const oglplus::glsl_source_ref glsl_src{
           data.size(), gl_strs.data(), gl_ints.data()};
-        if(has_continuation()) {
-            extract(_continuation)._handle_glsl_source(*this, glsl_src);
+        if(const auto cont{continuation()}) {
+            extract(cont)._handle_glsl_source(*this, glsl_src);
         }
         _parent.glsl_source_loaded(_request_id, glsl_src, _locator);
     }
@@ -935,8 +960,8 @@ void pending_resource_info::_handle_glsl_source(
             gl.create_shader(pgss.shdr_type) >> shdr;
             gl.shader_source(shdr, glsl_src);
             gl.compile_shader(shdr);
-            if(has_continuation()) {
-                extract(_continuation)._handle_gl_shader(*this, shdr);
+            if(const auto cont{continuation()}) {
+                extract(cont)._handle_gl_shader(*this, shdr);
             }
             _parent.gl_shader_loaded(
               _request_id, pgss.shdr_type, shdr, {shdr}, _locator);
@@ -1052,6 +1077,13 @@ void pending_resource_info::handle_source_cancelled(
     mark_finished();
 }
 //------------------------------------------------------------------------------
+// resource_request_result
+//------------------------------------------------------------------------------
+auto resource_request_result::info() const noexcept -> pending_resource_info& {
+    assert(_info);
+    return *_info;
+}
+//------------------------------------------------------------------------------
 // resource_loader
 //------------------------------------------------------------------------------
 void resource_loader::_handle_stream_data_appended(
@@ -1060,33 +1092,38 @@ void resource_loader::_handle_stream_data_appended(
   const memory::span<const memory::const_block> data,
   const msgbus::blob_info& binfo) noexcept {
     if(const auto pos{_pending.find(request_id)}; pos != _pending.end()) {
-        const auto& rinfo = std::get<1>(*pos);
-        if(rinfo._continuation) {
-            extract(rinfo._continuation)
-              .handle_source_data(binfo, rinfo, offset, data);
+        if(const auto& prinfo{std::get<1>(*pos)}) {
+            if(const auto continuation{extract(prinfo).continuation()}) {
+                extract(continuation)
+                  .handle_source_data(binfo, extract(prinfo), offset, data);
+            }
         }
     }
 }
 //------------------------------------------------------------------------------
 void resource_loader::_handle_stream_finished(identifier_t request_id) noexcept {
     if(const auto pos{_pending.find(request_id)}; pos != _pending.end()) {
-        const auto& rinfo = std::get<1>(*pos);
-        if(rinfo._continuation) {
-            extract(rinfo._continuation).handle_source_finished(rinfo);
+        if(const auto& prinfo{std::get<1>(*pos)}) {
+            auto& rinfo{extract(prinfo)};
+            if(const auto continuation{rinfo.continuation()}) {
+                extract(continuation).handle_source_finished(rinfo);
+            }
+            rinfo.mark_finished();
         }
-        _pending.erase(pos);
     }
 }
 //------------------------------------------------------------------------------
 void resource_loader::_handle_stream_cancelled(
   identifier_t request_id) noexcept {
     if(const auto pos{_pending.find(request_id)}; pos != _pending.end()) {
-        const auto& [request_id, rinfo] = *pos;
-        if(rinfo._continuation) {
-            extract(rinfo._continuation).handle_source_cancelled(rinfo);
+        if(const auto& prinfo{std::get<1>(*pos)}) {
+            auto& rinfo{extract(prinfo)};
+            if(const auto continuation{rinfo.continuation()}) {
+                extract(continuation).handle_source_cancelled(rinfo);
+            }
+            resource_cancelled(request_id, rinfo._kind, rinfo._locator);
+            rinfo.mark_finished();
         }
-        resource_cancelled(request_id, rinfo._kind, rinfo._locator);
-        _pending.erase(pos);
     }
 }
 //------------------------------------------------------------------------------
@@ -1096,7 +1133,8 @@ auto resource_loader::_cancelled_resource(
   const resource_kind kind) noexcept -> resource_request_result {
     auto result{_cancelled.emplace(
       request_id,
-      pending_resource_info{*this, request_id, std::move(locator), kind})};
+      std::make_shared<pending_resource_info>(
+        *this, request_id, std::move(locator), kind))};
     return {*std::get<0>(result), true};
 }
 //------------------------------------------------------------------------------
@@ -1104,9 +1142,10 @@ auto resource_loader::_new_resource(
   const identifier_t request_id,
   url locator,
   resource_kind kind) noexcept -> resource_request_result {
-    auto result{_pending.emplace(
+    const auto result{_pending.emplace(
       request_id,
-      pending_resource_info{*this, request_id, std::move(locator), kind})};
+      std::make_shared<pending_resource_info>(
+        *this, request_id, std::move(locator), kind))};
     return {*std::get<0>(result), false};
 }
 //------------------------------------------------------------------------------
@@ -1146,9 +1185,7 @@ auto resource_loader::request_json_traversal(
   span_size_t max_token_size) noexcept -> resource_request_result {
     if(const auto src_request{_new_resource(
          stream_resource(
-           std::move(locator),
-           msgbus::message_priority::normal,
-           std::chrono::hours{1}),
+           locator, msgbus::message_priority::normal, std::chrono::hours{1}),
          resource_kind::json_text)}) {
 
         auto new_request{_new_resource(
@@ -1315,7 +1352,7 @@ auto resource_loader::request_gl_program(url locator, video_context& vc) noexcep
 
     if(const auto src_request{request_value_tree_traversal(
          locator,
-         std::make_unique<valtree_gl_program_builder>(new_request.info(), vc),
+         std::make_shared<valtree_gl_program_builder>(new_request, vc),
          128)}) {
         return new_request;
     }
@@ -1366,7 +1403,7 @@ auto resource_loader::request_gl_texture(
     if(const auto src_request{request_json_traversal(
          locator,
          std::make_shared<valtree_gl_texture_builder>(
-           new_request.info(), vc, target, unit),
+           new_request, vc, target, unit),
          128)}) {
         return new_request;
     }
@@ -1379,31 +1416,36 @@ auto resource_loader::request_gl_buffer(url locator, video_context&) noexcept
     return _cancelled_resource(locator);
 }
 //------------------------------------------------------------------------------
-void resource_loader::forget_resource(identifier_t request_id) noexcept {
-    _deleted.insert(request_id);
-}
-//------------------------------------------------------------------------------
 auto resource_loader::update() noexcept -> work_done {
     some_true something_done{base::update()};
 
-    for(auto& [request_id, rinfo] : _cancelled) {
-        resource_cancelled(request_id, rinfo._kind, rinfo._locator);
+    for(auto& [request_id, pinfo] : _cancelled) {
+        assert(pinfo);
+        auto& info{extract(pinfo)};
+        resource_cancelled(request_id, info._kind, info._locator);
         something_done();
     }
     _cancelled.clear();
 
-    for(auto pos{_pending.begin()}; pos != _pending.end();) {
-        auto& [request_id, info] = *pos;
-        if(info.is_done() || _deleted.contains(request_id)) {
+    std::swap(_pending, _finished);
+
+    something_done(_finished.erase_if([this](auto& entry) {
+        auto& [request_id, pinfo] = entry;
+        assert(pinfo);
+        auto& info{extract(pinfo)};
+        if(info.is_done()) {
             info.cleanup();
-            pos = _pending.erase(pos);
-            something_done();
         } else {
-            something_done(info.update());
-            ++pos;
+            _pending.emplace(request_id, std::move(pinfo));
         }
+        return true;
+    }) > 0);
+
+    for(auto& entry : _pending) {
+        auto& pinfo{std::get<1>(entry)};
+        assert(pinfo);
+        something_done(extract(pinfo).update());
     }
-    _deleted.clear();
 
     return something_done;
 }

@@ -16,7 +16,7 @@ import eagine.core.main_ctx;
 import eagine.shapes;
 import eagine.oglplus;
 import eagine.msgbus;
-import <map>;
+import <memory>;
 import <functional>;
 import <utility>;
 import <variant>;
@@ -70,7 +70,8 @@ export enum class resource_kind {
     finished
 };
 //------------------------------------------------------------------------------
-class pending_resource_info {
+class pending_resource_info
+  : public std::enable_shared_from_this<pending_resource_info> {
 public:
     pending_resource_info(
       resource_loader& loader,
@@ -94,8 +95,14 @@ public:
         return is(resource_kind::finished);
     }
 
-    auto has_continuation() const noexcept -> bool {
-        return !is_finished() && bool(_continuation);
+    auto continuation() const noexcept
+      -> std::shared_ptr<pending_resource_info> {
+        return _continuation.lock();
+    }
+
+    void set_continuation(
+      const std::shared_ptr<pending_resource_info>& cont) noexcept {
+        _continuation = cont;
     }
 
     auto loader() noexcept -> resource_loader& {
@@ -253,7 +260,7 @@ private:
 
     resource_loader& _parent;
     const identifier_t _request_id;
-    pending_resource_info* _continuation{nullptr};
+    std::weak_ptr<pending_resource_info> _continuation{};
     const url _locator;
 
     std::variant<
@@ -275,50 +282,54 @@ private:
 /// @see resource_kind
 export class resource_request_result {
 public:
-    resource_request_result(pending_resource_info& info, bool cancelled) noexcept
-      : _info{info}
+    resource_request_result(
+      std::shared_ptr<pending_resource_info> info,
+      bool cancelled) noexcept
+      : _info{std::move(info)}
       , _was_cancelled{cancelled} {}
 
     resource_request_result(
-      std::pair<const identifier_t, pending_resource_info>& init,
+      const std::pair<identifier_t, std::shared_ptr<pending_resource_info>>& p,
       bool cancelled) noexcept
-      : resource_request_result{std::get<1>(init), cancelled} {}
+      : resource_request_result{std::get<1>(p), cancelled} {}
 
     /// @brief Indicates if the request is valid.
     explicit operator bool() const noexcept {
         return !_was_cancelled;
     }
 
-    /// @brief Returns the unique id of the request.
-    auto request_id() const noexcept -> identifier_t {
-        return _info._request_id;
+    auto info() const noexcept -> pending_resource_info&;
+
+    operator std::shared_ptr<pending_resource_info>() const noexcept {
+        return _info;
     }
 
-    auto info() noexcept -> pending_resource_info& {
-        return _info;
+    /// @brief Returns the unique id of the request.
+    auto request_id() const noexcept -> identifier_t {
+        return extract(_info).request_id();
     }
 
     /// @brief Returns the locator of the requested resource.
     auto locator() const noexcept -> const url& {
-        return _info._locator;
+        return info()._locator;
     }
 
     /// @brief Sets the reference to the continuation request of this request.
-    auto set_continuation(pending_resource_info& cont) const noexcept
-      -> const resource_request_result& {
-        _info._continuation = &cont;
+    auto set_continuation(const std::shared_ptr<pending_resource_info>& cont)
+      const noexcept -> const resource_request_result& {
+        info().set_continuation(cont);
         return *this;
     }
 
     /// @brief Sets the reference to the continuation request of this request.
     auto set_continuation(resource_request_result& cont) const noexcept
       -> const resource_request_result& {
-        _info._continuation = &cont._info;
+        info().set_continuation(cont._info);
         return *this;
     }
 
 private:
-    pending_resource_info& _info;
+    std::shared_ptr<pending_resource_info> _info;
     bool _was_cancelled;
 };
 //------------------------------------------------------------------------------
@@ -676,9 +687,9 @@ private:
         return _new_resource(get_request_id(), std::move(locator), kind);
     }
 
-    std::map<identifier_t, pending_resource_info> _pending;
-    std::map<identifier_t, pending_resource_info> _cancelled;
-    flat_set<identifier_t> _deleted;
+    flat_map<identifier_t, std::shared_ptr<pending_resource_info>> _pending;
+    flat_map<identifier_t, std::shared_ptr<pending_resource_info>> _finished;
+    flat_map<identifier_t, std::shared_ptr<pending_resource_info>> _cancelled;
 };
 //------------------------------------------------------------------------------
 } // namespace eagine::app
