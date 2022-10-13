@@ -273,11 +273,14 @@ class valtree_gl_texture_image_loader
   : public valtree::object_builder_impl<valtree_gl_texture_image_loader> {
 public:
     valtree_gl_texture_image_loader(
-      pending_resource_info& info,
+      std::shared_ptr<pending_resource_info> info,
       oglplus::texture_target target) noexcept
-      : _parent{info}
-      , _target{target}
-      , _temp{_parent.loader().buffers().get(512 * 512)} {}
+      : _parent{std::move(info)}
+      , _target{target} {
+        if(const auto parent{_parent.lock()}) {
+            extract(parent).loader().buffers().get(512 * 512);
+        }
+    }
 
     template <std::integral T>
     void do_add(
@@ -330,28 +333,33 @@ public:
     void unparsed_data(span<const memory::const_block> data) noexcept final {
         for(const auto& blk : data) {
             memory::append_to(blk, _temp);
-            // TODO: progressive image specification once we have enough data
-            // for width * some constant so that the temp buffer doesn't get
-            // too big
+            // TODO: progressive image specification once we have enough
+            // data for width * some constant so that the temp buffer
+            // doesn't get too big
         }
     }
 
     void finish() noexcept final {
-        if(_success) {
-            _parent.handle_gl_texture_image(_target, _params, _temp);
-        } else {
-            _parent.mark_finished();
+        if(const auto parent{_parent.lock()}) {
+            if(_success) {
+                extract(parent).handle_gl_texture_image(
+                  _target, _params, _temp);
+            } else {
+                extract(parent).mark_finished();
+            }
+            extract(parent).loader().buffers().eat(std::move(_temp));
         }
-        _parent.loader().buffers().eat(std::move(_temp));
     }
 
     void failed() noexcept final {
-        _parent.mark_finished();
-        _parent.loader().buffers().eat(std::move(_temp));
+        if(const auto parent{_parent.lock()}) {
+            extract(parent).mark_finished();
+            extract(parent).loader().buffers().eat(std::move(_temp));
+        }
     }
 
 private:
-    pending_resource_info& _parent;
+    std::weak_ptr<pending_resource_info> _parent;
     oglplus::texture_target _target;
     resource_texture_image_params _params{};
     memory::buffer _temp;
@@ -1367,8 +1375,7 @@ auto resource_loader::request_gl_texture_image(
 
     if(const auto src_request{request_json_traversal(
          locator,
-         std::make_shared<valtree_gl_texture_image_loader>(
-           new_request.info(), target),
+         std::make_shared<valtree_gl_texture_image_loader>(new_request, target),
          128)}) {
         return new_request;
     }
