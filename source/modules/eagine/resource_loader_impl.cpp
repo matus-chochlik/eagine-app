@@ -264,9 +264,9 @@ class valtree_gl_texture_image_loader
 public:
     valtree_gl_texture_image_loader(
       pending_resource_info& info,
-      video_context& vc) noexcept
+      oglplus::texture_target target) noexcept
       : _parent{info}
-      , _video{vc}
+      , _target{target}
       , _temp{_parent.loader().buffers().get(512 * 512)} {}
 
     template <std::integral T>
@@ -328,8 +328,7 @@ public:
 
     void finish() noexcept final {
         if(_success) {
-            _parent.add_gl_texture_image_data(_params, _temp);
-            _parent.mark_loaded();
+            _parent.handle_gl_texture_image(_target, _params, _temp);
         } else {
             _parent.mark_finished();
         }
@@ -343,7 +342,7 @@ public:
 
 private:
     pending_resource_info& _parent;
-    video_context& _video;
+    oglplus::texture_target _target;
     resource_texture_image_params _params{};
     memory::buffer _temp;
     bool _success{true};
@@ -455,18 +454,14 @@ public:
     void finish_object(const basic_string_path& path) noexcept final {
         if(path.empty()) {
             if(_success) {
-                _success &= _parent.add_gl_texture_params(_params);
+                _success &= _parent.handle_gl_texture_params(_params);
             }
         } else if(path.size() == 2) {
             if(path.front() == "images") {
                 if(_image_locator) {
-                    /* TODO
-                    parent.request_gl_texture_image(
-                      std::move(_image_locator),
-                      _video,
-                      _image_target,
-                      _tex_unit);
-                      */
+                    auto img_request{_parent.loader().request_gl_texture_image(
+                      std::move(_image_locator), _image_target)};
+                    img_request.set_continuation(_parent);
                 }
             }
         }
@@ -585,25 +580,22 @@ auto pending_resource_info::add_gl_program_input_binding(
     return false;
 }
 //------------------------------------------------------------------------------
-void pending_resource_info::add_gl_texture_image_context(
+void pending_resource_info::handle_gl_texture_image(
+  const oglplus::texture_target target,
+  const resource_texture_image_params& params,
+  const memory::const_block data) noexcept {
+    if(has_continuation()) {
+        extract(_continuation)._handle_gl_texture_image(target, params, data);
+    }
+}
+//------------------------------------------------------------------------------
+void pending_resource_info::add_gl_texture_update_context(
   video_context& vc,
   oglplus::texture_target target,
   oglplus::texture_unit unit,
   oglplus::texture_name tex) noexcept {
-    _state = _pending_gl_texture_image_state{
+    _state = _pending_gl_texture_update_state{
       .video = vc, .tex_target = target, .tex_unit = unit, .tex = tex};
-}
-//------------------------------------------------------------------------------
-auto pending_resource_info::add_gl_texture_image_data(
-  const resource_texture_image_params&,
-  const memory::const_block) noexcept -> bool {
-    if(std::holds_alternative<_pending_gl_texture_image_state>(_state)) {
-        auto& pgtis = std::get<_pending_gl_texture_image_state>(_state);
-        (void)pgtis;
-        // TODO
-        return true;
-    }
-    return false;
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::add_gl_texture_context(
@@ -619,7 +611,7 @@ void pending_resource_info::add_gl_texture_context(
       .tex = std::move(tex)};
 }
 //------------------------------------------------------------------------------
-auto pending_resource_info::add_gl_texture_params(
+auto pending_resource_info::handle_gl_texture_params(
   const resource_texture_params& params) noexcept -> bool {
     if(std::holds_alternative<_pending_gl_texture_state>(_state)) {
         auto& pgts = std::get<_pending_gl_texture_state>(_state);
@@ -753,8 +745,8 @@ auto pending_resource_info::update() noexcept -> work_done {
     if(std::holds_alternative<_pending_shape_generator_state>(_state)) {
         if(const auto shape_gen{
              std::get<_pending_shape_generator_state>(_state).generator}) {
-            if(_continuation) {
-                _continuation->_handle_shape_generator(*this, shape_gen);
+            if(has_continuation()) {
+                extract(_continuation)._handle_shape_generator(*this, shape_gen);
             }
             _parent.shape_generator_loaded(_request_id, shape_gen, _locator);
             something_done();
@@ -792,7 +784,7 @@ void pending_resource_info::_handle_json_text(
 
     if(is(resource_kind::value_tree)) {
         auto tree{valtree::from_json_data(data, _parent.main_context().log())};
-        if(_continuation) {
+        if(has_continuation()) {
             extract(_continuation)._handle_value_tree(*this, tree);
         }
         _parent.value_tree_loaded(_request_id, tree, _locator);
@@ -853,7 +845,7 @@ void pending_resource_info::_handle_shape_generator(
             auto& pgss = std::get<_pending_gl_shape_state>(_state);
             const oglplus::shape_generator shape{
               pgss.video.get().gl_api(), gen};
-            if(_continuation) {
+            if(has_continuation()) {
                 extract(_continuation)._handle_gl_shape(*this, shape);
             }
             _parent.gl_shape_loaded(_request_id, shape, _locator);
@@ -919,7 +911,7 @@ void pending_resource_info::_handle_glsl_strings(
         }
         const oglplus::glsl_source_ref glsl_src{
           data.size(), gl_strs.data(), gl_ints.data()};
-        if(_continuation) {
+        if(has_continuation()) {
             extract(_continuation)._handle_glsl_source(*this, glsl_src);
         }
         _parent.glsl_source_loaded(_request_id, glsl_src, _locator);
@@ -943,7 +935,7 @@ void pending_resource_info::_handle_glsl_source(
             gl.create_shader(pgss.shdr_type) >> shdr;
             gl.shader_source(shdr, glsl_src);
             gl.compile_shader(shdr);
-            if(_continuation) {
+            if(has_continuation()) {
                 extract(_continuation)._handle_gl_shader(*this, shdr);
             }
             _parent.gl_shader_loaded(
@@ -1004,6 +996,29 @@ void pending_resource_info::_handle_gl_shader(
         }
     }
     mark_finished();
+}
+//------------------------------------------------------------------------------
+void pending_resource_info::_handle_gl_texture_image(
+  const oglplus::texture_target target,
+  const resource_texture_image_params&,
+  const memory::const_block) noexcept {
+    _parent.log_info("loaded and GL texture image")
+      .arg("requestId", _request_id)
+      .arg("locator", _locator.str());
+
+    if(is(resource_kind::gl_texture)) {
+        if(std::holds_alternative<_pending_gl_texture_state>(_state)) {
+            auto& pgts = std::get<_pending_gl_texture_state>(_state);
+            (void)pgts;
+            // TODO
+        }
+    } else if(is(resource_kind::gl_texture_update)) {
+        if(std::holds_alternative<_pending_gl_texture_update_state>(_state)) {
+            auto& pgts = std::get<_pending_gl_texture_update_state>(_state);
+            (void)pgts;
+            // TODO
+        }
+    }
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::handle_source_data(
@@ -1310,22 +1325,34 @@ auto resource_loader::request_gl_program(url locator, video_context& vc) noexcep
 //------------------------------------------------------------------------------
 auto resource_loader::request_gl_texture_image(
   url locator,
-  video_context& vc,
-  oglplus::texture_target target,
-  oglplus::texture_unit unit,
-  oglplus::texture_name tex) noexcept -> resource_request_result {
+  oglplus::texture_target target) noexcept -> resource_request_result {
     auto new_request{_new_resource(locator, resource_kind::gl_texture_image)};
-    new_request.info().add_gl_texture_image_context(vc, target, unit, tex);
 
     if(const auto src_request{request_json_traversal(
          locator,
          std::make_shared<valtree_gl_texture_image_loader>(
-           new_request.info(), vc),
+           new_request.info(), target),
          128)}) {
         return new_request;
     }
     new_request.info().mark_finished();
     return _cancelled_resource(locator, resource_kind::gl_texture_image);
+}
+//------------------------------------------------------------------------------
+auto resource_loader::request_gl_texture_update(
+  url locator,
+  video_context& vc,
+  oglplus::texture_target target,
+  oglplus::texture_unit unit,
+  oglplus::texture_name tex) noexcept -> resource_request_result {
+    if(const auto src_request{request_gl_texture_image(locator, target)}) {
+        auto new_request{
+          _new_resource(locator, resource_kind::gl_texture_update)};
+        new_request.info().add_gl_texture_update_context(vc, target, unit, tex);
+        src_request.set_continuation(new_request);
+        return new_request;
+    }
+    return _cancelled_resource(locator, resource_kind::gl_texture_update);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request_gl_texture(

@@ -62,8 +62,10 @@ export enum class resource_kind {
     gl_program,
     ///@brief GL texture object.
     gl_texture,
-    ///@brief GL texture image.
+    ///@brief GL texture image parameters and data.
     gl_texture_image,
+    ///@brief GL texture image update.
+    gl_texture_update,
     /// @brief Marks that resource request is finished.
     finished
 };
@@ -86,6 +88,14 @@ public:
 
     auto is(resource_kind kind) const noexcept -> bool {
         return _kind == kind;
+    }
+
+    auto is_finished() const noexcept -> bool {
+        return is(resource_kind::finished);
+    }
+
+    auto has_continuation() const noexcept -> bool {
+        return !is_finished() && bool(_continuation);
     }
 
     auto loader() noexcept -> resource_loader& {
@@ -116,20 +126,22 @@ public:
       std::string name,
       shapes::vertex_attrib_variant) noexcept -> bool;
 
-    void add_gl_texture_image_context(
+    void handle_gl_texture_image(
+      const oglplus::texture_target,
+      const resource_texture_image_params&,
+      const memory::const_block) noexcept;
+    void add_gl_texture_update_context(
       video_context&,
       oglplus::texture_target,
       oglplus::texture_unit,
       oglplus::texture_name) noexcept;
-    auto add_gl_texture_image_data(
-      const resource_texture_image_params&,
-      const memory::const_block) noexcept -> bool;
 
     void add_gl_texture_context(
       video_context&,
       oglplus::texture_target,
       oglplus::texture_unit) noexcept;
-    auto add_gl_texture_params(const resource_texture_params&) noexcept -> bool;
+    auto handle_gl_texture_params(const resource_texture_params&) noexcept
+      -> bool;
 
     auto update() noexcept -> work_done;
     void cleanup() noexcept;
@@ -180,7 +192,7 @@ private:
         bool loaded{false};
     };
 
-    struct _pending_gl_texture_image_state {
+    struct _pending_gl_texture_update_state {
         std::reference_wrapper<video_context> video;
         oglplus::texture_target tex_target;
         oglplus::texture_unit tex_unit;
@@ -234,6 +246,11 @@ private:
       const pending_resource_info& source,
       oglplus::owned_shader_name& shdr) noexcept;
 
+    void _handle_gl_texture_image(
+      const oglplus::texture_target,
+      const resource_texture_image_params&,
+      const memory::const_block) noexcept;
+
     resource_loader& _parent;
     const identifier_t _request_id;
     pending_resource_info* _continuation{nullptr};
@@ -247,7 +264,7 @@ private:
       _pending_gl_geometry_and_bindings_state,
       _pending_gl_shader_state,
       _pending_gl_program_state,
-      _pending_gl_texture_image_state,
+      _pending_gl_texture_update_state,
       _pending_gl_texture_state>
       _state;
 
@@ -593,8 +610,11 @@ public:
     auto request_gl_program(url locator, video_context&) noexcept
       -> resource_request_result;
 
-    /// @brief Requests image data for a GL textures.
-    auto request_gl_texture_image(
+    auto request_gl_texture_image(url locator, oglplus::texture_target) noexcept
+      -> resource_request_result;
+
+    /// @brief Requests image data update for a GL texture.
+    auto request_gl_texture_update(
       url locator,
       video_context&,
       oglplus::texture_target,
