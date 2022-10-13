@@ -137,6 +137,7 @@ public:
       const oglplus::texture_target,
       const resource_texture_image_params&,
       const memory::const_block) noexcept;
+    auto add_gl_texture_image_request(identifier_t request_id) noexcept -> bool;
     void add_gl_texture_update_context(
       video_context&,
       oglplus::texture_target,
@@ -211,6 +212,7 @@ private:
         oglplus::texture_target tex_target;
         oglplus::texture_unit tex_unit;
         oglplus::owned_texture_name tex;
+        flat_set<identifier_t> pending_requests;
         bool loaded{false};
     };
 
@@ -253,7 +255,9 @@ private:
       const pending_resource_info& source,
       oglplus::owned_shader_name& shdr) noexcept;
 
+    auto _finish_gl_texture(_pending_gl_texture_state&) noexcept -> bool;
     void _handle_gl_texture_image(
+      const pending_resource_info& source,
       const oglplus::texture_target,
       const resource_texture_image_params&,
       const memory::const_block) noexcept;

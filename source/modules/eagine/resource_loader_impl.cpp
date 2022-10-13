@@ -477,6 +477,16 @@ public:
                 if(const auto parent{_parent.lock()}) {
                     _success &=
                       extract(parent).handle_gl_texture_params(_params);
+                    for(auto& [loc, tgt] : _image_requests) {
+                        const auto img_request{
+                          extract(parent).loader().request_gl_texture_image(
+                            std::move(loc), tgt)};
+                        img_request.set_continuation(parent);
+                        _success &=
+                          extract(parent).add_gl_texture_image_request(
+                            img_request.request_id());
+                    }
+                    _image_requests.clear();
                 } else {
                     _success = false;
                 }
@@ -484,12 +494,8 @@ public:
         } else if(path.size() == 2) {
             if(path.front() == "images") {
                 if(_image_locator) {
-                    if(const auto parent{_parent.lock()}) {
-                        auto img_request{
-                          extract(parent).loader().request_gl_texture_image(
-                            std::move(_image_locator), _image_target)};
-                        img_request.set_continuation(parent);
-                    }
+                    _image_requests.emplace_back(
+                      std::move(_image_locator), _image_target);
                 }
             }
         }
@@ -521,6 +527,7 @@ private:
     oglplus::texture_target _tex_target;
     oglplus::texture_target _image_target;
     oglplus::texture_unit _tex_unit;
+    std::vector<std::tuple<url, oglplus::texture_target>> _image_requests;
     bool _success{true};
 };
 //------------------------------------------------------------------------------
@@ -535,6 +542,7 @@ void pending_resource_info::mark_loaded() noexcept {
     if(std::holds_alternative<_pending_gl_texture_state>(_state)) {
         auto& pgts = std::get<_pending_gl_texture_state>(_state);
         pgts.loaded = true;
+        _finish_gl_texture(pgts);
     }
 }
 //------------------------------------------------------------------------------
@@ -618,8 +626,18 @@ void pending_resource_info::handle_gl_texture_image(
   const resource_texture_image_params& params,
   const memory::const_block data) noexcept {
     if(const auto cont{continuation()}) {
-        extract(cont)._handle_gl_texture_image(target, params, data);
+        extract(cont)._handle_gl_texture_image(*this, target, params, data);
     }
+}
+//------------------------------------------------------------------------------
+auto pending_resource_info::add_gl_texture_image_request(
+  identifier_t request_id) noexcept -> bool {
+    if(std::holds_alternative<_pending_gl_texture_state>(_state)) {
+        auto& pgts = std::get<_pending_gl_texture_state>(_state);
+        pgts.pending_requests.insert(request_id);
+        return true;
+    }
+    return false;
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::add_gl_texture_update_context(
@@ -1032,6 +1050,7 @@ void pending_resource_info::_handle_gl_shader(
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::_handle_gl_texture_image(
+  const pending_resource_info& source,
   const oglplus::texture_target target,
   const resource_texture_image_params&,
   const memory::const_block) noexcept {
@@ -1039,19 +1058,53 @@ void pending_resource_info::_handle_gl_texture_image(
       .arg("requestId", _request_id)
       .arg("locator", _locator.str());
 
+    auto add_image_data = [&](auto& glapi, auto& pgts) {
+        (void)glapi;
+        (void)pgts;
+        // TODO
+    };
+
     if(is(resource_kind::gl_texture)) {
         if(std::holds_alternative<_pending_gl_texture_state>(_state)) {
             auto& pgts = std::get<_pending_gl_texture_state>(_state);
-            (void)pgts;
-            // TODO
+            if(pgts.tex) [[likely]] {
+                if(const auto pos{
+                     pgts.pending_requests.find(source.request_id())};
+                   pos != pgts.pending_requests.end()) {
+                    add_image_data(pgts.video.get().gl_api(), pgts);
+
+                    pgts.pending_requests.erase(pos);
+                    if(!_finish_gl_texture(pgts)) {
+                        return;
+                    }
+                }
+            }
         }
     } else if(is(resource_kind::gl_texture_update)) {
         if(std::holds_alternative<_pending_gl_texture_update_state>(_state)) {
             auto& pgts = std::get<_pending_gl_texture_update_state>(_state);
-            (void)pgts;
-            // TODO
+            add_image_data(pgts.video.get().gl_api(), pgts);
         }
     }
+    mark_finished();
+}
+//------------------------------------------------------------------------------
+auto pending_resource_info::_finish_gl_texture(
+  _pending_gl_texture_state& pgts) noexcept -> bool {
+    if(pgts.loaded && pgts.pending_requests.empty()) {
+        _parent.log_info("loaded and set-up GL texture object")
+          .arg("requestId", _request_id)
+          .arg("locator", _locator.str());
+
+        const auto& gl = pgts.video.get().gl_api().operations();
+        _parent.gl_texture_loaded(_request_id, pgts.tex, {pgts.tex}, _locator);
+
+        if(pgts.tex) {
+            gl.delete_textures(std::move(pgts.tex));
+        }
+        return true;
+    }
+    return false;
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::handle_source_data(
