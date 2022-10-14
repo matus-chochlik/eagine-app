@@ -929,7 +929,7 @@ void pending_resource_info::_handle_gl_shape(
               pggbs.video,
               temp};
             _parent.gl_geometry_and_bindings_loaded(
-              _request_id, {geom}, _locator);
+              _request_id, geom, _locator);
             if(geom) {
                 geom.clean_up(pggbs.video);
             }
@@ -990,7 +990,7 @@ void pending_resource_info::_handle_glsl_source(
                 extract(cont)._handle_gl_shader(*this, shdr);
             }
             _parent.gl_shader_loaded(
-              _request_id, pgss.shdr_type, shdr, {shdr}, _locator);
+              _request_id, pgss.shdr_type, shdr, shdr, _locator);
 
             if(shdr) {
                 gl.delete_shader(std::move(shdr));
@@ -1010,7 +1010,7 @@ auto pending_resource_info::_finish_gl_program(
         const auto& gl = pgps.video.get().gl_api().operations();
         gl.link_program(pgps.prog);
         _parent.gl_program_loaded(
-          _request_id, pgps.prog, {pgps.prog}, pgps.input_bindings, _locator);
+          _request_id, pgps.prog, pgps.prog, pgps.input_bindings, _locator);
 
         if(pgps.prog) {
             gl.delete_program(std::move(pgps.prog));
@@ -1097,7 +1097,7 @@ auto pending_resource_info::_finish_gl_texture(
           .arg("locator", _locator.str());
 
         const auto& gl = pgts.video.get().gl_api().operations();
-        _parent.gl_texture_loaded(_request_id, pgts.tex, {pgts.tex}, _locator);
+        _parent.gl_texture_loaded(_request_id, pgts.tex, pgts.tex, _locator);
 
         if(pgts.tex) {
             gl.delete_textures(std::move(pgts.tex));

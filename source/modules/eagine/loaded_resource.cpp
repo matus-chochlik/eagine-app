@@ -90,6 +90,12 @@ public:
         return this->is_valid();
     }
 
+    /// @brief Indicates if this resource is loaded.
+    /// @see is_loaded
+    explicit operator bool() const noexcept {
+        return is_loaded();
+    }
+
     /// @brief Updates the resource, possibly doing resource load request.
     auto update(video_context& video, resource_loader& loader) -> work_done {
         if(!is_loaded() && !is_loading()) {
@@ -105,11 +111,11 @@ private:
     void _handle_gl_program_loaded(
       const identifier_t request_id,
       oglplus::program_name prog,
-      std::reference_wrapper<oglplus::owned_program_name> ref,
+      oglplus::owned_program_name& ref,
       const oglplus::program_input_bindings& input_bindings,
       const url&) noexcept {
         if(request_id == _request_id) {
-            _res() = std::move(ref.get());
+            _res() = std::move(ref);
             if(is_loaded()) {
                 _request_id = 0;
                 this->loaded(prog, input_bindings);
@@ -164,11 +170,21 @@ public:
         return this->is_initialized();
     }
 
+    /// @brief Indicates if this resource is loaded.
+    /// @see is_loaded
+    explicit operator bool() const noexcept {
+        return is_loaded();
+    }
+
     /// @brief Updates the resource, possibly doing resource load request.
-    auto update(video_context& video, resource_loader& loader) -> work_done {
+    auto update(
+      video_context& video,
+      resource_loader& loader,
+      const oglplus::vertex_attrib_bindings& bindings,
+      span_size_t draw_var_idx = 0) -> work_done {
         if(!is_loaded() && !is_loading()) {
-            if(const auto request{
-                 loader.request_gl_geometry_and_bindings(_locator, video)}) {
+            if(const auto request{loader.request_gl_geometry_and_bindings(
+                 _locator, video, bindings, draw_var_idx)}) {
                 _request_id = request.request_id();
                 return true;
             }
@@ -179,13 +195,13 @@ public:
 private:
     void _handle_gl_geometry_and_bindings_loaded(
       const identifier_t request_id,
-      std::reference_wrapper<geometry_and_bindings> ref,
+      geometry_and_bindings& ref,
       const url&) noexcept {
         if(request_id == _request_id) {
-            _res() = std::move(ref.get());
+            _res() = std::move(ref);
             if(is_loaded()) {
                 _request_id = 0;
-                // this->loaded(_res());
+                this->loaded(_res());
             }
         }
     }

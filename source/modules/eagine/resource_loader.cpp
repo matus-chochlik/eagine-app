@@ -357,10 +357,7 @@ export struct resource_loader_signals {
       gl_shape_loaded;
 
     /// @brief Emitted when a geometry and attribute bindings wrapper is loaded.
-    signal<void(
-      identifier_t,
-      std::reference_wrapper<geometry_and_bindings>,
-      const url&) noexcept>
+    signal<void(identifier_t, geometry_and_bindings&, const url&) noexcept>
       gl_geometry_and_bindings_loaded;
 
     /// @brief Emitted when a value tree is loaded.
@@ -377,7 +374,7 @@ export struct resource_loader_signals {
       identifier_t,
       oglplus::shader_type,
       oglplus::shader_name,
-      std::reference_wrapper<oglplus::owned_shader_name>,
+      oglplus::owned_shader_name&,
       const url&) noexcept>
       gl_shader_loaded;
 
@@ -385,7 +382,7 @@ export struct resource_loader_signals {
     signal<void(
       identifier_t,
       oglplus::program_name,
-      std::reference_wrapper<oglplus::owned_program_name>,
+      oglplus::owned_program_name&,
       const oglplus::program_input_bindings&,
       const url&) noexcept>
       gl_program_loaded;
@@ -394,7 +391,7 @@ export struct resource_loader_signals {
     signal<void(
       identifier_t,
       oglplus::texture_name,
-      std::reference_wrapper<oglplus::owned_texture_name>,
+      oglplus::owned_texture_name&,
       const url&) noexcept>
       gl_texture_loaded;
 
@@ -406,7 +403,7 @@ export struct resource_loader_signals {
     signal<void(
       identifier_t,
       oglplus::buffer_name,
-      std::reference_wrapper<oglplus::owned_buffer_name>,
+      oglplus::owned_buffer_name&,
       const url&) noexcept>
       gl_buffer_loaded;
 };
@@ -454,7 +451,7 @@ concept resource_gl_geometry_and_bindings_loaded_observer =
   requires(
     T v,
     identifier_t request_id,
-    std::reference_wrapper<geometry_and_bindings> ref,
+    geometry_and_bindings& ref,
     const url& locator) {
       v.handle_gl_geometry_and_bindings_loaded(request_id, ref, locator);
   };
@@ -486,7 +483,7 @@ concept resource_gl_shader_loaded_observer =
     identifier_t request_id,
     oglplus::shader_type type,
     oglplus::shader_name name,
-    std::reference_wrapper<oglplus::owned_shader_name> ref,
+    oglplus::owned_shader_name& ref,
     const url& locator) {
       v.handle_gl_shader_loaded(request_id, type, name, ref, locator);
   };
@@ -497,7 +494,7 @@ concept resource_gl_program_loaded_observer =
     T v,
     identifier_t request_id,
     oglplus::program_name name,
-    std::reference_wrapper<oglplus::owned_program_name> ref,
+    oglplus::owned_program_name& ref,
     const oglplus::program_input_bindings& bnd,
     const url& locator) {
       v.handle_gl_program_loaded(request_id, name, ref, bnd, locator);

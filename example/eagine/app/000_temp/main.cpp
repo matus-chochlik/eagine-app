@@ -30,31 +30,20 @@ public:
 private:
     friend class app::resource_loader;
 
-    void handle_gl_program_loaded(
-      identifier_t,
-      oglplus::program_name,
-      std::reference_wrapper<oglplus::owned_program_name> ref,
-      const oglplus::program_input_bindings& input_bindings,
-      const url&) noexcept {
+    void _on_prog_loaded(
+      oglplus::program_name prog,
+      const oglplus::program_input_bindings& input_bindings) noexcept {
         auto& glapi = _video.gl_api();
-        _prog = std::move(ref.get());
-        input_bindings.apply(glapi, _prog, _attrib_bindings);
-        glapi.get_uniform_location(_prog, "Camera") >> _camera_loc;
-    }
-
-    void handle_gl_geometry_and_bindings_loaded(
-      identifier_t,
-      std::reference_wrapper<geometry_and_bindings> ref,
-      const url&) noexcept {
-        _geom = std::move(ref.get());
+        input_bindings.apply(glapi, prog, _attrib_bindings);
+        glapi.get_uniform_location(prog, "Camera") >> _camera_loc;
     }
 
     execution_context& _ctx;
     video_context& _video;
     resource_loader& _loader;
     oglplus::vertex_attrib_bindings _attrib_bindings;
-    geometry_and_bindings _geom;
-    oglplus::owned_program_name _prog;
+    loaded_resource<oglplus::owned_program_name> _prog;
+    loaded_resource<geometry_and_bindings> _geom;
     background_color_depth _bg;
     timeout _is_done{std::chrono::seconds{30}};
 
@@ -67,15 +56,15 @@ example_cube::example_cube(execution_context& ec, video_context& vc)
   , _video{vc}
   , _loader{ec.loader()}
   , _attrib_bindings{shapes::vertex_attrib_kind::position, shapes::vertex_attrib_kind::normal}
+  , _prog{url{"json:///GLProgram"}, _video, _loader}
+  , _geom{url{"json:///ShapeJson"}, _video, _loader}
   , _bg{0.4F, 0.F, 1.F} {
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
 
-    _loader.connect_observer(*this);
+    _prog.loaded.connect(
+      make_callable_ref<&example_cube::_on_prog_loaded>(this));
 
-    _loader.request_gl_geometry_and_bindings(
-      url{"json:///ShapeJson"}, _video, _attrib_bindings);
-    _loader.request_gl_program(url{"json:///GLProgram"}, _video);
     _loader.request_gl_texture(
       url{"json:///OGLplusTex"}, _video, GL.texture_2d, GL.texture0);
 
@@ -97,7 +86,10 @@ void example_cube::on_video_resize() noexcept {
 }
 //------------------------------------------------------------------------------
 void example_cube::update() noexcept {
+    _prog.update(_video, _loader);
+    _geom.update(_video, _loader, _attrib_bindings);
     _loader.update();
+
     auto& state = _ctx.state();
     if(state.is_active()) {
         _is_done.reset();
@@ -109,21 +101,22 @@ void example_cube::update() noexcept {
     _bg.clear(_video);
 
     const auto& glapi = _video.gl_api();
-    glapi.use_program(_prog);
+    if(_prog && _geom) {
+        glapi.use_program(_prog);
 
-    if(_camera.has_changed()) {
-        glapi.set_uniform(_prog, _camera_loc, _camera.matrix(_video));
+        if(_camera.has_changed()) {
+            glapi.set_uniform(_prog, _camera_loc, _camera.matrix(_video));
+        }
+
+        _geom.draw(glapi);
     }
-
-    _geom.draw(glapi);
 
     _video.commit();
 }
 //------------------------------------------------------------------------------
 void example_cube::clean_up() noexcept {
-    const auto& glapi = _video.gl_api();
-    glapi.clean_up(std::move(_prog));
-    _geom.clean_up(_video);
+    _prog.clean_up(_video, _loader);
+    _geom.clean_up(_video, _loader);
 
     _video.end();
 }
