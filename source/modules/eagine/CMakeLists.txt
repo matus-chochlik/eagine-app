@@ -105,17 +105,6 @@ eagine_add_module(
 )
 
 eagine_add_module(
-	eagine.app PARTITION loaded_resource
-	IMPORTS
-		resource_loader context
-		eagine.core.types
-		eagine.core.utility
-		eagine.core.runtime
-		eagine.shapes
-		eagine.oglplus
-)
-
-eagine_add_module(
 	eagine.app PARTITION main
 	IMPORTS
 		interface context
@@ -177,6 +166,18 @@ eagine_add_module(
 )
 
 eagine_add_module(
+	eagine.app PARTITION loaded_resource
+	IMPORTS
+		context geometry
+		resource_loader
+		eagine.core.types
+		eagine.core.utility
+		eagine.core.runtime
+		eagine.shapes
+		eagine.oglplus
+)
+
+eagine_add_module(
 	eagine.app
 	PP_NAME APP
 	INTERFACES app
@@ -190,13 +191,13 @@ eagine_add_module(
 		framedump_raw
 		resource_loader
 		context
-		loaded_resource
 		main
 		gpu_program
 		framebuffer
 		geometry
 		camera
 		background
+		loaded_resource
 	SOURCES
 		options_impl
 		state_impl
