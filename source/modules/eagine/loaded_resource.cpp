@@ -222,6 +222,90 @@ private:
 };
 //------------------------------------------------------------------------------
 export template <>
+class loaded_resource<oglplus::owned_texture_name>
+  : public oglplus::owned_texture_name
+  , public loaded_resource_base {
+    using _res_t = oglplus::owned_texture_name;
+
+    auto _res() noexcept -> _res_t& {
+        return *this;
+    }
+
+public:
+    /// @brief Signal emmitted when the resource is successfully loaded.
+    signal<void(oglplus::texture_name) noexcept> loaded;
+
+    /// @brief Constructor specifying the resource locator.
+    loaded_resource(url locator) noexcept
+      : loaded_resource_base{std::move(locator)} {}
+
+    /// @brief Delay-initializes the resource.
+    void init(video_context&, resource_loader& loader) {
+        _sig_key = connect<&loaded_resource::_handle_gl_texture_loaded>(
+          this, loader.gl_texture_loaded);
+    }
+
+    /// @brief Clean's up this resource.
+    void clean_up(video_context& video, resource_loader& loader) {
+        video.gl_api().clean_up(std::move(_res()));
+        if(_sig_key) {
+            loader.gl_texture_loaded.disconnect(_sig_key);
+            _sig_key = {};
+        }
+    }
+
+    /// @brief Constructor specifying the locator and initializing the resource.
+    loaded_resource(url locator, video_context& video, resource_loader& loader)
+      : loaded_resource{std::move(locator)} {
+        init(video, loader);
+    }
+
+    /// @brief Indicates if this resource is loaded.
+    auto is_loaded() const noexcept -> bool {
+        return this->is_valid();
+    }
+
+    /// @brief Indicates if this resource is loaded.
+    /// @see is_loaded
+    explicit operator bool() const noexcept {
+        return is_loaded();
+    }
+
+    /// @brief Updates the resource, possibly doing resource load request.
+    auto update(
+      video_context& video,
+      resource_loader& loader,
+      oglplus::texture_target target,
+      oglplus::texture_unit unit) -> work_done {
+        if(!is_loaded() && !is_loading()) {
+            if(const auto request{
+                 loader.request_gl_texture(_locator, video, target, unit)}) {
+                _request_id = request.request_id();
+                return true;
+            }
+        }
+        return false;
+    }
+
+private:
+    void _handle_gl_texture_loaded(
+      const identifier_t request_id,
+      oglplus::texture_name tex,
+      oglplus::owned_texture_name& ref,
+      const url&) noexcept {
+        if(request_id == _request_id) {
+            _res() = std::move(ref);
+            if(is_loaded()) {
+                _request_id = 0;
+                this->loaded(tex);
+            }
+        }
+    }
+
+    signal_binding_key _sig_key{};
+};
+//------------------------------------------------------------------------------
+export template <>
 class loaded_resource<geometry_and_bindings>
   : public geometry_and_bindings
   , public loaded_resource_base {
