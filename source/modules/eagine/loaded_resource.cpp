@@ -1,0 +1,122 @@
+/// @file
+///
+/// Copyright Matus Chochlik.
+/// Distributed under the Boost Software License, Version 1.0.
+/// See accompanying file LICENSE_1_0.txt or copy at
+///  http://www.boost.org/LICENSE_1_0.txt
+///
+export module eagine.app:loaded_resource;
+
+import eagine.core.types;
+import eagine.core.utility;
+import eagine.core.runtime;
+import eagine.shapes;
+import eagine.oglplus;
+import :context;
+import :resource_loader;
+
+namespace eagine::app {
+//------------------------------------------------------------------------------
+/// @brief Common base for loaded resource template.
+/// @see resource_loader
+export class loaded_resource_base {
+public:
+    loaded_resource_base(url locator) noexcept
+      : _locator{std::move(locator)} {}
+
+    /// @brief Returns this resource's URL.
+    auto locator() const noexcept -> const url& {
+        return _locator;
+    }
+
+    /// @brief Indicates if this resource is currently loading.
+    auto is_loading() const noexcept -> bool {
+        return _request_id != 0;
+    }
+
+protected:
+    url _locator;
+    identifier_t _request_id{0};
+};
+//------------------------------------------------------------------------------
+export template <typename Resource>
+class loaded_resource;
+//------------------------------------------------------------------------------
+export template <>
+class loaded_resource<oglplus::owned_program_name>
+  : public oglplus::owned_program_name
+  , public loaded_resource_base {
+    using _res_t = oglplus::owned_program_name;
+
+    auto _res() noexcept -> _res_t& {
+        return *this;
+    }
+
+public:
+    /// @brief Signal emmitted when the resource is successfully loaded.
+    signal<void(
+      oglplus::program_name,
+      const oglplus::program_input_bindings&) noexcept>
+      loaded;
+
+    /// @brief Constructor specifying the resource locator.
+    loaded_resource(url locator) noexcept
+      : loaded_resource_base{std::move(locator)} {}
+
+    /// @brief Delay-initializes the resource.
+    void init(video_context&, resource_loader& loader) {
+        _sig_key = connect<&loaded_resource::_handle_gl_program_loaded>(
+          this, loader.gl_program_loaded);
+    }
+
+    /// @brief Clean's up the resource.
+    void clean_up(video_context& video, resource_loader& loader) {
+        video.gl_api().clean_up(std::move(_res()));
+        if(_sig_key) {
+            loader.gl_program_loaded.disconnect(_sig_key);
+            _sig_key = {};
+        }
+    }
+
+    /// @brief Constructor specifying the locator and initializing the resource.
+    loaded_resource(url locator, video_context& video, resource_loader& loader)
+      : loaded_resource{std::move(locator)} {
+        init(video, loader);
+    }
+
+    /// @brief Indicates if this resource is loaded.
+    auto is_loaded() const noexcept -> bool {
+        return this->is_valid();
+    }
+
+    /// @brief Updates the resource, possibly doing resource load request.
+    auto update(video_context& video, resource_loader& loader) -> work_done {
+        if(!is_loaded() && !is_loading()) {
+            if(const auto request{loader.request_gl_program(_locator, video)}) {
+                _request_id = request.request_id();
+                return true;
+            }
+        }
+        return false;
+    }
+
+private:
+    void _handle_gl_program_loaded(
+      const identifier_t request_id,
+      oglplus::program_name prog,
+      std::reference_wrapper<oglplus::owned_program_name> ref,
+      const oglplus::program_input_bindings& input_bindings,
+      const url&) noexcept {
+        if(request_id == _request_id) {
+            _res() = std::move(ref.get());
+            if(is_loaded()) {
+                _request_id = 0;
+                this->loaded(prog, input_bindings);
+            }
+        }
+    }
+
+    signal_binding_key _sig_key{};
+};
+//------------------------------------------------------------------------------
+} // namespace eagine::app
