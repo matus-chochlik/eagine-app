@@ -348,68 +348,124 @@ export struct resource_loader_signals {
     signal<void(identifier_t, resource_kind, const url&) noexcept>
       resource_cancelled;
 
+    /// @brief Type of parameter of the shape_generator_loaded signal.
+    /// @see shape_generator_loaded
+    struct shape_generator_load_info {
+        const identifier_t request_id;
+        const url& locator;
+        const std::shared_ptr<shapes::generator>& generator;
+    };
+
     /// @brief Emitted when a shape generator is loaded.
-    signal<void(
-      identifier_t,
-      const std::shared_ptr<shapes::generator>&,
-      const url&) noexcept>
+    signal<void(const shape_generator_load_info&) noexcept>
       shape_generator_loaded;
 
+    /// @brief Type of parameter of the gl_shape_loaded signal.
+    /// @see gl_shape_loaded
+    struct gl_shape_load_info {
+        const identifier_t request_id;
+        const url& locator;
+        const oglplus::shape_generator& shape;
+    };
+
     /// @brief Emitted when a oglplus shape wrapper is loaded.
-    signal<
-      void(identifier_t, const oglplus::shape_generator&, const url&) noexcept>
-      gl_shape_loaded;
+    signal<void(const gl_shape_load_info&) noexcept> gl_shape_loaded;
+
+    /// @brief Type of parameter of the gl_geometry_and_bindings_loaded signal.
+    /// @see gl_geometry_and_bindings_loaded
+    struct gl_geometry_and_bindings_load_info {
+        const identifier_t request_id;
+        const url& locator;
+        geometry_and_bindings& ref;
+    };
 
     /// @brief Emitted when a geometry and attribute bindings wrapper is loaded.
-    signal<void(identifier_t, geometry_and_bindings&, const url&) noexcept>
+    signal<void(const gl_geometry_and_bindings_load_info&) noexcept>
       gl_geometry_and_bindings_loaded;
 
+    /// @brief Type of parameter of the value_tree_loaded signal.
+    /// @see value_tree_loaded
+    struct value_tree_load_info {
+        const identifier_t request_id;
+        const url& locator;
+        const valtree::compound& tree;
+    };
+
     /// @brief Emitted when a value tree is loaded.
-    signal<void(identifier_t, const valtree::compound&, const url&) noexcept>
-      value_tree_loaded;
+    signal<void(const value_tree_load_info&) noexcept> value_tree_loaded;
+
+    /// @brief Type of parameter of the glsl_source_loaded signal.
+    /// @see glsl_source_loaded
+    struct glsl_source_load_info {
+        const identifier_t request_id;
+        const url& locator;
+        const oglplus::glsl_source_ref& source;
+    };
 
     /// @brief Emitted when a GLSL source code is loaded.
-    signal<
-      void(identifier_t, const oglplus::glsl_source_ref&, const url&) noexcept>
-      glsl_source_loaded;
+    signal<void(const glsl_source_load_info&) noexcept> glsl_source_loaded;
+
+    /// @brief Type of parameter of the gl_shader_loaded signal.
+    /// @see gl_shader_loaded
+    struct gl_shader_load_info {
+        const identifier_t request_id;
+        const url& locator;
+        const oglplus::shader_type type;
+        const oglplus::shader_name name;
+        oglplus::owned_shader_name& ref;
+    };
 
     /// @brief Emitted when a GL shader is successfully created and compiled.
-    signal<void(
-      identifier_t,
-      oglplus::shader_type,
-      oglplus::shader_name,
-      oglplus::owned_shader_name&,
-      const url&) noexcept>
-      gl_shader_loaded;
+    signal<void(const gl_shader_load_info&) noexcept> gl_shader_loaded;
+
+    /// @brief Type of parameter of the gl_program_loaded signal.
+    /// @see gl_program_loaded
+    struct gl_program_load_info {
+        const identifier_t request_id;
+        const url& locator;
+        const oglplus::program_name name;
+        oglplus::owned_program_name& ref;
+        oglplus::program_input_bindings& input_bindings;
+    };
 
     /// @brief Emitted when a GL program is successfully created and linked.
-    signal<void(
-      identifier_t,
-      oglplus::program_name,
-      oglplus::owned_program_name&,
-      const oglplus::program_input_bindings&,
-      const url&) noexcept>
-      gl_program_loaded;
+    signal<void(const gl_program_load_info&) noexcept> gl_program_loaded;
+
+    /// @brief Type of parameter of the gl_texture_loaded signal.
+    /// @see gl_texture_loaded
+    struct gl_texture_load_info {
+        const identifier_t request_id;
+        const url& locator;
+        const oglplus::texture_name name;
+        oglplus::owned_texture_name& ref;
+    };
 
     /// @brief Emitted when a GL texture is successfully created and its parameters set-up.
-    signal<void(
-      identifier_t,
-      oglplus::texture_name,
-      oglplus::owned_texture_name&,
-      const url&) noexcept>
-      gl_texture_loaded;
+    signal<void(const gl_texture_load_info&) noexcept> gl_texture_loaded;
+
+    /// @brief Type of parameter of the gl_texture_images_loaded signal.
+    /// @see gl_texture_image_loaded
+    struct gl_texture_images_load_info {
+        const identifier_t request_id;
+        const url& locator;
+        const oglplus::texture_name name;
+    };
 
     /// @brief Emitted when all GL texture images are successfully loaded.
-    signal<void(identifier_t, oglplus::texture_name, const url&) noexcept>
+    signal<void(const gl_texture_images_load_info&) noexcept>
       gl_texture_images_loaded;
 
+    /// @brief Type of parameter of the gl_buffer_loaded signal.
+    /// @see gl_buffer_loaded
+    struct gl_buffer_load_info {
+        const identifier_t request_id;
+        const url& locator;
+        const oglplus::buffer_name name;
+        oglplus::owned_buffer_name& ref;
+    };
+
     /// @brief Emitted when a GL buffer is successfully created and set-up.
-    signal<void(
-      identifier_t,
-      oglplus::buffer_name,
-      oglplus::owned_buffer_name&,
-      const url&) noexcept>
-      gl_buffer_loaded;
+    signal<void(const gl_buffer_load_info&) noexcept> gl_buffer_loaded;
 };
 //------------------------------------------------------------------------------
 template <typename T>
@@ -435,73 +491,58 @@ concept resource_blob_stream_data_appended_observer =
 
 template <typename T>
 concept resource_shape_generator_loaded_observer =
-  requires(
-    T v,
-    identifier_t request_id,
-    const std::shared_ptr<shapes::generator>& gen,
-    const url& locator) {
-      v.handle_shape_generator_loaded(request_id, gen, locator);
+  requires(T v, const resource_loader_signals::shape_generator_load_info& info) {
+      v.handle_shape_generator_loaded(info);
   };
 
 template <typename T>
-concept resource_gl_shape_loaded_observer = requires(
-  T v,
-  identifier_t request_id,
-  const oglplus::shape_generator& shape,
-  const url& locator) { v.handle_gl_shape_loaded(request_id, shape, locator); };
+concept resource_gl_shape_loaded_observer =
+  requires(T v, const resource_loader_signals::gl_shape_load_info& info) {
+      v.handle_gl_shape_loaded(info);
+  };
 
 template <typename T>
 concept resource_gl_geometry_and_bindings_loaded_observer =
   requires(
     T v,
-    identifier_t request_id,
-    geometry_and_bindings& ref,
-    const url& locator) {
-      v.handle_gl_geometry_and_bindings_loaded(request_id, ref, locator);
+    const resource_loader_signals::gl_geometry_and_bindings_load_info& info) {
+      v.handle_gl_geometry_and_bindings_loaded(info);
   };
 
 template <typename T>
 concept resource_value_tree_loaded_observer =
-  requires(
-    T v,
-    identifier_t request_id,
-    const valtree::compound& tree,
-    const url& locator) {
-      v.handle_value_tree_loaded(request_id, tree, locator);
+  requires(T v, const resource_loader_signals::value_tree_load_info& info) {
+      v.handle_value_tree_loaded(info);
   };
 
 template <typename T>
 concept resource_glsl_source_loaded_observer =
-  requires(
-    T v,
-    identifier_t request_id,
-    const oglplus::glsl_source_ref& glsl_src,
-    const url& locator) {
-      v.handle_glsl_source_loaded(request_id, glsl_src, locator);
+  requires(T v, const resource_loader_signals::glsl_source_load_info& info) {
+      v.handle_glsl_source_loaded(info);
   };
 
 template <typename T>
 concept resource_gl_shader_loaded_observer =
-  requires(
-    T v,
-    identifier_t request_id,
-    oglplus::shader_type type,
-    oglplus::shader_name name,
-    oglplus::owned_shader_name& ref,
-    const url& locator) {
-      v.handle_gl_shader_loaded(request_id, type, name, ref, locator);
+  requires(T v, const resource_loader_signals::gl_shader_load_info& info) {
+      v.handle_gl_shader_loaded(info);
   };
 
 template <typename T>
 concept resource_gl_program_loaded_observer =
-  requires(
-    T v,
-    identifier_t request_id,
-    oglplus::program_name name,
-    oglplus::owned_program_name& ref,
-    const oglplus::program_input_bindings& bnd,
-    const url& locator) {
-      v.handle_gl_program_loaded(request_id, name, ref, bnd, locator);
+  requires(T v, const resource_loader_signals::gl_program_load_info& info) {
+      v.handle_gl_program_loaded(info);
+  };
+
+template <typename T>
+concept resource_gl_texture_loaded_observer =
+  requires(T v, const resource_loader_signals::gl_texture_load_info& info) {
+      v.handle_gl_texture_loaded(info);
+  };
+
+template <typename T>
+concept resource_gl_buffer_loaded_observer =
+  requires(T v, const resource_loader_signals::gl_buffer_load_info& info) {
+      v.handle_gl_buffer_loaded(info);
   };
 //------------------------------------------------------------------------------
 /// @brief Loader of resources of various types.
@@ -555,6 +596,14 @@ public:
         if constexpr(resource_gl_program_loaded_observer<O>) {
             connect<&O::handle_gl_program_loaded>(
               &observer, this->gl_program_loaded);
+        }
+        if constexpr(resource_gl_texture_loaded_observer<O>) {
+            connect<&O::handle_gl_texture_loaded>(
+              &observer, this->gl_texture_loaded);
+        }
+        if constexpr(resource_gl_buffer_loaded_observer<O>) {
+            connect<&O::handle_gl_buffer_loaded>(
+              &observer, this->gl_buffer_loaded);
         }
     }
 

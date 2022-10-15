@@ -129,15 +129,11 @@ public:
 
 private:
     void _handle_gl_shader_loaded(
-      const identifier_t request_id,
-      oglplus::shader_type type,
-      oglplus::shader_name,
-      oglplus::owned_shader_name& ref,
-      const url&) noexcept {
-        if(request_id == _request_id) {
-            _res() = std::move(ref);
+      const resource_loader::gl_shader_load_info& info) noexcept {
+        if(info.request_id == _request_id) {
+            _res() = std::move(info.ref);
             if(is_loaded()) {
-                this->loaded({.resource = *this, .shader_type = type});
+                this->loaded({.resource = *this, .shader_type = info.type});
                 _request_id = 0;
             }
         }
@@ -229,16 +225,12 @@ public:
 
 private:
     void _handle_gl_program_loaded(
-      const identifier_t request_id,
-      oglplus::program_name,
-      oglplus::owned_program_name& ref,
-      const oglplus::program_input_bindings& input_bindings,
-      const url&) noexcept {
-        if(request_id == _request_id) {
-            _res() = std::move(ref);
+      const resource_loader::gl_program_load_info& info) noexcept {
+        if(info.request_id == _request_id) {
+            _res() = std::move(info.ref);
             if(is_loaded()) {
                 this->loaded(
-                  {.resource = *this, .input_bindings = input_bindings});
+                  {.resource = *this, .input_bindings = info.input_bindings});
                 _request_id = 0;
             }
         }
@@ -322,12 +314,9 @@ public:
 
 private:
     void _handle_gl_texture_loaded(
-      const identifier_t request_id,
-      oglplus::texture_name,
-      oglplus::owned_texture_name& ref,
-      const url&) noexcept {
-        if(request_id == _request_id) {
-            _res() = std::move(ref);
+      const resource_loader::gl_texture_load_info& info) noexcept {
+        if(info.request_id == _request_id) {
+            _res() = std::move(info.ref);
             if(is_loaded()) {
                 this->loaded({.resource = *this});
                 _request_id = 0;
@@ -428,11 +417,9 @@ public:
 
 private:
     void _handle_gl_geometry_and_bindings_loaded(
-      const identifier_t request_id,
-      geometry_and_bindings& ref,
-      const url&) noexcept {
-        if(request_id == _request_id) {
-            _res() = std::move(ref);
+      const resource_loader::gl_geometry_and_bindings_load_info& info) noexcept {
+        if(info.request_id == _request_id) {
+            _res() = std::move(info.ref);
             if(is_loaded()) {
                 this->loaded({.resource = *this});
                 _request_id = 0;

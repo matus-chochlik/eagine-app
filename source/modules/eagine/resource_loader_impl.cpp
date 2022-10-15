@@ -794,7 +794,10 @@ auto pending_resource_info::update() noexcept -> work_done {
             if(const auto cont{continuation()}) {
                 extract(cont)._handle_shape_generator(*this, shape_gen);
             }
-            _parent.shape_generator_loaded(_request_id, shape_gen, _locator);
+            _parent.shape_generator_loaded(
+              {.request_id = _request_id,
+               .locator = _locator,
+               .generator = shape_gen});
             something_done();
         }
         _state = std::monostate{};
@@ -833,7 +836,8 @@ void pending_resource_info::_handle_json_text(
         if(const auto cont{continuation()}) {
             extract(cont)._handle_value_tree(*this, tree);
         }
-        _parent.value_tree_loaded(_request_id, tree, _locator);
+        _parent.value_tree_loaded(
+          {.request_id = _request_id, .locator = _locator, .tree = tree});
     } else if(is(resource_kind::value_tree_traversal)) {
         if(std::holds_alternative<_pending_valtree_traversal_state>(_state)) {
             auto& pvts = std::get<_pending_valtree_traversal_state>(_state);
@@ -894,7 +898,8 @@ void pending_resource_info::_handle_shape_generator(
             if(const auto cont{continuation()}) {
                 extract(cont)._handle_gl_shape(*this, shape);
             }
-            _parent.gl_shape_loaded(_request_id, shape, _locator);
+            _parent.gl_shape_loaded(
+              {.request_id = _request_id, .locator = _locator, .shape = shape});
         }
     }
     mark_finished();
@@ -924,7 +929,7 @@ void pending_resource_info::_handle_gl_shape(
               pggbs.video,
               temp};
             _parent.gl_geometry_and_bindings_loaded(
-              _request_id, geom, _locator);
+              {.request_id = _request_id, .locator = _locator, .ref = geom});
             if(geom) {
                 geom.clean_up(pggbs.video);
             }
@@ -960,7 +965,8 @@ void pending_resource_info::_handle_glsl_strings(
         if(const auto cont{continuation()}) {
             extract(cont)._handle_glsl_source(*this, glsl_src);
         }
-        _parent.glsl_source_loaded(_request_id, glsl_src, _locator);
+        _parent.glsl_source_loaded(
+          {.request_id = _request_id, .locator = _locator, .source = glsl_src});
     }
     mark_finished();
 }
@@ -985,7 +991,11 @@ void pending_resource_info::_handle_glsl_source(
                 extract(cont)._handle_gl_shader(*this, shdr);
             }
             _parent.gl_shader_loaded(
-              _request_id, pgss.shdr_type, shdr, shdr, _locator);
+              {.request_id = _request_id,
+               .locator = _locator,
+               .type = pgss.shdr_type,
+               .name = shdr,
+               .ref = shdr});
 
             if(shdr) {
                 gl.delete_shader(std::move(shdr));
@@ -1005,7 +1015,11 @@ auto pending_resource_info::_finish_gl_program(
         const auto& gl = pgps.video.get().gl_api().operations();
         gl.link_program(pgps.prog);
         _parent.gl_program_loaded(
-          _request_id, pgps.prog, pgps.prog, pgps.input_bindings, _locator);
+          {.request_id = _request_id,
+           .locator = _locator,
+           .name = pgps.prog,
+           .ref = pgps.prog,
+           .input_bindings = pgps.input_bindings});
 
         if(pgps.prog) {
             gl.delete_program(std::move(pgps.prog));
@@ -1168,7 +1182,14 @@ auto pending_resource_info::_finish_gl_texture(
           .arg("locator", _locator.str());
 
         const auto& gl = pgts.video.get().gl_api().operations();
-        _parent.gl_texture_loaded(_request_id, pgts.tex, pgts.tex, _locator);
+        // TODO: call this earlier (before all images are loaded)?
+        _parent.gl_texture_loaded(
+          {.request_id = _request_id,
+           .locator = _locator,
+           .name = pgts.tex,
+           .ref = pgts.tex});
+        _parent.gl_texture_images_loaded(
+          {.request_id = _request_id, .locator = _locator, .name = pgts.tex});
 
         if(pgts.tex) {
             gl.delete_textures(std::move(pgts.tex));
