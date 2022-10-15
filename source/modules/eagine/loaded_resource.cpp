@@ -359,6 +359,21 @@ public:
     auto update(
       video_context& video,
       resource_loader& loader,
+      span_size_t draw_var_idx = 0) -> work_done {
+        if(!is_loaded() && !is_loading()) {
+            if(const auto request{loader.request_gl_geometry_and_bindings(
+                 _locator, video, draw_var_idx)}) {
+                _request_id = request.request_id();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /// @brief Updates the resource, possibly doing resource load request.
+    auto update(
+      video_context& video,
+      resource_loader& loader,
       const oglplus::vertex_attrib_bindings& bindings,
       span_size_t draw_var_idx = 0) -> work_done {
         if(!is_loaded() && !is_loading()) {

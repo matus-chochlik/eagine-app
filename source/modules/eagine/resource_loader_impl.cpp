@@ -1020,7 +1020,7 @@ void pending_resource_info::_handle_gl_shader(
   oglplus::owned_shader_name& shdr) noexcept {
     _parent.log_info("loaded and compiled GL shader object")
       .arg("requestId", _request_id)
-      .arg("locator", _locator.str());
+      .arg("locator", source.locator().str());
 
     if(is(resource_kind::gl_program)) {
         if(std::holds_alternative<_pending_gl_program_state>(_state)) {
