@@ -477,16 +477,6 @@ public:
                 if(const auto parent{_parent.lock()}) {
                     _success &=
                       extract(parent).handle_gl_texture_params(_params);
-                    for(auto& [loc, tgt] : _image_requests) {
-                        const auto img_request{
-                          extract(parent).loader().request_gl_texture_image(
-                            std::move(loc), tgt)};
-                        img_request.set_continuation(parent);
-                        _success &=
-                          extract(parent).add_gl_texture_image_request(
-                            img_request.request_id());
-                    }
-                    _image_requests.clear();
                 } else {
                     _success = false;
                 }
@@ -502,12 +492,19 @@ public:
     }
 
     void finish() noexcept final {
-        if(_success) {
-            if(const auto parent{_parent.lock()}) {
+        if(const auto parent{_parent.lock()}) {
+            if(_success) {
+                for(auto& [loc, tgt] : _image_requests) {
+                    const auto img_request{
+                      extract(parent).loader().request_gl_texture_image(
+                        std::move(loc), tgt)};
+                    img_request.set_continuation(parent);
+                    extract(parent).add_gl_texture_image_request(
+                      img_request.request_id());
+                }
+                _image_requests.clear();
                 extract(parent).mark_loaded();
-            }
-        } else {
-            if(const auto parent{_parent.lock()}) {
+            } else {
                 extract(parent).mark_finished();
             }
         }
@@ -667,6 +664,8 @@ auto pending_resource_info::handle_gl_texture_params(
     if(std::holds_alternative<_pending_gl_texture_state>(_state)) {
         auto& pgts = std::get<_pending_gl_texture_state>(_state);
         auto& glapi = pgts.video.get().gl_api();
+        glapi.operations().active_texture(pgts.tex_unit);
+        glapi.bind_texture(pgts.tex_target, pgts.tex);
         if(params.dimensions == 3) {
             if(glapi.texture_storage3d) {
                 return bool(glapi.texture_storage3d(
@@ -677,8 +676,6 @@ auto pending_resource_info::handle_gl_texture_params(
                   params.height,
                   params.depth));
             } else if(glapi.tex_storage3d) {
-                glapi.operations().active_texture(pgts.tex_unit);
-                glapi.bind_texture(pgts.tex_target, pgts.tex);
                 return bool(glapi.tex_storage3d(
                   pgts.tex_target,
                   params.levels,
@@ -691,8 +688,6 @@ auto pending_resource_info::handle_gl_texture_params(
                 auto width = params.width;
                 auto height = params.height;
                 auto depth = params.depth;
-                glapi.operations().active_texture(pgts.tex_unit);
-                glapi.bind_texture(pgts.tex_target, pgts.tex);
                 for(auto level : integer_range(params.levels)) {
                     result &= bool(glapi.tex_image3d(
                       pgts.tex_target,
@@ -722,8 +717,6 @@ auto pending_resource_info::handle_gl_texture_params(
                   params.width,
                   params.height));
             } else if(glapi.tex_storage2d) {
-                glapi.operations().active_texture(pgts.tex_unit);
-                glapi.bind_texture(pgts.tex_target, pgts.tex);
                 return bool(glapi.tex_storage2d(
                   pgts.tex_target,
                   params.levels,
@@ -734,8 +727,6 @@ auto pending_resource_info::handle_gl_texture_params(
                 bool result{true};
                 auto width = params.width;
                 auto height = params.height;
-                glapi.operations().active_texture(pgts.tex_unit);
-                glapi.bind_texture(pgts.tex_target, pgts.tex);
                 for(auto level : integer_range(params.levels)) {
                     result &= bool(glapi.tex_image2d(
                       pgts.tex_target,
@@ -760,8 +751,6 @@ auto pending_resource_info::handle_gl_texture_params(
                   oglplus::pixel_internal_format{params.iformat},
                   params.width));
             } else if(glapi.tex_storage1d) {
-                glapi.operations().active_texture(pgts.tex_unit);
-                glapi.bind_texture(pgts.tex_target, pgts.tex);
                 return bool(glapi.tex_storage1d(
                   pgts.tex_target,
                   params.levels,
@@ -770,8 +759,6 @@ auto pending_resource_info::handle_gl_texture_params(
             } else if(glapi.tex_image1d) {
                 bool result{true};
                 auto width = params.width;
-                glapi.operations().active_texture(pgts.tex_unit);
-                glapi.bind_texture(pgts.tex_target, pgts.tex);
                 for(auto level : integer_range(params.levels)) {
                     result &= bool(glapi.tex_image1d(
                       pgts.tex_target,
@@ -1054,9 +1041,9 @@ void pending_resource_info::_handle_gl_texture_image(
   const oglplus::texture_target target,
   const resource_texture_image_params&,
   const memory::const_block) noexcept {
-    _parent.log_info("loaded and GL texture image")
+    _parent.log_info("loaded GL texture image")
       .arg("requestId", _request_id)
-      .arg("locator", _locator.str());
+      .arg("locator", source.locator().str());
 
     auto add_image_data = [&](auto& glapi, auto& pgts) {
         (void)glapi;

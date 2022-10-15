@@ -87,6 +87,10 @@ public:
         return _request_id;
     }
 
+    auto locator() const noexcept -> const url& {
+        return _locator;
+    }
+
     auto is(resource_kind kind) const noexcept -> bool {
         return _kind == kind;
     }
