@@ -173,6 +173,7 @@ eagine_add_module(
 		eagine.core.types
 		eagine.core.utility
 		eagine.core.runtime
+		eagine.core.value_tree
 		eagine.shapes
 		eagine.oglplus
 )
