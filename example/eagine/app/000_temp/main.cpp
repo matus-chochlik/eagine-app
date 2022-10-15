@@ -88,7 +88,6 @@ void example_cube::on_video_resize() noexcept {
 void example_cube::update() noexcept {
     _prog.update(_video, _loader);
     _geom.update(_video, _loader, _attrib_bindings);
-    _loader.update();
 
     auto& state = _ctx.state();
     if(state.is_active()) {

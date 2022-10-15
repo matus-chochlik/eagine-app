@@ -552,6 +552,7 @@ void execution_context::clean_up() noexcept {
 void execution_context::update() noexcept {
     const auto exec_time{measure_time_interval("appUpdate")};
     _registry.update_all();
+    _loader.update();
     extract(_state).update_activity();
     for(auto& provider : _hmi_providers) {
         extract(provider).update(*this);
