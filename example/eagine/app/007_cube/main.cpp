@@ -26,65 +26,43 @@ public:
     void clean_up() noexcept final;
 
 private:
+    void _on_prog_loaded(
+      oglplus::program_name prog,
+      const oglplus::program_input_bindings& input_bindings) noexcept {
+        auto& glapi = _video.gl_api();
+        input_bindings.apply(glapi, prog, _cube);
+        glapi.use_program(prog);
+        glapi.get_uniform_location(prog, "Camera") >> _camera_loc;
+    }
+
     execution_context& _ctx;
     video_context& _video;
+    resource_loader& _loader;
     background_color_depth _bg;
     timeout _is_done{std::chrono::seconds{30}};
 
-    oglplus::geometry_and_bindings cube;
+    oglplus::vertex_attrib_bindings _attrib_bindings;
+    loaded_resource<geometry_and_bindings> _cube;
+    loaded_resource<oglplus::owned_program_name> _prog;
 
-    oglplus::owned_program_name prog;
-
-    orbiting_camera camera;
-    oglplus::uniform_location camera_loc;
+    orbiting_camera _camera;
+    oglplus::uniform_location _camera_loc;
 };
 //------------------------------------------------------------------------------
 example_cube::example_cube(execution_context& ec, video_context& vc)
   : _ctx{ec}
   , _video{vc}
-  , _bg{0.4F, 0.F, 1.F} {
+  , _loader{_ctx.loader()}
+  , _bg{0.4F, 0.F, 1.F}
+  , _cube{url{"shape:///unit_cube?position=true+normal=true"}, _video, _loader}
+  , _prog{url{"json:///GLProgram"}, _video, _loader} {
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
 
-    // geometry
-    memory::buffer temp;
-    oglplus::shape_generator shape(
-      glapi,
-      shapes::unit_cube(
-        shapes::vertex_attrib_kind::position |
-        shapes::vertex_attrib_kind::normal));
-    cube = oglplus::geometry_and_bindings{glapi, shape, temp};
-    cube.use(glapi);
+    _prog.loaded.connect(
+      make_callable_ref<&example_cube::_on_prog_loaded>(this));
 
-    // vertex shader
-    auto vs_source = embed<"VertShader">("vertex.glsl");
-    oglplus::owned_shader_name vs;
-    gl.create_shader(GL.vertex_shader) >> vs;
-    auto cleanup_vs = gl.delete_shader.raii(vs);
-    gl.shader_source(vs, oglplus::glsl_string_ref(vs_source));
-    gl.compile_shader(vs);
-
-    // fragment shader
-    auto fs_source = embed<"FragShader">("fragment.glsl");
-    oglplus::owned_shader_name fs;
-    gl.create_shader(GL.fragment_shader) >> fs;
-    auto cleanup_fs = gl.delete_shader.raii(fs);
-    gl.shader_source(fs, oglplus::glsl_string_ref(fs_source));
-    gl.compile_shader(fs);
-
-    // program
-    gl.create_program() >> prog;
-    gl.attach_shader(prog, vs);
-    gl.attach_shader(prog, fs);
-    gl.link_program(prog);
-    gl.use_program(prog);
-
-    gl.bind_attrib_location(prog, cube.position_loc(), "Position");
-    gl.bind_attrib_location(prog, cube.normal_loc(), "Normal");
-
-    // uniform
-    gl.get_uniform_location(prog, "Camera") >> camera_loc;
-    camera.set_near(0.1F)
+    _camera.set_near(0.1F)
       .set_far(50.F)
       .set_orbit_min(1.1F)
       .set_orbit_max(3.5F)
@@ -92,7 +70,7 @@ example_cube::example_cube(execution_context& ec, video_context& vc)
 
     gl.enable(GL.depth_test);
 
-    camera.connect_inputs(ec).basic_input_mapping(ec);
+    _camera.connect_inputs(ec).basic_input_mapping(ec);
     ec.setup_inputs().switch_input_mapping();
 }
 //------------------------------------------------------------------------------
@@ -102,31 +80,37 @@ void example_cube::on_video_resize() noexcept {
 }
 //------------------------------------------------------------------------------
 void example_cube::update() noexcept {
+    if(!_cube) {
+        _cube.update(_video, _loader);
+    } else {
+        if(!_prog) {
+            _prog.update(_video, _loader);
+        }
+    }
+
     auto& state = _ctx.state();
     if(state.is_active()) {
         _is_done.reset();
     }
     if(state.user_idle_too_long()) {
-        camera.idle_update(state);
+        _camera.idle_update(state);
     }
 
     const auto& glapi = _video.gl_api();
 
     _bg.clear(_video);
 
-    if(camera.has_changed()) {
-        glapi.set_uniform(prog, camera_loc, camera.matrix(_video));
+    if(_cube && _prog) {
+        glapi.set_uniform(_prog, _camera_loc, _camera.matrix(_video));
+        _cube.draw(glapi);
     }
-    cube.draw(glapi);
 
     _video.commit();
 }
 //------------------------------------------------------------------------------
 void example_cube::clean_up() noexcept {
-    const auto& gl = _video.gl_api();
-
-    gl.delete_program(std::move(prog));
-    cube.clean_up(gl);
+    _prog.clean_up(_video, _loader);
+    _cube.clean_up(_video, _loader);
 
     _video.end();
 }

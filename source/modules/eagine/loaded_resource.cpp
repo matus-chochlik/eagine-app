@@ -165,6 +165,17 @@ public:
           this, loader.gl_program_loaded);
     }
 
+    /// @brief Makes the current program active within the given API object.
+    auto use(const oglplus::gl_api& glapi) noexcept -> loaded_resource& {
+        glapi.use_program(*this);
+        return *this;
+    }
+
+    /// @brief Makes the current program active within the given video context.
+    auto use(video_context& vc) noexcept -> loaded_resource& {
+        return use(vc.gl_api());
+    }
+
     /// @brief Clean's up this resource.
     void clean_up(video_context& video, resource_loader& loader) {
         video.gl_api().clean_up(std::move(_res()));

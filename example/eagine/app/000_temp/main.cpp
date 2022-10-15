@@ -28,8 +28,6 @@ public:
     void clean_up() noexcept final;
 
 private:
-    friend class app::resource_loader;
-
     void _on_prog_loaded(
       oglplus::program_name prog,
       const oglplus::program_input_bindings& input_bindings) noexcept {
