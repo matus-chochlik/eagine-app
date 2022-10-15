@@ -26,13 +26,11 @@ public:
     void clean_up() noexcept final;
 
 private:
-    void _on_prog_loaded(
-      oglplus::program_name prog,
-      const oglplus::program_input_bindings& input_bindings) noexcept {
+    void _on_prog_loaded(const gl_program_resource::load_info& info) noexcept {
         auto& glapi = _video.gl_api();
-        input_bindings.apply(glapi, prog, _cube);
-        glapi.use_program(prog);
-        glapi.get_uniform_location(prog, "Camera") >> _camera_loc;
+        info.input_bindings.apply(glapi, info.resource, _cube);
+        glapi.use_program(info.resource);
+        glapi.get_uniform_location(info.resource, "Camera") >> _camera_loc;
     }
 
     execution_context& _ctx;

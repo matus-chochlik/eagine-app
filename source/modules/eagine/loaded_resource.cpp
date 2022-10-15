@@ -54,8 +54,16 @@ class loaded_resource<oglplus::owned_shader_name>
     }
 
 public:
+    /// @brief Type of the loaded signal parameter.
+    struct load_info {
+        /// @brief The loaded shader resource.
+        const loaded_resource<oglplus::owned_shader_name>& resource;
+        /// @brief The loaded shader type.
+        oglplus::shader_type shader_type;
+    };
+
     /// @brief Signal emmitted when the resource is successfully loaded.
-    signal<void(oglplus::shader_type, oglplus::shader_name) noexcept> loaded;
+    signal<void(const load_info&) noexcept> loaded;
 
     /// @brief Constructor specifying the resource locator.
     loaded_resource(url locator) noexcept
@@ -123,20 +131,21 @@ private:
     void _handle_gl_shader_loaded(
       const identifier_t request_id,
       oglplus::shader_type type,
-      oglplus::shader_name shdr,
+      oglplus::shader_name,
       oglplus::owned_shader_name& ref,
       const url&) noexcept {
         if(request_id == _request_id) {
             _res() = std::move(ref);
             if(is_loaded()) {
+                this->loaded({.resource = *this, .shader_type = type});
                 _request_id = 0;
-                this->loaded(type, shdr);
             }
         }
     }
 
     signal_binding_key _sig_key{};
 };
+export using gl_shader_resource = loaded_resource<oglplus::owned_shader_name>;
 //------------------------------------------------------------------------------
 export template <>
 class loaded_resource<oglplus::owned_program_name>
@@ -149,11 +158,16 @@ class loaded_resource<oglplus::owned_program_name>
     }
 
 public:
+    /// @brief Type of the loaded signal parameter.
+    struct load_info {
+        /// @brief The loaded program resource.
+        const loaded_resource<oglplus::owned_program_name>& resource;
+        /// @brief The associated program input bindings.
+        const oglplus::program_input_bindings& input_bindings;
+    };
+
     /// @brief Signal emmitted when the resource is successfully loaded.
-    signal<void(
-      oglplus::program_name,
-      const oglplus::program_input_bindings&) noexcept>
-      loaded;
+    signal<void(const load_info&) noexcept> loaded;
 
     /// @brief Constructor specifying the resource locator.
     loaded_resource(url locator) noexcept
@@ -216,21 +230,23 @@ public:
 private:
     void _handle_gl_program_loaded(
       const identifier_t request_id,
-      oglplus::program_name prog,
+      oglplus::program_name,
       oglplus::owned_program_name& ref,
       const oglplus::program_input_bindings& input_bindings,
       const url&) noexcept {
         if(request_id == _request_id) {
             _res() = std::move(ref);
             if(is_loaded()) {
+                this->loaded(
+                  {.resource = *this, .input_bindings = input_bindings});
                 _request_id = 0;
-                this->loaded(prog, input_bindings);
             }
         }
     }
 
     signal_binding_key _sig_key{};
 };
+export using gl_program_resource = loaded_resource<oglplus::owned_program_name>;
 //------------------------------------------------------------------------------
 export template <>
 class loaded_resource<oglplus::owned_texture_name>
@@ -243,8 +259,14 @@ class loaded_resource<oglplus::owned_texture_name>
     }
 
 public:
+    /// @brief Type of the loaded signal parameter.
+    struct load_info {
+        /// @brief The loaded texture resource.
+        const loaded_resource<oglplus::owned_texture_name>& resource;
+    };
+
     /// @brief Signal emmitted when the resource is successfully loaded.
-    signal<void(oglplus::texture_name) noexcept> loaded;
+    signal<void(const load_info&) noexcept> loaded;
 
     /// @brief Constructor specifying the resource locator.
     loaded_resource(url locator) noexcept
@@ -301,20 +323,21 @@ public:
 private:
     void _handle_gl_texture_loaded(
       const identifier_t request_id,
-      oglplus::texture_name tex,
+      oglplus::texture_name,
       oglplus::owned_texture_name& ref,
       const url&) noexcept {
         if(request_id == _request_id) {
             _res() = std::move(ref);
             if(is_loaded()) {
+                this->loaded({.resource = *this});
                 _request_id = 0;
-                this->loaded(tex);
             }
         }
     }
 
     signal_binding_key _sig_key{};
 };
+export using gl_texture_resource = loaded_resource<oglplus::owned_texture_name>;
 //------------------------------------------------------------------------------
 export template <>
 class loaded_resource<geometry_and_bindings>
@@ -327,8 +350,14 @@ class loaded_resource<geometry_and_bindings>
     }
 
 public:
+    /// @brief Type of the loaded signal parameter.
+    struct load_info {
+        /// @brief The loaded geometry resource.
+        const loaded_resource<geometry_and_bindings>& resource;
+    };
+
     /// @brief Signal emmitted when the resource is successfully loaded.
-    signal<void(const geometry_and_bindings& geom) noexcept> loaded;
+    signal<void(const load_info&) noexcept> loaded;
 
     /// @brief Constructor specifying the resource locator.
     loaded_resource(url locator) noexcept
@@ -405,13 +434,15 @@ private:
         if(request_id == _request_id) {
             _res() = std::move(ref);
             if(is_loaded()) {
+                this->loaded({.resource = *this});
                 _request_id = 0;
-                this->loaded(_res());
             }
         }
     }
 
     signal_binding_key _sig_key{};
 };
+export using geometry_and_bindings_resource =
+  loaded_resource<geometry_and_bindings>;
 //------------------------------------------------------------------------------
 } // namespace eagine::app
