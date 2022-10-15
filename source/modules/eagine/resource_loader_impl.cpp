@@ -256,10 +256,11 @@ static auto texture_format_from_string(
 }
 //------------------------------------------------------------------------------
 struct resource_texture_image_params {
+    oglplus::gl_types::int_type dimensions{0};
+    oglplus::gl_types::int_type level{0};
     oglplus::gl_types::int_type x_offs{0};
     oglplus::gl_types::int_type y_offs{0};
     oglplus::gl_types::int_type z_offs{0};
-    oglplus::gl_types::int_type level{0};
     oglplus::gl_types::sizei_type channels{0};
     oglplus::gl_types::sizei_type width{0};
     oglplus::gl_types::sizei_type height{1};
@@ -299,10 +300,17 @@ public:
                 _success &= assign_if_fits(data, _params.channels);
             } else if(path.front() == "width") {
                 _success &= assign_if_fits(data, _params.width);
+                _params.dimensions = std::max(_params.dimensions, 1);
             } else if(path.front() == "height") {
                 _success &= assign_if_fits(data, _params.height);
+                if(_params.height > 1) {
+                    _params.dimensions = std::max(_params.dimensions, 2);
+                }
             } else if(path.front() == "depth") {
                 _success &= assign_if_fits(data, _params.depth);
+                if(_params.depth > 1) {
+                    _params.dimensions = std::max(_params.dimensions, 3);
+                }
             } else if(path.front() == "data_type") {
                 _success &= assign_if_fits(data, _params.data_type);
             } else if(path.front() == "format") {
@@ -1039,16 +1047,92 @@ void pending_resource_info::_handle_gl_shader(
 void pending_resource_info::_handle_gl_texture_image(
   const pending_resource_info& source,
   const oglplus::texture_target target,
-  const resource_texture_image_params&,
-  const memory::const_block) noexcept {
+  const resource_texture_image_params& params,
+  const memory::const_block data) noexcept {
     _parent.log_info("loaded GL texture image")
       .arg("requestId", _request_id)
       .arg("locator", source.locator().str());
 
     auto add_image_data = [&](auto& glapi, auto& pgts) {
-        (void)glapi;
-        (void)pgts;
-        // TODO
+        if(params.dimensions == 3) {
+            if(glapi.texture_sub_image3d) {
+                glapi.texture_sub_image3d(
+                  pgts.tex,
+                  params.level,
+                  params.x_offs,
+                  params.y_offs,
+                  params.z_offs,
+                  params.width,
+                  params.height,
+                  params.depth,
+                  oglplus::pixel_format{params.format},
+                  oglplus::pixel_data_type{params.data_type},
+                  data);
+            } else if(glapi.tex_sub_image3d) {
+                glapi.operations().active_texture(pgts.tex_unit);
+                glapi.bind_texture(pgts.tex_target, pgts.tex);
+                glapi.tex_sub_image3d(
+                  pgts.tex_target,
+                  params.level,
+                  params.x_offs,
+                  params.y_offs,
+                  params.z_offs,
+                  params.width,
+                  params.height,
+                  params.depth,
+                  oglplus::pixel_format{params.format},
+                  oglplus::pixel_data_type{params.data_type},
+                  data);
+            }
+        } else if(params.dimensions == 2) {
+            if(glapi.texture_sub_image2d) {
+                glapi.texture_sub_image2d(
+                  pgts.tex,
+                  params.level,
+                  params.x_offs,
+                  params.y_offs,
+                  params.width,
+                  params.height,
+                  oglplus::pixel_format{params.format},
+                  oglplus::pixel_data_type{params.data_type},
+                  data);
+            } else if(glapi.tex_sub_image2d) {
+                glapi.operations().active_texture(pgts.tex_unit);
+                glapi.bind_texture(pgts.tex_target, pgts.tex);
+                glapi.tex_sub_image2d(
+                  pgts.tex_target,
+                  params.level,
+                  params.x_offs,
+                  params.y_offs,
+                  params.width,
+                  params.height,
+                  oglplus::pixel_format{params.format},
+                  oglplus::pixel_data_type{params.data_type},
+                  data);
+            }
+        } else if(params.dimensions == 1) {
+            if(glapi.texture_sub_image1d) {
+                glapi.texture_sub_image1d(
+                  pgts.tex,
+                  params.level,
+                  params.x_offs,
+                  params.width,
+                  oglplus::pixel_format{params.format},
+                  oglplus::pixel_data_type{params.data_type},
+                  data);
+            } else if(glapi.tex_sub_image1d) {
+                glapi.operations().active_texture(pgts.tex_unit);
+                glapi.bind_texture(pgts.tex_target, pgts.tex);
+                glapi.tex_sub_image1d(
+                  pgts.tex_target,
+                  params.level,
+                  params.x_offs,
+                  params.width,
+                  oglplus::pixel_format{params.format},
+                  oglplus::pixel_data_type{params.data_type},
+                  data);
+            }
+        }
     };
 
     if(is(resource_kind::gl_texture)) {
