@@ -19,9 +19,10 @@ eagine_embed_target_resources(
 		DrawFrag "draw_fragment.glsl"
 		ScreenVert "screen_vertex.glsl"
 		ScreenFrag "screen_fragment.glsl"
-		ShapeJson "pumpkin.json"
+		Pumpkin "pumpkin.json"
 		PumpkinTex "pumpkin"
 	PACKED
+	ENABLE_SEARCH
 )
 eagine_add_exe_analysis(app-037_lantern)
 

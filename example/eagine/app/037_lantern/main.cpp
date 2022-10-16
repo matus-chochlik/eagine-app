@@ -26,14 +26,16 @@ public:
 
     void on_video_resize() noexcept final;
     void update() noexcept final;
+    void clean_up() noexcept final;
 
 private:
     execution_context& _ctx;
     video_context& _video;
+    resource_loader& _loader;
     timeout _is_done{std::chrono::seconds{90}};
 
     draw_buffers draw_bufs;
-    pumpkin_geometry pumpkin;
+    pumpkin_model pumpkin;
     screen_geometry screen;
     draw_program draw_prog;
     screen_program screen_prog;
@@ -43,18 +45,20 @@ private:
 //------------------------------------------------------------------------------
 example_lantern::example_lantern(execution_context& ec, video_context& vc)
   : _ctx{ec}
-  , _video{vc} {
+  , _video{vc}
+  , _loader{_ctx.loader()}
+  , pumpkin{_video, _loader} {
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
 
     draw_bufs.init(_video);
-    pumpkin.init(_video);
     screen.init(_video);
 
     draw_prog.init(_video);
-    draw_prog.bind_position_location(_video, pumpkin.position_loc());
-    draw_prog.bind_normal_location(_video, pumpkin.normal_loc());
-    draw_prog.bind_wrap_coord_location(_video, pumpkin.wrap_coord_loc());
+    draw_prog.bind_position_location(_video, pumpkin.geometry().position_loc());
+    draw_prog.bind_normal_location(_video, pumpkin.geometry().normal_loc());
+    draw_prog.bind_wrap_coord_location(
+      _video, pumpkin.geometry().wrap_coord_loc());
     draw_prog.set_texture_unit(_video, pumpkin.tex_unit());
 
     screen_prog.init(_video);
@@ -63,15 +67,8 @@ example_lantern::example_lantern(execution_context& ec, video_context& vc)
     screen_prog.set_texture_unit(_video, draw_bufs.tex_unit());
 
     // camera
-    const auto bs = pumpkin.bounding_sphere();
-    const auto sr = bs.radius();
     camera.set_pitch_max(degrees_(30.F))
       .set_pitch_min(degrees_(-25.F))
-      .set_target(bs.center())
-      .set_near(sr * 0.01F)
-      .set_far(sr * 50.0F)
-      .set_orbit_min(sr * 1.2F)
-      .set_orbit_max(sr * 2.4F)
       .set_fov(degrees_(50))
       .set_azimuth(degrees_(180));
 
@@ -88,6 +85,18 @@ void example_lantern::on_video_resize() noexcept {
 }
 //------------------------------------------------------------------------------
 void example_lantern::update() noexcept {
+    if(!pumpkin) {
+        pumpkin.update(_video, _loader);
+    } else {
+        const auto bs = pumpkin.bounding_sphere();
+        const auto sr = bs.radius();
+        camera.set_target(bs.center())
+          .set_near(sr * 0.01F)
+          .set_far(sr * 50.0F)
+          .set_orbit_min(sr * 1.2F)
+          .set_orbit_max(sr * 2.4F);
+    }
+
     auto& state = _ctx.state();
     if(state.is_active()) {
         _is_done.reset();
@@ -107,27 +116,33 @@ void example_lantern::update() noexcept {
     gl.clear_color(ambient, ambient, ambient, 0.F);
     gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
 
-    draw_prog.use(_video);
-    draw_prog.set_camera(_video, camera);
-    draw_prog.set_ambient_light(_video, ambient);
-    draw_prog.set_candle_light(
-      _video,
-      std::sin(t * 0.618F * 11.F) * 0.2F + std::cos(t * 1.618F * 7.F) * 0.2F +
-        0.9F);
+    if(pumpkin) {
+        draw_prog.use(_video);
+        draw_prog.set_camera(_video, camera);
+        draw_prog.set_ambient_light(_video, ambient);
+        draw_prog.set_candle_light(
+          _video,
+          std::sin(t * 0.618F * 11.F) * 0.2F +
+            std::cos(t * 1.618F * 7.F) * 0.2F + 0.9F);
 
-    pumpkin.use(_video);
-    pumpkin.draw(_video);
-    gl.disable(GL.depth_test);
+        pumpkin.geometry().use(_video);
+        pumpkin.geometry().draw(_video);
+        gl.disable(GL.depth_test);
 
-    draw_bufs.draw_on_screen(_video);
+        draw_bufs.draw_on_screen(_video);
 
-    screen_prog.use(_video);
-    screen_prog.set_screen_size(_video);
+        screen_prog.use(_video);
+        screen_prog.set_screen_size(_video);
 
-    screen.use(_video);
-    screen.draw(_video);
+        screen.use(_video);
+        screen.draw(_video);
+    }
 
     _video.commit();
+}
+//------------------------------------------------------------------------------
+void example_lantern::clean_up() noexcept {
+    pumpkin.clean_up(_video, _loader);
 }
 //------------------------------------------------------------------------------
 class example_launchpad : public launchpad {

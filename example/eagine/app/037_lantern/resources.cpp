@@ -121,22 +121,13 @@ void screen_program::set_texture_unit(
 //------------------------------------------------------------------------------
 // pumpkin
 //------------------------------------------------------------------------------
-void pumpkin_geometry::init(video_context& vc) {
-    const auto& glapi = vc.gl_api();
+pumpkin_model::pumpkin_model(video_context& video, resource_loader& loader)
+  : _geom{url{"json:///Pumpkin"}, video, loader} {
+    _geom.loaded.connect(
+      make_callable_ref<&pumpkin_model::_on_geom_loaded>(this));
+
+    const auto& glapi = video.gl_api();
     const auto& [gl, GL] = glapi;
-
-    const auto json_text =
-      as_chars(search_resource("ShapeJson").unpack(vc.parent()));
-
-    oglplus::shape_generator shape(
-      glapi,
-      shapes::from_value_tree(
-        valtree::from_json_text(json_text, vc.parent().main_context()),
-        vc.parent()));
-    _bounding_sphere = shape.bounding_sphere();
-
-    // geometry
-    geometry_and_bindings::init({shape, vc});
 
     // textures
     const auto tex_src{search_resource("PumpkinTex")};
@@ -154,16 +145,22 @@ void pumpkin_geometry::init(video_context& vc) {
       GL.texture_2d_array,
       0,
       0,
-      oglplus::texture_image_block(tex_src.unpack(vc.parent())));
-
-    vc.clean_up_later(*this);
+      oglplus::texture_image_block(tex_src.unpack(video.parent())));
 }
 //------------------------------------------------------------------------------
-void pumpkin_geometry::clean_up(video_context& vc) {
-    const auto& gl = vc.gl_api();
+void pumpkin_model::update(
+  video_context& video,
+  resource_loader& loader) noexcept {
+    _geom.update(video, loader);
+}
+//------------------------------------------------------------------------------
+void pumpkin_model::clean_up(
+  video_context& video,
+  resource_loader& loader) noexcept {
+    const auto& gl = video.gl_api();
 
     gl.clean_up(std::move(_tex));
-    geometry_and_bindings::clean_up(vc);
+    _geom.clean_up(video, loader);
 }
 //------------------------------------------------------------------------------
 // screen

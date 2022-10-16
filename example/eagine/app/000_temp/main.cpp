@@ -12,7 +12,6 @@ import eagine.oglplus;
 import eagine.msgbus;
 import eagine.app;
 
-import <iostream>;
 namespace eagine::app {
 //------------------------------------------------------------------------------
 class example_cube : public application {

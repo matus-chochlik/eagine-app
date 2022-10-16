@@ -55,13 +55,24 @@ private:
 //------------------------------------------------------------------------------
 // geometry
 //------------------------------------------------------------------------------
-class pumpkin_geometry : public geometry_and_bindings {
-public:
-    void init(video_context&);
-    void clean_up(video_context&);
+class pumpkin_model {
 
-    auto tex_unit() const noexcept -> oglplus::gl_types::int_type {
+public:
+    pumpkin_model(video_context&, resource_loader&);
+
+    void update(video_context&, resource_loader&) noexcept;
+    void clean_up(video_context&, resource_loader&) noexcept;
+
+    explicit operator bool() const noexcept {
+        return bool(_geom);
+    }
+
+    static auto tex_unit() noexcept -> oglplus::gl_types::int_type {
         return 0;
+    }
+
+    auto geometry() const noexcept -> const auto& {
+        return _geom;
     }
 
     auto bounding_sphere() const noexcept {
@@ -69,6 +80,12 @@ public:
     }
 
 private:
+    void _on_geom_loaded(
+      const geometry_and_bindings_resource::load_info& info) noexcept {
+        _bounding_sphere = info.shape.bounding_sphere();
+    }
+
+    geometry_and_bindings_resource _geom;
     oglplus::sphere _bounding_sphere;
     oglplus::owned_texture_name _tex{};
 };
