@@ -76,7 +76,8 @@ public:
     }
 
     /// @brief Clean's up this resource.
-    void clean_up(video_context&, resource_loader& loader) {
+    void clean_up(video_context& video, resource_loader& loader) {
+        _res().clean_up(video);
         if(_sig_key) {
             loader.gl_geometry_and_bindings_loaded.disconnect(_sig_key);
             _sig_key = {};
