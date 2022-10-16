@@ -929,7 +929,10 @@ void pending_resource_info::_handle_gl_shape(
               pggbs.video,
               temp};
             _parent.gl_geometry_and_bindings_loaded(
-              {.request_id = _request_id, .locator = _locator, .ref = geom});
+              {.request_id = _request_id,
+               .locator = _locator,
+               .shape = shape,
+               .ref = geom});
             if(geom) {
                 geom.clean_up(pggbs.video);
             }

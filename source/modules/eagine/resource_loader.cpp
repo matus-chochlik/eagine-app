@@ -376,6 +376,7 @@ export struct resource_loader_signals {
     struct gl_geometry_and_bindings_load_info {
         const identifier_t request_id;
         const url& locator;
+        const oglplus::shape_generator& shape;
         geometry_and_bindings& ref;
     };
 

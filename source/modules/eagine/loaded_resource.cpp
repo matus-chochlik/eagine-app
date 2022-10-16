@@ -57,6 +57,8 @@ class loaded_resource<geometry_and_bindings>
 public:
     /// @brief Type of the loaded signal parameter.
     struct load_info {
+        /// @brief The source shape generator.
+        const oglplus::shape_generator& shape;
         /// @brief The loaded geometry resource.
         const loaded_resource<geometry_and_bindings>& resource;
     };
@@ -138,7 +140,7 @@ private:
         if(info.request_id == _request_id) {
             _res() = std::move(info.ref);
             if(is_loaded()) {
-                this->loaded({.resource = *this});
+                this->loaded({.shape = info.shape, .resource = *this});
                 _request_id = 0;
             }
         }
