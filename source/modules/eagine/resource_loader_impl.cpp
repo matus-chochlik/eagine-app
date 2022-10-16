@@ -283,6 +283,26 @@ public:
         }
     }
 
+    auto append_image_data(const memory::const_block blk) noexcept -> bool {
+        memory::append_to(blk, _temp);
+        // TODO: progressive image specification once we have enough
+        // data for width * some constant so that the temp buffer
+        // doesn't get too big
+        return true;
+    }
+
+    auto init_decompression(data_compression_method method) noexcept -> bool {
+        if(const auto parent{_parent.lock()}) {
+            _decompression = stream_decompression{
+              data_compressor{method, extract(parent).loader().buffers()},
+              make_callable_ref<
+                &valtree_gl_texture_image_loader::append_image_data>(this),
+              method};
+            return true;
+        }
+        return false;
+    }
+
     template <std::integral T>
     void do_add(
       const basic_string_path& path,
@@ -332,6 +352,17 @@ public:
                 _success &= texture_format_from_string(data, _params.format);
             } else if(path.front() == "iformat") {
                 _success &= texture_iformat_from_string(data, _params.iformat);
+            } else if(path.front() == "data_filter") {
+                if(data.has_single_value()) {
+                    if(const auto method{
+                         from_string<data_compression_method>(extract(data))}) {
+                        _success &= init_decompression(extract(method));
+                    } else {
+                        _success = false;
+                    }
+                } else {
+                    _success = false;
+                }
             }
         }
     }
@@ -339,17 +370,20 @@ public:
     void do_add(const basic_string_path&, const auto&) noexcept {}
 
     void unparsed_data(span<const memory::const_block> data) noexcept final {
-        for(const auto& blk : data) {
-            memory::append_to(blk, _temp);
-            // TODO: progressive image specification once we have enough
-            // data for width * some constant so that the temp buffer
-            // doesn't get too big
+        if(!_decompression.is_initialized()) {
+            _success &= init_decompression(data_compression_method::none);
+        }
+        if(_success) {
+            for(const auto& blk : data) {
+                _decompression.next(blk);
+            }
         }
     }
 
     void finish() noexcept final {
         if(const auto parent{_parent.lock()}) {
             if(_success) {
+                _decompression.finish();
                 extract(parent).handle_gl_texture_image(
                   _target, _params, _temp);
             } else {
@@ -368,9 +402,10 @@ public:
 
 private:
     std::weak_ptr<pending_resource_info> _parent;
+    memory::buffer _temp;
+    stream_decompression _decompression;
     oglplus::texture_target _target;
     resource_texture_image_params _params{};
-    memory::buffer _temp;
     bool _success{true};
 };
 //------------------------------------------------------------------------------
@@ -1066,8 +1101,15 @@ void pending_resource_info::_handle_gl_texture_image(
   const oglplus::texture_target target,
   const resource_texture_image_params& params,
   const memory::const_block data) noexcept {
-    _parent.log_info("loaded GL texture image")
+    _parent.log_info("loaded GL texture sub-image")
       .arg("requestId", _request_id)
+      .arg("xoffs", params.x_offs)
+      .arg("yoffs", params.y_offs)
+      .arg("zoffs", params.z_offs)
+      .arg("width", params.width)
+      .arg("height", params.height)
+      .arg("depth", params.depth)
+      .arg("dataSize", data.size())
       .arg("locator", source.locator().str());
 
     auto add_image_data = [&](auto& glapi, auto& pgts) {
