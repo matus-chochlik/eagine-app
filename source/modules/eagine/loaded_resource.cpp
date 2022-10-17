@@ -55,6 +55,9 @@ class loaded_resource<geometry_and_bindings>
     }
 
 public:
+    /// @brief Signal emmitted when the resource is successfully loaded.
+    signal<void(const loaded_resource_base&) noexcept> base_loaded;
+
     /// @brief Type of the loaded signal parameter.
     struct load_info {
         /// @brief The source shape generator.
@@ -140,6 +143,7 @@ private:
         if(info.request_id == _request_id) {
             _res() = std::move(info.ref);
             if(is_loaded()) {
+                this->base_loaded(*this);
                 this->loaded({.shape = info.shape, .resource = *this});
                 _request_id = 0;
             }
@@ -162,6 +166,9 @@ class loaded_resource<valtree::compound>
     }
 
 public:
+    /// @brief Signal emmitted when the resource is successfully loaded.
+    signal<void(const loaded_resource_base&) noexcept> base_loaded;
+
     /// @brief Type of the loaded signal parameter.
     struct load_info {
         /// @brief The loaded geometry resource.
@@ -223,6 +230,7 @@ private:
         if(info.request_id == _request_id) {
             _res() = std::move(info.tree);
             if(is_loaded()) {
+                this->base_loaded(*this);
                 this->loaded({.resource = *this});
                 _request_id = 0;
             }
@@ -244,6 +252,9 @@ class loaded_resource<oglplus::owned_shader_name>
     }
 
 public:
+    /// @brief Signal emmitted when the resource is successfully loaded.
+    signal<void(const loaded_resource_base&) noexcept> base_loaded;
+
     /// @brief Type of the loaded signal parameter.
     struct load_info {
         /// @brief The loaded shader resource.
@@ -323,6 +334,7 @@ private:
         if(info.request_id == _request_id) {
             _res() = std::move(info.ref);
             if(is_loaded()) {
+                this->base_loaded(*this);
                 this->loaded({.resource = *this, .shader_type = info.type});
                 _request_id = 0;
             }
@@ -344,6 +356,9 @@ class loaded_resource<oglplus::owned_program_name>
     }
 
 public:
+    /// @brief Signal emmitted when the resource is successfully loaded.
+    signal<void(const loaded_resource_base&) noexcept> base_loaded;
+
     /// @brief Type of the loaded signal parameter.
     struct load_info {
         /// @brief The loaded program resource.
@@ -419,6 +434,7 @@ private:
         if(info.request_id == _request_id) {
             _res() = std::move(info.ref);
             if(is_loaded()) {
+                this->base_loaded(*this);
                 this->loaded(
                   {.resource = *this, .input_bindings = info.input_bindings});
                 _request_id = 0;
@@ -441,6 +457,9 @@ class loaded_resource<oglplus::owned_texture_name>
     }
 
 public:
+    /// @brief Signal emmitted when the resource is successfully loaded.
+    signal<void(const loaded_resource_base&) noexcept> base_loaded;
+
     /// @brief Type of the loaded signal parameter.
     struct load_info {
         /// @brief The loaded texture resource.
@@ -508,6 +527,7 @@ private:
         if(info.request_id == _request_id) {
             _res() = std::move(info.ref);
             if(is_loaded()) {
+                this->base_loaded(*this);
                 this->loaded({.resource = *this});
                 _request_id = 0;
             }
