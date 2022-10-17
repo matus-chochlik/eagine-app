@@ -159,11 +159,17 @@ static auto texture_target_from_string(
         if(str == "texture_2d") {
             v = 0x0DE1;
             return true;
+        } else if(str == "texture_2d_array") {
+            v = 0x8C1A;
+            return true;
         } else if(str == "texture_3d") {
             v = 0x806F;
             return true;
         } else if(str == "texture_1d") {
             v = 0x0DE0;
+            return true;
+        } else if(str == "texture_1d_array") {
+            v = 0x8C18;
             return true;
         } else if(str == "texture_cube_map") {
             v = 0x8513;
@@ -284,10 +290,18 @@ public:
     }
 
     auto append_image_data(const memory::const_block blk) noexcept -> bool {
+        if(const auto parent{_parent.lock()}) {
+            extract(parent)
+              .loader()
+              .log_debug("appending texture image data")
+              .tag("apndImgDta")
+              .arg("offset", _temp.size())
+              .arg("size", blk.size());
+        }
         memory::append_to(blk, _temp);
-        // TODO: progressive image specification once we have enough
-        // data for width * some constant so that the temp buffer
-        // doesn't get too big
+        //  TODO: progressive image specification once we have enough
+        //  data for width * some constant so that the temp buffer
+        //  doesn't get too big
         return true;
     }
 
@@ -860,10 +874,11 @@ void pending_resource_info::cleanup() noexcept {
 void pending_resource_info::_handle_json_text(
   const msgbus::blob_info&,
   const pending_resource_info&,
-  const span_size_t,
+  const span_size_t offset,
   const memory::span<const memory::const_block> data) noexcept {
-    _parent.log_debug("loaded JSON text")
+    _parent.log_debug("loaded JSON data")
       .arg("requestId", _request_id)
+      .arg("offset", offset)
       .arg("locator", _locator.str());
 
     if(is(resource_kind::value_tree)) {
@@ -879,7 +894,9 @@ void pending_resource_info::_handle_json_text(
             bool should_continue{true};
             for(auto chunk : data) {
                 if(!pvts.input.consume_data(chunk)) {
+                    pvts.input.finish();
                     should_continue = false;
+                    break;
                 }
             }
             if(should_continue) {
@@ -1362,7 +1379,7 @@ auto resource_loader::request_value_tree(url locator) noexcept
         if(const auto src_request{_new_resource(
              fetch_resource_chunks(
                locator,
-               4096,
+               16 * 1024,
                msgbus::message_priority::normal,
                std::chrono::seconds{15}),
              resource_kind::json_text)}) {
@@ -1486,7 +1503,7 @@ auto resource_loader::request_glsl_source(url locator) noexcept
         if(const auto src_request{_new_resource(
              fetch_resource_chunks(
                locator,
-               4096,
+               16 * 1024,
                msgbus::message_priority::normal,
                std::chrono::seconds{15}),
              resource_kind::glsl_text)}) {
