@@ -508,7 +508,7 @@ public:
                 } else if(path.back() == "target") {
                     oglplus::gl_types::enum_type tgt{0};
                     if(texture_target_from_string(data, tgt)) {
-                        _image_target = oglplus::texture_target{tgt};
+                        _tex_target = oglplus::texture_target{tgt};
                     } else {
                         _success = false;
                     }
@@ -1120,12 +1120,15 @@ void pending_resource_info::_handle_gl_texture_image(
   const memory::const_block data) noexcept {
     _parent.log_info("loaded GL texture sub-image")
       .arg("requestId", _request_id)
+      .arg("level", params.level)
       .arg("xoffs", params.x_offs)
       .arg("yoffs", params.y_offs)
       .arg("zoffs", params.z_offs)
       .arg("width", params.width)
       .arg("height", params.height)
       .arg("depth", params.depth)
+      .arg("dimensions", params.dimensions)
+      .arg("channels", params.channels)
       .arg("dataSize", data.size())
       .arg("locator", source.locator().str());
 
