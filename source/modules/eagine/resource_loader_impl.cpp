@@ -60,39 +60,6 @@ public:
       : _parent{info}
       , _video{vc} {}
 
-    void request_shader(
-      const basic_string_path& path,
-      span<const string_view> data) noexcept {
-        if(auto parent{_parent.lock()}) {
-            auto& loader = extract(parent).loader();
-            auto& GL = _video.gl_api().constants();
-            const auto delegate = [&, this](oglplus::shader_type shdr_type) {
-                if(auto src_request{loader.request_gl_shader(
-                     url{to_string(extract(data))}, shdr_type, _video)}) {
-                    src_request.set_continuation(parent);
-                    if(!extract(parent).add_gl_program_shader_request(
-                         src_request.request_id())) [[unlikely]] {
-                        src_request.info().mark_finished();
-                        extract(parent).mark_finished();
-                    }
-                }
-            };
-            if(path.back() == "fragment") {
-                delegate(GL.fragment_shader);
-            } else if(path.back() == "vertex") {
-                delegate(GL.vertex_shader);
-            } else if(path.back() == "geometry") {
-                delegate(GL.geometry_shader);
-            } else if(path.back() == "compute") {
-                delegate(GL.compute_shader);
-            } else if(path.back() == "tess_evaluation") {
-                delegate(GL.tess_evaluation_shader);
-            } else if(path.back() == "tess_control") {
-                delegate(GL.tess_control_shader);
-            }
-        }
-    }
-
     void do_add(
       const basic_string_path& path,
       span<const string_view> data) noexcept {
@@ -104,10 +71,6 @@ public:
                     }
                 }
             }
-        } else if(path.size() == 2) {
-            if(path.front() == "urls") {
-                request_shader(path, data);
-            }
         } else if((path.size() == 3) && data) {
             if((path.front() == "inputs") && (path.back() == "attrib")) {
                 if(const auto kind{
@@ -115,6 +78,30 @@ public:
                     _attrib_kind = extract(kind);
                 } else {
                     _input_name.clear();
+                }
+            }
+            if(path.front() == "shaders") {
+                if(path.back() == "url") {
+                    if(data.has_single_value()) {
+                        _shdr_locator = {to_string(extract(data))};
+                    }
+                } else if(path.back() == "type") {
+                    auto& GL = _video.gl_api().constants();
+                    if(data.has_single_value()) {
+                        if(extract(data) == "fragment") {
+                            _shdr_type = GL.fragment_shader;
+                        } else if(extract(data) == "vertex") {
+                            _shdr_type = GL.vertex_shader;
+                        } else if(extract(data) == "geometry") {
+                            _shdr_type = GL.geometry_shader;
+                        } else if(extract(data) == "compute") {
+                            _shdr_type = GL.compute_shader;
+                        } else if(extract(data) == "tess_evaluation") {
+                            _shdr_type = GL.tess_evaluation_shader;
+                        } else if(extract(data) == "tess_control") {
+                            _shdr_type = GL.tess_control_shader;
+                        }
+                    }
                 }
             }
         }
@@ -132,20 +119,42 @@ public:
     void do_add(const basic_string_path&, const auto&) noexcept {}
 
     void add_object(const basic_string_path& path) noexcept final {
-        if((path.size() == 2) && (path.front() == "inputs")) {
-            _input_name = to_string(path.back());
-            _attrib_kind = shapes::vertex_attrib_kind::position;
-            _attrib_variant_index = 0;
+        if(path.size() == 2) {
+            if(path.front() == "inputs") {
+                _input_name = to_string(path.back());
+                _attrib_kind = shapes::vertex_attrib_kind::position;
+                _attrib_variant_index = 0;
+            } else if(path.front() == "shaders") {
+                _shdr_locator = {};
+                _shdr_type = _video.gl_api().constants().fragment_shader;
+            }
         }
     }
 
     void finish_object(const basic_string_path& path) noexcept final {
-        if((path.size() == 2) && (path.front() == "inputs")) {
-            if(!_input_name.empty()) {
-                if(auto parent{_parent.lock()}) {
-                    extract(parent).add_gl_program_input_binding(
-                      std::move(_input_name),
-                      {_attrib_kind, _attrib_variant_index});
+        if(path.size() == 2) {
+            if(path.front() == "inputs") {
+                if(!_input_name.empty()) {
+                    if(auto parent{_parent.lock()}) {
+                        extract(parent).add_gl_program_input_binding(
+                          std::move(_input_name),
+                          {_attrib_kind, _attrib_variant_index});
+                    }
+                }
+            } else if(path.front() == "shaders") {
+                if(_shdr_locator) {
+                    if(auto parent{_parent.lock()}) {
+                        auto& loader = extract(parent).loader();
+                        if(auto src_request{loader.request_gl_shader(
+                             _shdr_locator, _shdr_type, _video)}) {
+                            src_request.set_continuation(parent);
+                            if(!extract(parent).add_gl_program_shader_request(
+                                 src_request.request_id())) [[unlikely]] {
+                                src_request.info().mark_finished();
+                                extract(parent).mark_finished();
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -167,6 +176,8 @@ private:
     std::weak_ptr<pending_resource_info> _parent;
     video_context& _video;
     std::string _input_name;
+    oglplus::shader_type _shdr_type;
+    url _shdr_locator;
     shapes::vertex_attrib_kind _attrib_kind;
     span_size_t _attrib_variant_index{0};
 };

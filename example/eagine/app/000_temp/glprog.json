@@ -1,8 +1,8 @@
-{"inputs":{
-"Position": {"attrib":"position","variant":0},
-"Normal": {"attrib":"normal","variant":0}}
+{"inputs":
+{"Position": {"attrib":"position","variant":0}
+,"Normal": {"attrib":"normal","variant":0}}
 ,"label":"example"
-,"urls":
-{"vertex":   "glsl:///VertShader"
-,"fragment": "glsl:///FragShader"}
+,"shaders":
+[{"url":"glsl:///VertShader","type":"vertex"}
+,{"url":"glsl:///FragShader","type":"fragment"}]
 }
