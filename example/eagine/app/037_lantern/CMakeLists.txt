@@ -17,8 +17,10 @@ eagine_embed_target_resources(
 	RESOURCES
 		DrawVert "draw_vertex.glsl"
 		DrawFrag "draw_fragment.glsl"
+		DrawProg "draw_prog.json"
 		ScreenVert "screen_vertex.glsl"
 		ScreenFrag "screen_fragment.glsl"
+		ScreenProg "screen_prog.json"
 		Pumpkin "pumpkin.json"
 		PumpkinTex "pumpkin"
 	PACKED

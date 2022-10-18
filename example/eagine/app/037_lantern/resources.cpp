@@ -12,23 +12,20 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 // draw program
 //------------------------------------------------------------------------------
-void draw_program::init(video_context& vc) {
-    // vertex shader
-    const auto vs_source = search_resource("DrawVert");
-    const auto fs_source = search_resource("DrawFrag");
+draw_program::draw_program(video_context& video, resource_loader& loader)
+  : gl_program_resource{url{"json:///DrawProg"}, video, loader} {
+    loaded.connect(make_callable_ref<&draw_program::_on_loaded>(this));
+}
+//------------------------------------------------------------------------------
+void draw_program::_on_loaded(
+  const gl_program_resource::load_info& info) noexcept {
+    info.use_program();
+    info.get_uniform_location("Camera") >> _camera_loc;
+    info.get_uniform_location("CandleLight") >> _candle_light_loc;
+    info.get_uniform_location("AmbientLight") >> _ambient_light_loc;
+    info.get_uniform_location("Tex") >> _tex_loc;
 
-    const auto& GL = vc.gl_api();
-
-    create(vc)
-      .add_shader(vc, GL.vertex_shader, vs_source)
-      .add_shader(vc, GL.fragment_shader, fs_source)
-      .link(vc)
-      .use(vc)
-      .query(vc, "Camera", _camera_loc)
-      .query(vc, "CandleLight", _candle_light_loc)
-      .query(vc, "AmbientLight", _ambient_light_loc)
-      .query(vc, "Tex", _tex_loc)
-      .clean_up_later(vc);
+    input_bindings = info.base.input_bindings;
 }
 //------------------------------------------------------------------------------
 void draw_program::set_camera(video_context& vc, const orbiting_camera& camera) {
@@ -53,59 +50,20 @@ void draw_program::set_texture_unit(
     set(vc, _tex_loc, unit);
 }
 //------------------------------------------------------------------------------
-void draw_program::bind_position_location(
-  video_context& vc,
-  oglplus::vertex_attrib_location position_loc) {
-    bind(vc, position_loc, "Position");
-}
-//------------------------------------------------------------------------------
-void draw_program::bind_normal_location(
-  video_context& vc,
-  oglplus::vertex_attrib_location normal_loc) {
-    bind(vc, normal_loc, "Normal");
-}
-//------------------------------------------------------------------------------
-void draw_program::bind_wrap_coord_location(
-  video_context& vc,
-  oglplus::vertex_attrib_location coord_loc) {
-    bind(vc, coord_loc, "WrapCoord");
-}
-//------------------------------------------------------------------------------
 // screen program
 //------------------------------------------------------------------------------
-void screen_program::init(video_context& vc) {
-    // vertex shader
-    const auto vs_source = search_resource("ScreenVert");
-    const auto fs_source = search_resource("ScreenFrag");
-
-    const auto& GL = vc.gl_api();
-
-    create(vc)
-      .add_shader(
-        vc,
-        GL.vertex_shader,
-        oglplus::glsl_string_ref(vs_source.unpack(vc.parent())))
-      .add_shader(
-        vc,
-        GL.fragment_shader,
-        oglplus::glsl_string_ref(fs_source.unpack(vc.parent())))
-      .link(vc)
-      .use(vc)
-      .query(vc, "ScreenSize", _screen_size_loc)
-      .query(vc, "Tex", _tex_loc)
-      .clean_up_later(vc);
+screen_program::screen_program(video_context& video, resource_loader& loader)
+  : gl_program_resource{url{"json:///ScreenProg"}, video, loader} {
+    loaded.connect(make_callable_ref<&screen_program::_on_loaded>(this));
 }
 //------------------------------------------------------------------------------
-void screen_program::bind_position_location(
-  video_context& vc,
-  oglplus::vertex_attrib_location loc) {
-    bind(vc, loc, "Position");
-}
-//------------------------------------------------------------------------------
-void screen_program::bind_coord_location(
-  video_context& vc,
-  oglplus::vertex_attrib_location loc) {
-    bind(vc, loc, "Coord");
+void screen_program::_on_loaded(
+  const gl_program_resource::load_info& info) noexcept {
+    info.use_program();
+    info.get_uniform_location("ScreenSize") >> _screen_size_loc;
+    info.get_uniform_location("Tex") >> _tex_loc;
+
+    input_bindings = info.base.input_bindings;
 }
 //------------------------------------------------------------------------------
 void screen_program::set_screen_size(video_context& vc) {
@@ -121,11 +79,19 @@ void screen_program::set_texture_unit(
 //------------------------------------------------------------------------------
 // pumpkin
 //------------------------------------------------------------------------------
-pumpkin_model::pumpkin_model(video_context& video, resource_loader& loader)
-  : _geom{url{"json:///Pumpkin"}, video, loader} {
-    _geom.loaded.connect(
-      make_callable_ref<&pumpkin_model::_on_geom_loaded>(this));
-
+pumpkin_geometry::pumpkin_geometry(video_context& video, resource_loader& loader)
+  : geometry_and_bindings_resource{url{"json:///Pumpkin"}, video, loader} {
+    loaded.connect(make_callable_ref<&pumpkin_geometry::_on_loaded>(this));
+}
+//------------------------------------------------------------------------------
+void pumpkin_geometry::_on_loaded(
+  const geometry_and_bindings_resource::load_info& info) noexcept {
+    _bounding_sphere = info.base.shape.bounding_sphere();
+}
+//------------------------------------------------------------------------------
+// texture
+//------------------------------------------------------------------------------
+pumpkin_texture::pumpkin_texture(video_context& video, resource_loader&) {
     const auto& glapi = video.gl_api();
     const auto& [gl, GL] = glapi;
 
@@ -148,32 +114,17 @@ pumpkin_model::pumpkin_model(video_context& video, resource_loader& loader)
       oglplus::texture_image_block(tex_src.unpack(video.parent())));
 }
 //------------------------------------------------------------------------------
-void pumpkin_model::update(
-  video_context& video,
-  resource_loader& loader) noexcept {
-    _geom.update(video, loader);
+void pumpkin_texture::clean_up(video_context& video, resource_loader&) noexcept {
+    video.gl_api().clean_up(std::move(_tex));
 }
 //------------------------------------------------------------------------------
-void pumpkin_model::clean_up(
-  video_context& video,
-  resource_loader& loader) noexcept {
-    const auto& gl = video.gl_api();
-
-    gl.clean_up(std::move(_tex));
-    _geom.clean_up(video, loader);
-}
+// screen_geometry
 //------------------------------------------------------------------------------
-// screen
-//------------------------------------------------------------------------------
-void screen_geometry::init(video_context& vc) {
-    geometry_and_bindings::init(
-      {shapes::unit_screen(
-         shapes::vertex_attrib_kind::position |
-         shapes::vertex_attrib_kind::wrap_coord),
-       vc});
-
-    vc.clean_up_later(*this);
-}
+screen_geometry::screen_geometry(video_context& video, resource_loader& loader)
+  : geometry_and_bindings_resource{
+      url{"eagires:///unit_screen?position=true+wrap_coord=true"},
+      video,
+      loader} {}
 //------------------------------------------------------------------------------
 // draw buffers
 //------------------------------------------------------------------------------

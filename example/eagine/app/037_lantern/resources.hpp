@@ -18,81 +18,75 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 // programs
 //------------------------------------------------------------------------------
-class draw_program : public gpu_program {
+class draw_program : public gl_program_resource {
 public:
-    void init(video_context&);
+    draw_program(video_context&, resource_loader&);
+
     void set_camera(video_context&, const orbiting_camera& camera);
     void set_candle_light(video_context&, oglplus::gl_types::float_type);
     void set_ambient_light(video_context&, oglplus::gl_types::float_type);
     void set_texture_unit(video_context&, oglplus::gl_types::int_type);
 
-    void bind_position_location(video_context&, oglplus::vertex_attrib_location);
-    void bind_normal_location(video_context&, oglplus::vertex_attrib_location);
-    void bind_wrap_coord_location(
-      video_context&,
-      oglplus::vertex_attrib_location);
+    oglplus::program_input_bindings input_bindings;
 
 private:
+    void _on_loaded(const gl_program_resource::load_info&) noexcept;
+
     oglplus::uniform_location _camera_loc;
     oglplus::uniform_location _candle_light_loc;
     oglplus::uniform_location _ambient_light_loc;
     oglplus::uniform_location _tex_loc;
 };
 //------------------------------------------------------------------------------
-class screen_program : public gpu_program {
+class screen_program : public gl_program_resource {
 public:
-    void init(video_context&);
+    screen_program(video_context&, resource_loader&);
+
     void set_screen_size(video_context& vc);
     void set_texture_unit(video_context&, oglplus::gl_types::int_type);
 
-    void bind_position_location(video_context&, oglplus::vertex_attrib_location);
-    void bind_coord_location(video_context&, oglplus::vertex_attrib_location);
+    oglplus::program_input_bindings input_bindings;
 
 private:
+    void _on_loaded(const gl_program_resource::load_info&) noexcept;
+
     oglplus::uniform_location _screen_size_loc;
     oglplus::uniform_location _tex_loc;
 };
 //------------------------------------------------------------------------------
 // geometry
 //------------------------------------------------------------------------------
-class pumpkin_model {
-
+class pumpkin_geometry : public geometry_and_bindings_resource {
 public:
-    pumpkin_model(video_context&, resource_loader&);
-
-    void update(video_context&, resource_loader&) noexcept;
-    void clean_up(video_context&, resource_loader&) noexcept;
-
-    explicit operator bool() const noexcept {
-        return bool(_geom);
-    }
-
-    static auto tex_unit() noexcept -> oglplus::gl_types::int_type {
-        return 0;
-    }
-
-    auto geometry() const noexcept -> const auto& {
-        return _geom;
-    }
+    pumpkin_geometry(video_context&, resource_loader&);
 
     auto bounding_sphere() const noexcept {
         return _bounding_sphere;
     }
 
 private:
-    void _on_geom_loaded(
-      const geometry_and_bindings_resource::load_info& info) noexcept {
-        _bounding_sphere = info.base.shape.bounding_sphere();
+    void _on_loaded(const geometry_and_bindings_resource::load_info&) noexcept;
+    oglplus::sphere _bounding_sphere;
+};
+//------------------------------------------------------------------------------
+class pumpkin_texture {
+
+public:
+    pumpkin_texture(video_context&, resource_loader&);
+
+    void clean_up(video_context&, resource_loader&) noexcept;
+
+    static auto tex_unit() noexcept -> oglplus::gl_types::int_type {
+        return 0;
     }
 
-    geometry_and_bindings_resource _geom;
-    oglplus::sphere _bounding_sphere;
+private:
     oglplus::owned_texture_name _tex{};
 };
 //------------------------------------------------------------------------------
-class screen_geometry : public geometry_and_bindings {
+class screen_geometry : public geometry_and_bindings_resource {
 public:
-    void init(video_context&);
+    screen_geometry(video_context&, resource_loader&);
 };
 //------------------------------------------------------------------------------
 // draw buffers
