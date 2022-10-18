@@ -161,8 +161,8 @@ private:
         if(info.request_id == _request_id) {
             _res() = std::move(info.ref);
             if(is_loaded()) {
-                this->base_loaded(*this);
                 this->loaded({.base = info, .resource = *this});
+                this->base_loaded(*this);
                 _request_id = 0;
             }
         }
@@ -250,8 +250,8 @@ private:
         if(info.request_id == _request_id) {
             _res() = std::move(info.tree);
             if(is_loaded()) {
-                this->base_loaded(*this);
                 this->loaded({.base = info, .resource = *this});
+                this->base_loaded(*this);
                 _request_id = 0;
             }
         }
@@ -354,8 +354,8 @@ private:
         if(info.request_id == _request_id) {
             _res() = std::move(info.ref);
             if(is_loaded()) {
-                this->base_loaded(*this);
                 this->loaded({.base = info, .resource = *this});
+                this->base_loaded(*this);
                 _request_id = 0;
             }
         }
@@ -488,8 +488,8 @@ private:
         if(info.request_id == _request_id) {
             _res() = std::move(info.ref);
             if(is_loaded()) {
-                this->base_loaded(*this);
                 this->loaded({.base = info, .resource = *this});
+                this->base_loaded(*this);
                 _request_id = 0;
             }
         }
@@ -582,8 +582,8 @@ private:
         if(info.request_id == _request_id) {
             _res() = std::move(info.ref);
             if(is_loaded()) {
-                this->base_loaded(*this);
                 this->loaded({.base = info, .resource = *this});
+                this->base_loaded(*this);
                 _request_id = 0;
             }
         }
