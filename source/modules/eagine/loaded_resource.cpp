@@ -17,6 +17,7 @@ import eagine.oglplus;
 import :context;
 import :geometry;
 import :resource_loader;
+import <concepts>;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
@@ -35,6 +36,22 @@ public:
     /// @brief Indicates if this resource is currently loading.
     auto is_loading() const noexcept -> bool {
         return _request_id != 0;
+    }
+
+    /// @brief Compares resources for equality.
+    auto operator==(const loaded_resource_base& that) const noexcept -> bool {
+        return this->_locator == that._locator;
+    }
+
+    /// @brief Indicates if this resource is the same as that resource.
+    auto is(const loaded_resource_base& that) const noexcept -> bool {
+        return (*this) == that;
+    }
+
+    /// @brief Indicates if this resource is one in the specified collection.
+    template <std::derived_from<loaded_resource_base>... R>
+    auto is_one_of(const R&... those) const noexcept -> bool {
+        return (... || is(those));
     }
 
 protected:
