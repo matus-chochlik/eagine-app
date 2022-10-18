@@ -411,9 +411,12 @@ export struct resource_loader_signals {
     struct gl_shader_load_info {
         const identifier_t request_id;
         const url& locator;
+        video_context& video;
         const oglplus::shader_type type;
         const oglplus::shader_name name;
         oglplus::owned_shader_name& ref;
+
+        auto gl_api() const noexcept -> const oglplus::gl_api&;
     };
 
     /// @brief Emitted when a GL shader is successfully created and compiled.
@@ -424,9 +427,26 @@ export struct resource_loader_signals {
     struct gl_program_load_info {
         const identifier_t request_id;
         const url& locator;
+        video_context& video;
         const oglplus::program_name name;
         oglplus::owned_program_name& ref;
         oglplus::program_input_bindings& input_bindings;
+
+        auto gl_api() const noexcept -> const oglplus::gl_api&;
+
+        auto apply_input_bindings(
+          const oglplus::vertex_attrib_bindings& attrib_bindings) const noexcept
+          -> bool {
+            return input_bindings.apply(this->gl_api(), name, attrib_bindings);
+        }
+
+        auto use_program() const noexcept {
+            return this->gl_api().use_program(name);
+        }
+
+        auto get_uniform_location(const string_view var_name) const noexcept {
+            return this->gl_api().get_uniform_location(name, var_name);
+        }
     };
 
     /// @brief Emitted when a GL program is successfully created and linked.
@@ -437,8 +457,11 @@ export struct resource_loader_signals {
     struct gl_texture_load_info {
         const identifier_t request_id;
         const url& locator;
+        video_context& video;
         const oglplus::texture_name name;
         oglplus::owned_texture_name& ref;
+
+        auto gl_api() const noexcept -> const oglplus::gl_api&;
     };
 
     /// @brief Emitted when a GL texture is successfully created and its parameters set-up.
@@ -449,7 +472,10 @@ export struct resource_loader_signals {
     struct gl_texture_images_load_info {
         const identifier_t request_id;
         const url& locator;
+        video_context& video;
         const oglplus::texture_name name;
+
+        auto gl_api() const noexcept -> const oglplus::gl_api&;
     };
 
     /// @brief Emitted when all GL texture images are successfully loaded.
@@ -461,8 +487,11 @@ export struct resource_loader_signals {
     struct gl_buffer_load_info {
         const identifier_t request_id;
         const url& locator;
+        video_context& video;
         const oglplus::buffer_name name;
         oglplus::owned_buffer_name& ref;
+
+        auto gl_api() const noexcept -> const oglplus::gl_api&;
     };
 
     /// @brief Emitted when a GL buffer is successfully created and set-up.

@@ -8,6 +8,7 @@
 export module eagine.app:loaded_resource;
 
 import eagine.core.types;
+import eagine.core.memory;
 import eagine.core.utility;
 import eagine.core.runtime;
 import eagine.core.value_tree;
@@ -60,8 +61,8 @@ public:
 
     /// @brief Type of the loaded signal parameter.
     struct load_info {
-        /// @brief The source shape generator.
-        const oglplus::shape_generator& shape;
+        /// @brief The base info from the loader signal.
+        const resource_loader::gl_geometry_and_bindings_load_info& base;
         /// @brief The loaded geometry resource.
         const loaded_resource<geometry_and_bindings>& resource;
     };
@@ -144,7 +145,7 @@ private:
             _res() = std::move(info.ref);
             if(is_loaded()) {
                 this->base_loaded(*this);
-                this->loaded({.shape = info.shape, .resource = *this});
+                this->loaded({.base = info, .resource = *this});
                 _request_id = 0;
             }
         }
@@ -171,6 +172,8 @@ public:
 
     /// @brief Type of the loaded signal parameter.
     struct load_info {
+        /// @brief The base info from the loader signal.
+        const resource_loader::value_tree_load_info& base;
         /// @brief The loaded geometry resource.
         const loaded_resource<valtree::compound>& resource;
     };
@@ -231,7 +234,7 @@ private:
             _res() = std::move(info.tree);
             if(is_loaded()) {
                 this->base_loaded(*this);
-                this->loaded({.resource = *this});
+                this->loaded({.base = info, .resource = *this});
                 _request_id = 0;
             }
         }
@@ -257,10 +260,10 @@ public:
 
     /// @brief Type of the loaded signal parameter.
     struct load_info {
+        /// @brief The base info from the loader signal.
+        const resource_loader::gl_shader_load_info& base;
         /// @brief The loaded shader resource.
         const loaded_resource<oglplus::owned_shader_name>& resource;
-        /// @brief The loaded shader type.
-        oglplus::shader_type shader_type;
     };
 
     /// @brief Signal emmitted when the resource is successfully loaded.
@@ -335,7 +338,7 @@ private:
             _res() = std::move(info.ref);
             if(is_loaded()) {
                 this->base_loaded(*this);
-                this->loaded({.resource = *this, .shader_type = info.type});
+                this->loaded({.base = info, .resource = *this});
                 _request_id = 0;
             }
         }
@@ -361,10 +364,27 @@ public:
 
     /// @brief Type of the loaded signal parameter.
     struct load_info {
+        /// @brief The base info from the loader signal.
+        const resource_loader::gl_program_load_info& base;
         /// @brief The loaded program resource.
         const loaded_resource<oglplus::owned_program_name>& resource;
-        /// @brief The associated program input bindings.
-        const oglplus::program_input_bindings& input_bindings;
+
+        /// @brief Applies the vertex attrib bindings to the loaded program.
+        auto apply_input_bindings(
+          const oglplus::vertex_attrib_bindings& attrib_bindings) const noexcept
+          -> bool {
+            return base.apply_input_bindings(attrib_bindings);
+        }
+
+        /// @brief Uses the loaded program in the relevant GL context.
+        auto use_program() const noexcept {
+            return base.use_program();
+        }
+
+        /// @brief Returns the location of a uniform with the specified name.
+        auto get_uniform_location(const string_view var_name) const noexcept {
+            return base.get_uniform_location(var_name);
+        }
     };
 
     /// @brief Signal emmitted when the resource is successfully loaded.
@@ -387,8 +407,25 @@ public:
     }
 
     /// @brief Makes the current program active within the given video context.
-    auto use(video_context& vc) noexcept -> loaded_resource& {
-        return use(vc.gl_api());
+    auto use(video_context& video) noexcept -> loaded_resource& {
+        return use(video.gl_api());
+    }
+
+    /// @brief Sets the value of a uniform variable
+    template <typename T>
+    auto set(
+      const oglplus::gl_api& glapi,
+      oglplus::uniform_location loc,
+      T&& value) -> loaded_resource& {
+        glapi.set_uniform(*this, loc, std::forward<T>(value));
+        return *this;
+    }
+
+    /// @brief Sets the value of a uniform variable
+    template <typename T>
+    auto set(video_context& video, oglplus::uniform_location loc, T&& value)
+      -> loaded_resource& {
+        return set(video.gl_api(), loc, std::forward<T>(value));
     }
 
     /// @brief Clean's up this resource.
@@ -435,8 +472,7 @@ private:
             _res() = std::move(info.ref);
             if(is_loaded()) {
                 this->base_loaded(*this);
-                this->loaded(
-                  {.resource = *this, .input_bindings = info.input_bindings});
+                this->loaded({.base = info, .resource = *this});
                 _request_id = 0;
             }
         }
@@ -462,6 +498,8 @@ public:
 
     /// @brief Type of the loaded signal parameter.
     struct load_info {
+        /// @brief The base info from the loader signal.
+        const resource_loader::gl_texture_load_info& base;
         /// @brief The loaded texture resource.
         const loaded_resource<oglplus::owned_texture_name>& resource;
     };
@@ -528,7 +566,7 @@ private:
             _res() = std::move(info.ref);
             if(is_loaded()) {
                 this->base_loaded(*this);
-                this->loaded({.resource = *this});
+                this->loaded({.base = info, .resource = *this});
                 _request_id = 0;
             }
         }

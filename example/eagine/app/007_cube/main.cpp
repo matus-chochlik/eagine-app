@@ -27,10 +27,10 @@ public:
 
 private:
     void _on_prog_loaded(const gl_program_resource::load_info& info) noexcept {
-        auto& glapi = _video.gl_api();
-        info.input_bindings.apply(glapi, info.resource, _cube);
-        glapi.use_program(info.resource);
-        glapi.get_uniform_location(info.resource, "Camera") >> _camera_loc;
+        info.apply_input_bindings(_cube);
+        info.get_uniform_location("Camera") >> _camera_loc;
+        info.use_program();
+        _is_done.reset();
     }
 
     execution_context& _ctx;

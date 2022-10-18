@@ -171,6 +171,7 @@ eagine_add_module(
 		context geometry
 		resource_loader
 		eagine.core.types
+		eagine.core.memory
 		eagine.core.utility
 		eagine.core.runtime
 		eagine.core.value_tree

@@ -27,6 +27,28 @@ import <iostream>;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
+// resource_loader_signals
+//------------------------------------------------------------------------------
+auto resource_loader_signals::gl_shader_load_info::gl_api() const noexcept
+  -> const oglplus::gl_api& {
+    return video.gl_api();
+}
+//------------------------------------------------------------------------------
+auto resource_loader_signals::gl_program_load_info::gl_api() const noexcept
+  -> const oglplus::gl_api& {
+    return video.gl_api();
+}
+//------------------------------------------------------------------------------
+auto resource_loader_signals::gl_texture_load_info::gl_api() const noexcept
+  -> const oglplus::gl_api& {
+    return video.gl_api();
+}
+//------------------------------------------------------------------------------
+auto resource_loader_signals::gl_buffer_load_info::gl_api() const noexcept
+  -> const oglplus::gl_api& {
+    return video.gl_api();
+}
+//------------------------------------------------------------------------------
 // valtree_gl_program_builder
 //------------------------------------------------------------------------------
 class valtree_gl_program_builder
@@ -1048,6 +1070,7 @@ void pending_resource_info::_handle_glsl_source(
             _parent.gl_shader_loaded(
               {.request_id = _request_id,
                .locator = _locator,
+               .video = pgss.video,
                .type = pgss.shdr_type,
                .name = shdr,
                .ref = shdr});
@@ -1072,6 +1095,7 @@ auto pending_resource_info::_finish_gl_program(
         _parent.gl_program_loaded(
           {.request_id = _request_id,
            .locator = _locator,
+           .video = pgps.video,
            .name = pgps.prog,
            .ref = pgps.prog,
            .input_bindings = pgps.input_bindings});
@@ -1251,10 +1275,14 @@ auto pending_resource_info::_finish_gl_texture(
         _parent.gl_texture_loaded(
           {.request_id = _request_id,
            .locator = _locator,
+           .video = pgts.video,
            .name = pgts.tex,
            .ref = pgts.tex});
         _parent.gl_texture_images_loaded(
-          {.request_id = _request_id, .locator = _locator, .name = pgts.tex});
+          {.request_id = _request_id,
+           .locator = _locator,
+           .video = pgts.video,
+           .name = pgts.tex});
 
         if(pgts.tex) {
             gl.delete_textures(std::move(pgts.tex));
