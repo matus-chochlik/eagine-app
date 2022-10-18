@@ -82,7 +82,7 @@ public:
 private:
     void _on_geom_loaded(
       const geometry_and_bindings_resource::load_info& info) noexcept {
-        _bounding_sphere = info.shape.bounding_sphere();
+        _bounding_sphere = info.base.shape.bounding_sphere();
     }
 
     geometry_and_bindings_resource _geom;
