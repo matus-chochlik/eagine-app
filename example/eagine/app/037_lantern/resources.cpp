@@ -91,31 +91,31 @@ void pumpkin_geometry::_on_loaded(
 //------------------------------------------------------------------------------
 // texture
 //------------------------------------------------------------------------------
-pumpkin_texture::pumpkin_texture(video_context& video, resource_loader&) {
-    const auto& glapi = video.gl_api();
-    const auto& [gl, GL] = glapi;
+pumpkin_texture::pumpkin_texture(video_context& video, resource_loader& loader)
+  : gl_texture_resource{url{"eagitex:///PumpkinTex"}, video, loader} {
+    loaded.connect(make_callable_ref<&pumpkin_texture::_on_loaded>(this));
+}
+//------------------------------------------------------------------------------
+auto pumpkin_texture::update(
+  video_context& video,
+  resource_loader& loader) noexcept -> work_done {
+    const auto& GL = video.gl_api().constants();
+    return gl_texture_resource::update(
+      video, loader, GL.texture_2d_array, GL.texture0 + tex_unit());
+}
+//------------------------------------------------------------------------------
+void pumpkin_texture::_on_loaded(
+  const gl_texture_resource::load_info& info) noexcept {
+    const auto& [gl, GL] = info.base.gl_api();
 
-    // textures
-    const auto tex_src{search_resource("PumpkinTex")};
-
-    gl.gen_textures() >> _tex;
     gl.active_texture(GL.texture0 + tex_unit());
-    gl.bind_texture(GL.texture_2d_array, _tex);
+    gl.bind_texture(GL.texture_2d_array, info.resource);
     gl.tex_parameter_i(GL.texture_2d_array, GL.texture_min_filter, GL.linear);
     gl.tex_parameter_i(GL.texture_2d_array, GL.texture_mag_filter, GL.linear);
     gl.tex_parameter_i(
       GL.texture_2d_array, GL.texture_wrap_s, GL.clamp_to_border);
     gl.tex_parameter_i(
       GL.texture_2d_array, GL.texture_wrap_t, GL.clamp_to_border);
-    glapi.spec_tex_image3d(
-      GL.texture_2d_array,
-      0,
-      0,
-      oglplus::texture_image_block(tex_src.unpack(video.parent())));
-}
-//------------------------------------------------------------------------------
-void pumpkin_texture::clean_up(video_context& video, resource_loader&) noexcept {
-    video.gl_api().clean_up(std::move(_tex));
 }
 //------------------------------------------------------------------------------
 // screen_geometry

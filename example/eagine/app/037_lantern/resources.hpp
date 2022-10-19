@@ -69,19 +69,20 @@ private:
     oglplus::sphere _bounding_sphere;
 };
 //------------------------------------------------------------------------------
-class pumpkin_texture {
+class pumpkin_texture : public gl_texture_resource {
 
 public:
     pumpkin_texture(video_context&, resource_loader&);
 
-    void clean_up(video_context&, resource_loader&) noexcept;
+    auto update(video_context& video, resource_loader& loader) noexcept
+      -> work_done;
 
     static auto tex_unit() noexcept -> oglplus::texture_unit::value_type {
         return 0U;
     }
 
 private:
-    oglplus::owned_texture_name _tex{};
+    void _on_loaded(const gl_texture_resource::load_info&) noexcept;
 };
 //------------------------------------------------------------------------------
 class screen_geometry : public geometry_and_bindings_resource {

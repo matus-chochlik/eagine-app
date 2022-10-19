@@ -22,7 +22,8 @@ eagine_embed_target_resources(
 		ScreenFrag "screen_fragment.glsl"
 		ScreenProg "screen_prog.json"
 		Pumpkin "pumpkin.json"
-		PumpkinTex "pumpkin"
+		PumpkinTex "pumpkin.eagitex"
+		PumpkinImg "pumpkin.eagitexi"
 	PACKED
 	ENABLE_SEARCH
 )

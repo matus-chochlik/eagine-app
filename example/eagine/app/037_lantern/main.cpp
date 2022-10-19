@@ -61,6 +61,7 @@ example_lantern::example_lantern(execution_context& ec, video_context& vc)
   , draw_prog{_video, _loader}
   , screen_prog{_video, _loader} {
 
+    pumpkin_tex.base_loaded.connect(_load_handler());
     pumpkin.base_loaded.connect(_load_handler());
     screen.base_loaded.connect(_load_handler());
     draw_prog.base_loaded.connect(_load_handler());
@@ -88,7 +89,6 @@ void example_lantern::on_video_resize() noexcept {
 //------------------------------------------------------------------------------
 void example_lantern::_on_resource_loaded(
   const loaded_resource_base& loaded) noexcept {
-    const auto& glapi = _video.gl_api();
 
     if(loaded.is(pumpkin)) {
         const auto bs = pumpkin.bounding_sphere();
@@ -101,34 +101,31 @@ void example_lantern::_on_resource_loaded(
     }
     if(loaded.is_one_of(pumpkin, draw_prog)) {
         if(pumpkin && draw_prog) {
+            const auto& glapi = _video.gl_api();
             draw_prog.use(_video);
             draw_prog.input_bindings.apply(glapi, draw_prog, pumpkin);
+        }
+    }
+    if(loaded.is_one_of(pumpkin_tex, draw_prog)) {
+        if(pumpkin_tex && draw_prog) {
+            draw_prog.use(_video);
             draw_prog.set_texture_unit(_video, pumpkin_tex.tex_unit());
         }
     }
     if(loaded.is_one_of(screen, screen_prog)) {
         if(screen && screen_prog) {
+            const auto& glapi = _video.gl_api();
             screen_prog.use(_video);
             screen_prog.input_bindings.apply(glapi, screen_prog, screen);
             screen_prog.set_texture_unit(_video, draw_bufs.tex_unit());
         }
     }
     _is_done.reset();
-    _has_all_resources = pumpkin && screen && draw_prog && screen_prog;
+    _has_all_resources =
+      pumpkin_tex && pumpkin && screen && draw_prog && screen_prog;
 }
 //------------------------------------------------------------------------------
 void example_lantern::update() noexcept {
-    if(!pumpkin) {
-        pumpkin.update(_video, _loader);
-    } else {
-        draw_prog.update(_video, _loader);
-    }
-    if(!screen) {
-        screen.update(_video, _loader);
-    } else {
-        screen_prog.update(_video, _loader);
-    }
-
     auto& state = _ctx.state();
     if(state.is_active()) {
         _is_done.reset();
@@ -159,9 +156,9 @@ void example_lantern::update() noexcept {
 
         pumpkin.use(_video);
         pumpkin.draw(_video);
-        gl.disable(GL.depth_test);
-
+        //
         draw_bufs.draw_on_screen(_video);
+        gl.disable(GL.depth_test);
 
         screen_prog.use(_video);
         screen_prog.set_screen_size(_video);
@@ -171,6 +168,18 @@ void example_lantern::update() noexcept {
     } else {
         gl.clear_color(0.F, 0.F, 0.F, 0.F);
         gl.clear(GL.color_buffer_bit);
+
+        pumpkin_tex.update(_video, _loader);
+        if(!pumpkin) {
+            pumpkin.update(_video, _loader);
+        } else {
+            draw_prog.update(_video, _loader);
+        }
+        if(!screen) {
+            screen.update(_video, _loader);
+        } else {
+            screen_prog.update(_video, _loader);
+        }
     }
 
     _video.commit();
