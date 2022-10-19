@@ -541,7 +541,7 @@ public:
                 } else if(path.back() == "target") {
                     oglplus::gl_types::enum_type tgt{0};
                     if(texture_target_from_string(data, tgt)) {
-                        _tex_target = oglplus::texture_target{tgt};
+                        _image_target = oglplus::texture_target{tgt};
                     } else {
                         _success = false;
                     }
@@ -980,6 +980,7 @@ auto pending_resource_info::_finish_gl_program(
     if(pgps.loaded && pgps.pending_requests.empty()) {
         _parent.log_info("loaded and linked GL program object")
           .arg("requestId", _request_id)
+          .arg("bindgCount", pgps.input_bindings.count())
           .arg("locator", _locator.str());
 
         const auto& gl = pgps.video.get().gl_api().operations();
@@ -1037,8 +1038,8 @@ auto pending_resource_info::handle_gl_texture_params(
           .arg("width", params.width)
           .arg("height", params.height)
           .arg("depth", params.depth)
-          .arg("iformat", params.iformat)
-          .arg("dimensions", params.dimensions);
+          .arg("dimensions", params.dimensions)
+          .arg("iformat", params.iformat);
 
         auto& pgts = std::get<_pending_gl_texture_state>(_state);
         auto& glapi = pgts.video.get().gl_api();
