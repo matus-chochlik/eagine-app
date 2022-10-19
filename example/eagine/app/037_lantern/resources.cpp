@@ -46,8 +46,8 @@ void draw_program::set_ambient_light(
 //------------------------------------------------------------------------------
 void draw_program::set_texture_unit(
   video_context& vc,
-  oglplus::gl_types::int_type unit) {
-    set(vc, _tex_loc, unit);
+  oglplus::texture_unit::value_type unit) {
+    set(vc, _tex_loc, oglplus::gl_types::int_type(unit));
 }
 //------------------------------------------------------------------------------
 // screen program
@@ -73,8 +73,8 @@ void screen_program::set_screen_size(video_context& vc) {
 //------------------------------------------------------------------------------
 void screen_program::set_texture_unit(
   video_context& vc,
-  oglplus::gl_types::int_type unit) {
-    set(vc, _tex_loc, unit);
+  oglplus::texture_unit::value_type unit) {
+    set(vc, _tex_loc, oglplus::gl_types::int_type(unit));
 }
 //------------------------------------------------------------------------------
 // pumpkin

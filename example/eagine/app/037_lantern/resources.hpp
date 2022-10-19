@@ -25,7 +25,7 @@ public:
     void set_camera(video_context&, const orbiting_camera& camera);
     void set_candle_light(video_context&, oglplus::gl_types::float_type);
     void set_ambient_light(video_context&, oglplus::gl_types::float_type);
-    void set_texture_unit(video_context&, oglplus::gl_types::int_type);
+    void set_texture_unit(video_context&, oglplus::texture_unit::value_type);
 
     oglplus::program_input_bindings input_bindings;
 
@@ -43,7 +43,7 @@ public:
     screen_program(video_context&, resource_loader&);
 
     void set_screen_size(video_context& vc);
-    void set_texture_unit(video_context&, oglplus::gl_types::int_type);
+    void set_texture_unit(video_context&, oglplus::texture_unit::value_type);
 
     oglplus::program_input_bindings input_bindings;
 
@@ -76,8 +76,8 @@ public:
 
     void clean_up(video_context&, resource_loader&) noexcept;
 
-    static auto tex_unit() noexcept -> oglplus::gl_types::int_type {
-        return 0;
+    static auto tex_unit() noexcept -> oglplus::texture_unit::value_type {
+        return 0U;
     }
 
 private:
@@ -101,8 +101,8 @@ public:
     void draw_off_screen(video_context&);
     void draw_on_screen(video_context&);
 
-    auto tex_unit() const noexcept -> oglplus::gl_types::int_type {
-        return 1;
+    auto tex_unit() const noexcept -> oglplus::texture_unit::value_type {
+        return 1U;
     }
 };
 //------------------------------------------------------------------------------
