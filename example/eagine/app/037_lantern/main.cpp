@@ -38,6 +38,7 @@ private:
     execution_context& _ctx;
     video_context& _video;
     resource_loader& _loader;
+    activity_progress _load_progress;
     timeout _is_done{std::chrono::seconds{90}};
 
     draw_buffers draw_bufs;
@@ -55,6 +56,7 @@ example_lantern::example_lantern(execution_context& ec, video_context& vc)
   : _ctx{ec}
   , _video{vc}
   , _loader{_ctx.loader()}
+  , _load_progress{_ctx.progress().activity("Loading resources", 5)}
   , pumpkin_tex{_video, _loader}
   , pumpkin{_video, _loader}
   , screen{_video, _loader}
@@ -121,8 +123,14 @@ void example_lantern::_on_resource_loaded(
         }
     }
     _is_done.reset();
+    _load_progress.update_progress(
+      int(bool(pumpkin_tex)) + int(bool(pumpkin)) + int(bool(screen)) +
+      int(bool(draw_prog)) + int(bool(screen_prog)));
     _has_all_resources =
       pumpkin_tex && pumpkin && screen && draw_prog && screen_prog;
+    if(_has_all_resources) {
+        _load_progress.finish();
+    }
 }
 //------------------------------------------------------------------------------
 void example_lantern::update() noexcept {
