@@ -11,8 +11,6 @@ set_target_properties(
 	PROPERTIES FOLDER "Example/App"
 )
 
-add_subdirectory(000_temp)
-
 add_subdirectory(001_basic_info)
 add_subdirectory(001_clear)
 add_subdirectory(002_spectrum)
