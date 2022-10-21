@@ -63,10 +63,10 @@ export template <typename Resource>
 class loaded_resource;
 //------------------------------------------------------------------------------
 export template <>
-class loaded_resource<geometry_and_bindings>
-  : public geometry_and_bindings
+class loaded_resource<gl_geometry_and_bindings>
+  : public gl_geometry_and_bindings
   , public loaded_resource_base {
-    using _res_t = geometry_and_bindings;
+    using _res_t = gl_geometry_and_bindings;
 
     auto _res() noexcept -> _res_t& {
         return *this;
@@ -81,7 +81,7 @@ public:
         /// @brief The base info from the loader signal.
         const resource_loader::gl_geometry_and_bindings_load_info& base;
         /// @brief The loaded geometry resource.
-        const loaded_resource<geometry_and_bindings>& resource;
+        const loaded_resource<gl_geometry_and_bindings>& resource;
     };
 
     /// @brief Signal emmitted when the resource is successfully loaded.
@@ -170,8 +170,8 @@ private:
 
     signal_binding_key _sig_key{};
 };
-export using geometry_and_bindings_resource =
-  loaded_resource<geometry_and_bindings>;
+export using gl_geometry_and_bindings_resource =
+  loaded_resource<gl_geometry_and_bindings>;
 //------------------------------------------------------------------------------
 export template <>
 class loaded_resource<valtree::compound>

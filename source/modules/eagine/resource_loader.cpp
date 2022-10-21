@@ -25,7 +25,7 @@ namespace eagine::app {
 
 export class video_context;
 export class audio_context;
-export class geometry_and_bindings;
+export class gl_geometry_and_bindings;
 export class resource_request_result;
 export class resource_loader;
 //
@@ -377,7 +377,7 @@ export struct resource_loader_signals {
         const identifier_t request_id;
         const url& locator;
         const oglplus::shape_generator& shape;
-        geometry_and_bindings& ref;
+        gl_geometry_and_bindings& ref;
     };
 
     /// @brief Emitted when a geometry and attribute bindings wrapper is loaded.

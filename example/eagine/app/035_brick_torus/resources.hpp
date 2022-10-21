@@ -41,7 +41,7 @@ private:
 //------------------------------------------------------------------------------
 // geometry
 //------------------------------------------------------------------------------
-class torus_geometry : public geometry_and_bindings {
+class torus_geometry : public gl_geometry_and_bindings {
 public:
     void init(video_context&);
 };

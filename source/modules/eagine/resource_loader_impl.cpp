@@ -888,7 +888,7 @@ void pending_resource_info::_handle_gl_shape(
             if(!pggbs.bindings) {
                 pggbs.bindings = oglplus::vertex_attrib_bindings{shape};
             }
-            geometry_and_bindings geom{
+            gl_geometry_and_bindings geom{
               shape,
               pggbs.bindings,
               shape.draw_variant(pggbs.draw_var_idx),

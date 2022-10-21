@@ -56,7 +56,7 @@ private:
 //------------------------------------------------------------------------------
 // geometry
 //------------------------------------------------------------------------------
-class pumpkin_geometry : public geometry_and_bindings_resource {
+class pumpkin_geometry : public gl_geometry_and_bindings_resource {
 public:
     pumpkin_geometry(video_context&, resource_loader&);
 
@@ -65,7 +65,8 @@ public:
     }
 
 private:
-    void _on_loaded(const geometry_and_bindings_resource::load_info&) noexcept;
+    void _on_loaded(
+      const gl_geometry_and_bindings_resource::load_info&) noexcept;
     oglplus::sphere _bounding_sphere;
 };
 //------------------------------------------------------------------------------
@@ -85,7 +86,7 @@ private:
     void _on_loaded(const gl_texture_resource::load_info&) noexcept;
 };
 //------------------------------------------------------------------------------
-class screen_geometry : public geometry_and_bindings_resource {
+class screen_geometry : public gl_geometry_and_bindings_resource {
 public:
     screen_geometry(video_context&, resource_loader&);
 };

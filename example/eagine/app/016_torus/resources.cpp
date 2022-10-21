@@ -72,7 +72,7 @@ void torus_geometry::init(execution_context&, video_context& vc) {
         36.F,
         12.F,
         1.F));
-    geometry_and_bindings::init(
+    gl_geometry_and_bindings::init(
       {shape,
        vertex_attrib_bindings(
          {(shapes::vertex_attrib_kind::position / 3),

@@ -72,7 +72,7 @@ void torus_program::bind_texcoord_location(
 // geometry
 //------------------------------------------------------------------------------
 void torus_geometry::init(video_context& vc) {
-    geometry_and_bindings::init(
+    gl_geometry_and_bindings::init(
       {shapes::unit_torus(
          shapes::vertex_attrib_kind::position |
            shapes::vertex_attrib_kind::normal |

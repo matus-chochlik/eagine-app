@@ -35,7 +35,7 @@ void edges_program::bind_position_location(
 // geometry
 //------------------------------------------------------------------------------
 void icosahedron_geometry::init(video_context& vc) {
-    geometry_and_bindings::init(
+    gl_geometry_and_bindings::init(
       {shapes::center(eagine::shapes::ortho_array_xyz(
          shapes::scale(
            shapes::unit_icosahedron(shapes::vertex_attrib_kind::position),

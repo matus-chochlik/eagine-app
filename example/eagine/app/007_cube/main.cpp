@@ -40,7 +40,7 @@ private:
     timeout _is_done{std::chrono::seconds{30}};
 
     oglplus::vertex_attrib_bindings _attrib_bindings;
-    loaded_resource<geometry_and_bindings> _cube;
+    loaded_resource<gl_geometry_and_bindings> _cube;
     loaded_resource<oglplus::owned_program_name> _prog;
 
     orbiting_camera _camera;

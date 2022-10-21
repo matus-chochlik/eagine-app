@@ -36,7 +36,7 @@ private:
 //------------------------------------------------------------------------------
 // geometry
 //------------------------------------------------------------------------------
-class shape_geometry : public geometry_and_bindings {
+class shape_geometry : public gl_geometry_and_bindings {
 public:
     void init(video_context&);
 };

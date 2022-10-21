@@ -34,7 +34,7 @@ private:
 //------------------------------------------------------------------------------
 // geometry
 //------------------------------------------------------------------------------
-class icosahedron_geometry : public geometry_and_bindings {
+class icosahedron_geometry : public gl_geometry_and_bindings {
 public:
     void init(video_context&);
 };

@@ -80,12 +80,12 @@ void screen_program::set_texture_unit(
 // pumpkin
 //------------------------------------------------------------------------------
 pumpkin_geometry::pumpkin_geometry(video_context& video, resource_loader& loader)
-  : geometry_and_bindings_resource{url{"json:///Pumpkin"}, video, loader} {
+  : gl_geometry_and_bindings_resource{url{"json:///Pumpkin"}, video, loader} {
     loaded.connect(make_callable_ref<&pumpkin_geometry::_on_loaded>(this));
 }
 //------------------------------------------------------------------------------
 void pumpkin_geometry::_on_loaded(
-  const geometry_and_bindings_resource::load_info& info) noexcept {
+  const gl_geometry_and_bindings_resource::load_info& info) noexcept {
     _bounding_sphere = info.base.shape.bounding_sphere();
 }
 //------------------------------------------------------------------------------
@@ -121,7 +121,7 @@ void pumpkin_texture::_on_loaded(
 // screen_geometry
 //------------------------------------------------------------------------------
 screen_geometry::screen_geometry(video_context& video, resource_loader& loader)
-  : geometry_and_bindings_resource{
+  : gl_geometry_and_bindings_resource{
       url{"eagires:///unit_screen?position=true+wrap_coord=true"},
       video,
       loader} {}

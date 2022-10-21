@@ -141,7 +141,7 @@ void shape_geometry::init(execution_context& ec, video_context& vc) {
     oglplus::shape_generator shape(
       glapi, shapes::add_triangle_adjacency(std::move(gen), ctx));
 
-    geometry_and_bindings::init(
+    gl_geometry_and_bindings::init(
       {shape,
        vertex_attrib_bindings{
          {shapes::vertex_attrib_kind::position,

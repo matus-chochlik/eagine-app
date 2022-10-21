@@ -78,7 +78,7 @@ void cube_program::bind_tex_coord_location(
 // geometry
 //------------------------------------------------------------------------------
 void cube_geometry::init(video_context& vc) {
-    geometry_and_bindings::init(
+    gl_geometry_and_bindings::init(
       {shapes::unit_cube(
          shapes::vertex_attrib_kind::position |
          shapes::vertex_attrib_kind::normal |

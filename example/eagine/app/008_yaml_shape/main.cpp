@@ -30,7 +30,7 @@ private:
     video_context& _video;
     timeout _is_done{std::chrono::seconds{30}};
 
-    geometry_and_bindings geom;
+    gl_geometry_and_bindings geom;
 
     oglplus::owned_program_name prog;
 

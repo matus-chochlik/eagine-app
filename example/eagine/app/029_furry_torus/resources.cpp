@@ -122,7 +122,7 @@ void hair_program::bind_occlusion_location(
 void shape_surface::init(
   video_context& vc,
   const std::shared_ptr<shapes::generator>& gen) {
-    geometry_and_bindings::init({gen, vc});
+    gl_geometry_and_bindings::init({gen, vc});
 
     vc.clean_up_later(*this);
 }
@@ -139,7 +139,7 @@ void shape_hair::init(
       glapi,
       shapes::surface_points(
         gen, 256 * 1024, shapes::vertex_attrib_kind::occlusion, vc.parent()));
-    geometry_and_bindings::init({shape, vc});
+    gl_geometry_and_bindings::init({shape, vc});
 
     vc.clean_up_later(*this);
 }

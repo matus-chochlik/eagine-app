@@ -44,7 +44,7 @@ private:
 //------------------------------------------------------------------------------
 // geometry
 //------------------------------------------------------------------------------
-class cube_geometry : public geometry_and_bindings {
+class cube_geometry : public gl_geometry_and_bindings {
 public:
     void init(video_context&);
 };

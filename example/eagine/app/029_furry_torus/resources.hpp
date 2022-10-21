@@ -65,12 +65,12 @@ private:
 //------------------------------------------------------------------------------
 // geometry
 //------------------------------------------------------------------------------
-class shape_surface : public geometry_and_bindings {
+class shape_surface : public gl_geometry_and_bindings {
 public:
     void init(video_context&, const std::shared_ptr<shapes::generator>&);
 };
 //------------------------------------------------------------------------------
-class shape_hair : public geometry_and_bindings {
+class shape_hair : public gl_geometry_and_bindings {
 public:
     void init(video_context&, const std::shared_ptr<shapes::generator>&);
 };
