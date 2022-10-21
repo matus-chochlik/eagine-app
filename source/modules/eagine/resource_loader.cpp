@@ -31,6 +31,7 @@ export class resource_loader;
 //
 struct resource_texture_image_params;
 struct resource_texture_params;
+struct resource_buffer_params;
 //------------------------------------------------------------------------------
 /// @brief Resource kind enumeration.
 /// @see resource_loader
@@ -66,6 +67,10 @@ export enum class resource_kind {
     gl_texture_image,
     ///@brief GL texture image update.
     gl_texture_update,
+    ///@brief GL buffer object.
+    gl_buffer,
+    ///@brief GL buffer image update.
+    gl_buffer_update,
     /// @brief Marks that resource request is finished.
     finished
 };
@@ -155,6 +160,10 @@ public:
     auto handle_gl_texture_params(const resource_texture_params&) noexcept
       -> bool;
 
+    void add_gl_buffer_context(video_context&, oglplus::buffer_target) noexcept;
+    auto handle_gl_buffer_params(const resource_buffer_params&) noexcept
+      -> bool;
+
     auto update() noexcept -> work_done;
     void cleanup() noexcept;
 
@@ -220,6 +229,20 @@ private:
         bool loaded{false};
     };
 
+    struct _pending_gl_buffer_update_state {
+        std::reference_wrapper<video_context> video;
+        oglplus::buffer_target buf_target;
+        oglplus::buffer_name buf;
+    };
+
+    struct _pending_gl_buffer_state {
+        std::reference_wrapper<video_context> video;
+        oglplus::buffer_target buf_target;
+        oglplus::owned_buffer_name buf;
+        flat_set<identifier_t> pending_requests;
+        bool loaded{false};
+    };
+
     // resource loaded handlers
     void _handle_json_text(
       const msgbus::blob_info&,
@@ -280,7 +303,9 @@ private:
       _pending_gl_shader_state,
       _pending_gl_program_state,
       _pending_gl_texture_update_state,
-      _pending_gl_texture_state>
+      _pending_gl_texture_state,
+      _pending_gl_buffer_update_state,
+      _pending_gl_buffer_state>
       _state;
 
     resource_kind _kind{resource_kind::unknown};
@@ -723,8 +748,11 @@ public:
       oglplus::texture_target,
       oglplus::texture_unit) noexcept -> resource_request_result;
 
-    auto request_gl_buffer(url locator, video_context&) noexcept
-      -> resource_request_result;
+    /// @brief Requests a set-up GL buffer object.
+    auto request_gl_buffer(
+      url locator,
+      video_context&,
+      oglplus::buffer_target) noexcept -> resource_request_result;
 
 private:
     friend class pending_resource_info;
