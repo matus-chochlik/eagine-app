@@ -3,14 +3,18 @@
 # See accompanying file LICENSE_1_0.txt or copy at
 #  http://www.boost.org/LICENSE_1_0.txt
 #
-oglplus_add_glsl_program(cel_shading)
 add_executable(app-021_cel_shading main.cpp resources.cpp)
 add_dependencies(app-021_cel_shading eagine-app-examples)
 
 eagine_embed_target_resources(
 	TARGET app-021_cel_shading
-	INPUT_TARGETS cel_shading
+	RESOURCES
+		VertShader vertex.glsl
+		GeomShader geometry.glsl
+		FragShader fragment.glsl
+		CelProg celprog.json
 	PACKED
+	ENABLE_SEARCH
 )
 eagine_add_exe_analysis(app-021_cel_shading)
 

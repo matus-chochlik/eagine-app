@@ -27,46 +27,61 @@ public:
     void clean_up() noexcept final;
 
 private:
+    void _on_resource_loaded(const loaded_resource_base&) noexcept;
+
+    auto _load_handler() noexcept {
+        return make_callable_ref<&example_cel::_on_resource_loaded>(this);
+    }
+
     execution_context& _ctx;
     video_context& _video;
-    background_icosahedron _bg;
-    timeout _is_done{std::chrono::seconds{30}};
+    resource_loader& _loader;
 
-    orbiting_camera camera;
-    cel_program prog;
-    icosahedron_geometry shape;
+    orbiting_camera _camera;
+    icosahedron_geometry _shape;
+    cel_program _prog;
+    background_icosahedron _bg;
+
+    timeout _is_done{std::chrono::seconds{30}};
 };
 //------------------------------------------------------------------------------
 example_cel::example_cel(execution_context& ec, video_context& vc)
   : _ctx{ec}
   , _video{vc}
+  , _loader{_ctx.loader()}
+  , _shape{_video, _loader}
+  , _prog{_video, _loader}
   , _bg{_video, {0.1F, 0.1F, 0.1F, 1.0F}, {0.4F, 0.4F, 0.4F, 0.0F}, 1.F} {
-    const auto& glapi = _video.gl_api();
-    const auto& [gl, GL] = glapi;
+    _shape.base_loaded.connect(_load_handler());
+    _prog.base_loaded.connect(_load_handler());
 
-    prog.init(vc);
-    shape.init(vc);
-
-    prog.bind_position_location(vc, shape.position_loc());
-
-    camera.set_near(0.1F)
+    _camera.set_near(0.1F)
       .set_far(50.F)
       .set_orbit_min(1.3F)
       .set_orbit_max(6.0F)
       .set_fov(right_angle_());
-    prog.set_projection(vc, camera);
 
+    _camera.connect_inputs(_ctx).basic_input_mapping(_ctx);
+    _ctx.setup_inputs().switch_input_mapping();
+
+    const auto& glapi = _video.gl_api();
+    const auto& [gl, GL] = glapi;
     gl.enable(GL.depth_test);
     gl.enable(GL.cull_face);
     gl.cull_face(GL.back);
-
-    camera.connect_inputs(ec).basic_input_mapping(ec);
-    ec.setup_inputs().switch_input_mapping();
 }
 //------------------------------------------------------------------------------
 void example_cel::on_video_resize() noexcept {
     const auto& gl = _video.gl_api();
     gl.viewport[_video.surface_size()];
+}
+//------------------------------------------------------------------------------
+void example_cel::_on_resource_loaded(const loaded_resource_base&) noexcept {
+    if(_shape && _prog) {
+        _prog.input_bindings.apply(_video.gl_api(), _prog, _shape);
+        _prog.set_projection(_video, _camera);
+        _is_done.reset();
+    }
 }
 //------------------------------------------------------------------------------
 void example_cel::update() noexcept {
@@ -75,23 +90,28 @@ void example_cel::update() noexcept {
         _is_done.reset();
     }
     if(state.user_idle_too_long()) {
-        camera.idle_update(state);
+        _camera.idle_update(state);
     }
 
-    _bg.clear(_video, camera);
+    _bg.clear(_video, _camera);
 
-    prog.use(_video);
-    prog.set_projection(_video, camera);
-    prog.set_modelview(_ctx, _video);
-    shape.use_and_draw(_video);
+    if(_shape && _prog) {
+        _prog.use(_video);
+        _prog.set_projection(_video, _camera);
+        _prog.set_modelview(_ctx, _video);
+        _shape.use_and_draw(_video);
+    } else {
+        _shape.update(_video, _loader);
+        _prog.update(_video, _loader);
+    }
 
     _video.commit();
 }
 //------------------------------------------------------------------------------
 void example_cel::clean_up() noexcept {
 
-    prog.clean_up(_video);
-    shape.clean_up(_video);
+    _prog.clean_up(_video, _loader);
+    _shape.clean_up(_video, _loader);
     _bg.clean_up(_video);
 
     _video.end();

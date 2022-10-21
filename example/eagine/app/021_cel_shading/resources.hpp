@@ -18,15 +18,17 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 // program
 //------------------------------------------------------------------------------
-class cel_program : public gpu_program {
+class cel_program : public gl_program_resource {
 public:
-    void init(video_context&);
+    cel_program(video_context&, resource_loader&);
     void set_projection(video_context&, orbiting_camera& camera);
     void set_modelview(execution_context&, video_context&);
 
-    void bind_position_location(video_context&, oglplus::vertex_attrib_location);
+    oglplus::program_input_bindings input_bindings;
 
 private:
+    void _on_loaded(const gl_program_resource::load_info&) noexcept;
+
     oglplus::uniform_location projection_loc;
     oglplus::uniform_location modelview_loc;
     float shp_turns{0.F};
@@ -34,9 +36,9 @@ private:
 //------------------------------------------------------------------------------
 // geometry
 //------------------------------------------------------------------------------
-class icosahedron_geometry : public gl_geometry_and_bindings {
+class icosahedron_geometry : public gl_geometry_and_bindings_resource {
 public:
-    void init(video_context&);
+    icosahedron_geometry(video_context&, resource_loader&);
 };
 //------------------------------------------------------------------------------
 } // namespace eagine::app
