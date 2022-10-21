@@ -3,14 +3,17 @@
 # See accompanying file LICENSE_1_0.txt or copy at
 #  http://www.boost.org/LICENSE_1_0.txt
 #
-oglplus_add_glsl_program(checker_torus)
-
 add_executable(app-016_torus main.cpp resources.cpp)
 add_dependencies(app-016_torus eagine-app-examples)
 
 eagine_embed_target_resources(
 	TARGET app-016_torus
-	INPUT_TARGETS checker_torus
+	RESOURCES
+		VertShader vertex.glsl
+		FragShader fragment.glsl
+		GLProgram glprog.json
+	PACKED
+	ENABLE_SEARCH
 	PACKED
 )
 eagine_add_exe_analysis(app-016_torus)

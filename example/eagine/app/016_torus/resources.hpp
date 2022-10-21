@@ -18,26 +18,23 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 // program
 //------------------------------------------------------------------------------
-class torus_program {
+class torus_program : public gl_program_resource {
 public:
-    void init(execution_context&, video_context&);
-    void clean_up(video_context&);
+    torus_program(video_context&, resource_loader&);
     void set_projection(video_context&, orbiting_camera& camera);
 
-    void bind_position_location(video_context&, oglplus::vertex_attrib_location);
-    void bind_normal_location(video_context&, oglplus::vertex_attrib_location);
-    void bind_texcoord_location(video_context&, oglplus::vertex_attrib_location);
+    oglplus::program_input_bindings input_bindings;
 
 private:
-    oglplus::owned_program_name prog;
+    void _on_loaded(const gl_program_resource::load_info&) noexcept;
     oglplus::uniform_location camera_loc;
 };
 //------------------------------------------------------------------------------
 // geometry
 //------------------------------------------------------------------------------
-class torus_geometry : public gl_geometry_and_bindings {
+class torus_geometry : public gl_geometry_and_bindings_resource {
 public:
-    void init(execution_context&, video_context&);
+    torus_geometry(video_context&, resource_loader&);
 };
 //------------------------------------------------------------------------------
 } // namespace eagine::app
