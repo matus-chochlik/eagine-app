@@ -593,4 +593,97 @@ private:
 };
 export using gl_texture_resource = loaded_resource<oglplus::owned_texture_name>;
 //------------------------------------------------------------------------------
+export template <>
+class loaded_resource<oglplus::owned_buffer_name>
+  : public oglplus::owned_buffer_name
+  , public loaded_resource_base {
+    using _res_t = oglplus::owned_buffer_name;
+
+    auto _res() noexcept -> _res_t& {
+        return *this;
+    }
+
+public:
+    /// @brief Signal emmitted when the resource is successfully loaded.
+    signal<void(const loaded_resource_base&) noexcept> base_loaded;
+
+    /// @brief Type of the loaded signal parameter.
+    struct load_info {
+        /// @brief The base info from the loader signal.
+        const resource_loader::gl_buffer_load_info& base;
+        /// @brief The loaded buffer resource.
+        const loaded_resource<oglplus::owned_buffer_name>& resource;
+    };
+
+    /// @brief Signal emmitted when the resource is successfully loaded.
+    signal<void(const load_info&) noexcept> loaded;
+
+    /// @brief Constructor specifying the resource locator.
+    loaded_resource(url locator) noexcept
+      : loaded_resource_base{std::move(locator)} {}
+
+    /// @brief Delay-initializes the resource.
+    void init(video_context&, resource_loader& loader) {
+        _sig_key = connect<&loaded_resource::_handle_gl_buffer_loaded>(
+          this, loader.gl_buffer_loaded);
+    }
+
+    /// @brief Clean's up this resource.
+    void clean_up(video_context& video, resource_loader& loader) {
+        video.gl_api().clean_up(std::move(_res()));
+        if(_sig_key) {
+            loader.gl_buffer_loaded.disconnect(_sig_key);
+            _sig_key = {};
+        }
+    }
+
+    /// @brief Constructor specifying the locator and initializing the resource.
+    loaded_resource(url locator, video_context& video, resource_loader& loader)
+      : loaded_resource{std::move(locator)} {
+        init(video, loader);
+    }
+
+    /// @brief Indicates if this resource is loaded.
+    auto is_loaded() const noexcept -> bool {
+        return this->is_valid();
+    }
+
+    /// @brief Indicates if this resource is loaded.
+    /// @see is_loaded
+    explicit operator bool() const noexcept {
+        return is_loaded();
+    }
+
+    /// @brief Updates the resource, possibly doing resource load request.
+    auto update(
+      video_context& video,
+      resource_loader& loader,
+      oglplus::buffer_target target) -> work_done {
+        if(!is_loaded() && !is_loading()) {
+            if(const auto request{
+                 loader.request_gl_buffer(_locator, video, target)}) {
+                _request_id = request.request_id();
+                return true;
+            }
+        }
+        return false;
+    }
+
+private:
+    void _handle_gl_buffer_loaded(
+      const resource_loader::gl_buffer_load_info& info) noexcept {
+        if(info.request_id == _request_id) {
+            _res() = std::move(info.ref);
+            if(is_loaded()) {
+                this->loaded({.base = info, .resource = *this});
+                this->base_loaded(*this);
+                _request_id = 0;
+            }
+        }
+    }
+
+    signal_binding_key _sig_key{};
+};
+export using gl_buffer_resource = loaded_resource<oglplus::owned_buffer_name>;
+//------------------------------------------------------------------------------
 } // namespace eagine::app
