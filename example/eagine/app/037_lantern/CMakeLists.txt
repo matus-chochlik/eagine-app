@@ -3,11 +3,6 @@
 # See accompanying file LICENSE_1_0.txt or copy at
 #  http://www.boost.org/LICENSE_1_0.txt
 #
-configure_file(
-	"${PROJECT_SOURCE_DIR}/assets/models/pumpkin.json"
-	"${CMAKE_CURRENT_BINARY_DIR}/pumpkin.json"
-)
-
 add_executable(app-037_lantern main.cpp resources.cpp)
 add_dependencies(app-037_lantern eagine-app-examples)
 
