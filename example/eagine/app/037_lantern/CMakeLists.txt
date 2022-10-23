@@ -8,7 +8,6 @@ add_dependencies(app-037_lantern eagine-app-examples)
 
 eagine_embed_target_resources(
 	TARGET app-037_lantern
-	INPUT_TARGETS pumpkin
 	RESOURCES
 		DrawVert "draw_vertex.glsl"
 		DrawFrag "draw_fragment.glsl"
