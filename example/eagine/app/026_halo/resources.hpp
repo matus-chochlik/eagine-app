@@ -18,33 +18,31 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 // program
 //------------------------------------------------------------------------------
-class surface_program {
+class surface_program : public gl_program_resource {
 public:
-    void init(execution_context&, video_context&);
-    void clean_up(video_context&);
+    surface_program(video_context&, resource_loader&);
     void prepare_frame(video_context&, orbiting_camera& camera, float t);
 
-    void bind_position_location(video_context&, oglplus::vertex_attrib_location);
-    void bind_normal_location(video_context&, oglplus::vertex_attrib_location);
+    oglplus::program_input_bindings input_bindings;
 
 private:
-    oglplus::owned_program_name _prog;
+    void _on_loaded(const gl_program_resource::load_info&) noexcept;
+
     oglplus::uniform_location _model_loc;
     oglplus::uniform_location _view_loc;
     oglplus::uniform_location _projection_loc;
 };
 //------------------------------------------------------------------------------
-class halo_program {
+class halo_program : public gl_program_resource {
 public:
-    void init(execution_context&, video_context&);
-    void clean_up(video_context&);
+    halo_program(video_context&, resource_loader&);
     void prepare_frame(video_context&, orbiting_camera& camera, float t);
 
-    void bind_position_location(video_context&, oglplus::vertex_attrib_location);
-    void bind_normal_location(video_context&, oglplus::vertex_attrib_location);
+    oglplus::program_input_bindings input_bindings;
 
 private:
-    oglplus::owned_program_name _prog;
+    void _on_loaded(const gl_program_resource::load_info&) noexcept;
+
     oglplus::uniform_location _model_loc;
     oglplus::uniform_location _view_loc;
     oglplus::uniform_location _projection_loc;
@@ -53,11 +51,9 @@ private:
 //------------------------------------------------------------------------------
 // geometry
 //------------------------------------------------------------------------------
-class shape_geometry : public gl_geometry_and_bindings {
+class shape_geometry : public gl_geometry_and_bindings_resource {
 public:
-    void init(execution_context&, video_context&);
-    void clean_up(video_context&);
-    void draw(video_context&);
+    shape_geometry(video_context&, resource_loader&);
 };
 //------------------------------------------------------------------------------
 } // namespace eagine::app

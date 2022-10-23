@@ -24,54 +24,75 @@ public:
 
     void on_video_resize() noexcept final;
     void update() noexcept final;
+    void clean_up() noexcept final;
 
 private:
+    void _on_resource_loaded(const loaded_resource_base&) noexcept;
+
+    auto _load_handler() noexcept {
+        return make_callable_ref<&example_halo::_on_resource_loaded>(this);
+    }
+
     execution_context& _ctx;
     video_context& _video;
-    timeout _is_done{std::chrono::seconds{30}};
+    resource_loader& _loader;
 
-    orbiting_camera _camera;
     surface_program _surf_prog;
     halo_program _halo_prog;
     shape_geometry _shape;
+
+    orbiting_camera _camera;
+    timeout _is_done{std::chrono::seconds{30}};
 };
 //------------------------------------------------------------------------------
 example_halo::example_halo(execution_context& ec, video_context& vc)
   : _ctx{ec}
-  , _video{vc} {
-    const auto& glapi = _video.gl_api();
-    const auto& [gl, GL] = glapi;
+  , _video{vc}
+  , _loader{_ctx.loader()}
+  , _surf_prog{_video, _loader}
+  , _halo_prog{_video, _loader}
+  , _shape{_video, _loader} {
 
-    _shape.init(ec, vc);
+    _surf_prog.base_loaded.connect(_load_handler());
+    _halo_prog.base_loaded.connect(_load_handler());
+    _shape.base_loaded.connect(_load_handler());
 
-    _surf_prog.init(ec, vc);
-    _surf_prog.bind_position_location(vc, _shape.position_loc());
-    _surf_prog.bind_normal_location(vc, _shape.normal_loc());
-
-    _halo_prog.init(ec, vc);
-    _halo_prog.bind_position_location(vc, _shape.position_loc());
-    _halo_prog.bind_normal_location(vc, _shape.normal_loc());
-
-    // camera
     _camera.set_near(0.1F)
       .set_far(50.F)
       .set_orbit_min(1.4F)
       .set_orbit_max(3.5F)
       .set_fov(degrees_(70));
 
+    _camera.connect_inputs(ec).basic_input_mapping(ec);
+    ec.setup_inputs().switch_input_mapping();
+
+    const auto& glapi = _video.gl_api();
+    const auto& [gl, GL] = glapi;
+
     gl.clear_color(0.25F, 0.25F, 0.25F, 0.0F);
     gl.enable(GL.depth_test);
     gl.enable(GL.cull_face);
     gl.cull_face(GL.back);
     gl.blend_func(GL.src_alpha, GL.one);
-
-    _camera.connect_inputs(ec).basic_input_mapping(ec);
-    ec.setup_inputs().switch_input_mapping();
 }
 //------------------------------------------------------------------------------
 void example_halo::on_video_resize() noexcept {
     const auto& gl = _video.gl_api();
     gl.viewport[_video.surface_size()];
+}
+//------------------------------------------------------------------------------
+void example_halo::_on_resource_loaded(const loaded_resource_base&) noexcept {
+    if(_shape) {
+        const auto& glapi = _video.gl_api();
+        if(_surf_prog) {
+            _surf_prog.use(_video);
+            _surf_prog.input_bindings.apply(glapi, _surf_prog, _shape);
+        }
+        if(_halo_prog) {
+            _halo_prog.use(_video);
+            _halo_prog.input_bindings.apply(glapi, _halo_prog, _shape);
+        }
+    }
 }
 //------------------------------------------------------------------------------
 void example_halo::update() noexcept {
@@ -83,23 +104,36 @@ void example_halo::update() noexcept {
         _camera.idle_update(state, 11.F);
     }
 
-    const auto& glapi = _video.gl_api();
-    const auto& [gl, GL] = glapi;
+    if(_surf_prog && _halo_prog && _shape) {
+        const auto& glapi = _video.gl_api();
+        const auto& [gl, GL] = glapi;
 
-    gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
+        gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
 
-    float t = _ctx.state().frame_time().value();
-    _surf_prog.prepare_frame(_video, _camera, t);
-    _shape.draw(_video);
+        float t = _ctx.state().frame_time().value();
+        _surf_prog.prepare_frame(_video, _camera, t);
+        _shape.draw(_video);
 
-    gl.depth_mask(GL.false_);
-    gl.enable(GL.blend);
-    _halo_prog.prepare_frame(_video, _camera, t);
-    _shape.draw(_video);
-    gl.disable(GL.blend);
-    gl.depth_mask(GL.true_);
+        gl.depth_mask(GL.false_);
+        gl.enable(GL.blend);
+        _halo_prog.prepare_frame(_video, _camera, t);
+        _shape.draw(_video);
+        gl.disable(GL.blend);
+        gl.depth_mask(GL.true_);
+    } else {
+        _surf_prog.update(_video, _loader);
+        _halo_prog.update(_video, _loader);
+        _shape.update(_video, _loader);
+    }
 
     _video.commit();
+}
+//------------------------------------------------------------------------------
+void example_halo::clean_up() noexcept {
+    _surf_prog.clean_up(_video, _loader);
+    _halo_prog.clean_up(_video, _loader);
+    _shape.clean_up(_video, _loader);
+    _video.end();
 }
 //------------------------------------------------------------------------------
 class example_launchpad : public launchpad {
