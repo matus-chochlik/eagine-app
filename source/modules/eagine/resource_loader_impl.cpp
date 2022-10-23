@@ -294,7 +294,7 @@ static auto texture_format_from_string(
     return false;
 }
 //------------------------------------------------------------------------------
-struct resource_texture_image_params {
+struct resource_gl_texture_image_params {
     oglplus::gl_types::int_type dimensions{0};
     oglplus::gl_types::int_type level{0};
     oglplus::gl_types::int_type x_offs{0};
@@ -314,9 +314,11 @@ class valtree_gl_texture_image_loader
 public:
     valtree_gl_texture_image_loader(
       std::shared_ptr<pending_resource_info> info,
-      oglplus::texture_target target) noexcept
+      oglplus::texture_target target,
+      const resource_gl_texture_image_params& params) noexcept
       : _parent{std::move(info)}
-      , _target{target} {
+      , _target{target}
+      , _params{params} {
         if(const auto parent{_parent.lock()}) {
             extract(parent).loader().buffers().get(512 * 512);
         }
@@ -452,13 +454,13 @@ private:
     memory::buffer _temp;
     stream_decompression _decompression;
     oglplus::texture_target _target;
-    resource_texture_image_params _params{};
+    resource_gl_texture_image_params _params{};
     bool _success{true};
 };
 //------------------------------------------------------------------------------
 // valtree_gl_texture_builder
 //------------------------------------------------------------------------------
-struct resource_texture_params {
+struct resource_gl_texture_params {
     oglplus::gl_types::int_type dimensions{0};
     oglplus::gl_types::int_type levels{0};
     oglplus::gl_types::sizei_type width{0};
@@ -509,6 +511,18 @@ public:
             } else if(path.front() == "iformat") {
                 _success &= assign_if_fits(data, _params.iformat);
             }
+        } else if(path.size() == 3) {
+            if(path.front() == "images") {
+                if(path.back() == "level") {
+                    _success &= assign_if_fits(data, _image_params.level);
+                } else if(path.back() == "x_offs") {
+                    _success &= assign_if_fits(data, _image_params.x_offs);
+                } else if(path.back() == "y_offs") {
+                    _success &= assign_if_fits(data, _image_params.y_offs);
+                } else if(path.back() == "z_offs") {
+                    _success &= assign_if_fits(data, _image_params.z_offs);
+                }
+            }
         }
     }
 
@@ -556,6 +570,7 @@ public:
         if(path.size() == 2) {
             if(path.front() == "images") {
                 _image_locator = {};
+                _image_params = {};
                 _image_target = _tex_target;
             }
         }
@@ -575,7 +590,7 @@ public:
             if(path.front() == "images") {
                 if(_image_locator) {
                     _image_requests.emplace_back(
-                      std::move(_image_locator), _image_target);
+                      std::move(_image_locator), _image_target, _image_params);
                 }
             }
         }
@@ -584,10 +599,10 @@ public:
     void finish() noexcept final {
         if(const auto parent{_parent.lock()}) {
             if(_success) {
-                for(auto& [loc, tgt] : _image_requests) {
+                for(auto& [loc, tgt, para] : _image_requests) {
                     const auto img_request{
                       extract(parent).loader().request_gl_texture_image(
-                        std::move(loc), tgt)};
+                        std::move(loc), tgt, para)};
                     img_request.set_continuation(parent);
                     extract(parent).add_gl_texture_image_request(
                       img_request.request_id());
@@ -609,18 +624,21 @@ public:
 private:
     std::weak_ptr<pending_resource_info> _parent;
     video_context& _video;
-    resource_texture_params _params{};
+    resource_gl_texture_params _params{};
     url _image_locator;
-    oglplus::texture_target _tex_target;
+    resource_gl_texture_image_params _image_params;
     oglplus::texture_target _image_target;
+    oglplus::texture_target _tex_target;
     oglplus::texture_unit _tex_unit;
-    std::vector<std::tuple<url, oglplus::texture_target>> _image_requests;
+    std::vector<
+      std::tuple<url, oglplus::texture_target, resource_gl_texture_image_params>>
+      _image_requests;
     bool _success{true};
 };
 //------------------------------------------------------------------------------
 // valtree_gl_buffer_builder
 //------------------------------------------------------------------------------
-struct resource_buffer_params {
+struct resource_gl_buffer_params {
     oglplus::gl_types::sizei_type data_size{0};
     oglplus::gl_types::enum_type data_type{0};
 };
@@ -648,7 +666,7 @@ public:
 private:
     std::weak_ptr<pending_resource_info> _parent;
     video_context& _video;
-    resource_buffer_params _params{};
+    resource_gl_buffer_params _params{};
     url _image_locator;
     oglplus::buffer_target _buf_target;
     bool _success{true};
@@ -747,7 +765,7 @@ auto pending_resource_info::add_gl_program_input_binding(
 //------------------------------------------------------------------------------
 void pending_resource_info::handle_gl_texture_image(
   const oglplus::texture_target target,
-  const resource_texture_image_params& params,
+  const resource_gl_texture_image_params& params,
   const memory::const_block data) noexcept {
     if(const auto cont{continuation()}) {
         extract(cont)._handle_gl_texture_image(*this, target, params, data);
@@ -1077,7 +1095,7 @@ void pending_resource_info::_handle_gl_shader(
 }
 //------------------------------------------------------------------------------
 auto pending_resource_info::handle_gl_texture_params(
-  const resource_texture_params& params) noexcept -> bool {
+  const resource_gl_texture_params& params) noexcept -> bool {
     if(std::holds_alternative<_pending_gl_texture_state>(_state)) {
         _parent.log_info("loaded GL texture storage parameters")
           .arg("levels", params.levels)
@@ -1206,7 +1224,7 @@ auto pending_resource_info::handle_gl_texture_params(
 void pending_resource_info::_handle_gl_texture_image(
   const pending_resource_info& source,
   const oglplus::texture_target target,
-  const resource_texture_image_params& params,
+  const resource_gl_texture_image_params& params,
   const memory::const_block data) noexcept {
     _parent.log_info("loaded GL texture sub-image")
       .arg("requestId", _request_id)
@@ -1359,7 +1377,7 @@ auto pending_resource_info::_finish_gl_texture(
 }
 //------------------------------------------------------------------------------
 auto pending_resource_info::handle_gl_buffer_params(
-  const resource_buffer_params& params) noexcept -> bool {
+  const resource_gl_buffer_params& params) noexcept -> bool {
     if(std::holds_alternative<_pending_gl_buffer_state>(_state)) {
         _parent.log_info("loaded GL buffer storage parameters")
           .arg("dataSize", params.data_size);
@@ -1688,17 +1706,26 @@ auto resource_loader::request_gl_program(
 //------------------------------------------------------------------------------
 auto resource_loader::request_gl_texture_image(
   url locator,
-  oglplus::texture_target target) noexcept -> resource_request_result {
+  oglplus::texture_target target,
+  const resource_gl_texture_image_params& params) noexcept
+  -> resource_request_result {
     auto new_request{_new_resource(locator, resource_kind::gl_texture_image)};
 
     if(const auto src_request{request_json_traversal(
          locator,
-         std::make_shared<valtree_gl_texture_image_loader>(new_request, target),
+         std::make_shared<valtree_gl_texture_image_loader>(
+           new_request, target, params),
          128)}) {
         return new_request;
     }
     new_request.info().mark_finished();
     return _cancelled_resource(locator, resource_kind::gl_texture_image);
+}
+//------------------------------------------------------------------------------
+auto resource_loader::request_gl_texture_image(
+  url locator,
+  oglplus::texture_target target) noexcept -> resource_request_result {
+    return request_gl_texture_image(std::move(locator), target, {});
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request_gl_texture_update(

@@ -29,9 +29,9 @@ export class gl_geometry_and_bindings;
 export class resource_request_result;
 export class resource_loader;
 //
-struct resource_texture_image_params;
-struct resource_texture_params;
-struct resource_buffer_params;
+struct resource_gl_texture_image_params;
+struct resource_gl_texture_params;
+struct resource_gl_buffer_params;
 //------------------------------------------------------------------------------
 /// @brief Resource kind enumeration.
 /// @see resource_loader
@@ -144,7 +144,7 @@ public:
 
     void handle_gl_texture_image(
       const oglplus::texture_target,
-      const resource_texture_image_params&,
+      const resource_gl_texture_image_params&,
       const memory::const_block) noexcept;
     auto add_gl_texture_image_request(identifier_t request_id) noexcept -> bool;
     void add_gl_texture_update_context(
@@ -157,11 +157,11 @@ public:
       video_context&,
       oglplus::texture_target,
       oglplus::texture_unit) noexcept;
-    auto handle_gl_texture_params(const resource_texture_params&) noexcept
+    auto handle_gl_texture_params(const resource_gl_texture_params&) noexcept
       -> bool;
 
     void add_gl_buffer_context(video_context&, oglplus::buffer_target) noexcept;
-    auto handle_gl_buffer_params(const resource_buffer_params&) noexcept
+    auto handle_gl_buffer_params(const resource_gl_buffer_params&) noexcept
       -> bool;
 
     auto update() noexcept -> work_done;
@@ -286,7 +286,7 @@ private:
     void _handle_gl_texture_image(
       const pending_resource_info& source,
       const oglplus::texture_target,
-      const resource_texture_image_params&,
+      const resource_gl_texture_image_params&,
       const memory::const_block) noexcept;
 
     resource_loader& _parent;
@@ -728,6 +728,12 @@ public:
 
     /// @brief Requests a linked GL program object.
     auto request_gl_program(url locator, video_context&) noexcept
+      -> resource_request_result;
+
+    auto request_gl_texture_image(
+      url locator,
+      oglplus::texture_target,
+      const resource_gl_texture_image_params&) noexcept
       -> resource_request_result;
 
     auto request_gl_texture_image(url locator, oglplus::texture_target) noexcept
