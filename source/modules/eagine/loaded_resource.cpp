@@ -409,6 +409,13 @@ public:
           const noexcept {
             return base.set_uniform(loc, value);
         }
+
+        /// @brief Sets the value of a uniform having the specified name.
+        template <typename T>
+        auto set_uniform(const string_view var_name, const T& value)
+          const noexcept {
+            return base.set_uniform(var_name, value);
+        }
     };
 
     /// @brief Signal emmitted when the resource is successfully loaded.

@@ -97,9 +97,7 @@ void example_uv_map::on_video_resize() noexcept {
 void example_uv_map::_on_loaded(const loaded_resource_base& loaded) noexcept {
     if(loaded.is_one_of(_shape, _prog)) {
         if(_shape && _prog) {
-            if(_prog_inputs.apply(_video.gl_api(), _prog, _shape)) {
-                _ctx.cio_print("BLA");
-            }
+            _prog_inputs.apply(_video.gl_api(), _prog, _shape);
         }
     }
 }
@@ -119,9 +117,7 @@ void example_uv_map::_on_shp_loaded(
 void example_uv_map::_on_prg_loaded(
   const gl_program_resource::load_info& loaded) noexcept {
     _prog_inputs = loaded.base.input_bindings;
-    oglplus::uniform_location tex_loc;
-    loaded.get_uniform_location("Tex") >> tex_loc;
-    loaded.set_uniform(tex_loc, 0);
+    loaded.set_uniform("Tex", 0);
     loaded.get_uniform_location("Camera") >> _camera_loc;
     loaded.get_uniform_location("LightDir") >> _light_dir_loc;
 }
