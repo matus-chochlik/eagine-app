@@ -361,10 +361,13 @@ public:
                 _success &= assign_if_fits(data, _params.level);
             } else if(path.front() == "x_offs") {
                 _success &= assign_if_fits(data, _params.x_offs);
+                _params.dimensions = std::max(_params.dimensions, 1);
             } else if(path.front() == "y_offs") {
                 _success &= assign_if_fits(data, _params.y_offs);
+                _params.dimensions = std::max(_params.dimensions, 2);
             } else if(path.front() == "z_offs") {
                 _success &= assign_if_fits(data, _params.z_offs);
+                _params.dimensions = std::max(_params.dimensions, 3);
             } else if(path.front() == "channels") {
                 _success &= assign_if_fits(data, _params.channels);
             } else if(path.front() == "width") {
@@ -517,10 +520,16 @@ public:
                     _success &= assign_if_fits(data, _image_params.level);
                 } else if(path.back() == "x_offs") {
                     _success &= assign_if_fits(data, _image_params.x_offs);
+                    _image_params.dimensions =
+                      std::max(_image_params.dimensions, 1);
                 } else if(path.back() == "y_offs") {
                     _success &= assign_if_fits(data, _image_params.y_offs);
+                    _image_params.dimensions =
+                      std::max(_image_params.dimensions, 2);
                 } else if(path.back() == "z_offs") {
                     _success &= assign_if_fits(data, _image_params.z_offs);
+                    _image_params.dimensions =
+                      std::max(_image_params.dimensions, 3);
                 }
             }
         }
@@ -1049,6 +1058,7 @@ auto pending_resource_info::_finish_gl_program(
 
         const auto& gl = pgps.video.get().gl_api().operations();
         gl.link_program(pgps.prog);
+        gl.use_program(pgps.prog);
         _parent.gl_program_loaded(
           {.request_id = _request_id,
            .locator = _locator,

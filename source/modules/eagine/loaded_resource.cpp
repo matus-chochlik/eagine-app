@@ -402,6 +402,13 @@ public:
         auto get_uniform_location(const string_view var_name) const noexcept {
             return base.get_uniform_location(var_name);
         }
+
+        /// @brief Sets the value of a uniform at the specified location.
+        template <typename T>
+        auto set_uniform(oglplus::uniform_location loc, const T& value)
+          const noexcept {
+            return base.set_uniform(loc, value);
+        }
     };
 
     /// @brief Signal emmitted when the resource is successfully loaded.

@@ -472,6 +472,12 @@ export struct resource_loader_signals {
         auto get_uniform_location(const string_view var_name) const noexcept {
             return this->gl_api().get_uniform_location(name, var_name);
         }
+
+        template <typename T>
+        auto set_uniform(oglplus::uniform_location loc, const T& value)
+          const noexcept {
+            return this->gl_api().set_uniform(name, loc, value);
+        }
     };
 
     /// @brief Emitted when a GL program is successfully created and linked.
