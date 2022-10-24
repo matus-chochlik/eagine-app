@@ -12,125 +12,82 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 // program
 //------------------------------------------------------------------------------
-void torus_program::init(video_context& vc) {
-    const auto prog_src{embed<"prog">("brick_torus.oglpprog")};
-    create(vc)
-      .build(vc, prog_src.unpack(vc.parent()))
-      .use(vc)
-      .query(vc, "LightPosition", light_pos_loc)
-      .query(vc, "CameraPosition", camera_pos_loc)
-      .query(vc, "Camera", camera_loc)
-      .query(vc, "Model", model_loc)
-      .query(vc, "TextureMap", texture_map_loc);
+torus_program::torus_program(execution_context& ctx)
+  : gl_program_resource{url{"json:///Program"}, ctx.main_video(), ctx.loader()} {
+    loaded.connect(make_callable_ref<&torus_program::_on_loaded>(this));
 }
 //------------------------------------------------------------------------------
-void torus_program::set_camera(video_context& vc, orbiting_camera& camera) {
-    set(vc, camera_loc, camera.matrix(vc.surface_aspect()))
-      .set(vc, camera_pos_loc, camera.position());
+void torus_program::_on_loaded(
+  const gl_program_resource::load_info& info) noexcept {
+    info.get_uniform_location("LightPosition") >> light_pos_loc;
+    info.get_uniform_location("CameraPosition") >> camera_pos_loc;
+    info.get_uniform_location("Camera") >> camera_loc;
+    info.get_uniform_location("Model") >> model_loc;
+    info.get_uniform_location("TextureMap") >> texture_map_loc;
+
+    input_bindings = info.base.input_bindings;
+}
+//------------------------------------------------------------------------------
+void torus_program::set_camera(video_context& video, orbiting_camera& camera) {
+    set(video, camera_loc, camera.matrix(video.surface_aspect()));
+    set(video, camera_pos_loc, camera.position());
 }
 //------------------------------------------------------------------------------
 void torus_program::set_model(
-  video_context& vc,
+  video_context& video,
   const oglplus::trfmat<4>& model) {
-    set(vc, model_loc, model);
+    set(video, model_loc, model);
 }
 //------------------------------------------------------------------------------
-void torus_program::set_light(video_context& vc, const oglplus::vec3& light) {
-    set(vc, light_pos_loc, light);
+void torus_program::set_light(video_context& video, const oglplus::vec3& light) {
+    set(video, light_pos_loc, light);
 }
 //------------------------------------------------------------------------------
 void torus_program::set_texture_map(
-  video_context& vc,
+  video_context& video,
   oglplus::gl_types::int_type unit) {
-    set(vc, texture_map_loc, unit);
-}
-//------------------------------------------------------------------------------
-void torus_program::bind_position_location(
-  video_context& vc,
-  oglplus::vertex_attrib_location loc) {
-    bind(vc, loc, "Position");
-}
-//------------------------------------------------------------------------------
-void torus_program::bind_normal_location(
-  video_context& vc,
-  oglplus::vertex_attrib_location loc) {
-    bind(vc, loc, "Normal");
-}
-//------------------------------------------------------------------------------
-void torus_program::bind_tangent_location(
-  video_context& vc,
-  oglplus::vertex_attrib_location loc) {
-    bind(vc, loc, "Tangent");
-}
-//------------------------------------------------------------------------------
-void torus_program::bind_texcoord_location(
-  video_context& vc,
-  oglplus::vertex_attrib_location loc) {
-    bind(vc, loc, "TexCoord");
+    set(video, texture_map_loc, unit);
 }
 //------------------------------------------------------------------------------
 // geometry
 //------------------------------------------------------------------------------
-void torus_geometry::init(video_context& vc) {
-    gl_geometry_and_bindings::init(
-      {shapes::unit_torus(
-         shapes::vertex_attrib_kind::position |
-           shapes::vertex_attrib_kind::normal |
-           shapes::vertex_attrib_kind::tangent |
-           shapes::vertex_attrib_kind::wrap_coord,
-         48,
-         72,
-         0.5F),
-       vc});
-}
+torus_geometry::torus_geometry(execution_context& ctx)
+  : gl_geometry_and_bindings_resource{
+      url{"shape:///unit_torus?"
+          "position=true+normal=true+tangent=true+wrap_coord=true+"
+          "rings=48+sections=72"},
+      ctx.main_video(),
+      ctx.loader()} {}
 //------------------------------------------------------------------------------
 // textures
 //------------------------------------------------------------------------------
-void torus_textures::init(video_context& vc) {
-    const auto& glapi = vc.gl_api();
-    const auto& [gl, GL] = glapi;
-
-    // bricks texture
-    const auto brick_tex_src{embed<"BricksTex">("bricks")};
-
-    gl.gen_textures() >> bricks;
-    gl.active_texture(GL.texture0 + bricks_map_unit());
-    gl.bind_texture(GL.texture_2d_array, bricks);
-    gl.tex_parameter_i(GL.texture_2d_array, GL.texture_mag_filter, GL.linear);
-    gl.tex_parameter_i(
-      GL.texture_2d_array, GL.texture_min_filter, GL.linear_mipmap_linear);
-    gl.tex_parameter_i(GL.texture_2d_array, GL.texture_wrap_s, GL.repeat);
-    gl.tex_parameter_i(GL.texture_2d_array, GL.texture_wrap_t, GL.repeat);
-    glapi.spec_tex_image3d(
-      GL.texture_2d_array,
-      0,
-      0,
-      oglplus::texture_image_block(brick_tex_src.unpack(vc.parent())));
-    gl.generate_mipmap(GL.texture_2d_array);
-
-    // stones texture
-    const auto stones_tex_src{embed<"StonesTex">("stones")};
-
-    gl.gen_textures() >> stones;
-    gl.active_texture(GL.texture0 + stones_map_unit());
-    gl.bind_texture(GL.texture_2d_array, stones);
-    gl.tex_parameter_i(GL.texture_2d_array, GL.texture_mag_filter, GL.linear);
-    gl.tex_parameter_i(
-      GL.texture_2d_array, GL.texture_min_filter, GL.linear_mipmap_linear);
-    gl.tex_parameter_i(GL.texture_2d_array, GL.texture_wrap_s, GL.repeat);
-    gl.tex_parameter_i(GL.texture_2d_array, GL.texture_wrap_t, GL.repeat);
-    glapi.spec_tex_image3d(
-      GL.texture_2d_array,
-      0,
-      0,
-      oglplus::texture_image_block(stones_tex_src.unpack(vc.parent())));
-    gl.generate_mipmap(GL.texture_2d_array);
+brick_texture::brick_texture(execution_context& ctx)
+  : gl_texture_resource{
+      url{"eagitex:///Bricks"},
+      ctx.main_video(),
+      ctx.loader()} {
+    loaded.connect(make_callable_ref<&brick_texture::_on_loaded>(this));
 }
 //------------------------------------------------------------------------------
-void torus_textures::clean_up(video_context& vc) {
-    const auto& gl = vc.gl_api();
-    gl.clean_up(std::move(stones));
-    gl.clean_up(std::move(bricks));
+auto brick_texture::update(execution_context& ctx) noexcept -> work_done {
+    const auto& GL = ctx.main_video().gl_api().constants();
+    return gl_texture_resource::update(
+      ctx.main_video(),
+      ctx.loader(),
+      GL.texture_2d_array,
+      GL.texture0 + tex_unit());
+}
+//------------------------------------------------------------------------------
+void brick_texture::_on_loaded(
+  const gl_texture_resource::load_info& info) noexcept {
+    const auto& [gl, GL] = info.base.gl_api();
+
+    gl.tex_parameter_i(
+      GL.texture_2d_array, GL.texture_min_filter, GL.linear_mipmap_linear);
+    gl.tex_parameter_i(GL.texture_2d_array, GL.texture_mag_filter, GL.linear);
+    gl.tex_parameter_i(GL.texture_2d_array, GL.texture_wrap_s, GL.repeat);
+    gl.tex_parameter_i(GL.texture_2d_array, GL.texture_wrap_t, GL.repeat);
+    gl.generate_mipmap(GL.texture_2d_array);
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

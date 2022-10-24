@@ -107,6 +107,11 @@ public:
         }
     }
 
+    /// @brief Clean's up this resource.
+    void clean_up(execution_context& ctx) {
+        clean_up(ctx.main_video(), ctx.loader());
+    }
+
     /// @brief Constructor specifying the locator and initializing the resource.
     loaded_resource(url locator, video_context& video, resource_loader& loader)
       : loaded_resource{std::move(locator)} {
@@ -230,6 +235,11 @@ public:
         }
     }
 
+    /// @brief Clean's up this resource.
+    void clean_up(execution_context& ctx) {
+        clean_up(ctx.loader());
+    }
+
     /// @brief Constructor specifying the locator and initializing the resource.
     loaded_resource(url locator, resource_loader& loader)
       : loaded_resource{std::move(locator)} {
@@ -322,6 +332,11 @@ public:
             loader.gl_shader_loaded.disconnect(_sig_key);
             _sig_key = {};
         }
+    }
+
+    /// @brief Clean's up this resource.
+    void clean_up(execution_context& ctx) {
+        clean_up(ctx.main_video(), ctx.loader());
     }
 
     /// @brief Constructor specifying the locator and initializing the resource.
@@ -637,6 +652,11 @@ public:
             loader.gl_texture_loaded.disconnect(_sig_key);
             _sig_key = {};
         }
+    }
+
+    /// @brief Clean's up this resource.
+    void clean_up(execution_context& ctx) {
+        clean_up(ctx.main_video(), ctx.loader());
     }
 
     /// @brief Constructor specifying the locator and initializing the resource.

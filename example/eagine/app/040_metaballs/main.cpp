@@ -97,7 +97,9 @@ void example::update() noexcept {
 //------------------------------------------------------------------------------
 void example::clean_up() noexcept {
     _bg.clean_up(_video);
-    _cleanup.clear();
+    _mball_prog.clean_up(_ctx);
+    _field_prog.clean_up(_ctx);
+    _srfce_prog.clean_up(_ctx);
     _video.end();
 }
 //------------------------------------------------------------------------------

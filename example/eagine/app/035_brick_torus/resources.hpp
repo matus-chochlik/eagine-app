@@ -18,20 +18,19 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 // program
 //------------------------------------------------------------------------------
-class torus_program : public gpu_program {
+class torus_program : public gl_program_resource {
 public:
-    void init(video_context&);
+    torus_program(execution_context&);
     void set_camera(video_context&, orbiting_camera& camera);
     void set_model(video_context&, const oglplus::trfmat<4>&);
     void set_light(video_context&, const oglplus::vec3&);
     void set_texture_map(video_context&, oglplus::gl_types::int_type unit);
 
-    void bind_position_location(video_context&, oglplus::vertex_attrib_location);
-    void bind_normal_location(video_context&, oglplus::vertex_attrib_location);
-    void bind_tangent_location(video_context&, oglplus::vertex_attrib_location);
-    void bind_texcoord_location(video_context&, oglplus::vertex_attrib_location);
+    oglplus::program_input_bindings input_bindings;
 
 private:
+    void _on_loaded(const gl_program_resource::load_info&) noexcept;
+
     oglplus::uniform_location light_pos_loc;
     oglplus::uniform_location camera_pos_loc;
     oglplus::uniform_location camera_loc;
@@ -41,29 +40,25 @@ private:
 //------------------------------------------------------------------------------
 // geometry
 //------------------------------------------------------------------------------
-class torus_geometry : public gl_geometry_and_bindings {
+class torus_geometry : public gl_geometry_and_bindings_resource {
 public:
-    void init(video_context&);
+    torus_geometry(execution_context&);
 };
 //------------------------------------------------------------------------------
 // textures
 //------------------------------------------------------------------------------
-class torus_textures {
+class brick_texture : public gl_texture_resource {
 public:
-    void init(video_context&);
-    void clean_up(video_context&);
+    brick_texture(execution_context&);
 
-    static auto bricks_map_unit() noexcept {
+    auto update(execution_context&) noexcept -> work_done;
+
+    static auto tex_unit() noexcept {
         return oglplus::gl_types::int_type(0);
     }
 
-    static auto stones_map_unit() noexcept {
-        return oglplus::gl_types::int_type(1);
-    }
-
 private:
-    oglplus::owned_texture_name bricks;
-    oglplus::owned_texture_name stones;
+    void _on_loaded(const gl_texture_resource::load_info&) noexcept;
 };
 //------------------------------------------------------------------------------
 } // namespace eagine::app

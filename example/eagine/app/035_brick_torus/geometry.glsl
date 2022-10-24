@@ -6,7 +6,7 @@ uniform mat4 Camera;
 uniform vec3 CameraPosition;
 
 const float WindingDirection = 1;
-const float ShellHeight = 0.04;
+const float ShellHeight = 0.02;
 
 in vec3 vertNormal[3];
 in vec3 vertTangent[3];

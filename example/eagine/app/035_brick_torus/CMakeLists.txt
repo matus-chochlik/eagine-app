@@ -3,15 +3,22 @@
 # See accompanying file LICENSE_1_0.txt or copy at
 #  http://www.boost.org/LICENSE_1_0.txt
 #
-oglplus_add_glsl_program(brick_torus)
-
 add_executable(app-035_brick_torus main.cpp resources.cpp)
 add_dependencies(app-035_brick_torus eagine-app-examples)
 
 eagine_embed_target_resources(
 	TARGET app-035_brick_torus
-	INPUT_TARGETS brick_torus bricks stones
+	INPUT_TARGETS bricks stones
+	RESOURCES
+		VertShader "vertex.glsl"
+		GeomShader "geometry.glsl"
+		FragShader "fragment.glsl"
+		Program    "prog.json"
+		BricksColr "bricks_color_hmap.eagitexi"
+		BricksNMap "bricks_nmap_hmap.eagitexi"
+		Bricks     "bricks.eagitex"
 	PACKED
+	ENABLE_SEARCH
 )
 eagine_add_exe_analysis(app-035_brick_torus)
 
