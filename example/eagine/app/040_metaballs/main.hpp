@@ -37,6 +37,10 @@ public:
         return _video;
     }
 
+    auto loader() noexcept -> auto& {
+        return _ctx.loader();
+    }
+
     auto camera() noexcept -> auto& {
         return _camera;
     }
@@ -50,17 +54,24 @@ public:
     }
 
 private:
+    void _on_loaded(const gl_program_resource::load_info&) noexcept;
+
+    auto _load_handler() noexcept {
+        return make_callable_ref<&example::_on_loaded>(this);
+    }
+
     cleanup_group _cleanup;
     execution_context& _ctx;
     video_context& _video;
     background_icosahedron _bg;
-    timeout _is_done{std::chrono::seconds{60}};
+    volume_domain _volume;
 
-    orbiting_camera _camera;
     metaball_program _mball_prog;
     field_program _field_prog;
     surface_program _srfce_prog;
-    volume_domain _volume;
+
+    orbiting_camera _camera;
+    timeout _is_done{std::chrono::seconds{60}};
 };
 
 } // namespace eagine::app

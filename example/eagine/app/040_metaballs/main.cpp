@@ -13,24 +13,15 @@ namespace eagine::app {
 example::example(execution_context& ec, video_context& vc)
   : _ctx{ec}
   , _video{vc}
-  , _bg{_video, {0.5F, 0.5F, 0.5F, 1.F}, {0.25F, 0.25F, 0.25F, 0.0F}, 1.F} {
+  , _bg{_video, {0.5F, 0.5F, 0.5F, 1.F}, {0.25F, 0.25F, 0.25F, 0.0F}, 1.F}
+  , _mball_prog{*this}
+  , _field_prog{*this}
+  , _srfce_prog{*this} {
+    _mball_prog.loaded.connect(_load_handler());
+    _field_prog.loaded.connect(_load_handler());
+    _srfce_prog.loaded.connect(_load_handler());
 
     _volume.init(*this);
-
-    _mball_prog.init(*this);
-    _mball_prog.bind_metaballs(*this, _volume.metaballs_binding());
-
-    _field_prog.init(*this);
-    _field_prog.bind_field(*this, _volume.field_binding());
-    _field_prog.bind_metaballs(*this, _volume.metaballs_binding());
-    _field_prog.set_plane_count(*this, _volume.plane_count());
-
-    _srfce_prog.init(*this);
-    _srfce_prog.bind_corner_location(*this, _volume.corner_loc());
-    _srfce_prog.bind_field(*this, _volume.field_binding());
-    _srfce_prog.bind_configs(*this, _volume.configs_binding());
-    _srfce_prog.set_plane_count(*this, _volume.plane_count());
-    _srfce_prog.set_div_count(*this, _volume.div_count());
 
     _camera.set_near(0.1F)
       .set_far(50.F)
@@ -47,6 +38,27 @@ void example::on_video_resize() noexcept {
     gl.viewport[_video.surface_size()];
 }
 //------------------------------------------------------------------------------
+void example::_on_loaded(const gl_program_resource::load_info& loaded) noexcept {
+    if(loaded.resource.is(_mball_prog)) {
+        loaded.shader_storage_block_binding(
+          "MetaballBlock", _volume.metaballs_binding());
+    } else if(loaded.resource.is(_field_prog)) {
+        loaded.set_uniform("PlaneCount", _volume.plane_count());
+        loaded.shader_storage_block_binding(
+          "FieldBlock", _volume.field_binding());
+        loaded.shader_storage_block_binding(
+          "MetaballBlock", _volume.metaballs_binding());
+    } else if(loaded.resource.is(_srfce_prog)) {
+        loaded.set_uniform("PlaneCount", _volume.plane_count());
+        loaded.set_uniform("DivCount", _volume.div_count());
+        loaded.shader_storage_block_binding(
+          "FieldBlock", _volume.field_binding());
+        loaded.shader_storage_block_binding(
+          "ConfigsBlock", _volume.configs_binding());
+        _srfce_prog.bind_corner_location(*this, _volume.corner_loc());
+    }
+}
+//------------------------------------------------------------------------------
 void example::update() noexcept {
     auto& state = _ctx.state();
     if(state.is_active()) {
@@ -56,25 +68,29 @@ void example::update() noexcept {
         _camera.idle_update(state, 7.F);
     }
 
-    const auto& glapi = _video.gl_api();
-    const auto& [gl, GL] = glapi;
+    if(_mball_prog && _field_prog && _srfce_prog) {
+        const auto& glapi = _video.gl_api();
+        const auto& [gl, GL] = glapi;
 
-    _mball_prog.use(*this);
-    _mball_prog.prepare_frame(*this);
-    gl.dispatch_compute(1, 1, 1);
+        _mball_prog.use(ctx());
+        gl.dispatch_compute(1, 1, 1);
 
-    _field_prog.use(*this);
-    _field_prog.prepare_frame(*this);
-    _volume.compute(*this);
+        _field_prog.use(ctx());
+        _volume.compute(*this);
 
-    _bg.clear(_video, _camera);
+        _bg.clear(_video, _camera);
 
-    gl.enable(GL.depth_test);
-    gl.enable(GL.cull_face);
+        gl.enable(GL.depth_test);
+        gl.enable(GL.cull_face);
 
-    _srfce_prog.use(*this);
-    _srfce_prog.prepare_frame(*this);
-    _volume.draw(*this);
+        _srfce_prog.use(ctx());
+        _srfce_prog.prepare_frame(*this);
+        _volume.draw(*this);
+    } else {
+        _mball_prog.update(ctx());
+        _field_prog.update(ctx());
+        _srfce_prog.update(ctx());
+    }
 
     _video.commit();
 }

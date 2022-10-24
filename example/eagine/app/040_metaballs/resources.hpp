@@ -69,50 +69,27 @@ private:
 //------------------------------------------------------------------------------
 // programs
 //------------------------------------------------------------------------------
-class metaball_program {
+class metaball_program : public gl_program_resource {
 public:
-    void init(example&);
-    void prepare_frame(example&);
-    void use(example&);
-
-    void bind_metaballs(example&, oglplus::gl_types::uint_type);
-
-private:
-    oglplus::owned_program_name _prog;
+    metaball_program(example&);
 };
 //------------------------------------------------------------------------------
-class field_program {
+class field_program : public gl_program_resource {
 public:
-    void init(example&);
-    void prepare_frame(example&);
-    void use(example&);
-
-    void bind_field(example&, oglplus::gl_types::uint_type);
-    void bind_metaballs(example&, oglplus::gl_types::uint_type);
-    void set_plane_count(example&, oglplus::gl_types::int_type);
-
-private:
-    oglplus::owned_program_name _prog;
-    oglplus::uniform_location _plane_count_loc;
+    field_program(example&);
 };
 //------------------------------------------------------------------------------
-class surface_program {
+class surface_program : public gl_program_resource {
 public:
-    void init(example&);
+    surface_program(example&);
     void prepare_frame(example&);
     void bind_corner_location(example&, oglplus::vertex_attrib_location);
-    void use(example&);
-
-    void bind_field(example&, oglplus::gl_types::uint_type);
-    void bind_configs(example&, oglplus::gl_types::uint_type);
-    void set_plane_count(example&, oglplus::gl_types::int_type);
-    void set_div_count(example&, oglplus::gl_types::int_type);
 
 private:
-    oglplus::owned_program_name _prog;
+    void _on_loaded(const gl_program_resource::load_info&) noexcept;
+
     oglplus::uniform_location _camera_mat_loc;
     oglplus::uniform_location _perspective_mat_loc;
-    oglplus::uniform_location _plane_count_loc;
     oglplus::uniform_location _div_count_loc;
 };
 //------------------------------------------------------------------------------
