@@ -486,6 +486,27 @@ export struct resource_loader_signals {
             get_uniform_location(var_name) >> loc;
             return set_uniform(loc, value);
         }
+
+        auto get_shader_storage_block_index(
+          const string_view var_name) const noexcept {
+            return this->gl_api().get_shader_storage_block_index(
+              name, var_name);
+        }
+
+        auto shader_storage_block_binding(
+          oglplus::shader_storage_block_index index,
+          oglplus::gl_types::uint_type binding) const noexcept {
+            return this->gl_api().shader_storage_block_binding(
+              name, index, binding);
+        }
+
+        auto shader_storage_block_binding(
+          const string_view var_name,
+          oglplus::gl_types::uint_type binding) const noexcept {
+            oglplus::shader_storage_block_index index;
+            get_shader_storage_block_index(var_name) >> index;
+            return shader_storage_block_binding(index, binding);
+        }
     };
 
     /// @brief Emitted when a GL program is successfully created and linked.
@@ -538,31 +559,30 @@ export struct resource_loader_signals {
 };
 //------------------------------------------------------------------------------
 template <typename T>
-concept resource_cancelled_observer =
-  requires(
-    T v,
-    identifier_t request_id,
-    resource_kind kind,
-    const url& locator) {
-      v.handle_resource_cancelled(request_id, kind, locator);
-  };
+concept resource_cancelled_observer = requires(
+  T v,
+  identifier_t request_id,
+  resource_kind kind,
+  const url& locator) {
+    v.handle_resource_cancelled(request_id, kind, locator);
+};
 
 template <typename T>
-concept resource_blob_stream_data_appended_observer =
-  requires(
-    T v,
-    identifier_t request_id,
-    const span_size_t offset,
-    const memory::span<const memory::const_block> data,
-    const msgbus::blob_info& binfo) {
-      v.handle_blob_stream_data_appended(request_id, offset, data, binfo);
-  };
+concept resource_blob_stream_data_appended_observer = requires(
+  T v,
+  identifier_t request_id,
+  const span_size_t offset,
+  const memory::span<const memory::const_block> data,
+  const msgbus::blob_info& binfo) {
+    v.handle_blob_stream_data_appended(request_id, offset, data, binfo);
+};
 
 template <typename T>
-concept resource_shape_generator_loaded_observer =
-  requires(T v, const resource_loader_signals::shape_generator_load_info& info) {
-      v.handle_shape_generator_loaded(info);
-  };
+concept resource_shape_generator_loaded_observer = requires(
+  T v,
+  const resource_loader_signals::shape_generator_load_info& info) {
+    v.handle_shape_generator_loaded(info);
+};
 
 template <typename T>
 concept resource_gl_shape_loaded_observer =
@@ -571,12 +591,11 @@ concept resource_gl_shape_loaded_observer =
   };
 
 template <typename T>
-concept resource_gl_geometry_and_bindings_loaded_observer =
-  requires(
-    T v,
-    const resource_loader_signals::gl_geometry_and_bindings_load_info& info) {
-      v.handle_gl_geometry_and_bindings_loaded(info);
-  };
+concept resource_gl_geometry_and_bindings_loaded_observer = requires(
+  T v,
+  const resource_loader_signals::gl_geometry_and_bindings_load_info& info) {
+    v.handle_gl_geometry_and_bindings_loaded(info);
+};
 
 template <typename T>
 concept resource_value_tree_loaded_observer =

@@ -155,6 +155,20 @@ public:
         return false;
     }
 
+    /// @brief Updates the resource, possibly doing resource load request.
+    auto update(execution_context& ctx, span_size_t draw_var_idx = 0)
+      -> work_done {
+        return update(ctx.main_video(), ctx.loader(), draw_var_idx);
+    }
+
+    /// @brief Updates the resource, possibly doing resource load request.
+    auto update(
+      execution_context& ctx,
+      const oglplus::vertex_attrib_bindings& bindings,
+      span_size_t draw_var_idx = 0) -> work_done {
+        return update(ctx.main_video(), ctx.loader(), bindings, draw_var_idx);
+    }
+
 private:
     void _handle_gl_geometry_and_bindings_loaded(
       const resource_loader::gl_geometry_and_bindings_load_info& info) noexcept {
@@ -242,6 +256,11 @@ public:
             }
         }
         return false;
+    }
+
+    /// @brief Updates the resource, possibly doing resource load request.
+    auto update(execution_context& ctx) -> work_done {
+        return update(ctx.loader());
     }
 
 private:
@@ -348,6 +367,17 @@ public:
         return false;
     }
 
+    /// @brief Updates the resource, possibly doing resource load request.
+    auto update(execution_context& ctx, oglplus::shader_type type)
+      -> work_done {
+        return update(ctx.main_video(), ctx.loader(), type);
+    }
+
+    /// @brief Updates the resource, possibly doing resource load request.
+    auto update(execution_context& ctx) -> work_done {
+        return update(ctx.main_video(), ctx.loader());
+    }
+
 private:
     void _handle_gl_shader_loaded(
       const resource_loader::gl_shader_load_info& info) noexcept {
@@ -416,6 +446,26 @@ public:
           const noexcept {
             return base.set_uniform(var_name, value);
         }
+
+        /// @brief Returns the location of a storge block with the specified name.
+        auto get_shader_storage_block_index(
+          const string_view var_name) const noexcept {
+            return base.get_shader_storage_block_index(var_name);
+        }
+
+        /// @brief Changes the buffer binding of a shader storage block.
+        auto shader_storage_block_binding(
+          oglplus::shader_storage_block_index index,
+          oglplus::gl_types::uint_type binding) const noexcept {
+            return base.shader_storage_block_binding(index, binding);
+        }
+
+        /// @brief Changes the buffer binding of a shader storage block.
+        auto shader_storage_block_binding(
+          const string_view var_name,
+          oglplus::gl_types::uint_type binding) const noexcept {
+            return base.shader_storage_block_binding(var_name, binding);
+        }
     };
 
     /// @brief Signal emmitted when the resource is successfully loaded.
@@ -442,6 +492,11 @@ public:
         return use(video.gl_api());
     }
 
+    /// @brief Makes the current program active within the given execution context.
+    auto use(execution_context& ctx) noexcept -> loaded_resource& {
+        return use(ctx.main_video());
+    }
+
     /// @brief Sets the value of a uniform variable
     template <typename T>
     auto set(
@@ -459,6 +514,23 @@ public:
         return set(video.gl_api(), loc, std::forward<T>(value));
     }
 
+    /// @brief Binds the location of a input attribute variable.
+    auto bind(
+      const oglplus::gl_api& glapi,
+      oglplus::vertex_attrib_location loc,
+      const string_view var_name) -> loaded_resource& {
+        glapi.bind_attrib_location(*this, loc, var_name);
+        return *this;
+    }
+
+    /// @brief Binds the location of a input attribute variable.
+    auto bind(
+      video_context& video,
+      oglplus::vertex_attrib_location loc,
+      const string_view var_name) -> loaded_resource& {
+        return bind(video.gl_api(), loc, var_name);
+    }
+
     /// @brief Clean's up this resource.
     void clean_up(video_context& video, resource_loader& loader) {
         video.gl_api().clean_up(std::move(_res()));
@@ -466,6 +538,11 @@ public:
             loader.gl_program_loaded.disconnect(_sig_key);
             _sig_key = {};
         }
+    }
+
+    /// @brief Clean's up this resource.
+    void clean_up(execution_context& ctx) {
+        return clean_up(ctx.main_video(), ctx.loader());
     }
 
     /// @brief Constructor specifying the locator and initializing the resource.
@@ -494,6 +571,11 @@ public:
             }
         }
         return false;
+    }
+
+    /// @brief Updates the resource, possibly doing resource load request.
+    auto update(execution_context& ctx) -> work_done {
+        return update(ctx.main_video(), ctx.loader());
     }
 
 private:
@@ -588,6 +670,14 @@ public:
             }
         }
         return false;
+    }
+
+    /// @brief Updates the resource, possibly doing resource load request.
+    auto update(
+      execution_context& ctx,
+      oglplus::texture_target target,
+      oglplus::texture_unit unit) -> work_done {
+        return update(ctx.main_video(), ctx.loader(), target, unit);
     }
 
 private:

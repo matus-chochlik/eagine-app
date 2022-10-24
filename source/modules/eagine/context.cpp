@@ -271,6 +271,13 @@ public:
         return nullptr;
     }
 
+    /// @brief Returns the main video context.
+    auto main_video() const noexcept -> video_context& {
+        assert(!_video_contexts.empty());
+        assert(_video_contexts.front());
+        return *_video_contexts.front();
+    }
+
     /// @brief Returns the count of created audio contexts.
     auto audio_ctx_count() const noexcept {
         return span_size(_audio_contexts.size());
@@ -283,6 +290,13 @@ public:
             return _audio_contexts[integer(index)].get();
         }
         return nullptr;
+    }
+
+    /// @brief Returns the main audio context.
+    auto main_audio() const noexcept -> audio_context& {
+        assert(!_audio_contexts.empty());
+        assert(_audio_contexts.front());
+        return *_audio_contexts.front();
     }
 
     /// @brief Connect the specified logical input to a callable handler reference.
