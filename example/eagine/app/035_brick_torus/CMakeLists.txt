@@ -16,6 +16,9 @@ eagine_embed_target_resources(
 		BricksColr "bricks_color_hmap.eagitexi"
 		BricksNMap "bricks_nmap_hmap.eagitexi"
 		Bricks     "bricks.eagitex"
+		StonesColr "stones_color_hmap.eagitexi"
+		StonesNMap "stones_nmap_hmap.eagitexi"
+		Stones     "stones.eagitex"
 	PACKED
 	ENABLE_SEARCH
 )

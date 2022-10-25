@@ -16,12 +16,7 @@ oglplus_add_texture(barrel_1_rough)
 oglplus_add_texture(wheelcart_1_color)
 oglplus_add_texture(wheelcart_1_aoccl)
 
-oglplus_add_texture(pumpkin)
-
 oglplus_add_texture(monkey)
-
-oglplus_add_texture(bricks)
-oglplus_add_texture(stones)
 
 oglplus_add_texture(cube_map)
 oglplus_add_texture(cloudy_day)

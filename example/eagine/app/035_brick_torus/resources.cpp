@@ -61,15 +61,16 @@ torus_geometry::torus_geometry(execution_context& ctx)
 //------------------------------------------------------------------------------
 // textures
 //------------------------------------------------------------------------------
-brick_texture::brick_texture(execution_context& ctx)
-  : gl_texture_resource{
-      url{"eagitex:///Bricks"},
-      ctx.main_video(),
-      ctx.loader()} {
-    loaded.connect(make_callable_ref<&brick_texture::_on_loaded>(this));
+example_texture::example_texture(
+  url locator,
+  oglplus::gl_types::int_type tex_unit,
+  execution_context& ctx)
+  : gl_texture_resource{std::move(locator), ctx.main_video(), ctx.loader()}
+  , _tex_unit{tex_unit} {
+    loaded.connect(make_callable_ref<&example_texture::_on_loaded>(this));
 }
 //------------------------------------------------------------------------------
-auto brick_texture::update(execution_context& ctx) noexcept -> work_done {
+auto example_texture::update(execution_context& ctx) noexcept -> work_done {
     const auto& GL = ctx.main_video().gl_api().constants();
     return gl_texture_resource::update(
       ctx.main_video(),
@@ -78,7 +79,7 @@ auto brick_texture::update(execution_context& ctx) noexcept -> work_done {
       GL.texture0 + tex_unit());
 }
 //------------------------------------------------------------------------------
-void brick_texture::_on_loaded(
+void example_texture::_on_loaded(
   const gl_texture_resource::load_info& info) noexcept {
     const auto& [gl, GL] = info.base.gl_api();
 
@@ -89,5 +90,11 @@ void brick_texture::_on_loaded(
     gl.tex_parameter_i(GL.texture_2d_array, GL.texture_wrap_t, GL.repeat);
     gl.generate_mipmap(GL.texture_2d_array);
 }
+//------------------------------------------------------------------------------
+brick_texture::brick_texture(execution_context& ctx)
+  : example_texture{url{"eagitex:///Bricks"}, 0, ctx} {}
+//------------------------------------------------------------------------------
+stone_texture::stone_texture(execution_context& ctx)
+  : example_texture{url{"eagitex:///Stones"}, 1, ctx} {}
 //------------------------------------------------------------------------------
 } // namespace eagine::app

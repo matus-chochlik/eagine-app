@@ -1,0 +1,13 @@
+{"levels":1
+,"width":1024
+,"height":1024
+,"depth":2
+,"channels":4
+,"data_type":"unsigned_byte"
+,"format":"rgba"
+,"iformat":"rgba8"
+,"label":"stones"
+,"images":
+[{"url":"eagires:///StonesColr","z_offs":0}
+,{"url":"eagires:///StonesNMap","z_offs":1}]
+}

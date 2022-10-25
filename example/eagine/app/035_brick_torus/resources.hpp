@@ -47,18 +47,29 @@ public:
 //------------------------------------------------------------------------------
 // textures
 //------------------------------------------------------------------------------
-class brick_texture : public gl_texture_resource {
+class example_texture : public gl_texture_resource {
 public:
-    brick_texture(execution_context&);
+    example_texture(url, oglplus::gl_types::int_type, execution_context&);
 
     auto update(execution_context&) noexcept -> work_done;
 
-    static auto tex_unit() noexcept {
-        return oglplus::gl_types::int_type(0);
+    auto tex_unit() const noexcept {
+        return _tex_unit;
     }
 
 private:
     void _on_loaded(const gl_texture_resource::load_info&) noexcept;
+    oglplus::gl_types::int_type _tex_unit;
+};
+//------------------------------------------------------------------------------
+class brick_texture : public example_texture {
+public:
+    brick_texture(execution_context&);
+};
+//------------------------------------------------------------------------------
+class stone_texture : public example_texture {
+public:
+    stone_texture(execution_context&);
 };
 //------------------------------------------------------------------------------
 } // namespace eagine::app

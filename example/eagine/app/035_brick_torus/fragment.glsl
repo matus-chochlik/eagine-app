@@ -63,9 +63,9 @@ void main() {
 			nml = vec3(2.0*(nml.x-0.5), 2.0*(nml.y-0.5), nml.z);
 			nml = normalize(t*nml.x+b*nml.y+n*nml.z);
 			float ldot = max(dot(ldir, nml)+0.1, 0.0);
-			float ambi = mix(0.05, 0.55, height);
-			float diff = 1.4 * sqrt(ldot);
-			float lght = mix(ambi, mix(ambi, diff, max(sqrt(height), ldot)), 0.45);
+			float ambi = mix(0.05, 0.45, height);
+			float diff = 1.8 * sqrt(ldot);
+			float lght = mix(ambi, mix(ambi, diff, sqrt(ldot*max(height, ldot))), 0.5);
 			fragColor = clr * lght;
 			return;
 		}

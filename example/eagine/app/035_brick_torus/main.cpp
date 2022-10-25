@@ -40,6 +40,7 @@ private:
     torus_program _prog;
     torus_geometry _torus;
     brick_texture _bricks;
+    stone_texture _stones;
 
     orbiting_camera _camera;
     timeout _is_done{std::chrono::seconds{60}};
@@ -51,10 +52,12 @@ example_parallax::example_parallax(execution_context& ec, video_context& vc)
   , _loader{_ctx.loader()}
   , _prog{_ctx}
   , _torus{_ctx}
-  , _bricks{_ctx} {
+  , _bricks{_ctx}
+  , _stones{_ctx} {
     _prog.base_loaded.connect(_load_handler());
     _torus.base_loaded.connect(_load_handler());
     _bricks.base_loaded.connect(_load_handler());
+    _stones.base_loaded.connect(_load_handler());
 
     _camera.set_near(0.1F)
       .set_far(50.F)
@@ -99,7 +102,7 @@ void example_parallax::update() noexcept {
         _camera.idle_update(state, 17.F);
     }
 
-    if(_prog && _torus && _bricks) {
+    if(_prog && _torus && _bricks && _stones) {
         const auto rad = radians_(state.frame_time().value());
         const auto& glapi = _video.gl_api();
         const auto& [gl, GL] = glapi;
@@ -125,6 +128,7 @@ void example_parallax::update() noexcept {
         _prog.update(_ctx);
         _torus.update(_ctx);
         _bricks.update(_ctx);
+        _stones.update(_ctx);
     }
 
     _video.commit();
