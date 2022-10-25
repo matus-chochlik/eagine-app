@@ -22,23 +22,15 @@ example::example(execution_context& ec, video_context& vc)
       {{-20.F, -10.F, -10.F},
        {20.F, -10.F, -10.F},
        {0.F, 10.F, 0.F},
-       {0.F, -10.F, 10.F}}})} {
-
-    const auto& glapi = _video.gl_api();
-    const auto& [gl, GL] = glapi;
+       {0.F, -10.F, 10.F}}})}
+  , _emit_prog{*this}
+  , _draw_prog{*this} {
+    _emit_prog.base_loaded.connect(
+      make_callable_ref<&example::_on_resource_loaded>(this));
+    _draw_prog.base_loaded.connect(
+      make_callable_ref<&example::_on_resource_loaded>(this));
 
     _particles.init(*this);
-
-    _emit_prog.init(*this);
-    _emit_prog.bind_random(*this, _particles.random_binding());
-    _emit_prog.bind_offsets(*this, _particles.offsets_binding());
-    _emit_prog.bind_velocities(*this, _particles.velocities_binding());
-    _emit_prog.bind_ages(*this, _particles.ages_binding());
-
-    _draw_prog.init(*this);
-    _draw_prog.bind_origin_location(*this, _particles.origin_loc());
-    _draw_prog.bind_offsets(*this, _particles.offsets_binding());
-    _draw_prog.bind_ages(*this, _particles.ages_binding());
 
     _camera.set_near(0.1F)
       .set_far(200.F)
@@ -46,11 +38,28 @@ example::example(execution_context& ec, video_context& vc)
       .set_orbit_max(40.0F)
       .set_fov(right_angle_());
 
-    gl.enable(GL.depth_test);
-    gl.disable(GL.cull_face);
-
     _camera.connect_inputs(ec).basic_input_mapping(ec);
     ec.setup_inputs().switch_input_mapping();
+
+    const auto& glapi = _video.gl_api();
+    const auto& [gl, GL] = glapi;
+
+    gl.enable(GL.depth_test);
+    gl.disable(GL.cull_face);
+}
+//------------------------------------------------------------------------------
+void example::_on_resource_loaded(const loaded_resource_base& loaded) noexcept {
+    if(loaded.is(_emit_prog)) {
+        _emit_prog.bind_random(*this, _particles.random_binding());
+        _emit_prog.bind_offsets(*this, _particles.offsets_binding());
+        _emit_prog.bind_velocities(*this, _particles.velocities_binding());
+        _emit_prog.bind_ages(*this, _particles.ages_binding());
+    }
+    if(loaded.is(_draw_prog)) {
+        _draw_prog.bind_origin_location(*this, _particles.origin_loc());
+        _draw_prog.bind_offsets(*this, _particles.offsets_binding());
+        _draw_prog.bind_ages(*this, _particles.ages_binding());
+    }
 }
 //------------------------------------------------------------------------------
 void example::on_video_resize() noexcept {
@@ -69,20 +78,25 @@ void example::update() noexcept {
 
     _bg.clear(_video, _camera);
 
-    _emit_prog.use(*this);
-    _emit_prog.prepare_frame(*this);
-    _particles.emit(*this);
+    if(_emit_prog && _draw_prog) {
+        _emit_prog.prepare_frame(*this);
+        _particles.emit(*this);
 
-    _draw_prog.use(*this);
-    _draw_prog.prepare_frame(*this);
-    _particles.draw(*this);
+        _draw_prog.prepare_frame(*this);
+        _particles.draw(*this);
+    } else {
+        _emit_prog.update(ctx());
+        _draw_prog.update(ctx());
+    }
 
     _video.commit();
 }
 //------------------------------------------------------------------------------
 void example::clean_up() noexcept {
     _bg.clean_up(_video);
-    _cleanup.clear();
+    _particles.clean_up(*this);
+    _draw_prog.clean_up(_ctx);
+    _emit_prog.clean_up(_ctx);
     _video.end();
 }
 //------------------------------------------------------------------------------

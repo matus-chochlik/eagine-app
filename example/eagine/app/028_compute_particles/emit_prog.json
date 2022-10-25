@@ -1,0 +1,3 @@
+{"shaders":
+[{"url":"glsl:///CompShader","type":"compute"}]
+}

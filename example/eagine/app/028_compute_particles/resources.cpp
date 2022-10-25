@@ -17,14 +17,12 @@ void particles::init(example& e) {
     const auto& [gl, GL] = e.video().gl_api();
 
     // vao
-    gl.delete_vertex_arrays.later_by(e, _vao);
     gl.gen_vertex_arrays() >> _vao;
     gl.bind_vertex_array(_vao);
 
     // origin
     const auto origin_data = GL.float_.array(0.F, 0.F, 0.F);
 
-    gl.delete_buffers.later_by(e, _origin);
     gl.gen_buffers() >> _origin;
     gl.bind_buffer(GL.array_buffer, _origin);
     gl.object_label(_origin, "origin");
@@ -48,7 +46,6 @@ void particles::init(example& e) {
     init_data.resize(std_size(_count * 16));
     e.ctx().random_uniform_01(cover(init_data));
 
-    gl.delete_buffers.later_by(e, _random);
     gl.gen_buffers() >> _random;
     gl.bind_buffer(GL.shader_storage_buffer, _random);
     gl.object_label(_random, "random");
@@ -58,7 +55,6 @@ void particles::init(example& e) {
     // offsets
     init_data.resize(std_size(_count * 4));
     fill(cover(init_data), 0.F);
-    gl.delete_buffers.later_by(e, _offsets);
     gl.gen_buffers() >> _offsets;
     gl.bind_buffer(GL.shader_storage_buffer, _offsets);
     gl.object_label(_offsets, "offsets");
@@ -68,7 +64,6 @@ void particles::init(example& e) {
     // velocities
     init_data.resize(std_size(_count * 4));
     fill(cover(init_data), 0.F);
-    gl.delete_buffers.later_by(e, _velocities);
     gl.gen_buffers() >> _velocities;
     gl.bind_buffer(GL.shader_storage_buffer, _velocities);
     gl.object_label(_velocities, "velocities");
@@ -79,7 +74,6 @@ void particles::init(example& e) {
     // ages
     init_data.resize(std_size(_count));
     fill(cover(init_data), 1.F);
-    gl.delete_buffers.later_by(e, _ages);
     gl.gen_buffers() >> _ages;
     gl.bind_buffer(GL.shader_storage_buffer, _ages);
     gl.object_label(_ages, "ages");
@@ -100,27 +94,34 @@ void particles::draw(example& e) {
     gl.draw_arrays_instanced(GL.points, 0, 1, signedness_cast(_count));
 }
 //------------------------------------------------------------------------------
+void particles::clean_up(example& e) noexcept {
+    const auto& gl = e.video().gl_api().operations();
+    gl.delete_buffers(std::move(_ages));
+    gl.delete_buffers(std::move(_velocities));
+    gl.delete_buffers(std::move(_offsets));
+    gl.delete_buffers(std::move(_random));
+    gl.delete_buffers(std::move(_origin));
+    gl.delete_vertex_arrays(std::move(_vao));
+}
+//------------------------------------------------------------------------------
 // emit program
 //------------------------------------------------------------------------------
-void emit_program::init(example& e) {
-    const auto& gl = e.video().gl_api();
-
-    gl.delete_program.later_by(e, _prog);
-    gl.create_program() >> _prog;
-    gl.object_label(_prog, "emit program");
-
-    const auto prog_src{embed<"EmitProg">("compute_particles_emit.oglpprog")};
-    gl.build_program(_prog, prog_src.unpack(e.ctx()));
-    gl.use_program(_prog);
-
-    gl.get_uniform_location(_prog, "emitPosition") >> _emit_position_loc;
-    gl.get_uniform_location(_prog, "deltaTime") >> _delta_time_loc;
+emit_program::emit_program(example& e)
+  : gl_program_resource{url{"json:///EmitProg"}, e.video(), e.loader()} {
+    loaded.connect(make_callable_ref<&emit_program::_on_loaded>(this));
+}
+//------------------------------------------------------------------------------
+void emit_program::_on_loaded(
+  const gl_program_resource::load_info& info) noexcept {
+    info.get_uniform_location("emitPosition") >> _emit_position_loc;
+    info.get_uniform_location("deltaTime") >> _delta_time_loc;
 }
 //------------------------------------------------------------------------------
 void emit_program::prepare_frame(example& e) {
+    use(e.ctx());
     const auto& gl = e.video().gl_api();
-    gl.set_uniform(_prog, _emit_position_loc, e.emit_position());
-    gl.set_uniform(_prog, _delta_time_loc, e.frame_duration());
+    gl.set_uniform(*this, _emit_position_loc, e.emit_position());
+    gl.set_uniform(*this, _delta_time_loc, e.frame_duration());
 }
 //------------------------------------------------------------------------------
 void emit_program::bind_random(
@@ -128,8 +129,8 @@ void emit_program::bind_random(
   oglplus::gl_types::uint_type binding) {
     const auto& gl = e.video().gl_api();
     oglplus::shader_storage_block_index blk_idx;
-    gl.get_shader_storage_block_index(_prog, "RandomBlock") >> blk_idx;
-    gl.shader_storage_block_binding(_prog, blk_idx, binding);
+    gl.get_shader_storage_block_index(*this, "RandomBlock") >> blk_idx;
+    gl.shader_storage_block_binding(*this, blk_idx, binding);
 }
 //------------------------------------------------------------------------------
 void emit_program::bind_offsets(
@@ -137,8 +138,8 @@ void emit_program::bind_offsets(
   oglplus::gl_types::uint_type binding) {
     const auto& gl = e.video().gl_api();
     oglplus::shader_storage_block_index blk_idx;
-    gl.get_shader_storage_block_index(_prog, "OffsetBlock") >> blk_idx;
-    gl.shader_storage_block_binding(_prog, blk_idx, binding);
+    gl.get_shader_storage_block_index(*this, "OffsetBlock") >> blk_idx;
+    gl.shader_storage_block_binding(*this, blk_idx, binding);
 }
 //------------------------------------------------------------------------------
 void emit_program::bind_velocities(
@@ -146,43 +147,36 @@ void emit_program::bind_velocities(
   oglplus::gl_types::uint_type binding) {
     const auto& gl = e.video().gl_api();
     oglplus::shader_storage_block_index blk_idx;
-    gl.get_shader_storage_block_index(_prog, "VelocityBlock") >> blk_idx;
-    gl.shader_storage_block_binding(_prog, blk_idx, binding);
+    gl.get_shader_storage_block_index(*this, "VelocityBlock") >> blk_idx;
+    gl.shader_storage_block_binding(*this, blk_idx, binding);
 }
 //------------------------------------------------------------------------------
 void emit_program::bind_ages(example& e, oglplus::gl_types::uint_type binding) {
     const auto& gl = e.video().gl_api();
     oglplus::shader_storage_block_index blk_idx;
-    gl.get_shader_storage_block_index(_prog, "AgeBlock") >> blk_idx;
-    gl.shader_storage_block_binding(_prog, blk_idx, binding);
-}
-//------------------------------------------------------------------------------
-void emit_program::use(example& e) {
-    e.video().gl_api().use_program(_prog);
+    gl.get_shader_storage_block_index(*this, "AgeBlock") >> blk_idx;
+    gl.shader_storage_block_binding(*this, blk_idx, binding);
 }
 //------------------------------------------------------------------------------
 // draw program
 //------------------------------------------------------------------------------
-void draw_program::init(example& e) {
-    auto& gl = e.video().gl_api();
-
-    gl.delete_program.later_by(e, _prog);
-    gl.create_program() >> _prog;
-    gl.object_label(_prog, "draw program");
-
-    const auto prog_src{embed<"DrawProg">("compute_particles_draw.oglpprog")};
-    gl.build_program(_prog, prog_src.unpack(e.ctx()));
-    gl.use_program(_prog);
-
-    gl.get_uniform_location(_prog, "CameraMatrix") >> _camera_mat_loc;
-    gl.get_uniform_location(_prog, "PerspectiveMatrix") >> _perspective_mat_loc;
+draw_program::draw_program(example& e)
+  : gl_program_resource{url{"json:///DrawProg"}, e.video(), e.loader()} {
+    loaded.connect(make_callable_ref<&draw_program::_on_loaded>(this));
+}
+//------------------------------------------------------------------------------
+void draw_program::_on_loaded(
+  const gl_program_resource::load_info& info) noexcept {
+    info.get_uniform_location("CameraMatrix") >> _camera_mat_loc;
+    info.get_uniform_location("PerspectiveMatrix") >> _perspective_mat_loc;
 }
 //------------------------------------------------------------------------------
 void draw_program::prepare_frame(example& e) {
+    use(e.ctx());
     e.video().gl_api().set_uniform(
-      _prog, _camera_mat_loc, e.camera().transform_matrix());
+      *this, _camera_mat_loc, e.camera().transform_matrix());
     e.video().gl_api().set_uniform(
-      _prog,
+      *this,
       _perspective_mat_loc,
       e.camera().perspective_matrix(e.video().surface_aspect()));
 }
@@ -190,7 +184,7 @@ void draw_program::prepare_frame(example& e) {
 void draw_program::bind_origin_location(
   example& e,
   oglplus::vertex_attrib_location loc) {
-    e.video().gl_api().bind_attrib_location(_prog, loc, "Origin");
+    e.video().gl_api().bind_attrib_location(*this, loc, "Origin");
 }
 //------------------------------------------------------------------------------
 void draw_program::bind_offsets(
@@ -198,19 +192,15 @@ void draw_program::bind_offsets(
   oglplus::gl_types::uint_type binding) {
     auto& gl = e.video().gl_api();
     oglplus::shader_storage_block_index blk_idx;
-    gl.get_shader_storage_block_index(_prog, "OffsetBlock") >> blk_idx;
-    gl.shader_storage_block_binding(_prog, blk_idx, binding);
+    gl.get_shader_storage_block_index(*this, "OffsetBlock") >> blk_idx;
+    gl.shader_storage_block_binding(*this, blk_idx, binding);
 }
 //------------------------------------------------------------------------------
 void draw_program::bind_ages(example& e, oglplus::gl_types::uint_type binding) {
     const auto& gl = e.video().gl_api();
     oglplus::shader_storage_block_index blk_idx;
-    gl.get_shader_storage_block_index(_prog, "AgeBlock") >> blk_idx;
-    gl.shader_storage_block_binding(_prog, blk_idx, binding);
-}
-//------------------------------------------------------------------------------
-void draw_program::use(example& e) {
-    e.video().gl_api().use_program(_prog);
+    gl.get_shader_storage_block_index(*this, "AgeBlock") >> blk_idx;
+    gl.shader_storage_block_binding(*this, blk_idx, binding);
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

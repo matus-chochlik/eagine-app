@@ -49,6 +49,8 @@ public:
         return 3U;
     }
 
+    void clean_up(example&) noexcept;
+
 private:
     const unsigned _count{4096U};
 
@@ -64,33 +66,33 @@ private:
 //------------------------------------------------------------------------------
 // programs
 //------------------------------------------------------------------------------
-class emit_program {
+class emit_program : public gl_program_resource {
 public:
-    void init(example&);
+    emit_program(example&);
     void prepare_frame(example&);
     void bind_random(example&, oglplus::gl_types::uint_type);
     void bind_offsets(example&, oglplus::gl_types::uint_type);
     void bind_velocities(example&, oglplus::gl_types::uint_type);
     void bind_ages(example&, oglplus::gl_types::uint_type);
-    void use(example&);
 
 private:
-    oglplus::owned_program_name _prog;
+    void _on_loaded(const gl_program_resource::load_info&) noexcept;
+
     oglplus::uniform_location _emit_position_loc;
     oglplus::uniform_location _delta_time_loc;
 };
 //------------------------------------------------------------------------------
-class draw_program {
+class draw_program : public gl_program_resource {
 public:
-    void init(example&);
+    draw_program(example&);
     void prepare_frame(example&);
     void bind_origin_location(example&, oglplus::vertex_attrib_location);
     void bind_offsets(example&, oglplus::gl_types::uint_type);
     void bind_ages(example&, oglplus::gl_types::uint_type);
-    void use(example&);
 
 private:
-    oglplus::owned_program_name _prog;
+    void _on_loaded(const gl_program_resource::load_info&) noexcept;
+
     oglplus::uniform_location _camera_mat_loc;
     oglplus::uniform_location _perspective_mat_loc;
 };

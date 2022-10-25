@@ -33,6 +33,10 @@ public:
         return _video;
     }
 
+    auto loader() noexcept -> auto& {
+        return _ctx.loader();
+    }
+
     auto camera() noexcept -> auto& {
         return _camera;
     }
@@ -45,23 +49,21 @@ public:
         return ctx().state().frame_duration().value();
     }
 
-    operator cleanup_group&() noexcept {
-        return _cleanup;
-    }
-
 private:
-    cleanup_group _cleanup;
+    void _on_resource_loaded(const loaded_resource_base&) noexcept;
+
     execution_context& _ctx;
     video_context& _video;
     background_icosahedron _bg;
-    timeout _is_done{std::chrono::seconds{60}};
 
     math::cubic_bezier_loop<oglplus::vec3, float> _path;
 
-    orbiting_camera _camera;
     emit_program _emit_prog;
     draw_program _draw_prog;
     particles _particles;
+
+    orbiting_camera _camera;
+    timeout _is_done{std::chrono::seconds{60}};
 };
 
 } // namespace eagine::app
