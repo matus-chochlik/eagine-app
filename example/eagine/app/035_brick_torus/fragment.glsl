@@ -64,8 +64,8 @@ void main() {
 			nml = normalize(t*nml.x+b*nml.y+n*nml.z);
 			float ldot = max(dot(ldir, nml)+0.1, 0.0);
 			float ambi = mix(0.05, 0.45, height);
-			float diff = 1.8 * sqrt(ldot);
-			float lght = mix(ambi, mix(ambi, diff, sqrt(ldot*max(height, ldot))), 0.5);
+			float diff = 2.0 * sqrt(ldot);
+			float lght = mix(ambi, mix(ambi, diff, sqrt(ldot*max(height, ldot*0.25))), 0.5);
 			fragColor = clr * lght;
 			return;
 		}

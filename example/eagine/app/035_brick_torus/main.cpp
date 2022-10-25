@@ -33,6 +33,9 @@ private:
         return make_callable_ref<&example_parallax::_on_resource_loaded>(this);
     }
 
+    void _apply_texture() noexcept;
+    void _switch_texture(const input&) noexcept;
+
     execution_context& _ctx;
     video_context& _video;
     resource_loader& _loader;
@@ -44,6 +47,7 @@ private:
 
     orbiting_camera _camera;
     timeout _is_done{std::chrono::seconds{60}};
+    bool _use_stones_tex{false};
 };
 //------------------------------------------------------------------------------
 example_parallax::example_parallax(execution_context& ec, video_context& vc)
@@ -66,7 +70,13 @@ example_parallax::example_parallax(execution_context& ec, video_context& vc)
       .set_fov(degrees_(40.F));
 
     _camera.connect_inputs(ec).basic_input_mapping(ec);
-    ec.setup_inputs().switch_input_mapping();
+    ec.setup_inputs()
+      .connect_input(
+        {"Example", "ChngTexMap"},
+        make_callable_ref<&example_parallax::_switch_texture>(this))
+      .map_input(
+        {"Example", "ChngTexMap"}, {"Keyboard", "T"}, input_setup().trigger())
+      .switch_input_mapping();
 
     const auto& glapi = _video.gl_api();
     auto& [gl, GL] = glapi;
@@ -88,8 +98,24 @@ void example_parallax::_on_resource_loaded(
     if(_prog && _torus) {
         _prog.input_bindings.apply(_video.gl_api(), _prog, _torus);
     }
-    if(_prog && _bricks) {
-        _prog.set_texture_map(_video, _bricks.tex_unit());
+    _apply_texture();
+}
+//------------------------------------------------------------------------------
+void example_parallax::_apply_texture() noexcept {
+    if(_prog && _bricks && _stones) {
+        if(_use_stones_tex) {
+            _prog.set_texture_map(_video, _stones.tex_unit());
+        } else {
+            _prog.set_texture_map(_video, _bricks.tex_unit());
+        }
+    }
+}
+//------------------------------------------------------------------------------
+void example_parallax::_switch_texture(const input& i) noexcept {
+    if(!i) {
+        _use_stones_tex = !_use_stones_tex;
+        _apply_texture();
+        _is_done.reset();
     }
 }
 //------------------------------------------------------------------------------
