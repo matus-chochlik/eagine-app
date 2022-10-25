@@ -33,6 +33,10 @@ public:
         return _video;
     }
 
+    auto loader() noexcept -> auto& {
+        return _ctx.loader();
+    }
+
     auto cleanup() noexcept -> auto& {
         return _cleanup;
     }
@@ -42,17 +46,20 @@ public:
     }
 
 private:
+    void _on_resource_loaded(const loaded_resource_base&) noexcept;
+
     cleanup_group _cleanup;
     execution_context& _ctx;
     video_context& _video;
-    timeout _is_done{std::chrono::seconds{30}};
 
-    orbiting_camera _camera;
     draw_program _draw_prog;
     screen_program _screen_prog;
     shape_geometry _shape;
     screen_geometry _screen;
     draw_buffers _draw_bufs;
+
+    orbiting_camera _camera;
+    timeout _is_done{std::chrono::seconds{30}};
 };
 //------------------------------------------------------------------------------
 } // namespace eagine::app

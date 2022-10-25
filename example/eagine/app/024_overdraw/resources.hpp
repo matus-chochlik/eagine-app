@@ -20,35 +20,32 @@ class example;
 //------------------------------------------------------------------------------
 // programs
 //------------------------------------------------------------------------------
-class draw_program {
+class draw_program : public gl_program_resource {
 public:
-    void init(example&);
+    draw_program(example&);
     void set_projection(example&);
 
     void bind_position_location(example&, oglplus::vertex_attrib_location);
 
-    void use(example&);
-
 private:
-    oglplus::owned_program_name _prog;
+    void _on_loaded(const gl_program_resource::load_info&) noexcept;
+
     oglplus::uniform_location _camera_loc;
 };
 //------------------------------------------------------------------------------
-class screen_program {
+class screen_program : public gl_program_resource {
 public:
-    void init(example&);
+    screen_program(example&);
 
     void bind_position_location(example&, oglplus::vertex_attrib_location);
     void bind_tex_coord_location(example&, oglplus::vertex_attrib_location);
 
     void set_screen_size(example&);
 
-    void use(example&);
-
 private:
-    oglplus::owned_program_name _prog;
+    void _on_loaded(const gl_program_resource::load_info&) noexcept;
+
     oglplus::uniform_location _screen_size_loc;
-    oglplus::uniform_location _draw_tex_loc;
 };
 //------------------------------------------------------------------------------
 // geometry
@@ -69,7 +66,6 @@ private:
 
     oglplus::owned_buffer_name _positions;
     oglplus::owned_buffer_name _indices;
-
     oglplus::owned_buffer_name _offsets;
 
     std::vector<oglplus::shape_draw_operation> _ops{};
