@@ -12,16 +12,18 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 // program
 //------------------------------------------------------------------------------
-void sphere_program::init(video_context& vc) {
-    create(vc)
-      .label(vc, "sphere program")
-      .build(vc, embed<"TessProg">("sphere_tessellation.oglpprog"))
-      .use(vc)
-      .query(vc, "CameraMatrix", camera_matrix_loc)
-      .query(vc, "CameraPosition", camera_position_loc)
-      .query(vc, "ViewportDimensions", viewport_dim_loc)
-      .query(vc, "OffsetBlock", offset_blk_idx)
-      .clean_up_later(vc);
+sphere_program::sphere_program(video_context& video, resource_loader& loader)
+  : gl_program_resource{url{"json:///Program"}, video, loader} {
+    loaded.connect(make_callable_ref<&sphere_program::_on_loaded>(this));
+}
+//------------------------------------------------------------------------------
+void sphere_program::_on_loaded(
+  const gl_program_resource::load_info& info) noexcept {
+    info.get_uniform_location("CameraMatrix") >> camera_matrix_loc;
+    info.get_uniform_location("CameraPosition") >> camera_position_loc;
+    info.get_uniform_location("ViewportDimensions") >> viewport_dim_loc;
+
+    input_bindings = info.base.input_bindings;
 }
 //------------------------------------------------------------------------------
 void sphere_program::set_projection(video_context& vc, orbiting_camera& camera) {
@@ -29,18 +31,6 @@ void sphere_program::set_projection(video_context& vc, orbiting_camera& camera) 
     set(vc, camera_position_loc, camera.position());
     set(vc, camera_matrix_loc, camera.matrix(vc));
     set(vc, viewport_dim_loc, oglplus::vec2(width, height));
-}
-//------------------------------------------------------------------------------
-void sphere_program::bind_position_location(
-  video_context& vc,
-  oglplus::vertex_attrib_location loc) {
-    bind(vc, loc, "Position");
-}
-//------------------------------------------------------------------------------
-void sphere_program::bind_offsets_block(
-  video_context& vc,
-  oglplus::gl_types::uint_type binding) {
-    bind(vc, offset_blk_idx, binding);
 }
 //------------------------------------------------------------------------------
 // geometry
@@ -67,7 +57,7 @@ void icosahedron_geometry::init(video_context& vc) {
       glapi,
       vao,
       positions,
-      position_loc(),
+      oglplus::vertex_attrib_location(0),
       eagine::shapes::vertex_attrib_kind::position,
       "positions",
       vc.parent().buffer());

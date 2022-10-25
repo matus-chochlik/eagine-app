@@ -24,38 +24,50 @@ public:
 
     void on_video_resize() noexcept final;
     void update() noexcept final;
+    void clean_up() noexcept final;
 
 private:
+    void _on_prog_loaded(const gl_program_resource::load_info&) noexcept;
+
     execution_context& _ctx;
     video_context& _video;
+    resource_loader& _loader;
     background_icosahedron _bg;
-    timeout _is_done{std::chrono::seconds{30}};
 
-    orbiting_camera camera;
-    sphere_program prog;
-    icosahedron_geometry shape;
+    sphere_program _prog;
+    icosahedron_geometry _shape;
+
+    orbiting_camera _camera;
+    timeout _is_done{std::chrono::seconds{30}};
 };
 //------------------------------------------------------------------------------
 example_sphere::example_sphere(execution_context& ec, video_context& vc)
   : _ctx{ec}
   , _video{vc}
-  , _bg{_video, {0.0F, 0.0F, 0.0F, 1.F}, {0.25F, 0.25F, 0.25F, 0.0F}, 1.F} {
+  , _loader{_ctx.loader()}
+  , _bg{_video, {0.0F, 0.0F, 0.0F, 1.F}, {0.25F, 0.25F, 0.25F, 0.0F}, 1.F}
+  , _prog{_video, _loader} {
+    _prog.loaded.connect(
+      make_callable_ref<&example_sphere::_on_prog_loaded>(this));
 
-    prog.init(vc);
-    shape.init(vc);
+    _shape.init(vc);
 
-    prog.bind_position_location(vc, shape.position_loc());
-    prog.bind_offsets_block(vc, shape.offsets_binding());
-
-    camera.set_near(0.1F)
+    _camera.set_near(0.1F)
       .set_far(100.F)
       .set_orbit_min(13.0F)
       .set_orbit_max(24.0F)
       .set_fov(degrees_(70.F));
-    prog.set_projection(vc, camera);
 
-    camera.connect_inputs(ec).basic_input_mapping(ec);
+    _camera.connect_inputs(ec).basic_input_mapping(ec);
     ec.setup_inputs().switch_input_mapping();
+}
+//------------------------------------------------------------------------------
+void example_sphere::_on_prog_loaded(
+  const gl_program_resource::load_info& loaded) noexcept {
+    _prog.input_bindings.apply(
+      _video.gl_api(), _prog, _shape.attrib_bindings());
+    loaded.shader_storage_block_binding(
+      "OffsetBlock", _shape.offsets_binding());
 }
 //------------------------------------------------------------------------------
 void example_sphere::on_video_resize() noexcept {
@@ -69,23 +81,31 @@ void example_sphere::update() noexcept {
         _is_done.reset();
     }
     if(state.user_idle_too_long()) {
-        camera.idle_update(state, 7.F);
+        _camera.idle_update(state, 7.F);
     }
 
-    _bg.clear(_video, camera);
+    _bg.clear(_video, _camera);
+    if(_prog) {
 
-    const auto& glapi = _video.gl_api();
-    const auto& [gl, GL] = glapi;
+        const auto& glapi = _video.gl_api();
+        const auto& [gl, GL] = glapi;
 
-    gl.enable(GL.depth_test);
-    gl.enable(GL.cull_face);
-    gl.cull_face(GL.back);
+        gl.enable(GL.depth_test);
+        gl.enable(GL.cull_face);
+        gl.cull_face(GL.back);
 
-    prog.use(_video);
-    prog.set_projection(_video, camera);
-    shape.draw(_video);
+        _prog.use(_video);
+        _prog.set_projection(_video, _camera);
+        _shape.draw(_video);
+    } else {
+        _prog.update(_video, _loader);
+    }
 
     _video.commit();
+}
+//------------------------------------------------------------------------------
+void example_sphere::clean_up() noexcept {
+    _prog.clean_up(_video, _loader);
 }
 //------------------------------------------------------------------------------
 class example_launchpad : public launchpad {
