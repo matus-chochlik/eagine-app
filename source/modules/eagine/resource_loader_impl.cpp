@@ -1370,6 +1370,7 @@ auto pending_resource_info::_finish_gl_texture(
           {.request_id = _request_id,
            .locator = _locator,
            .video = pgts.video,
+           .target = pgts.tex_target,
            .name = pgts.tex,
            .ref = pgts.tex});
         _parent.gl_texture_images_loaded(

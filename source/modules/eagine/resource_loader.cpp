@@ -518,10 +518,25 @@ export struct resource_loader_signals {
         const identifier_t request_id;
         const url& locator;
         video_context& video;
+        const oglplus::texture_target target;
         const oglplus::texture_name name;
         oglplus::owned_texture_name& ref;
 
         auto gl_api() const noexcept -> const oglplus::gl_api&;
+
+        template <typename Param, typename Value>
+        auto parameter_f(Param param, Value value) const noexcept {
+            return gl_api().tex_parameter_f(target, param, value);
+        }
+
+        template <typename Param, typename Value>
+        auto parameter_i(Param param, Value value) const noexcept {
+            return gl_api().tex_parameter_i(target, param, value);
+        }
+
+        auto generate_mipmap() const noexcept {
+            return gl_api().operations().generate_mipmap(target);
+        }
     };
 
     /// @brief Emitted when a GL texture is successfully created and its parameters set-up.

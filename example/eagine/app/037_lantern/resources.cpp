@@ -106,16 +106,12 @@ auto pumpkin_texture::update(
 //------------------------------------------------------------------------------
 void pumpkin_texture::_on_loaded(
   const gl_texture_resource::load_info& info) noexcept {
-    const auto& [gl, GL] = info.base.gl_api();
+    const auto& GL = info.base.gl_api().constants();
 
-    gl.active_texture(GL.texture0 + tex_unit());
-    gl.bind_texture(GL.texture_2d_array, info.resource);
-    gl.tex_parameter_i(GL.texture_2d_array, GL.texture_min_filter, GL.linear);
-    gl.tex_parameter_i(GL.texture_2d_array, GL.texture_mag_filter, GL.linear);
-    gl.tex_parameter_i(
-      GL.texture_2d_array, GL.texture_wrap_s, GL.clamp_to_border);
-    gl.tex_parameter_i(
-      GL.texture_2d_array, GL.texture_wrap_t, GL.clamp_to_border);
+    info.parameter_i(GL.texture_min_filter, GL.linear);
+    info.parameter_i(GL.texture_mag_filter, GL.linear);
+    info.parameter_i(GL.texture_wrap_s, GL.clamp_to_border);
+    info.parameter_i(GL.texture_wrap_t, GL.clamp_to_border);
 }
 //------------------------------------------------------------------------------
 // screen_geometry

@@ -630,6 +630,23 @@ public:
         const resource_loader::gl_texture_load_info& base;
         /// @brief The loaded texture resource.
         const loaded_resource<oglplus::owned_texture_name>& resource;
+
+        /// @brief Sets the specified floating-point texture parameter value.
+        template <typename Param, typename Value>
+        auto parameter_f(Param param, Value value) const noexcept {
+            return base.parameter_f(param, value);
+        }
+
+        /// @brief Sets the specified integral texture parameter value.
+        template <typename Param, typename Value>
+        auto parameter_i(Param param, Value value) const noexcept {
+            return base.parameter_i(param, value);
+        }
+
+        /// @brief Generates texture mipmap.
+        auto generate_mipmap() const noexcept {
+            return base.generate_mipmap();
+        }
     };
 
     /// @brief Signal emmitted when the resource is successfully loaded.

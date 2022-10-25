@@ -58,6 +58,10 @@ example_parallax::example_parallax(execution_context& ec, video_context& vc)
   , _torus{_ctx}
   , _bricks{_ctx}
   , _stones{_ctx} {
+    if(_ctx.main_context().args().find("--stones")) {
+        _use_stones_tex = true;
+    }
+
     _prog.base_loaded.connect(_load_handler());
     _torus.base_loaded.connect(_load_handler());
     _bricks.base_loaded.connect(_load_handler());
