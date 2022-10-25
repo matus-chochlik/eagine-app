@@ -8,7 +8,6 @@ add_dependencies(app-035_brick_torus eagine-app-examples)
 
 eagine_embed_target_resources(
 	TARGET app-035_brick_torus
-	INPUT_TARGETS bricks stones
 	RESOURCES
 		VertShader "vertex.glsl"
 		GeomShader "geometry.glsl"

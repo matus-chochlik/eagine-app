@@ -57,14 +57,16 @@ void main() {
 			vec3 t = mix(t1, t0, s*step);
 			vec3 b = cross(n, t);
 
-			vec3 ldir = normalize(LightPosition - p);
+			vec3 clr = texture(TextureMap, vec3(tc.xy, 0.0)).rgb;
 			vec3 nml = texture(TextureMap, vec3(tc.xy, 1.0)).rgb;
+			vec3 ldir = normalize(LightPosition - p);
 			nml = vec3(2.0*(nml.x-0.5), 2.0*(nml.y-0.5), nml.z);
 			nml = normalize(t*nml.x+b*nml.y+n*nml.z);
-			float ambi = 0.55;
-			float diff = sqrt(max(dot(ldir, nml), 0.0)*max(dot(ldir, n)+0.3, 0.0));
-			fragColor = texture(TextureMap, vec3(tc.xy, 0.0)).rgb*
-				max(ambi, diff);
+			float ldot = max(dot(ldir, nml)+0.1, 0.0);
+			float ambi = mix(0.05, 0.55, height);
+			float diff = 1.4 * sqrt(ldot);
+			float lght = mix(ambi, mix(ambi, diff, max(sqrt(height), ldot)), 0.45);
+			fragColor = clr * lght;
 			return;
 		}
 	}
