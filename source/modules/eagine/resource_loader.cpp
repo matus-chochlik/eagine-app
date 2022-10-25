@@ -31,6 +31,7 @@ export class resource_loader;
 //
 struct resource_gl_texture_image_params;
 struct resource_gl_texture_params;
+struct resource_gl_buffer_data_params;
 struct resource_gl_buffer_params;
 //------------------------------------------------------------------------------
 /// @brief Resource kind enumeration.
@@ -161,6 +162,10 @@ public:
       -> bool;
 
     void add_gl_buffer_context(video_context&, oglplus::buffer_target) noexcept;
+    void handle_gl_buffer_data(
+      const oglplus::buffer_target,
+      const resource_gl_buffer_data_params&,
+      const memory::const_block) noexcept;
     auto handle_gl_buffer_params(const resource_gl_buffer_params&) noexcept
       -> bool;
 
@@ -287,6 +292,13 @@ private:
       const pending_resource_info& source,
       const oglplus::texture_target,
       const resource_gl_texture_image_params&,
+      const memory::const_block) noexcept;
+
+    auto _finish_gl_buffer(_pending_gl_buffer_state&) noexcept -> bool;
+    void _handle_gl_buffer_data(
+      const pending_resource_info& source,
+      const oglplus::buffer_target,
+      const resource_gl_buffer_data_params&,
       const memory::const_block) noexcept;
 
     resource_loader& _parent;

@@ -694,6 +694,11 @@ void pending_resource_info::mark_loaded() noexcept {
         pgts.loaded = true;
         _finish_gl_texture(pgts);
     }
+    if(std::holds_alternative<_pending_gl_buffer_state>(_state)) {
+        auto& pgbs = std::get<_pending_gl_buffer_state>(_state);
+        pgbs.loaded = true;
+        _finish_gl_buffer(pgbs);
+    }
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::mark_finished() noexcept {
@@ -811,6 +816,15 @@ void pending_resource_info::add_gl_texture_context(
       .tex_target = target,
       .tex_unit = unit,
       .tex = std::move(tex)};
+}
+//------------------------------------------------------------------------------
+void pending_resource_info::handle_gl_buffer_data(
+  const oglplus::buffer_target target,
+  const resource_gl_buffer_data_params& params,
+  const memory::const_block data) noexcept {
+    if(const auto cont{continuation()}) {
+        extract(cont)._handle_gl_buffer_data(*this, target, params, data);
+    }
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::add_gl_buffer_context(
@@ -1396,6 +1410,30 @@ auto pending_resource_info::handle_gl_buffer_params(
         return true;
     }
     return false;
+}
+//------------------------------------------------------------------------------
+auto pending_resource_info::_finish_gl_buffer(
+  _pending_gl_buffer_state& pgbs) noexcept -> bool {
+    if(pgbs.loaded && pgbs.pending_requests.empty()) {
+        _parent.log_info("loaded and set-up GL buffer object")
+          .arg("requestId", _request_id)
+          .arg("locator", _locator.str());
+        // TODO
+        return true;
+    }
+    return false;
+}
+//------------------------------------------------------------------------------
+void pending_resource_info::_handle_gl_buffer_data(
+  const pending_resource_info& source,
+  const oglplus::buffer_target,
+  const resource_gl_buffer_data_params& params,
+  const memory::const_block data) noexcept {
+    _parent.log_info("loaded GL buffer sub-image")
+      .arg("requestId", _request_id)
+      .arg("dataSize", data.size())
+      .arg("locator", source.locator().str());
+    // TODO
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::handle_source_data(
