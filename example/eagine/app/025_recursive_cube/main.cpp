@@ -27,28 +27,28 @@ public:
     void clean_up() noexcept final;
 
 private:
+    void _on_resource_loaded(const loaded_resource_base&) noexcept;
+
     execution_context& _ctx;
     video_context& _video;
-    timeout _is_done{std::chrono::seconds{30}};
 
-    cube_program prog;
-    cube_geometry cube;
-    cube_draw_buffers bufs;
+    cube_program _prog;
+    cube_geometry _cube;
+    cube_draw_buffers _bufs;
+
+    timeout _is_done{std::chrono::seconds{30}};
 };
 //------------------------------------------------------------------------------
 example_cube::example_cube(execution_context& ec, video_context& vc)
   : _ctx{ec}
-  , _video{vc} {
+  , _video{vc}
+  , _prog{_ctx}
+  , _cube{_ctx} {
+
+    _bufs.init(_ctx);
+
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
-
-    prog.init(ec, vc);
-    cube.init(vc);
-    bufs.init(ec, vc);
-
-    prog.bind_position_location(vc, cube.position_loc());
-    prog.bind_normal_location(vc, cube.normal_loc());
-    prog.bind_tex_coord_location(vc, cube.wrap_coord_loc());
 
     gl.clear_color(0.8F, 0.8F, 0.8F, 0.0F);
     gl.enable(GL.depth_test);
@@ -56,6 +56,12 @@ example_cube::example_cube(execution_context& ec, video_context& vc)
     gl.cull_face(GL.back);
 
     ec.setup_inputs().switch_input_mapping();
+}
+//------------------------------------------------------------------------------
+void example_cube::_on_resource_loaded(const loaded_resource_base&) noexcept {
+    if(_prog && _cube) {
+        _prog.input_bindings.apply(_video.gl_api(), _prog, _cube);
+    }
 }
 //------------------------------------------------------------------------------
 void example_cube::on_video_resize() noexcept {
@@ -67,48 +73,53 @@ void example_cube::update() noexcept {
         _is_done.reset();
     }
 
-    const auto& glapi = _video.gl_api();
-    const auto& [gl, GL] = glapi;
+    if(_prog && _cube) {
+        const auto& glapi = _video.gl_api();
+        const auto& [gl, GL] = glapi;
 
-    prog.update(_ctx, _video);
-    prog.set_texture(_video, bufs.front_tex_unit());
+        _prog.prepare_frame(_ctx);
+        _prog.set_texture(_ctx, _bufs.front_tex_unit());
 
-    // draw into texture
-    gl.bind_framebuffer(GL.draw_framebuffer, bufs.back_fbo());
-    gl.viewport(bufs.side(), bufs.side());
+        // draw into texture
+        gl.bind_framebuffer(GL.draw_framebuffer, _bufs.back_fbo());
+        gl.viewport(_bufs.side(), _bufs.side());
 
-    prog.set_projection(
-      _video,
-      oglplus::matrix_perspective(-0.5F, 0.5F, -0.5F, 0.5F, 1.0F, 5.F) *
-        oglplus::matrix_translation(0.F, 0.F, -2.F));
+        _prog.set_projection(
+          _ctx,
+          oglplus::matrix_perspective(-0.5F, 0.5F, -0.5F, 0.5F, 1.0F, 5.F) *
+            oglplus::matrix_translation(0.F, 0.F, -2.F));
 
-    gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
-    cube.use_and_draw(_video);
+        gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
+        _cube.use_and_draw(_video);
 
-    // draw on screen
-    gl.bind_framebuffer(GL.draw_framebuffer, oglplus::default_framebuffer);
-    gl.viewport[_video.surface_size()];
+        // draw on screen
+        gl.bind_framebuffer(GL.draw_framebuffer, oglplus::default_framebuffer);
+        gl.viewport[_video.surface_size()];
 
-    const float h = 0.55F;
-    const float w = h * _video.surface_aspect();
-    prog.set_projection(
-      _video,
-      oglplus::matrix_perspective(-w, +w, -h, +h, 1.F, 3.F) *
-        oglplus::matrix_translation(0.F, 0.F, -2.F));
+        const float h = 0.55F;
+        const float w = h * _video.surface_aspect();
+        _prog.set_projection(
+          _ctx,
+          oglplus::matrix_perspective(-w, +w, -h, +h, 1.F, 3.F) *
+            oglplus::matrix_translation(0.F, 0.F, -2.F));
 
-    gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
-    cube.use_and_draw(_video);
-    // swap texture draw buffers
-    bufs.swap();
+        gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
+        _cube.use_and_draw(_video);
+        // swap texture draw buffers
+        _bufs.swap();
+    } else {
+        _prog.update(_ctx);
+        _cube.update(_ctx);
+    }
 
     _video.commit();
 }
 //------------------------------------------------------------------------------
 void example_cube::clean_up() noexcept {
 
-    bufs.clean_up(_video);
-    cube.clean_up(_video);
-    prog.clean_up(_video);
+    _bufs.clean_up(_ctx);
+    _cube.clean_up(_ctx);
+    _prog.clean_up(_ctx);
 
     _video.end();
 }
