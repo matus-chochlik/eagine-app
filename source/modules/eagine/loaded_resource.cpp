@@ -118,6 +118,10 @@ public:
         init(video, loader);
     }
 
+    /// @brief Constructor specifying the locator and initializing the resource.
+    loaded_resource(url locator, execution_context& ctx)
+      : loaded_resource{std::move(locator), ctx.main_video(), ctx.loader()} {}
+
     /// @brief Indicates if this resource is loaded.
     auto is_loaded() const noexcept -> bool {
         return this->is_initialized();
@@ -246,6 +250,10 @@ public:
         init(loader);
     }
 
+    /// @brief Constructor specifying the locator and initializing the resource.
+    loaded_resource(url locator, execution_context& ctx)
+      : loaded_resource{std::move(locator), ctx.loader()} {}
+
     /// @brief Indicates if this resource is loaded.
     auto is_loaded() const noexcept -> bool {
         return bool(static_cast<const valtree::compound&>(*this));
@@ -344,6 +352,10 @@ public:
       : loaded_resource{std::move(locator)} {
         init(video, loader);
     }
+
+    /// @brief Constructor specifying the locator and initializing the resource.
+    loaded_resource(url locator, execution_context& ctx)
+      : loaded_resource{std::move(locator), ctx.main_video(), ctx.loader()} {}
 
     /// @brief Indicates if this resource is loaded.
     auto is_loaded() const noexcept -> bool {
@@ -566,6 +578,10 @@ public:
         init(video, loader);
     }
 
+    /// @brief Constructor specifying the locator and initializing the resource.
+    loaded_resource(url locator, execution_context& ctx)
+      : loaded_resource{std::move(locator), ctx.main_video(), ctx.loader()} {}
+
     /// @brief Indicates if this resource is loaded.
     auto is_loaded() const noexcept -> bool {
         return this->is_valid();
@@ -682,6 +698,10 @@ public:
         init(video, loader);
     }
 
+    /// @brief Constructor specifying the locator and initializing the resource.
+    loaded_resource(url locator, execution_context& ctx)
+      : loaded_resource{std::move(locator), ctx.main_video(), ctx.loader()} {}
+
     /// @brief Indicates if this resource is loaded.
     auto is_loaded() const noexcept -> bool {
         return this->is_valid();
@@ -783,6 +803,10 @@ public:
       : loaded_resource{std::move(locator)} {
         init(video, loader);
     }
+
+    /// @brief Constructor specifying the locator and initializing the resource.
+    loaded_resource(url locator, execution_context& ctx)
+      : loaded_resource{std::move(locator), ctx.main_video(), ctx.loader()} {}
 
     /// @brief Indicates if this resource is loaded.
     auto is_loaded() const noexcept -> bool {
