@@ -103,9 +103,8 @@ void example_lantern::_on_resource_loaded(
     }
     if(loaded.is_one_of(pumpkin, draw_prog)) {
         if(pumpkin && draw_prog) {
-            const auto& glapi = _video.gl_api();
             draw_prog.use(_video);
-            draw_prog.input_bindings.apply(glapi, draw_prog, pumpkin);
+            draw_prog.apply_input_bindings(_video, pumpkin);
         }
     }
     if(loaded.is_one_of(pumpkin_tex, draw_prog)) {
@@ -116,9 +115,8 @@ void example_lantern::_on_resource_loaded(
     }
     if(loaded.is_one_of(screen, screen_prog)) {
         if(screen && screen_prog) {
-            const auto& glapi = _video.gl_api();
             screen_prog.use(_video);
-            screen_prog.input_bindings.apply(glapi, screen_prog, screen);
+            screen_prog.apply_input_bindings(_video, screen);
             screen_prog.set_texture_unit(_video, draw_bufs.tex_unit());
         }
     }

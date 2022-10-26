@@ -22,8 +22,6 @@ void cel_program::_on_loaded(
     info.use_program();
     info.get_uniform_location("Modelview") >> modelview_loc;
     info.get_uniform_location("Projection") >> projection_loc;
-
-    input_bindings = info.base.input_bindings;
 }
 //------------------------------------------------------------------------------
 void cel_program::set_projection(video_context& video, orbiting_camera& camera) {

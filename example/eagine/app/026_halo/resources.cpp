@@ -22,8 +22,6 @@ void surface_program::_on_loaded(
     info.get_uniform_location("Model") >> _model_loc;
     info.get_uniform_location("View") >> _view_loc;
     info.get_uniform_location("Projection") >> _projection_loc;
-
-    input_bindings = info.base.input_bindings;
 }
 //------------------------------------------------------------------------------
 void surface_program::prepare_frame(
@@ -52,8 +50,6 @@ void halo_program::_on_loaded(
     info.get_uniform_location("View") >> _view_loc;
     info.get_uniform_location("Projection") >> _projection_loc;
     info.get_uniform_location("CameraPos") >> _camera_pos_loc;
-
-    input_bindings = info.base.input_bindings;
 }
 //------------------------------------------------------------------------------
 void halo_program::prepare_frame(

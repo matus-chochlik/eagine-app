@@ -25,8 +25,6 @@ public:
 
     void bind_offsets_block(video_context&, oglplus::gl_types::uint_type);
 
-    oglplus::program_input_bindings input_bindings;
-
 private:
     void _on_loaded(const gl_program_resource::load_info&) noexcept;
 

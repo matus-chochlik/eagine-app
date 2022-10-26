@@ -23,8 +23,6 @@ void draw_program::_on_loaded(
     info.get_uniform_location("CandleLight") >> _candle_light_loc;
     info.get_uniform_location("AmbientLight") >> _ambient_light_loc;
     info.get_uniform_location("Tex") >> _tex_loc;
-
-    input_bindings = info.base.input_bindings;
 }
 //------------------------------------------------------------------------------
 void draw_program::set_camera(video_context& vc, const orbiting_camera& camera) {
@@ -61,8 +59,6 @@ void screen_program::_on_loaded(
     info.use_program();
     info.get_uniform_location("ScreenSize") >> _screen_size_loc;
     info.get_uniform_location("Tex") >> _tex_loc;
-
-    input_bindings = info.base.input_bindings;
 }
 //------------------------------------------------------------------------------
 void screen_program::set_screen_size(video_context& vc) {

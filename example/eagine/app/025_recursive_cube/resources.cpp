@@ -23,8 +23,6 @@ void cube_program::_on_loaded(
     info.get_uniform_location("Modelview") >> modelview_loc;
     info.get_uniform_location("LightPos") >> light_pos_loc;
     info.get_uniform_location("CubeTex") >> cube_tex_loc;
-
-    input_bindings = info.base.input_bindings;
 }
 //------------------------------------------------------------------------------
 void cube_program::set_texture(

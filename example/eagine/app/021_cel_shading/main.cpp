@@ -78,7 +78,7 @@ void example_cel::on_video_resize() noexcept {
 //------------------------------------------------------------------------------
 void example_cel::_on_resource_loaded(const loaded_resource_base&) noexcept {
     if(_shape && _prog) {
-        _prog.input_bindings.apply(_video.gl_api(), _prog, _shape);
+        _prog.apply_input_bindings(_video, _shape);
         _prog.set_projection(_video, _camera);
         _is_done.reset();
     }

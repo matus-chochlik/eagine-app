@@ -24,8 +24,6 @@ void torus_program::_on_loaded(
     info.get_uniform_location("Camera") >> camera_loc;
     info.get_uniform_location("Model") >> model_loc;
     info.get_uniform_location("TextureMap") >> texture_map_loc;
-
-    input_bindings = info.base.input_bindings;
 }
 //------------------------------------------------------------------------------
 void torus_program::set_camera(video_context& video, orbiting_camera& camera) {

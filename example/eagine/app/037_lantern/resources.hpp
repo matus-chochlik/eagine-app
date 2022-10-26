@@ -27,8 +27,6 @@ public:
     void set_ambient_light(video_context&, oglplus::gl_types::float_type);
     void set_texture_unit(video_context&, oglplus::texture_unit::value_type);
 
-    oglplus::program_input_bindings input_bindings;
-
 private:
     void _on_loaded(const gl_program_resource::load_info&) noexcept;
 
@@ -44,8 +42,6 @@ public:
 
     void set_screen_size(video_context& vc);
     void set_texture_unit(video_context&, oglplus::texture_unit::value_type);
-
-    oglplus::program_input_bindings input_bindings;
 
 private:
     void _on_loaded(const gl_program_resource::load_info&) noexcept;

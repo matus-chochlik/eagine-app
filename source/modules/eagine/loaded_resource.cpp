@@ -558,6 +558,14 @@ public:
         return bind(video.gl_api(), loc, var_name);
     }
 
+    /// @brief Applies the vertex attrib bindings to the loaded program.
+    auto apply_input_bindings(
+      video_context& video,
+      const oglplus::vertex_attrib_bindings& attrib_bindings) const noexcept
+      -> bool {
+        return _inputs.apply(video.gl_api(), *this, attrib_bindings);
+    }
+
     /// @brief Clean's up this resource.
     void clean_up(video_context& video, resource_loader& loader) {
         video.gl_api().clean_up(std::move(_res()));
@@ -614,6 +622,7 @@ private:
       const resource_loader::gl_program_load_info& info) noexcept {
         if(info.request_id == _request_id) {
             _res() = std::move(info.ref);
+            _inputs = info.input_bindings;
             if(is_loaded()) {
                 this->loaded({.base = info, .resource = *this});
                 this->base_loaded(*this);
@@ -622,6 +631,7 @@ private:
         }
     }
 
+    oglplus::program_input_bindings _inputs;
     signal_binding_key _sig_key{};
 };
 export using gl_program_resource = loaded_resource<oglplus::owned_program_name>;

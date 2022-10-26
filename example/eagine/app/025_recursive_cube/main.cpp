@@ -60,7 +60,7 @@ example_cube::example_cube(execution_context& ec, video_context& vc)
 //------------------------------------------------------------------------------
 void example_cube::_on_resource_loaded(const loaded_resource_base&) noexcept {
     if(_prog && _cube) {
-        _prog.input_bindings.apply(_video.gl_api(), _prog, _cube);
+        _prog.apply_input_bindings(_video, _cube);
     }
 }
 //------------------------------------------------------------------------------

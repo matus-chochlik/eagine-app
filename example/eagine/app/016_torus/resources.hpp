@@ -23,8 +23,6 @@ public:
     torus_program(video_context&, resource_loader&);
     void set_projection(video_context&, orbiting_camera& camera);
 
-    oglplus::program_input_bindings input_bindings;
-
 private:
     void _on_loaded(const gl_program_resource::load_info&) noexcept;
     oglplus::uniform_location camera_loc;

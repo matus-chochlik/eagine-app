@@ -27,43 +27,50 @@ public:
     void clean_up() noexcept final;
 
 private:
+    void _on_loaded(const gl_program_resource::load_info&) noexcept;
+
     execution_context& _ctx;
     video_context& _video;
     background_icosahedron _bg;
-    timeout _is_done{std::chrono::seconds{30}};
 
-    orbiting_camera camera;
-    edges_program prog;
-    icosahedron_geometry shape;
+    edges_program _prog;
+    icosahedron_geometry _shape;
+
+    orbiting_camera _camera;
+    timeout _is_done{std::chrono::seconds{30}};
 };
 //------------------------------------------------------------------------------
 example_edges::example_edges(execution_context& ec, video_context& vc)
   : _ctx{ec}
   , _video{vc}
-  , _bg{_video, {0.1F, 0.1F, 0.1F, 1.0F}, {0.4F, 0.4F, 0.4F, 0.0F}, 1.F} {
-    const auto& glapi = _video.gl_api();
-    auto& [gl, GL] = glapi;
+  , _bg{_video, {0.1F, 0.1F, 0.1F, 1.0F}, {0.4F, 0.4F, 0.4F, 0.0F}, 1.F}
+  , _prog{_ctx} {
+    _prog.loaded.connect(make_callable_ref<&example_edges::_on_loaded>(this));
 
-    prog.init(vc);
-    shape.init(vc);
+    _shape.init(_ctx);
 
-    prog.bind_position_location(vc, shape.position_loc());
-
-    camera.set_near(0.1F)
+    _camera.set_near(0.1F)
       .set_far(50.F)
       .set_orbit_min(2.6F)
       .set_orbit_max(9.0F)
       .set_fov(right_angle_());
-    prog.set_projection(vc, camera);
 
+    _camera.connect_inputs(ec).basic_input_mapping(ec);
+    ec.setup_inputs().switch_input_mapping();
+
+    const auto& glapi = _video.gl_api();
+    const auto& [gl, GL] = glapi;
     gl.clear_color(0.4F, 0.4F, 0.4F, 0.0F);
 
     gl.enable(GL.depth_test);
     gl.enable(GL.cull_face);
     gl.cull_face(GL.back);
-
-    camera.connect_inputs(ec).basic_input_mapping(ec);
-    ec.setup_inputs().switch_input_mapping();
+}
+//------------------------------------------------------------------------------
+void example_edges::_on_loaded(
+  const gl_program_resource::load_info& loaded) noexcept {
+    loaded.apply_input_bindings(_shape);
+    _prog.set_projection(_ctx, _camera);
 }
 //------------------------------------------------------------------------------
 void example_edges::on_video_resize() noexcept {
@@ -77,22 +84,26 @@ void example_edges::update() noexcept {
         _is_done.reset();
     }
     if(state.user_idle_too_long()) {
-        camera.idle_update(state);
+        _camera.idle_update(state);
     }
 
-    _bg.clear(_video, camera);
+    _bg.clear(_video, _camera);
 
-    prog.use(_video);
-    prog.set_projection(_video, camera);
-    shape.use_and_draw(_video);
+    if(_prog) {
+        _prog.use(_video);
+        _prog.set_projection(_ctx, _camera);
+        _shape.use_and_draw(_video);
+    } else {
+        _prog.update(_ctx);
+    }
 
     _video.commit();
 }
 //------------------------------------------------------------------------------
 void example_edges::clean_up() noexcept {
 
-    prog.clean_up(_video);
-    shape.clean_up(_video);
+    _prog.clean_up(_ctx);
+    _shape.clean_up(_video);
     _bg.clean_up(_video);
 
     _video.end();

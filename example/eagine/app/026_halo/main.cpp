@@ -83,14 +83,13 @@ void example_halo::on_video_resize() noexcept {
 //------------------------------------------------------------------------------
 void example_halo::_on_resource_loaded(const loaded_resource_base&) noexcept {
     if(_shape) {
-        const auto& glapi = _video.gl_api();
         if(_surf_prog) {
             _surf_prog.use(_video);
-            _surf_prog.input_bindings.apply(glapi, _surf_prog, _shape);
+            _surf_prog.apply_input_bindings(_video, _shape);
         }
         if(_halo_prog) {
             _halo_prog.use(_video);
-            _halo_prog.input_bindings.apply(glapi, _halo_prog, _shape);
+            _halo_prog.apply_input_bindings(_video, _shape);
         }
     }
 }

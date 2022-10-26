@@ -79,7 +79,7 @@ void example_torus::on_video_resize() noexcept {
 //------------------------------------------------------------------------------
 void example_torus::_on_resource_loaded(const loaded_resource_base&) noexcept {
     if(torus && prog) {
-        prog.input_bindings.apply(_video.gl_api(), prog, torus);
+        prog.apply_input_bindings(_video, torus);
         _is_done.reset();
     }
 }

@@ -26,8 +26,6 @@ public:
     void set_light(video_context&, const oglplus::vec3&);
     void set_texture_map(video_context&, oglplus::gl_types::int_type unit);
 
-    oglplus::program_input_bindings input_bindings;
-
 private:
     void _on_loaded(const gl_program_resource::load_info&) noexcept;
 

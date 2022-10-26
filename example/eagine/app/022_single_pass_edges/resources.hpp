@@ -18,14 +18,14 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 // program
 //------------------------------------------------------------------------------
-class edges_program : public gpu_program {
+class edges_program : public gl_program_resource {
 public:
-    void init(video_context&);
-    void set_projection(video_context&, orbiting_camera&);
-
-    void bind_position_location(video_context&, oglplus::vertex_attrib_location);
+    edges_program(execution_context&);
+    void set_projection(execution_context&, orbiting_camera&);
 
 private:
+    void _on_loaded(const gl_program_resource::load_info&) noexcept;
+
     oglplus::uniform_location camera_loc;
     oglplus::uniform_location vp_dim_loc;
 };
@@ -34,7 +34,7 @@ private:
 //------------------------------------------------------------------------------
 class icosahedron_geometry : public gl_geometry_and_bindings {
 public:
-    void init(video_context&);
+    void init(execution_context&);
 };
 //------------------------------------------------------------------------------
 } // namespace eagine::app

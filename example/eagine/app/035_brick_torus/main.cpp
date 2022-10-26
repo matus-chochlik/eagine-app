@@ -100,7 +100,7 @@ void example_parallax::on_video_resize() noexcept {
 void example_parallax::_on_resource_loaded(
   const loaded_resource_base&) noexcept {
     if(_prog && _torus) {
-        _prog.input_bindings.apply(_video.gl_api(), _prog, _torus);
+        _prog.apply_input_bindings(_video, _torus);
     }
     _apply_texture();
 }

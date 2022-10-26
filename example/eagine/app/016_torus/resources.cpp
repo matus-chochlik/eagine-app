@@ -28,7 +28,6 @@ void torus_program::_on_loaded(
   const gl_program_resource::load_info& info) noexcept {
     info.use_program();
     info.get_uniform_location("Camera") >> camera_loc;
-    input_bindings = info.base.input_bindings;
 }
 //------------------------------------------------------------------------------
 // geometry

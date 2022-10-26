@@ -23,8 +23,6 @@ public:
     surface_program(video_context&, resource_loader&);
     void prepare_frame(video_context&, orbiting_camera& camera, float t);
 
-    oglplus::program_input_bindings input_bindings;
-
 private:
     void _on_loaded(const gl_program_resource::load_info&) noexcept;
 
@@ -37,8 +35,6 @@ class halo_program : public gl_program_resource {
 public:
     halo_program(video_context&, resource_loader&);
     void prepare_frame(video_context&, orbiting_camera& camera, float t);
-
-    oglplus::program_input_bindings input_bindings;
 
 private:
     void _on_loaded(const gl_program_resource::load_info&) noexcept;

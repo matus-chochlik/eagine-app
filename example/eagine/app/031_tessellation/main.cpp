@@ -64,8 +64,7 @@ example_sphere::example_sphere(execution_context& ec, video_context& vc)
 //------------------------------------------------------------------------------
 void example_sphere::_on_prog_loaded(
   const gl_program_resource::load_info& loaded) noexcept {
-    _prog.input_bindings.apply(
-      _video.gl_api(), _prog, _shape.attrib_bindings());
+    _prog.apply_input_bindings(_video, _shape.attrib_bindings());
     loaded.shader_storage_block_binding(
       "OffsetBlock", _shape.offsets_binding());
 }

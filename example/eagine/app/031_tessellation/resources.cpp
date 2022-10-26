@@ -22,8 +22,6 @@ void sphere_program::_on_loaded(
     info.get_uniform_location("CameraMatrix") >> camera_matrix_loc;
     info.get_uniform_location("CameraPosition") >> camera_position_loc;
     info.get_uniform_location("ViewportDimensions") >> viewport_dim_loc;
-
-    input_bindings = info.base.input_bindings;
 }
 //------------------------------------------------------------------------------
 void sphere_program::set_projection(video_context& vc, orbiting_camera& camera) {

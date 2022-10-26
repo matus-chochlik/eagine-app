@@ -24,8 +24,6 @@ public:
     void set_projection(video_context&, orbiting_camera& camera);
     void set_modelview(execution_context&, video_context&);
 
-    oglplus::program_input_bindings input_bindings;
-
 private:
     void _on_loaded(const gl_program_resource::load_info&) noexcept;
 
