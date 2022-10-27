@@ -26,11 +26,11 @@ namespace eagine::app {
 export class loaded_resource_base {
 public:
     loaded_resource_base(url locator) noexcept
-      : _locator{std::move(locator)} {}
+      : _locator_str{locator.release_string()} {}
 
     /// @brief Returns this resource's URL.
-    auto locator() const noexcept -> const url& {
-        return _locator;
+    auto locator() const noexcept -> url {
+        return {_locator_str};
     }
 
     /// @brief Indicates if this resource is currently loading.
@@ -40,7 +40,7 @@ public:
 
     /// @brief Compares resources for equality.
     auto operator==(const loaded_resource_base& that) const noexcept -> bool {
-        return this->_locator == that._locator;
+        return this->_locator_str == that._locator_str;
     }
 
     /// @brief Indicates if this resource is the same as that resource.
@@ -55,7 +55,7 @@ public:
     }
 
 protected:
-    url _locator;
+    std::string _locator_str;
     identifier_t _request_id{0};
 };
 //------------------------------------------------------------------------------
@@ -140,7 +140,7 @@ public:
       span_size_t draw_var_idx = 0) -> work_done {
         if(!is_loaded() && !is_loading()) {
             if(const auto request{loader.request_gl_geometry_and_bindings(
-                 _locator, video, draw_var_idx)}) {
+                 locator(), video, draw_var_idx)}) {
                 _request_id = request.request_id();
                 return true;
             }
@@ -156,7 +156,7 @@ public:
       span_size_t draw_var_idx = 0) -> work_done {
         if(!is_loaded() && !is_loading()) {
             if(const auto request{loader.request_gl_geometry_and_bindings(
-                 _locator, video, bindings, draw_var_idx)}) {
+                 locator(), video, bindings, draw_var_idx)}) {
                 _request_id = request.request_id();
                 return true;
             }
@@ -268,7 +268,7 @@ public:
     /// @brief Updates the resource, possibly doing resource load request.
     auto update(resource_loader& loader) -> work_done {
         if(!is_loaded() && !is_loading()) {
-            if(const auto request{loader.request_value_tree(_locator)}) {
+            if(const auto request{loader.request_value_tree(locator())}) {
                 _request_id = request.request_id();
                 return true;
             }
@@ -375,7 +375,7 @@ public:
       oglplus::shader_type type) -> work_done {
         if(!is_loaded() && !is_loading()) {
             if(const auto request{
-                 loader.request_gl_shader(_locator, type, video)}) {
+                 loader.request_gl_shader(locator(), type, video)}) {
                 _request_id = request.request_id();
                 return true;
             }
@@ -386,7 +386,7 @@ public:
     /// @brief Updates the resource, possibly doing resource load request.
     auto update(video_context& video, resource_loader& loader) -> work_done {
         if(!is_loaded() && !is_loading()) {
-            if(const auto request{loader.request_gl_shader(_locator, video)}) {
+            if(const auto request{loader.request_gl_shader(locator(), video)}) {
                 _request_id = request.request_id();
                 return true;
             }
@@ -604,7 +604,8 @@ public:
     /// @brief Updates the resource, possibly doing resource load request.
     auto update(video_context& video, resource_loader& loader) -> work_done {
         if(!is_loaded() && !is_loading()) {
-            if(const auto request{loader.request_gl_program(_locator, video)}) {
+            if(const auto request{
+                 loader.request_gl_program(locator(), video)}) {
                 _request_id = request.request_id();
                 return true;
             }
@@ -731,7 +732,7 @@ public:
       oglplus::texture_unit unit) -> work_done {
         if(!is_loaded() && !is_loading()) {
             if(const auto request{
-                 loader.request_gl_texture(_locator, video, target, unit)}) {
+                 loader.request_gl_texture(locator(), video, target, unit)}) {
                 _request_id = request.request_id();
                 return true;
             }
@@ -836,7 +837,7 @@ public:
       oglplus::buffer_target target) -> work_done {
         if(!is_loaded() && !is_loading()) {
             if(const auto request{
-                 loader.request_gl_buffer(_locator, video, target)}) {
+                 loader.request_gl_buffer(locator(), video, target)}) {
                 _request_id = request.request_id();
                 return true;
             }
