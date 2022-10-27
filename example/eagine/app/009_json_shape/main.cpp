@@ -13,22 +13,15 @@ import eagine.app;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-class example_shape : public application {
+class example_shape : public timeouting_application {
 public:
     example_shape(execution_context&, video_context&);
 
-    auto is_done() noexcept -> bool final {
-        return _is_done.is_expired();
-    }
-
-    void on_video_resize() noexcept final;
     void update() noexcept final;
     void clean_up() noexcept final;
 
 private:
-    execution_context& _ctx;
     video_context& _video;
-    timeout _is_done{std::chrono::seconds{30}};
 
     std::vector<oglplus::shape_draw_operation> _ops;
     oglplus::owned_vertex_array_name vao;
@@ -44,7 +37,7 @@ private:
 };
 //------------------------------------------------------------------------------
 example_shape::example_shape(execution_context& ec, video_context& vc)
-  : _ctx{ec}
+  : timeouting_application{ec, std::chrono::seconds{30}}
   , _video{vc} {
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
@@ -99,7 +92,7 @@ example_shape::example_shape(execution_context& ec, video_context& vc)
       positions,
       position_loc,
       eagine::shapes::vertex_attrib_kind::position,
-      _ctx.buffer());
+      context().buffer());
     gl.bind_attrib_location(prog, position_loc, "Position");
 
     // colors
@@ -111,12 +104,12 @@ example_shape::example_shape(execution_context& ec, video_context& vc)
       colors,
       color_loc,
       eagine::shapes::vertex_attrib_kind::color,
-      _ctx.buffer());
+      context().buffer());
     gl.bind_attrib_location(prog, color_loc, "Color");
 
     // indices
     gl.gen_buffers() >> indices;
-    shape.index_setup(glapi, indices, _ctx.buffer());
+    shape.index_setup(glapi, indices, context().buffer());
 
     // uniform
     gl.get_uniform_location(prog, "Camera") >> camera_loc;
@@ -140,15 +133,10 @@ example_shape::example_shape(execution_context& ec, video_context& vc)
     ec.setup_inputs().switch_input_mapping();
 }
 //------------------------------------------------------------------------------
-void example_shape::on_video_resize() noexcept {
-    const auto& gl = _video.gl_api();
-    gl.viewport[_video.surface_size()];
-}
-//------------------------------------------------------------------------------
 void example_shape::update() noexcept {
-    auto& state = _ctx.state();
+    auto& state = context().state();
     if(state.is_active()) {
-        _is_done.reset();
+        reset_timeout();
     }
     if(state.user_idle_too_long()) {
         camera.idle_update(state);

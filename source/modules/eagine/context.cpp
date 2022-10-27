@@ -451,6 +451,63 @@ private:
     }
 };
 //------------------------------------------------------------------------------
+/// @brief Common implementation of the application interface.
+export class common_application : public application {
+public:
+    /// @brief Construction specifying the application execution context.
+    common_application(execution_context& ec) noexcept
+      : _ctx{ec} {}
+
+    /// @brief Returns the associated execution context.
+    auto context() const noexcept -> execution_context& {
+        return _ctx;
+    }
+
+    /// @brief Default implementation of the rendering surface resize handler.
+    void on_video_resize() noexcept override {
+        auto video = _ctx.main_video();
+        video.gl_api().viewport[video.surface_size()];
+    }
+
+private:
+    execution_context& _ctx;
+};
+//------------------------------------------------------------------------------
+/// @brief Implementation of the application interface with execution timeout.
+export class timeouting_application : public common_application {
+public:
+    /// @brief Construction specifying the execution context and timeout interval.
+    timeouting_application(
+      execution_context& ec,
+      const timeout::duration_type is_done_time) noexcept
+      : common_application{ec}
+      , _is_done{is_done_time} {}
+
+    /// @brief Resets the is-done timeout.
+    auto reset_timeout() noexcept -> auto& {
+        _is_done.reset();
+        return *this;
+    }
+
+    /// @brief Returns a callable reference to reset_timeout on this object.
+    auto reset_timeout_handler() noexcept {
+        return make_callable_ref<&timeouting_application::_do_reset_timeout>(
+          this);
+    }
+
+    /// @brief Indicates if the timeout specified in the constructor expired.
+    auto is_done() noexcept -> bool final {
+        return _is_done.is_expired();
+    }
+
+private:
+    void _do_reset_timeout(const input&) noexcept {
+        _is_done.reset();
+    }
+
+    timeout _is_done{std::chrono::seconds{30}};
+};
+//------------------------------------------------------------------------------
 
 } // namespace eagine::app
 

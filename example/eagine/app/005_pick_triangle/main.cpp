@@ -11,15 +11,10 @@ import eagine.app;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-class example_picking : public application {
+class example_picking : public timeouting_application {
 public:
     example_picking(execution_context&, video_context&);
 
-    auto is_done() noexcept -> bool final {
-        return _is_done.is_expired();
-    }
-
-    void on_video_resize() noexcept final;
     void update() noexcept final;
     void clean_up() noexcept final;
 
@@ -27,9 +22,7 @@ public:
     void motion_y(const input&) noexcept;
 
 private:
-    execution_context& _ctx;
     video_context& _video;
-    timeout _is_done{std::chrono::seconds(10)};
 
     oglplus::triangle tri{
       oglplus::vec3{-0.2F, 0.5F, 0.0F},
@@ -52,7 +45,7 @@ private:
 };
 //------------------------------------------------------------------------------
 example_picking::example_picking(execution_context& ec, video_context& vc)
-  : _ctx{ec}
+  : timeouting_application{ec, std::chrono::seconds{15}}
   , _video{vc} {
 
     const auto& glapi = _video.gl_api();
@@ -130,11 +123,6 @@ example_picking::example_picking(execution_context& ec, video_context& vc)
       .switch_input_mapping();
 }
 //------------------------------------------------------------------------------
-void example_picking::on_video_resize() noexcept {
-    const auto& gl = _video.gl_api();
-    gl.viewport[_video.surface_size()];
-}
-//------------------------------------------------------------------------------
 void example_picking::update() noexcept {
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
@@ -145,10 +133,10 @@ void example_picking::update() noexcept {
 
         is_inside = bool(math::line_triangle_intersection(ray, tri));
         has_moved = false;
-        _is_done.reset();
+        reset_timeout();
     }
 
-    const auto dt = _ctx.state().frame_duration().value();
+    const auto dt = context().state().frame_duration().value();
     if(is_inside) {
         hl_value = math::minimum(hl_value + dt * 3.0F, 1.F);
     } else {

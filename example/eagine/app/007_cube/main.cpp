@@ -13,15 +13,10 @@ import eagine.app;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-class example_cube : public application {
+class example_cube : public timeouting_application {
 public:
     example_cube(execution_context&, video_context&);
 
-    auto is_done() noexcept -> bool final {
-        return _is_done.is_expired();
-    }
-
-    void on_video_resize() noexcept final;
     void update() noexcept final;
     void clean_up() noexcept final;
 
@@ -30,14 +25,12 @@ private:
         info.apply_input_bindings(_cube);
         info.get_uniform_location("Camera") >> _camera_loc;
         info.use_program();
-        _is_done.reset();
+        reset_timeout();
     }
 
-    execution_context& _ctx;
     video_context& _video;
     resource_loader& _loader;
     background_color_depth _bg;
-    timeout _is_done{std::chrono::seconds{30}};
 
     oglplus::vertex_attrib_bindings _attrib_bindings;
     loaded_resource<gl_geometry_and_bindings> _cube;
@@ -48,12 +41,12 @@ private:
 };
 //------------------------------------------------------------------------------
 example_cube::example_cube(execution_context& ec, video_context& vc)
-  : _ctx{ec}
+  : timeouting_application{ec, std::chrono::seconds{30}}
   , _video{vc}
-  , _loader{_ctx.loader()}
+  , _loader{ec.loader()}
   , _bg{0.4F, 0.F, 1.F}
-  , _cube{url{"shape:///unit_cube?position=true+normal=true"}, _video, _loader}
-  , _prog{url{"json:///GLProgram"}, _video, _loader} {
+  , _cube{url{"shape:///unit_cube?position=true+normal=true"}, ec}
+  , _prog{url{"json:///GLProgram"}, ec} {
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
 
@@ -72,23 +65,18 @@ example_cube::example_cube(execution_context& ec, video_context& vc)
     ec.setup_inputs().switch_input_mapping();
 }
 //------------------------------------------------------------------------------
-void example_cube::on_video_resize() noexcept {
-    const auto& gl = _video.gl_api();
-    gl.viewport[_video.surface_size()];
-}
-//------------------------------------------------------------------------------
 void example_cube::update() noexcept {
     if(!_cube) {
-        _cube.update(_video, _loader);
+        _cube.update(context());
     } else {
         if(!_prog) {
-            _prog.update(_video, _loader);
+            _prog.update(context());
         }
     }
 
-    auto& state = _ctx.state();
+    auto& state = context().state();
     if(state.is_active()) {
-        _is_done.reset();
+        reset_timeout();
     }
     if(state.user_idle_too_long()) {
         _camera.idle_update(state);
@@ -107,8 +95,8 @@ void example_cube::update() noexcept {
 }
 //------------------------------------------------------------------------------
 void example_cube::clean_up() noexcept {
-    _prog.clean_up(_video, _loader);
-    _cube.clean_up(_video, _loader);
+    _prog.clean_up(context());
+    _cube.clean_up(context());
 
     _video.end();
 }
