@@ -16,15 +16,10 @@ import <cmath>;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-class example_lantern : public application {
+class example_lantern : public timeouting_application {
 public:
     example_lantern(execution_context&, video_context&);
 
-    auto is_done() noexcept -> bool final {
-        return _is_done.is_expired();
-    }
-
-    void on_video_resize() noexcept final;
     void update() noexcept final;
     void clean_up() noexcept final;
 
@@ -35,11 +30,9 @@ private:
         return make_callable_ref<&example_lantern::_on_resource_loaded>(this);
     }
 
-    execution_context& _ctx;
     video_context& _video;
     resource_loader& _loader;
     activity_progress _load_progress;
-    timeout _is_done{std::chrono::seconds{90}};
 
     draw_buffers draw_bufs;
     pumpkin_texture pumpkin_tex;
@@ -53,10 +46,10 @@ private:
 };
 //------------------------------------------------------------------------------
 example_lantern::example_lantern(execution_context& ec, video_context& vc)
-  : _ctx{ec}
+  : timeouting_application{ec, std::chrono::seconds{90}}
   , _video{vc}
-  , _loader{_ctx.loader()}
-  , _load_progress{_ctx.progress().activity("Loading resources", 5)}
+  , _loader{ec.loader()}
+  , _load_progress{ec.progress().activity("Loading resources", 5)}
   , pumpkin_tex{_video, _loader}
   , pumpkin{_video, _loader}
   , screen{_video, _loader}
@@ -81,12 +74,6 @@ example_lantern::example_lantern(execution_context& ec, video_context& vc)
 
     camera.connect_inputs(ec).basic_input_mapping(ec);
     ec.setup_inputs().switch_input_mapping();
-}
-//------------------------------------------------------------------------------
-void example_lantern::on_video_resize() noexcept {
-    const auto& gl = _video.gl_api();
-    gl.viewport[_video.surface_size()];
-    draw_bufs.resize(_video);
 }
 //------------------------------------------------------------------------------
 void example_lantern::_on_resource_loaded(
@@ -120,7 +107,7 @@ void example_lantern::_on_resource_loaded(
             screen_prog.set_texture_unit(_video, draw_bufs.tex_unit());
         }
     }
-    _is_done.reset();
+    reset_timeout();
     _load_progress.update_progress(
       int(bool(pumpkin_tex)) + int(bool(pumpkin)) + int(bool(screen)) +
       int(bool(draw_prog)) + int(bool(screen_prog)));
@@ -132,9 +119,9 @@ void example_lantern::_on_resource_loaded(
 }
 //------------------------------------------------------------------------------
 void example_lantern::update() noexcept {
-    auto& state = _ctx.state();
+    auto& state = context().state();
     if(state.is_active()) {
-        _is_done.reset();
+        reset_timeout();
     }
     if(state.user_idle_too_long()) {
         camera.idle_update(state, 5.F);

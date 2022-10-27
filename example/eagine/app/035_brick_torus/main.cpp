@@ -14,15 +14,10 @@ import eagine.app;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-class example_parallax : public application {
+class example_parallax : public timeouting_application {
 public:
     example_parallax(execution_context&, video_context&);
 
-    auto is_done() noexcept -> bool final {
-        return _is_done.is_expired();
-    }
-
-    void on_video_resize() noexcept final;
     void update() noexcept final;
     void clean_up() noexcept final;
 
@@ -36,7 +31,6 @@ private:
     void _apply_texture() noexcept;
     void _switch_texture(const input&) noexcept;
 
-    execution_context& _ctx;
     video_context& _video;
     resource_loader& _loader;
 
@@ -46,19 +40,18 @@ private:
     stone_texture _stones;
 
     orbiting_camera _camera;
-    timeout _is_done{std::chrono::seconds{60}};
     bool _use_stones_tex{false};
 };
 //------------------------------------------------------------------------------
 example_parallax::example_parallax(execution_context& ec, video_context& vc)
-  : _ctx{ec}
+  : timeouting_application{ec, std::chrono::seconds{90}}
   , _video{vc}
-  , _loader{_ctx.loader()}
-  , _prog{_ctx}
-  , _torus{_ctx}
-  , _bricks{_ctx}
-  , _stones{_ctx} {
-    if(_ctx.main_context().args().find("--stones")) {
+  , _loader{ec.loader()}
+  , _prog{ec}
+  , _torus{ec}
+  , _bricks{ec}
+  , _stones{ec} {
+    if(ec.main_context().args().find("--stones")) {
         _use_stones_tex = true;
     }
 
@@ -92,11 +85,6 @@ example_parallax::example_parallax(execution_context& ec, video_context& vc)
     gl.enable(GL.clip_distance0 + 2);
 }
 //------------------------------------------------------------------------------
-void example_parallax::on_video_resize() noexcept {
-    const auto& gl = _video.gl_api();
-    gl.viewport[_video.surface_size()];
-}
-//------------------------------------------------------------------------------
 void example_parallax::_on_resource_loaded(
   const loaded_resource_base&) noexcept {
     if(_prog && _torus) {
@@ -119,14 +107,14 @@ void example_parallax::_switch_texture(const input& i) noexcept {
     if(!i) {
         _use_stones_tex = !_use_stones_tex;
         _apply_texture();
-        _is_done.reset();
+        reset_timeout();
     }
 }
 //------------------------------------------------------------------------------
 void example_parallax::update() noexcept {
-    auto& state = _ctx.state();
+    auto& state = context().state();
     if(state.is_active()) {
-        _is_done.reset();
+        reset_timeout();
     }
     if(state.user_idle_too_long()) {
         _camera.idle_update(state, 17.F);
@@ -155,19 +143,19 @@ void example_parallax::update() noexcept {
             oglplus::matrix_rotation_x(right_angles_(+0.5F)));
         _torus.use_and_draw(_video);
     } else {
-        _prog.update(_ctx);
-        _torus.update(_ctx);
-        _bricks.update(_ctx);
-        _stones.update(_ctx);
+        _prog.update(context());
+        _torus.update(context());
+        _bricks.update(context());
+        _stones.update(context());
     }
 
     _video.commit();
 }
 //------------------------------------------------------------------------------
 void example_parallax::clean_up() noexcept {
-    _bricks.clean_up(_ctx);
-    _torus.clean_up(_ctx);
-    _prog.clean_up(_ctx);
+    _bricks.clean_up(context());
+    _torus.clean_up(context());
+    _prog.clean_up(context());
 
     _video.end();
 }

@@ -17,28 +17,19 @@ import eagine.app;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-class example : public application {
+class example : public timeouting_application {
 public:
     example(execution_context&, video_context&);
 
-    auto is_done() noexcept -> bool final {
-        return _is_done.is_expired();
-    }
-
-    void on_video_resize() noexcept final;
     void update() noexcept final;
     void clean_up() noexcept final;
-
-    auto ctx() noexcept -> auto& {
-        return _ctx;
-    }
 
     auto video() noexcept -> auto& {
         return _video;
     }
 
     auto loader() noexcept -> auto& {
-        return _ctx.loader();
+        return context().loader();
     }
 
     auto camera() noexcept -> auto& {
@@ -46,7 +37,7 @@ public:
     }
 
     auto frame_duration() noexcept {
-        return ctx().state().frame_duration().value();
+        return context().state().frame_duration().value();
     }
 
     operator cleanup_group&() noexcept {
@@ -61,7 +52,6 @@ private:
     }
 
     cleanup_group _cleanup;
-    execution_context& _ctx;
     video_context& _video;
     background_icosahedron _bg;
     volume_domain _volume;
@@ -71,7 +61,6 @@ private:
     surface_program _srfce_prog;
 
     orbiting_camera _camera;
-    timeout _is_done{std::chrono::seconds{60}};
 };
 
 } // namespace eagine::app

@@ -11,7 +11,7 @@
 namespace eagine::app {
 //------------------------------------------------------------------------------
 example::example(execution_context& ec, video_context& vc)
-  : _ctx{ec}
+  : timeouting_application{ec, std::chrono::seconds{60}}
   , _video{vc}
   , _bg{_video, {0.5F, 0.5F, 0.5F, 1.F}, {0.25F, 0.25F, 0.25F, 0.0F}, 1.F}
   , _mball_prog{*this}
@@ -31,11 +31,6 @@ example::example(execution_context& ec, video_context& vc)
 
     _camera.connect_inputs(ec).basic_input_mapping(ec);
     ec.setup_inputs().switch_input_mapping();
-}
-//------------------------------------------------------------------------------
-void example::on_video_resize() noexcept {
-    const auto& gl = _video.gl_api();
-    gl.viewport[_video.surface_size()];
 }
 //------------------------------------------------------------------------------
 void example::_on_loaded(const gl_program_resource::load_info& loaded) noexcept {
@@ -60,9 +55,9 @@ void example::_on_loaded(const gl_program_resource::load_info& loaded) noexcept 
 }
 //------------------------------------------------------------------------------
 void example::update() noexcept {
-    auto& state = _ctx.state();
+    auto& state = context().state();
     if(state.is_active()) {
-        _is_done.reset();
+        reset_timeout();
     }
     if(state.user_idle_too_long()) {
         _camera.idle_update(state, 7.F);
@@ -72,10 +67,10 @@ void example::update() noexcept {
         const auto& glapi = _video.gl_api();
         const auto& [gl, GL] = glapi;
 
-        _mball_prog.use(ctx());
+        _mball_prog.use(context());
         gl.dispatch_compute(1, 1, 1);
 
-        _field_prog.use(ctx());
+        _field_prog.use(context());
         _volume.compute(*this);
 
         _bg.clear(_video, _camera);
@@ -83,13 +78,13 @@ void example::update() noexcept {
         gl.enable(GL.depth_test);
         gl.enable(GL.cull_face);
 
-        _srfce_prog.use(ctx());
+        _srfce_prog.use(context());
         _srfce_prog.prepare_frame(*this);
         _volume.draw(*this);
     } else {
-        _mball_prog.update(ctx());
-        _field_prog.update(ctx());
-        _srfce_prog.update(ctx());
+        _mball_prog.update(context());
+        _field_prog.update(context());
+        _srfce_prog.update(context());
     }
 
     _video.commit();
@@ -97,9 +92,9 @@ void example::update() noexcept {
 //------------------------------------------------------------------------------
 void example::clean_up() noexcept {
     _bg.clean_up(_video);
-    _mball_prog.clean_up(_ctx);
-    _field_prog.clean_up(_ctx);
-    _srfce_prog.clean_up(_ctx);
+    _mball_prog.clean_up(context());
+    _field_prog.clean_up(context());
+    _srfce_prog.clean_up(context());
     _video.end();
 }
 //------------------------------------------------------------------------------

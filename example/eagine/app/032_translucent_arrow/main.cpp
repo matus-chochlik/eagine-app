@@ -15,24 +15,17 @@ import eagine.app;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-class example_arrow : public application {
+class example_arrow : public timeouting_application {
 public:
     example_arrow(
       execution_context&,
       video_context&,
       const std::shared_ptr<shapes::generator>&);
 
-    auto is_done() noexcept -> bool final {
-        return _is_done.is_expired();
-    }
-
-    void on_video_resize() noexcept final;
     void update() noexcept final;
 
 private:
-    execution_context& _ctx;
     video_context& _video;
-    timeout _is_done{std::chrono::seconds{30}};
 
     orbiting_camera camera;
 
@@ -46,7 +39,7 @@ example_arrow::example_arrow(
   execution_context& ec,
   video_context& vc,
   const std::shared_ptr<shapes::generator>& gen)
-  : _ctx{ec}
+  : timeouting_application{ec, std::chrono::seconds{30}}
   , _video{vc} {
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
@@ -85,15 +78,10 @@ example_arrow::example_arrow(
     ec.setup_inputs().switch_input_mapping();
 }
 //------------------------------------------------------------------------------
-void example_arrow::on_video_resize() noexcept {
-    const auto& gl = _video.gl_api();
-    gl.viewport[_video.surface_size()];
-}
-//------------------------------------------------------------------------------
 void example_arrow::update() noexcept {
-    auto& state = _ctx.state();
+    auto& state = context().state();
     if(state.is_active()) {
-        _is_done.reset();
+        reset_timeout();
     }
     if(state.user_idle_too_long()) {
         camera.idle_update(state, 5);
@@ -120,7 +108,7 @@ void example_arrow::update() noexcept {
     gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
     gl.depth_func(GL.less);
     gl.cull_face(GL.back);
-    draw_prog.update(_ctx, _video);
+    draw_prog.update(context(), _video);
     draw_prog.set_camera(_video, camera);
     shape.draw(_video);
 
