@@ -13,22 +13,15 @@ import eagine.app;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-class example_uv_map : public application {
+class example_uv_map : public timeouting_application {
 public:
     example_uv_map(execution_context&, video_context&);
 
-    auto is_done() noexcept -> bool final {
-        return _is_done.is_expired();
-    }
-
-    void on_video_resize() noexcept final;
     void update() noexcept final;
     void clean_up() noexcept final;
 
 private:
-    execution_context& _ctx;
     video_context& _video;
-    timeout _is_done{std::chrono::seconds{30}};
 
     std::vector<oglplus::shape_draw_operation> _ops;
     oglplus::owned_vertex_array_name vao;
@@ -49,7 +42,7 @@ private:
 };
 //------------------------------------------------------------------------------
 example_uv_map::example_uv_map(execution_context& ec, video_context& vc)
-  : _ctx{ec}
+  : timeouting_application{ec, std::chrono::seconds{30}}
   , _video{vc} {
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
@@ -91,7 +84,7 @@ example_uv_map::example_uv_map(execution_context& ec, video_context& vc)
       positions,
       position_loc,
       eagine::shapes::vertex_attrib_kind::position,
-      _ctx.buffer());
+      context().buffer());
     gl.bind_attrib_location(prog, position_loc, "Position");
 
     // normals
@@ -103,7 +96,7 @@ example_uv_map::example_uv_map(execution_context& ec, video_context& vc)
       normals,
       normal_loc,
       eagine::shapes::vertex_attrib_kind::normal,
-      _ctx.buffer());
+      context().buffer());
     gl.bind_attrib_location(prog, normal_loc, "Normal");
 
     // wrap_coords
@@ -115,12 +108,12 @@ example_uv_map::example_uv_map(execution_context& ec, video_context& vc)
       wrap_coords,
       wrap_coord_loc,
       eagine::shapes::vertex_attrib_kind::wrap_coord,
-      _ctx.buffer());
+      context().buffer());
     gl.bind_attrib_location(prog, wrap_coord_loc, "WrapCoord");
 
     // indices
     gl.gen_buffers() >> indices;
-    shape.index_setup(glapi, indices, _ctx.buffer());
+    shape.index_setup(glapi, indices, context().buffer());
 
     // color texture
     const auto color_tex_src{embed<"ColorTex">("barrel_1_color")};
@@ -199,15 +192,10 @@ example_uv_map::example_uv_map(execution_context& ec, video_context& vc)
     ec.setup_inputs().switch_input_mapping();
 }
 //------------------------------------------------------------------------------
-void example_uv_map::on_video_resize() noexcept {
-    const auto& gl = _video.gl_api();
-    gl.viewport[_video.surface_size()];
-}
-//------------------------------------------------------------------------------
 void example_uv_map::update() noexcept {
-    auto& state = _ctx.state();
+    auto& state = context().state();
     if(state.is_active()) {
-        _is_done.reset();
+        reset_timeout();
     }
     if(state.user_idle_too_long()) {
         camera.idle_update(state, 5.F);

@@ -14,22 +14,16 @@ import eagine.app;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-class example_edges : public application {
+class example_edges : public timeouting_application {
 public:
     example_edges(execution_context&, video_context&);
 
-    auto is_done() noexcept -> bool final {
-        return _is_done.is_expired();
-    }
-
-    void on_video_resize() noexcept final;
     void update() noexcept final;
     void clean_up() noexcept final;
 
 private:
     void _on_loaded(const gl_program_resource::load_info&) noexcept;
 
-    execution_context& _ctx;
     video_context& _video;
     background_icosahedron _bg;
 
@@ -37,17 +31,16 @@ private:
     icosahedron_geometry _shape;
 
     orbiting_camera _camera;
-    timeout _is_done{std::chrono::seconds{30}};
 };
 //------------------------------------------------------------------------------
 example_edges::example_edges(execution_context& ec, video_context& vc)
-  : _ctx{ec}
+  : timeouting_application{ec, std::chrono::seconds{30}}
   , _video{vc}
   , _bg{_video, {0.1F, 0.1F, 0.1F, 1.0F}, {0.4F, 0.4F, 0.4F, 0.0F}, 1.F}
-  , _prog{_ctx} {
+  , _prog{context()} {
     _prog.loaded.connect(make_callable_ref<&example_edges::_on_loaded>(this));
 
-    _shape.init(_ctx);
+    _shape.init(context());
 
     _camera.set_near(0.1F)
       .set_far(50.F)
@@ -70,18 +63,13 @@ example_edges::example_edges(execution_context& ec, video_context& vc)
 void example_edges::_on_loaded(
   const gl_program_resource::load_info& loaded) noexcept {
     loaded.apply_input_bindings(_shape);
-    _prog.set_projection(_ctx, _camera);
-}
-//------------------------------------------------------------------------------
-void example_edges::on_video_resize() noexcept {
-    const auto& gl = _video.gl_api();
-    gl.viewport[_video.surface_size()];
+    _prog.set_projection(context(), _camera);
 }
 //------------------------------------------------------------------------------
 void example_edges::update() noexcept {
-    auto& state = _ctx.state();
+    auto& state = context().state();
     if(state.is_active()) {
-        _is_done.reset();
+        reset_timeout();
     }
     if(state.user_idle_too_long()) {
         _camera.idle_update(state);
@@ -91,10 +79,10 @@ void example_edges::update() noexcept {
 
     if(_prog) {
         _prog.use(_video);
-        _prog.set_projection(_ctx, _camera);
+        _prog.set_projection(context(), _camera);
         _shape.use_and_draw(_video);
     } else {
-        _prog.update(_ctx);
+        _prog.update(context());
     }
 
     _video.commit();
@@ -102,7 +90,7 @@ void example_edges::update() noexcept {
 //------------------------------------------------------------------------------
 void example_edges::clean_up() noexcept {
 
-    _prog.clean_up(_ctx);
+    _prog.clean_up(context());
     _shape.clean_up(_video);
     _bg.clean_up(_video);
 

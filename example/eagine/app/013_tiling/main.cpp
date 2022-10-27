@@ -13,23 +13,16 @@ import eagine.app;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-class example_tiling : public application {
+class example_tiling : public timeouting_application {
 public:
     example_tiling(execution_context&, video_context&);
 
-    auto is_done() noexcept -> bool final {
-        return _is_done.is_expired();
-    }
-
-    void on_video_resize() noexcept final;
     void update() noexcept final;
     void clean_up() noexcept final;
     void change_tileset(const input&) noexcept;
 
 private:
-    execution_context& _ctx;
     video_context& _video;
-    timeout _is_done{std::chrono::seconds{60}};
 
     oglplus::geometry cube;
 
@@ -51,7 +44,7 @@ private:
 };
 //------------------------------------------------------------------------------
 example_tiling::example_tiling(execution_context& ec, video_context& vc)
-  : _ctx{ec}
+  : timeouting_application{ec, std::chrono::seconds{60}}
   , _video{vc} {
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
@@ -66,7 +59,7 @@ example_tiling::example_tiling(execution_context& ec, video_context& vc)
           shapes::vertex_attrib_kind::face_coord,
         32));
     oglplus::vertex_attrib_bindings bindings{shape};
-    cube = oglplus::geometry{glapi, shape, bindings, _ctx.buffer()};
+    cube = oglplus::geometry{glapi, shape, bindings, context().buffer()};
     cube.use(glapi);
 
     // vertex shader
@@ -147,7 +140,7 @@ example_tiling::example_tiling(execution_context& ec, video_context& vc)
     gl.get_uniform_location(prog, "Camera") >> camera_loc;
 
     const auto [azimuth, elevation, orbit] =
-      geo_coord.update(_ctx.state().frame_duration().value()).get();
+      geo_coord.update(context().state().frame_duration().value()).get();
     camera.set_near(0.01F)
       .set_far(50.F)
       .set_orbit_min(1.02F)
@@ -176,11 +169,6 @@ example_tiling::example_tiling(execution_context& ec, video_context& vc)
       .switch_input_mapping();
 }
 //------------------------------------------------------------------------------
-void example_tiling::on_video_resize() noexcept {
-    const auto& gl = _video.gl_api();
-    gl.viewport[_video.surface_size()];
-}
-//------------------------------------------------------------------------------
 void example_tiling::change_tileset(const input& i) noexcept {
     if(!i) {
         tileset_tex_idx = (tileset_tex_idx + 1) % tileset_tex_units.size();
@@ -188,9 +176,9 @@ void example_tiling::change_tileset(const input& i) noexcept {
 }
 //------------------------------------------------------------------------------
 void example_tiling::update() noexcept {
-    auto& state = _ctx.state();
+    auto& state = context().state();
     if(state.is_active()) {
-        _is_done.reset();
+        reset_timeout();
     }
     if(state.user_idle_too_long()) {
         const auto [azimuth, elevation, orbit] =
@@ -207,8 +195,8 @@ void example_tiling::update() noexcept {
                     break;
                 case animation_status::zoom_out:
                     geo_coord.set(
-                      {turns_(_ctx.random_uniform_01()),
-                       right_angles_(_ctx.random_uniform_11()),
+                      {turns_(context().random_uniform_01()),
+                       right_angles_(context().random_uniform_11()),
                        1.F},
                       3.F);
                     camera_status = animation_status::relocate;

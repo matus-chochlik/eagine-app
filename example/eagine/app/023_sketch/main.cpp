@@ -14,23 +14,16 @@ import eagine.app;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-class example_sketch : public application {
+class example_sketch : public timeouting_application {
 public:
     example_sketch(execution_context&, video_context&);
 
-    auto is_done() noexcept -> bool final {
-        return _is_done.is_expired();
-    }
-
-    void on_video_resize() noexcept final;
     void update() noexcept final;
     void clean_up() noexcept final;
 
 private:
-    execution_context& _ctx;
     video_context& _video;
     background_icosahedron _bg;
-    timeout _is_done{std::chrono::seconds{30}};
 
     orbiting_camera _camera;
     sketch_program _sketch_prog;
@@ -39,7 +32,7 @@ private:
 };
 //------------------------------------------------------------------------------
 example_sketch::example_sketch(execution_context& ec, video_context& vc)
-  : _ctx{ec}
+  : timeouting_application{ec, std::chrono::seconds{30}}
   , _video{vc}
   , _bg{_video, {0.50F, 0.50F, 0.45F, 1.0F}, {0.85F, 0.85F, 0.85F, 0.0F}, 1.F} {
     const auto& glapi = _video.gl_api();
@@ -69,15 +62,10 @@ example_sketch::example_sketch(execution_context& ec, video_context& vc)
     ec.setup_inputs().switch_input_mapping();
 }
 //------------------------------------------------------------------------------
-void example_sketch::on_video_resize() noexcept {
-    const auto& gl = _video.gl_api();
-    gl.viewport[_video.surface_size()];
-}
-//------------------------------------------------------------------------------
 void example_sketch::update() noexcept {
-    auto& state = _ctx.state();
+    auto& state = context().state();
     if(state.is_active()) {
-        _is_done.reset();
+        reset_timeout();
     }
     if(state.user_idle_too_long()) {
         _camera.idle_update(state, 9.F);
@@ -86,7 +74,7 @@ void example_sketch::update() noexcept {
     _bg.clear(_video, _camera);
 
     _sketch_prog.prepare_frame(
-      _video, _camera, _ctx.state().frame_time().value());
+      _video, _camera, context().state().frame_time().value());
     _shape.use_and_draw(_video);
 
     _video.commit();

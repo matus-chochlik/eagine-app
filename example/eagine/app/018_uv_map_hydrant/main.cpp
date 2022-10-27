@@ -13,15 +13,10 @@ import eagine.app;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-class example_uv_map : public application {
+class example_uv_map : public timeouting_application {
 public:
     example_uv_map(execution_context&, video_context&);
 
-    auto is_done() noexcept -> bool final {
-        return _is_done.is_expired();
-    }
-
-    void on_video_resize() noexcept final;
     void update() noexcept final;
     void clean_up() noexcept final;
 
@@ -47,7 +42,6 @@ private:
         return make_callable_ref<&example_uv_map::_on_tex_loaded>(this);
     }
 
-    execution_context& _ctx;
     video_context& _video;
     resource_loader& _loader;
     gl_geometry_and_bindings_resource _shape;
@@ -58,13 +52,12 @@ private:
     oglplus::uniform_location _light_dir_loc;
 
     orbiting_camera camera;
-    timeout _is_done{std::chrono::seconds{30}};
 };
 //------------------------------------------------------------------------------
 example_uv_map::example_uv_map(execution_context& ec, video_context& vc)
-  : _ctx{ec}
+  : timeouting_application{ec, std::chrono::seconds{30}}
   , _video{vc}
-  , _loader{_ctx.loader()}
+  , _loader{context().loader()}
   , _shape{url{"json:///HydrntShpe"}, _video, _loader}
   , _prog{url{"json:///HydrntProg"}, _video, _loader}
   , _tex{url{"json:///HydrantTex"}, _video, _loader} {
@@ -87,11 +80,6 @@ example_uv_map::example_uv_map(execution_context& ec, video_context& vc)
 
     gl.clear_color(0.35F, 0.35F, 0.35F, 1.0F);
     gl.enable(GL.depth_test);
-}
-//------------------------------------------------------------------------------
-void example_uv_map::on_video_resize() noexcept {
-    const auto& gl = _video.gl_api();
-    gl.viewport[_video.surface_size()];
 }
 //------------------------------------------------------------------------------
 void example_uv_map::_on_loaded(const loaded_resource_base& loaded) noexcept {
@@ -134,9 +122,9 @@ void example_uv_map::_on_tex_loaded(
 }
 //------------------------------------------------------------------------------
 void example_uv_map::update() noexcept {
-    auto& state = _ctx.state();
+    auto& state = context().state();
     if(state.is_active()) {
-        _is_done.reset();
+        reset_timeout();
     }
     if(state.user_idle_too_long()) {
         camera.idle_update(state, 5.F);

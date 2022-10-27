@@ -14,15 +14,10 @@ import eagine.app;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-class example_torus : public application {
+class example_torus : public timeouting_application {
 public:
     example_torus(execution_context&, video_context&);
 
-    auto is_done() noexcept -> bool final {
-        return _is_done.is_expired();
-    }
-
-    void on_video_resize() noexcept final;
     void update() noexcept final;
     void clean_up() noexcept final;
 
@@ -33,11 +28,8 @@ private:
         return make_callable_ref<&example_torus::_on_resource_loaded>(this);
     }
 
-    execution_context& _ctx;
     video_context& _video;
     resource_loader& _loader;
-
-    timeout _is_done{std::chrono::seconds{30}};
 
     orbiting_camera camera;
     torus_geometry torus;
@@ -45,9 +37,9 @@ private:
 };
 //------------------------------------------------------------------------------
 example_torus::example_torus(execution_context& ec, video_context& vc)
-  : _ctx{ec}
+  : timeouting_application{ec, std::chrono::seconds{30}}
   , _video{vc}
-  , _loader{_ctx.loader()}
+  , _loader{context().loader()}
   , torus{_video, _loader}
   , prog{_video, _loader} {
     torus.base_loaded.connect(_load_handler());
@@ -72,23 +64,17 @@ example_torus::example_torus(execution_context& ec, video_context& vc)
     gl.cull_face(GL.back);
 }
 //------------------------------------------------------------------------------
-void example_torus::on_video_resize() noexcept {
-    const auto& gl = _video.gl_api();
-    gl.viewport[_video.surface_size()];
-}
-//------------------------------------------------------------------------------
 void example_torus::_on_resource_loaded(const loaded_resource_base&) noexcept {
     if(torus && prog) {
         prog.apply_input_bindings(_video, torus);
-        _is_done.reset();
+        reset_timeout();
     }
 }
 //------------------------------------------------------------------------------
 void example_torus::update() noexcept {
-
-    auto& state = _ctx.state();
+    auto& state = context().state();
     if(state.is_active()) {
-        _is_done.reset();
+        reset_timeout();
     }
     if(state.user_idle_too_long()) {
         camera.idle_update(state);

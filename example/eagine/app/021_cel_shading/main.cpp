@@ -14,15 +14,10 @@ import eagine.app;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-class example_cel : public application {
+class example_cel : public timeouting_application {
 public:
     example_cel(execution_context&, video_context&);
 
-    auto is_done() noexcept -> bool final {
-        return _is_done.is_expired();
-    }
-
-    void on_video_resize() noexcept final;
     void update() noexcept final;
     void clean_up() noexcept final;
 
@@ -33,7 +28,6 @@ private:
         return make_callable_ref<&example_cel::_on_resource_loaded>(this);
     }
 
-    execution_context& _ctx;
     video_context& _video;
     resource_loader& _loader;
 
@@ -41,14 +35,12 @@ private:
     icosahedron_geometry _shape;
     cel_program _prog;
     background_icosahedron _bg;
-
-    timeout _is_done{std::chrono::seconds{30}};
 };
 //------------------------------------------------------------------------------
 example_cel::example_cel(execution_context& ec, video_context& vc)
-  : _ctx{ec}
+  : timeouting_application{ec, std::chrono::seconds{30}}
   , _video{vc}
-  , _loader{_ctx.loader()}
+  , _loader{context().loader()}
   , _shape{_video, _loader}
   , _prog{_video, _loader}
   , _bg{_video, {0.1F, 0.1F, 0.1F, 1.0F}, {0.4F, 0.4F, 0.4F, 0.0F}, 1.F} {
@@ -61,8 +53,8 @@ example_cel::example_cel(execution_context& ec, video_context& vc)
       .set_orbit_max(6.0F)
       .set_fov(right_angle_());
 
-    _camera.connect_inputs(_ctx).basic_input_mapping(_ctx);
-    _ctx.setup_inputs().switch_input_mapping();
+    _camera.connect_inputs(context()).basic_input_mapping(context());
+    context().setup_inputs().switch_input_mapping();
 
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
@@ -71,23 +63,18 @@ example_cel::example_cel(execution_context& ec, video_context& vc)
     gl.cull_face(GL.back);
 }
 //------------------------------------------------------------------------------
-void example_cel::on_video_resize() noexcept {
-    const auto& gl = _video.gl_api();
-    gl.viewport[_video.surface_size()];
-}
-//------------------------------------------------------------------------------
 void example_cel::_on_resource_loaded(const loaded_resource_base&) noexcept {
     if(_shape && _prog) {
         _prog.apply_input_bindings(_video, _shape);
         _prog.set_projection(_video, _camera);
-        _is_done.reset();
+        reset_timeout();
     }
 }
 //------------------------------------------------------------------------------
 void example_cel::update() noexcept {
-    auto& state = _ctx.state();
+    auto& state = context().state();
     if(state.is_active()) {
-        _is_done.reset();
+        reset_timeout();
     }
     if(state.user_idle_too_long()) {
         _camera.idle_update(state);
@@ -98,7 +85,7 @@ void example_cel::update() noexcept {
     if(_shape && _prog) {
         _prog.use(_video);
         _prog.set_projection(_video, _camera);
-        _prog.set_modelview(_ctx, _video);
+        _prog.set_modelview(context(), _video);
         _shape.use_and_draw(_video);
     } else {
         _shape.update(_video, _loader);

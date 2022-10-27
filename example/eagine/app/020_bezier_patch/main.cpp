@@ -14,39 +14,32 @@ import eagine.app;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-class example_bpatch : public application {
+class example_bpatch : public timeouting_application {
 public:
     example_bpatch(execution_context&, video_context&);
 
-    auto is_done() noexcept -> bool final {
-        return _is_done.is_expired();
-    }
-
-    void on_video_resize() noexcept final;
     void update() noexcept final;
     void clean_up() noexcept final;
 
 private:
     void _on_prog_loaded(const gl_program_resource::load_info&) noexcept;
 
-    execution_context& _ctx;
     video_context& _video;
 
     patch_program _prog;
     patch_geometry _shape;
 
     orbiting_camera _camera;
-    timeout _is_done{std::chrono::seconds{30}};
 };
 //------------------------------------------------------------------------------
 example_bpatch::example_bpatch(execution_context& ec, video_context& vc)
-  : _ctx{ec}
+  : timeouting_application{ec, std::chrono::seconds{30}}
   , _video{vc}
-  , _prog{_ctx} {
+  , _prog{context()} {
     _prog.loaded.connect(
       make_callable_ref<&example_bpatch::_on_prog_loaded>(this));
 
-    _shape.init(_ctx);
+    _shape.init(context());
 
     _camera.set_near(0.1F)
       .set_far(50.F)
@@ -55,8 +48,8 @@ example_bpatch::example_bpatch(execution_context& ec, video_context& vc)
       .set_fov(degrees_(70.F));
     _prog.set_projection(vc, _camera);
 
-    _camera.connect_inputs(ec).basic_input_mapping(_ctx);
-    _ctx.setup_inputs().switch_input_mapping();
+    _camera.connect_inputs(ec).basic_input_mapping(context());
+    context().setup_inputs().switch_input_mapping();
 
     const auto& [gl, GL] = _video.gl_api();
 
@@ -72,15 +65,10 @@ void example_bpatch::_on_prog_loaded(
     _prog.bind_position_location(_video, _shape.position_loc());
 }
 //------------------------------------------------------------------------------
-void example_bpatch::on_video_resize() noexcept {
-    const auto& gl = _video.gl_api();
-    gl.viewport[_video.surface_size()];
-}
-//------------------------------------------------------------------------------
 void example_bpatch::update() noexcept {
-    auto& state = _ctx.state();
+    auto& state = context().state();
     if(state.is_active()) {
-        _is_done.reset();
+        reset_timeout();
     }
     if(state.user_idle_too_long()) {
         _camera.idle_update(state, 8.F);
@@ -97,14 +85,14 @@ void example_bpatch::update() noexcept {
         gl.enable(GL.blend);
         gl.polygon_mode(GL.front_and_back, GL.fill);
         _prog.set_surface_color(_video);
-        _shape.draw(_ctx);
+        _shape.draw(context());
         gl.disable(GL.blend);
 
         gl.polygon_mode(GL.front_and_back, GL.line);
         _prog.set_wireframe_color(_video);
-        _shape.draw(_ctx);
+        _shape.draw(context());
     } else {
-        _prog.update(_ctx);
+        _prog.update(context());
     }
 
     _video.commit();
@@ -112,8 +100,8 @@ void example_bpatch::update() noexcept {
 //------------------------------------------------------------------------------
 void example_bpatch::clean_up() noexcept {
 
-    _prog.clean_up(_ctx);
-    _shape.clean_up(_ctx);
+    _prog.clean_up(context());
+    _shape.clean_up(context());
 
     _video.end();
 }

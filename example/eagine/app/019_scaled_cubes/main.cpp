@@ -16,22 +16,15 @@ import <cmath>;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-class example_cubes : public application {
+class example_cubes : public timeouting_application {
 public:
     example_cubes(execution_context&, video_context&);
 
-    auto is_done() noexcept -> bool final {
-        return _is_done.is_expired();
-    }
-
-    void on_video_resize() noexcept final;
     void update() noexcept final;
     void clean_up() noexcept final;
 
 private:
-    execution_context& _ctx;
     video_context& _video;
-    timeout _is_done{std::chrono::seconds{30}};
 
     orbiting_camera camera;
     cubes_program prog;
@@ -39,7 +32,7 @@ private:
 };
 //------------------------------------------------------------------------------
 example_cubes::example_cubes(execution_context& ec, video_context& vc)
-  : _ctx{ec}
+  : timeouting_application{ec, std::chrono::seconds{30}}
   , _video{vc} {
     const auto& glapi = _video.gl_api();
     auto& [gl, GL] = glapi;
@@ -68,15 +61,10 @@ example_cubes::example_cubes(execution_context& ec, video_context& vc)
     ec.setup_inputs().switch_input_mapping();
 }
 //------------------------------------------------------------------------------
-void example_cubes::on_video_resize() noexcept {
-    const auto& gl = _video.gl_api();
-    gl.viewport[_video.surface_size()];
-}
-//------------------------------------------------------------------------------
 void example_cubes::update() noexcept {
-    auto& state = _ctx.state();
+    auto& state = context().state();
     if(state.is_active()) {
-        _is_done.reset();
+        reset_timeout();
     }
     if(state.user_idle_too_long()) {
         camera.idle_update(state, 3.F);
@@ -86,7 +74,7 @@ void example_cubes::update() noexcept {
     const auto& [gl, GL] = glapi;
 
     gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
-    prog.update(_ctx, _video);
+    prog.update(context(), _video);
     prog.set_projection(_video, camera);
 
     prog.drawing_surface(_video);
