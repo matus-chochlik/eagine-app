@@ -13,28 +13,20 @@
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-class example : public application {
+class example : public timeouting_application {
 public:
     example(execution_context&, video_context&);
-
-    auto is_done() noexcept -> bool final {
-        return _is_done.is_expired();
-    }
 
     void on_video_resize() noexcept final;
     void update() noexcept final;
     void clean_up() noexcept final;
-
-    auto ctx() noexcept -> auto& {
-        return _ctx;
-    }
 
     auto video() noexcept -> auto& {
         return _video;
     }
 
     auto loader() noexcept -> auto& {
-        return _ctx.loader();
+        return context().loader();
     }
 
     auto cleanup() noexcept -> auto& {
@@ -49,7 +41,6 @@ private:
     void _on_resource_loaded(const loaded_resource_base&) noexcept;
 
     cleanup_group _cleanup;
-    execution_context& _ctx;
     video_context& _video;
 
     draw_program _draw_prog;
@@ -59,7 +50,6 @@ private:
     draw_buffers _draw_bufs;
 
     orbiting_camera _camera;
-    timeout _is_done{std::chrono::seconds{30}};
 };
 //------------------------------------------------------------------------------
 } // namespace eagine::app

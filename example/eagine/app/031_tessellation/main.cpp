@@ -14,22 +14,16 @@ import eagine.app;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-class example_sphere : public application {
+class example_sphere : public timeouting_application {
 public:
     example_sphere(execution_context&, video_context&);
 
-    auto is_done() noexcept -> bool final {
-        return _is_done.is_expired();
-    }
-
-    void on_video_resize() noexcept final;
     void update() noexcept final;
     void clean_up() noexcept final;
 
 private:
     void _on_prog_loaded(const gl_program_resource::load_info&) noexcept;
 
-    execution_context& _ctx;
     video_context& _video;
     resource_loader& _loader;
     background_icosahedron _bg;
@@ -38,13 +32,12 @@ private:
     icosahedron_geometry _shape;
 
     orbiting_camera _camera;
-    timeout _is_done{std::chrono::seconds{30}};
 };
 //------------------------------------------------------------------------------
 example_sphere::example_sphere(execution_context& ec, video_context& vc)
-  : _ctx{ec}
+  : timeouting_application{ec, std::chrono::seconds{30}}
   , _video{vc}
-  , _loader{_ctx.loader()}
+  , _loader{ec.loader()}
   , _bg{_video, {0.0F, 0.0F, 0.0F, 1.F}, {0.25F, 0.25F, 0.25F, 0.0F}, 1.F}
   , _prog{_video, _loader} {
     _prog.loaded.connect(
@@ -69,15 +62,10 @@ void example_sphere::_on_prog_loaded(
       "OffsetBlock", _shape.offsets_binding());
 }
 //------------------------------------------------------------------------------
-void example_sphere::on_video_resize() noexcept {
-    const auto& gl = _video.gl_api();
-    gl.viewport[_video.surface_size()];
-}
-//------------------------------------------------------------------------------
 void example_sphere::update() noexcept {
-    auto& state = _ctx.state();
+    auto& state = context().state();
     if(state.is_active()) {
-        _is_done.reset();
+        reset_timeout();
     }
     if(state.user_idle_too_long()) {
         _camera.idle_update(state, 7.F);

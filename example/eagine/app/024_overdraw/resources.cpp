@@ -91,12 +91,12 @@ void shape_geometry::init(example& e) {
       _positions,
       position_loc(),
       eagine::shapes::vertex_attrib_kind::position,
-      e.ctx().buffer());
+      e.context().buffer());
 
     // indices
     gl.gen_buffers() >> _indices;
     gl.delete_buffers.later_by(e.cleanup(), _indices);
-    shape.index_setup(glapi, _indices, e.ctx().buffer());
+    shape.index_setup(glapi, _indices, e.context().buffer());
 
     // offsets
     const float d = 1.414F;
@@ -164,7 +164,7 @@ void screen_geometry::init(example& e) {
       _positions,
       position_loc(),
       eagine::shapes::vertex_attrib_kind::position,
-      e.ctx().buffer());
+      e.context().buffer());
 
     // coords
     gl.gen_buffers() >> _tex_coords;
@@ -175,7 +175,7 @@ void screen_geometry::init(example& e) {
       _tex_coords,
       tex_coord_loc(),
       eagine::shapes::vertex_attrib_kind::wrap_coord,
-      e.ctx().buffer());
+      e.context().buffer());
 }
 //------------------------------------------------------------------------------
 void screen_geometry::draw(example& e) {

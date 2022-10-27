@@ -14,7 +14,7 @@ namespace eagine::app {
 // example
 //------------------------------------------------------------------------------
 example::example(execution_context& ec, video_context& vc)
-  : _ctx{ec}
+  : timeouting_application{ec, std::chrono::seconds{30}}
   , _video{vc}
   , _draw_prog{*this}
   , _screen_prog{*this} {
@@ -63,9 +63,9 @@ void example::on_video_resize() noexcept {
 }
 //------------------------------------------------------------------------------
 void example::update() noexcept {
-    auto& state = _ctx.state();
+    auto& state = context().state();
     if(state.is_active()) {
-        _is_done.reset();
+        reset_timeout();
     }
     if(state.user_idle_too_long()) {
         _camera.idle_update(state);
@@ -82,7 +82,7 @@ void example::update() noexcept {
         gl.enable(GL.depth_test);
         gl.enable(GL.blend);
 
-        _draw_prog.use(ctx());
+        _draw_prog.use(context());
         _draw_prog.set_projection(*this);
         _shape.draw(*this);
 
@@ -92,12 +92,12 @@ void example::update() noexcept {
         // draw onscreen
         _draw_bufs.draw_onscreen(*this);
 
-        _screen_prog.use(ctx());
+        _screen_prog.use(context());
         _screen_prog.set_screen_size(*this);
         _screen.draw(*this);
     } else {
-        _draw_prog.update(ctx());
-        _screen_prog.update(ctx());
+        _draw_prog.update(context());
+        _screen_prog.update(context());
     }
 
     _video.commit();

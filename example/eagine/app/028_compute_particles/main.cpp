@@ -15,7 +15,7 @@ import eagine.app;
 namespace eagine::app {
 //------------------------------------------------------------------------------
 example::example(execution_context& ec, video_context& vc)
-  : _ctx{ec}
+  : timeouting_application{ec, std::chrono::seconds{60}}
   , _video{vc}
   , _bg{_video, {0.45F, 0.40F, 0.35F, 1.0F}, {0.25F, 0.25F, 0.25F, 0.0F}, 1.F}
   , _path{view(std::array<oglplus::vec3, 4>{
@@ -62,15 +62,10 @@ void example::_on_resource_loaded(const loaded_resource_base& loaded) noexcept {
     }
 }
 //------------------------------------------------------------------------------
-void example::on_video_resize() noexcept {
-    const auto& gl = _video.gl_api();
-    gl.viewport[_video.surface_size()];
-}
-//------------------------------------------------------------------------------
 void example::update() noexcept {
-    auto& state = _ctx.state();
+    auto& state = context().state();
     if(state.is_active()) {
-        _is_done.reset();
+        reset_timeout();
     }
     if(state.user_idle_too_long()) {
         _camera.idle_update(state, 7.F);
@@ -85,8 +80,8 @@ void example::update() noexcept {
         _draw_prog.prepare_frame(*this);
         _particles.draw(*this);
     } else {
-        _emit_prog.update(ctx());
-        _draw_prog.update(ctx());
+        _emit_prog.update(context());
+        _draw_prog.update(context());
     }
 
     _video.commit();
@@ -95,8 +90,8 @@ void example::update() noexcept {
 void example::clean_up() noexcept {
     _bg.clean_up(_video);
     _particles.clean_up(*this);
-    _draw_prog.clean_up(_ctx);
-    _emit_prog.clean_up(_ctx);
+    _draw_prog.clean_up(context());
+    _emit_prog.clean_up(context());
     _video.end();
 }
 //------------------------------------------------------------------------------

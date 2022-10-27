@@ -44,7 +44,7 @@ void particles::init(example& e) {
     std::vector<oglplus::gl_types::float_type> init_data;
     // random
     init_data.resize(std_size(_count * 16));
-    e.ctx().random_uniform_01(cover(init_data));
+    e.context().random_uniform_01(cover(init_data));
 
     gl.gen_buffers() >> _random;
     gl.bind_buffer(GL.shader_storage_buffer, _random);
@@ -118,7 +118,7 @@ void emit_program::_on_loaded(
 }
 //------------------------------------------------------------------------------
 void emit_program::prepare_frame(example& e) {
-    use(e.ctx());
+    use(e.context());
     const auto& gl = e.video().gl_api();
     gl.set_uniform(*this, _emit_position_loc, e.emit_position());
     gl.set_uniform(*this, _delta_time_loc, e.frame_duration());
@@ -172,7 +172,7 @@ void draw_program::_on_loaded(
 }
 //------------------------------------------------------------------------------
 void draw_program::prepare_frame(example& e) {
-    use(e.ctx());
+    use(e.context());
     e.video().gl_api().set_uniform(
       *this, _camera_mat_loc, e.camera().transform_matrix());
     e.video().gl_api().set_uniform(

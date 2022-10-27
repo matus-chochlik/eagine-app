@@ -14,38 +14,30 @@ import eagine.app;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-class example_cube : public application {
+class example_cube : public timeouting_application {
 public:
     example_cube(execution_context&, video_context&);
 
-    auto is_done() noexcept -> bool final {
-        return _is_done.is_expired();
-    }
-
-    void on_video_resize() noexcept final;
     void update() noexcept final;
     void clean_up() noexcept final;
 
 private:
     void _on_resource_loaded(const loaded_resource_base&) noexcept;
 
-    execution_context& _ctx;
     video_context& _video;
 
     cube_program _prog;
     cube_geometry _cube;
     cube_draw_buffers _bufs;
-
-    timeout _is_done{std::chrono::seconds{30}};
 };
 //------------------------------------------------------------------------------
 example_cube::example_cube(execution_context& ec, video_context& vc)
-  : _ctx{ec}
+  : timeouting_application{ec, std::chrono::seconds{30}}
   , _video{vc}
-  , _prog{_ctx}
-  , _cube{_ctx} {
+  , _prog{context()}
+  , _cube{context()} {
 
-    _bufs.init(_ctx);
+    _bufs.init(context());
 
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
@@ -64,28 +56,24 @@ void example_cube::_on_resource_loaded(const loaded_resource_base&) noexcept {
     }
 }
 //------------------------------------------------------------------------------
-void example_cube::on_video_resize() noexcept {
-    _video.gl_api().viewport[_video.surface_size()];
-}
-//------------------------------------------------------------------------------
 void example_cube::update() noexcept {
-    if(_ctx.state().is_active()) {
-        _is_done.reset();
+    if(context().state().is_active()) {
+        reset_timeout();
     }
 
     if(_prog && _cube) {
         const auto& glapi = _video.gl_api();
         const auto& [gl, GL] = glapi;
 
-        _prog.prepare_frame(_ctx);
-        _prog.set_texture(_ctx, _bufs.front_tex_unit());
+        _prog.prepare_frame(context());
+        _prog.set_texture(context(), _bufs.front_tex_unit());
 
         // draw into texture
         gl.bind_framebuffer(GL.draw_framebuffer, _bufs.back_fbo());
         gl.viewport(_bufs.side(), _bufs.side());
 
         _prog.set_projection(
-          _ctx,
+          context(),
           oglplus::matrix_perspective(-0.5F, 0.5F, -0.5F, 0.5F, 1.0F, 5.F) *
             oglplus::matrix_translation(0.F, 0.F, -2.F));
 
@@ -99,7 +87,7 @@ void example_cube::update() noexcept {
         const float h = 0.55F;
         const float w = h * _video.surface_aspect();
         _prog.set_projection(
-          _ctx,
+          context(),
           oglplus::matrix_perspective(-w, +w, -h, +h, 1.F, 3.F) *
             oglplus::matrix_translation(0.F, 0.F, -2.F));
 
@@ -108,8 +96,8 @@ void example_cube::update() noexcept {
         // swap texture draw buffers
         _bufs.swap();
     } else {
-        _prog.update(_ctx);
-        _cube.update(_ctx);
+        _prog.update(context());
+        _cube.update(context());
     }
 
     _video.commit();
@@ -117,9 +105,9 @@ void example_cube::update() noexcept {
 //------------------------------------------------------------------------------
 void example_cube::clean_up() noexcept {
 
-    _bufs.clean_up(_ctx);
-    _cube.clean_up(_ctx);
-    _prog.clean_up(_ctx);
+    _bufs.clean_up(context());
+    _cube.clean_up(context());
+    _prog.clean_up(context());
 
     _video.end();
 }

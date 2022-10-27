@@ -14,15 +14,10 @@ import eagine.app;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-class example_halo : public application {
+class example_halo : public timeouting_application {
 public:
     example_halo(execution_context&, video_context&);
 
-    auto is_done() noexcept -> bool final {
-        return _is_done.is_expired();
-    }
-
-    void on_video_resize() noexcept final;
     void update() noexcept final;
     void clean_up() noexcept final;
 
@@ -33,7 +28,6 @@ private:
         return make_callable_ref<&example_halo::_on_resource_loaded>(this);
     }
 
-    execution_context& _ctx;
     video_context& _video;
     resource_loader& _loader;
 
@@ -42,13 +36,12 @@ private:
     shape_geometry _shape;
 
     orbiting_camera _camera;
-    timeout _is_done{std::chrono::seconds{30}};
 };
 //------------------------------------------------------------------------------
 example_halo::example_halo(execution_context& ec, video_context& vc)
-  : _ctx{ec}
+  : timeouting_application{ec, std::chrono::seconds{60}}
   , _video{vc}
-  , _loader{_ctx.loader()}
+  , _loader{context().loader()}
   , _surf_prog{_video, _loader}
   , _halo_prog{_video, _loader}
   , _shape{_video, _loader} {
@@ -76,11 +69,6 @@ example_halo::example_halo(execution_context& ec, video_context& vc)
     gl.blend_func(GL.src_alpha, GL.one);
 }
 //------------------------------------------------------------------------------
-void example_halo::on_video_resize() noexcept {
-    const auto& gl = _video.gl_api();
-    gl.viewport[_video.surface_size()];
-}
-//------------------------------------------------------------------------------
 void example_halo::_on_resource_loaded(const loaded_resource_base&) noexcept {
     if(_shape) {
         if(_surf_prog) {
@@ -95,9 +83,9 @@ void example_halo::_on_resource_loaded(const loaded_resource_base&) noexcept {
 }
 //------------------------------------------------------------------------------
 void example_halo::update() noexcept {
-    auto& state = _ctx.state();
+    auto& state = context().state();
     if(state.is_active()) {
-        _is_done.reset();
+        reset_timeout();
     }
     if(state.user_idle_too_long()) {
         _camera.idle_update(state, 11.F);
@@ -109,7 +97,7 @@ void example_halo::update() noexcept {
 
         gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
 
-        float t = _ctx.state().frame_time().value();
+        float t = context().state().frame_time().value();
         _surf_prog.prepare_frame(_video, _camera, t);
         _shape.draw(_video);
 

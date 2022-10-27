@@ -13,15 +13,10 @@ import eagine.app;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-class example_stencil_shadow : public application {
+class example_stencil_shadow : public timeouting_application {
 public:
     example_stencil_shadow(execution_context&, video_context&);
 
-    auto is_done() noexcept -> bool final {
-        return _is_done.is_expired();
-    }
-
-    void on_video_resize() noexcept final;
     void update() noexcept final;
     void clean_up() noexcept final;
 
@@ -29,7 +24,6 @@ private:
     void _on_prog_loaded(const gl_program_resource::load_info&) noexcept;
     void _on_resource_loaded(const loaded_resource_base&) noexcept;
 
-    execution_context& _ctx;
     video_context& _video;
     background_skybox _bg;
 
@@ -47,18 +41,17 @@ private:
     oglplus::uniform_location light_mult_loc;
 
     orbiting_camera camera;
-    timeout _is_done{std::chrono::seconds{90}};
 };
 //------------------------------------------------------------------------------
 example_stencil_shadow::example_stencil_shadow(
   execution_context& ec,
   video_context& vc)
-  : _ctx{ec}
+  : timeouting_application{ec, std::chrono::seconds{90}}
   , _video{vc}
   , _bg{_video, embed<"CubeMap">("cloudy_day").unpack(ec)}
-  , _draw_prog{url{"json:///DrawProg"}, _ctx}
-  , _mask_prog{url{"json:///MaskProg"}, _ctx}
-  , _wheelcart{url{"json:///Wheelcart"}, _ctx} {
+  , _draw_prog{url{"json:///DrawProg"}, context()}
+  , _mask_prog{url{"json:///MaskProg"}, context()}
+  , _wheelcart{url{"json:///Wheelcart"}, context()} {
     _draw_prog.loaded.connect(
       make_callable_ref<&example_stencil_shadow::_on_prog_loaded>(this));
     _mask_prog.loaded.connect(
@@ -111,7 +104,7 @@ example_stencil_shadow::example_stencil_shadow(
       .set_fov(degrees_(70))
       .set_near(0.01F)
       .set_far(100.0F);
-    camera.idle_update(_ctx.state(), 11.F);
+    camera.idle_update(context().state(), 11.F);
 
     camera.connect_inputs(ec).basic_input_mapping(ec);
     ec.setup_inputs().switch_input_mapping();
@@ -134,15 +127,10 @@ void example_stencil_shadow::_on_prog_loaded(
     }
 }
 //------------------------------------------------------------------------------
-void example_stencil_shadow::on_video_resize() noexcept {
-    const auto& gl = _video.gl_api();
-    gl.viewport[_video.surface_size()];
-}
-//------------------------------------------------------------------------------
 void example_stencil_shadow::update() noexcept {
-    auto& state = _ctx.state();
+    auto& state = context().state();
     if(state.is_active()) {
-        _is_done.reset();
+        reset_timeout();
     }
     if(state.user_idle_too_long()) {
         camera.idle_update(state, 11.F);
@@ -202,10 +190,10 @@ void example_stencil_shadow::update() noexcept {
         gl.cull_face(GL.back);
         _wheelcart.draw(_video);
     } else if(_wheelcart) {
-        _draw_prog.update(_ctx);
-        _mask_prog.update(_ctx);
+        _draw_prog.update(context());
+        _mask_prog.update(context());
     } else {
-        _wheelcart.update(_ctx);
+        _wheelcart.update(context());
     }
 
     _video.commit();
@@ -213,9 +201,9 @@ void example_stencil_shadow::update() noexcept {
 //------------------------------------------------------------------------------
 void example_stencil_shadow::clean_up() noexcept {
     _bg.clean_up(_video);
-    _wheelcart.clean_up(_ctx);
-    _mask_prog.clean_up(_ctx);
-    _draw_prog.clean_up(_ctx);
+    _wheelcart.clean_up(context());
+    _mask_prog.clean_up(context());
+    _draw_prog.clean_up(context());
 
     const auto& gl = _video.gl_api();
     gl.clean_up(std::move(light_tex));
