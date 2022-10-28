@@ -12,8 +12,8 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 // program
 //------------------------------------------------------------------------------
-cel_program::cel_program(video_context& video, resource_loader& loader)
-  : gl_program_resource{url{"json:///CelProg"}, video, loader} {
+cel_program::cel_program(execution_context& ctx)
+  : gl_program_resource{url{"json:///CelProg"}, ctx} {
     loaded.connect(make_callable_ref<&cel_program::_on_loaded>(this));
 }
 //------------------------------------------------------------------------------
@@ -43,12 +43,9 @@ void cel_program::set_modelview(execution_context& ec, video_context& video) {
 //------------------------------------------------------------------------------
 // geometry
 //------------------------------------------------------------------------------
-icosahedron_geometry::icosahedron_geometry(
-  video_context& video,
-  resource_loader& loader)
+icosahedron_geometry::icosahedron_geometry(execution_context& ctx)
   : gl_geometry_and_bindings_resource{
       url{"shape:///unit_icosahedron?position=true"},
-      video,
-      loader} {}
+      ctx} {}
 //------------------------------------------------------------------------------
 } // namespace eagine::app

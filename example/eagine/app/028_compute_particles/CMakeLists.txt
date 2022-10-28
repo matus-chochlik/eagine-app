@@ -15,6 +15,7 @@ eagine_embed_target_resources(
 		CompShader "compute.glsl"
 		DrawProg   "draw_prog.json"
 		EmitProg   "emit_prog.json"
+		PathPoints "path.json"
 	PACKED
 	ENABLE_SEARCH
 )

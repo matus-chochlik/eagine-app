@@ -20,7 +20,7 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 class cel_program : public gl_program_resource {
 public:
-    cel_program(video_context&, resource_loader&);
+    cel_program(execution_context&);
     void set_projection(video_context&, orbiting_camera& camera);
     void set_modelview(execution_context&, video_context&);
 
@@ -36,7 +36,7 @@ private:
 //------------------------------------------------------------------------------
 class icosahedron_geometry : public gl_geometry_and_bindings_resource {
 public:
-    icosahedron_geometry(video_context&, resource_loader&);
+    icosahedron_geometry(execution_context&);
 };
 //------------------------------------------------------------------------------
 } // namespace eagine::app

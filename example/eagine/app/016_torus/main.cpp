@@ -88,16 +88,16 @@ void example_torus::update() noexcept {
         prog.set_projection(_video, camera);
         torus.use_and_draw(_video);
     } else {
-        torus.load_if_needed(_video, _loader);
-        prog.load_if_needed(_video, _loader);
+        torus.load_if_needed(context());
+        prog.load_if_needed(context());
     }
 
     _video.commit();
 }
 //------------------------------------------------------------------------------
 void example_torus::clean_up() noexcept {
-    prog.clean_up(_video, _loader);
-    torus.clean_up(_video, _loader);
+    prog.clean_up(context());
+    torus.clean_up(context());
 
     _video.end();
 }

@@ -12,8 +12,8 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 // surface program
 //------------------------------------------------------------------------------
-surface_program::surface_program(video_context& video, resource_loader& loader)
-  : gl_program_resource{url{"json:///SurfProg"}, video, loader} {
+surface_program::surface_program(execution_context& ctx)
+  : gl_program_resource{url{"json:///SurfProg"}, ctx} {
     loaded.connect(make_callable_ref<&surface_program::_on_loaded>(this));
 }
 //------------------------------------------------------------------------------
@@ -39,8 +39,8 @@ void surface_program::prepare_frame(
 //------------------------------------------------------------------------------
 // halo program
 //------------------------------------------------------------------------------
-halo_program::halo_program(video_context& video, resource_loader& loader)
-  : gl_program_resource{url{"json:///HaloProg"}, video, loader} {
+halo_program::halo_program(execution_context& ctx)
+  : gl_program_resource{url{"json:///HaloProg"}, ctx} {
     loaded.connect(make_callable_ref<&halo_program::_on_loaded>(this));
 }
 //------------------------------------------------------------------------------
@@ -69,8 +69,7 @@ void halo_program::prepare_frame(
 //------------------------------------------------------------------------------
 // geometry
 //------------------------------------------------------------------------------
-shape_geometry::shape_geometry(video_context& video, resource_loader& loader)
-  : gl_geometry_and_bindings_resource{url{"json:///TwstdSphre"}, video, loader} {
-}
+shape_geometry::shape_geometry(execution_context& ctx)
+  : gl_geometry_and_bindings_resource{url{"json:///TwstdSphre"}, ctx} {}
 //------------------------------------------------------------------------------
 } // namespace eagine::app

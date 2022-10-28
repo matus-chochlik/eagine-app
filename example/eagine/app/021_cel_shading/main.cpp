@@ -41,8 +41,8 @@ example_cel::example_cel(execution_context& ec, video_context& vc)
   : timeouting_application{ec, std::chrono::seconds{30}}
   , _video{vc}
   , _loader{context().loader()}
-  , _shape{_video, _loader}
-  , _prog{_video, _loader}
+  , _shape{context()}
+  , _prog{context()}
   , _bg{_video, {0.1F, 0.1F, 0.1F, 1.0F}, {0.4F, 0.4F, 0.4F, 0.0F}, 1.F} {
     _shape.base_loaded.connect(_load_handler());
     _prog.base_loaded.connect(_load_handler());
@@ -88,8 +88,8 @@ void example_cel::update() noexcept {
         _prog.set_modelview(context(), _video);
         _shape.use_and_draw(_video);
     } else {
-        _shape.load_if_needed(_video, _loader);
-        _prog.load_if_needed(_video, _loader);
+        _shape.load_if_needed(context());
+        _prog.load_if_needed(context());
     }
 
     _video.commit();
@@ -97,8 +97,8 @@ void example_cel::update() noexcept {
 //------------------------------------------------------------------------------
 void example_cel::clean_up() noexcept {
 
-    _prog.clean_up(_video, _loader);
-    _shape.clean_up(_video, _loader);
+    _prog.clean_up(context());
+    _shape.clean_up(context());
     _bg.clean_up(_video);
 
     _video.end();

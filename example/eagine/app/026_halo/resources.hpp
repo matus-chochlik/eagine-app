@@ -20,7 +20,7 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 class surface_program : public gl_program_resource {
 public:
-    surface_program(video_context&, resource_loader&);
+    surface_program(execution_context&);
     void prepare_frame(video_context&, orbiting_camera& camera, float t);
 
 private:
@@ -33,7 +33,7 @@ private:
 //------------------------------------------------------------------------------
 class halo_program : public gl_program_resource {
 public:
-    halo_program(video_context&, resource_loader&);
+    halo_program(execution_context&);
     void prepare_frame(video_context&, orbiting_camera& camera, float t);
 
 private:
@@ -49,7 +49,7 @@ private:
 //------------------------------------------------------------------------------
 class shape_geometry : public gl_geometry_and_bindings_resource {
 public:
-    shape_geometry(video_context&, resource_loader&);
+    shape_geometry(execution_context&);
 };
 //------------------------------------------------------------------------------
 } // namespace eagine::app

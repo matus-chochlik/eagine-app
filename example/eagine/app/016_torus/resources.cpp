@@ -35,7 +35,7 @@ void torus_program::_on_loaded(
 torus_geometry::torus_geometry(video_context& video, resource_loader& loader)
   : gl_geometry_and_bindings_resource{
       url{"shape:///unit_torus?position=true+normal=true+wrap_coord=true"},
-      video,
-      loader} {}
+      loader,
+      video} {}
 //------------------------------------------------------------------------------
 } // namespace eagine::app

@@ -20,7 +20,7 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 class draw_program : public gl_program_resource {
 public:
-    draw_program(video_context&, resource_loader&);
+    draw_program(execution_context&);
 
     void set_camera(video_context&, const orbiting_camera& camera);
     void set_candle_light(video_context&, oglplus::gl_types::float_type);
@@ -38,7 +38,7 @@ private:
 //------------------------------------------------------------------------------
 class screen_program : public gl_program_resource {
 public:
-    screen_program(video_context&, resource_loader&);
+    screen_program(execution_context&);
 
     void set_screen_size(video_context& vc);
     void set_texture_unit(video_context&, oglplus::texture_unit::value_type);
@@ -54,7 +54,7 @@ private:
 //------------------------------------------------------------------------------
 class pumpkin_geometry : public gl_geometry_and_bindings_resource {
 public:
-    pumpkin_geometry(video_context&, resource_loader&);
+    pumpkin_geometry(execution_context&);
 
     auto bounding_sphere() const noexcept {
         return _bounding_sphere;
@@ -69,10 +69,9 @@ private:
 class pumpkin_texture : public gl_texture_resource {
 
 public:
-    pumpkin_texture(video_context&, resource_loader&);
+    pumpkin_texture(execution_context&);
 
-    auto load_if_needed(video_context& video, resource_loader& loader) noexcept
-      -> work_done;
+    auto load_if_needed(execution_context&) noexcept -> work_done;
 
     static auto tex_unit() noexcept -> oglplus::texture_unit::value_type {
         return 0U;
@@ -84,7 +83,7 @@ private:
 //------------------------------------------------------------------------------
 class screen_geometry : public gl_geometry_and_bindings_resource {
 public:
-    screen_geometry(video_context&, resource_loader&);
+    screen_geometry(execution_context&);
 };
 //------------------------------------------------------------------------------
 // draw buffers

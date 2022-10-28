@@ -445,9 +445,18 @@ export struct resource_loader_signals {
         gl_geometry_and_bindings& ref;
     };
 
+    template <>
+    struct get_load_info<gl_geometry_and_bindings>
+      : std::type_identity<gl_geometry_and_bindings_load_info> {};
+
     /// @brief Emitted when a geometry and attribute bindings wrapper is loaded.
     signal<void(const gl_geometry_and_bindings_load_info&) noexcept>
       gl_geometry_and_bindings_loaded;
+
+    auto load_signal(std::type_identity<gl_geometry_and_bindings>) noexcept
+      -> auto& {
+        return gl_geometry_and_bindings_loaded;
+    }
 
     /// @brief Type of parameter of the value_tree_loaded signal.
     /// @see value_tree_loaded
@@ -867,11 +876,30 @@ public:
       oglplus::vertex_attrib_bindings,
       span_size_t draw_var_idx = 0) noexcept -> resource_request_result;
 
+    auto request(
+      std::type_identity<gl_geometry_and_bindings>,
+      url locator,
+      video_context& video,
+      oglplus::vertex_attrib_bindings bindings,
+      span_size_t draw_var_idx = 0) noexcept {
+        return request_gl_geometry_and_bindings(
+          std::move(locator), video, bindings, draw_var_idx);
+    }
+
     /// @brief Requests a shape geometry and attrib bindings object.
     auto request_gl_geometry_and_bindings(
       url locator,
       video_context&,
       span_size_t draw_var_idx = 0) noexcept -> resource_request_result;
+
+    auto request(
+      std::type_identity<gl_geometry_and_bindings>,
+      url locator,
+      video_context& video,
+      span_size_t draw_var_idx = 0) noexcept {
+        return request_gl_geometry_and_bindings(
+          std::move(locator), video, draw_var_idx);
+    }
 
     /// @brief Requests GLSL shader source code resource.
     auto request_glsl_source(url locator) noexcept -> resource_request_result;

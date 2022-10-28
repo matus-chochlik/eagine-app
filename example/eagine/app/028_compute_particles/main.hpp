@@ -42,11 +42,13 @@ public:
 
 private:
     void _on_resource_loaded(const loaded_resource_base&) noexcept;
+    void _on_path_loaded(const vec3_vector_resource::load_info&) noexcept;
 
     video_context& _video;
     background_icosahedron _bg;
 
-    math::cubic_bezier_loop<oglplus::vec3, float> _path;
+    vec3_vector_resource _path_pts;
+    math::cubic_bezier_loop<math::vector<float, 3, true>, float> _path;
 
     emit_program _emit_prog;
     draw_program _draw_prog;

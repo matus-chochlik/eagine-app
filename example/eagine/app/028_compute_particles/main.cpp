@@ -18,13 +18,11 @@ example::example(execution_context& ec, video_context& vc)
   : timeouting_application{ec, std::chrono::seconds{60}}
   , _video{vc}
   , _bg{_video, {0.45F, 0.40F, 0.35F, 1.0F}, {0.25F, 0.25F, 0.25F, 0.0F}, 1.F}
-  , _path{view(std::array<oglplus::vec3, 4>{
-      {{-20.F, -10.F, -10.F},
-       {20.F, -10.F, -10.F},
-       {0.F, 10.F, 0.F},
-       {0.F, -10.F, 10.F}}})}
+  , _path_pts{url{"json:///PathPoints"}, ec}
   , _emit_prog{*this}
   , _draw_prog{*this} {
+    _path_pts.loaded.connect(
+      make_callable_ref<&example::_on_path_loaded>(this));
     _emit_prog.base_loaded.connect(
       make_callable_ref<&example::_on_resource_loaded>(this));
     _draw_prog.base_loaded.connect(
@@ -46,6 +44,11 @@ example::example(execution_context& ec, video_context& vc)
 
     gl.enable(GL.depth_test);
     gl.disable(GL.cull_face);
+}
+//------------------------------------------------------------------------------
+void example::_on_path_loaded(
+  const vec3_vector_resource::load_info& loaded) noexcept {
+    _path = {view(loaded.resource)};
 }
 //------------------------------------------------------------------------------
 void example::_on_resource_loaded(const loaded_resource_base& loaded) noexcept {
@@ -73,13 +76,14 @@ void example::update() noexcept {
 
     _bg.clear(_video, _camera);
 
-    if(_emit_prog && _draw_prog) {
+    if(_path_pts && _emit_prog && _draw_prog) {
         _emit_prog.prepare_frame(*this);
         _particles.emit(*this);
 
         _draw_prog.prepare_frame(*this);
         _particles.draw(*this);
     } else {
+        _path_pts.load_if_needed(context());
         _emit_prog.load_if_needed(context());
         _draw_prog.load_if_needed(context());
     }

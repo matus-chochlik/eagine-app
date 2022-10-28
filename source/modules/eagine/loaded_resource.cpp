@@ -67,7 +67,20 @@ template <typename Derived>
 class loaded_resource_common;
 
 template <typename Resource>
-struct resource_load_info;
+struct resource_load_info {
+    using base_load_info = typename resource_loader::load_info_t<Resource>;
+
+    /// @brief The base info from the loader signal.
+    const base_load_info& base;
+    /// @brief The loaded geometry resource.
+    loaded_resource<Resource>& resource;
+
+    resource_load_info(
+      const base_load_info& info,
+      loaded_resource<Resource>& parent) noexcept
+      : base{info}
+      , resource{parent} {}
+};
 //------------------------------------------------------------------------------
 template <typename Resource>
 class loaded_resource_common<loaded_resource<Resource>>
@@ -110,7 +123,8 @@ public:
     }
 
     /// @brief Delay-initializes the resource.
-    void init(resource_loader& loader) noexcept {
+    template <typename... Args>
+    void init(resource_loader& loader, const Args&...) noexcept {
         _connect(loader);
     }
 
@@ -158,7 +172,7 @@ private:
     void _handle_loaded(const base_load_info& info) noexcept {
         if(info.request_id == _request_id) {
             if(derived().assign(info)) {
-                loaded(load_info(info));
+                loaded(load_info(info, derived()));
                 base_loaded(*this);
                 _request_id = 0;
             }
@@ -168,27 +182,11 @@ private:
     signal_binding_key _sig_key{};
 };
 //------------------------------------------------------------------------------
-template <typename T>
-struct resource_load_info<std::vector<T>> {
-    using Resource = std::vector<T>;
-    using base_load_info = typename resource_loader::load_info_t<Resource>;
-
-    /// @brief The base info from the loader signal.
-    const base_load_info& base;
-    /// @brief The loaded geometry resource.
-    Resource& resource;
-
-    resource_load_info(const base_load_info& info) noexcept
-      : base{info}
-      , resource{info.values} {}
-};
-
 export template <typename T>
 class loaded_resource<std::vector<T>>
   : public loaded_resource_common<loaded_resource<std::vector<T>>> {
 
     using common = loaded_resource_common<loaded_resource<std::vector<T>>>;
-    friend class loaded_resource_common<loaded_resource<std::vector<T>>>;
 
 public:
     /// @brief Constructor specifying the locator and initializing the resource.
@@ -238,110 +236,63 @@ export using vec3_vector_resource =
 //------------------------------------------------------------------------------
 export template <>
 class loaded_resource<gl_geometry_and_bindings>
-  : public gl_geometry_and_bindings
-  , public loaded_resource_base {
-    using _res_t = gl_geometry_and_bindings;
+  : public loaded_resource_common<loaded_resource<gl_geometry_and_bindings>> {
 
-    auto _res() noexcept -> _res_t& {
-        return *this;
-    }
+    using common =
+      loaded_resource_common<loaded_resource<gl_geometry_and_bindings>>;
 
 public:
-    /// @brief Signal emmitted when the resource is successfully loaded.
-    signal<void(const loaded_resource_base&) noexcept> base_loaded;
-
-    /// @brief Type of the loaded signal parameter.
-    struct load_info {
-        /// @brief The base info from the loader signal.
-        const resource_loader::gl_geometry_and_bindings_load_info& base;
-        /// @brief The loaded geometry resource.
-        const loaded_resource<gl_geometry_and_bindings>& resource;
-    };
-
-    /// @brief Signal emmitted when the resource is successfully loaded.
-    signal<void(const load_info&) noexcept> loaded;
-
     /// @brief Constructor specifying the resource locator.
     loaded_resource(url locator) noexcept
-      : loaded_resource_base{std::move(locator)} {}
-
-    /// @brief Delay-initializes the resource.
-    void init(video_context&, resource_loader& loader) {
-        _sig_key =
-          connect<&loaded_resource::_handle_gl_geometry_and_bindings_loaded>(
-            this, loader.gl_geometry_and_bindings_loaded);
-    }
+      : common{std::move(locator)} {}
 
     /// @brief Clean's up this resource.
-    void clean_up(video_context& video, resource_loader& loader) {
-        _res().clean_up(video);
-        if(_sig_key) {
-            loader.gl_geometry_and_bindings_loaded.disconnect(_sig_key);
-            _sig_key = {};
-        }
+    void clean_up(resource_loader& loader, video_context& video) {
+        resource().clean_up(video);
+        common::_disconnect(loader);
     }
 
     /// @brief Clean's up this resource.
     void clean_up(execution_context& ctx) {
-        clean_up(ctx.main_video(), ctx.loader());
+        clean_up(ctx.loader(), ctx.main_video());
     }
 
     /// @brief Constructor specifying the locator and initializing the resource.
-    loaded_resource(url locator, video_context& video, resource_loader& loader)
+    loaded_resource(url locator, resource_loader& loader, video_context& video)
       : loaded_resource{std::move(locator)} {
-        init(video, loader);
+        this->init(loader, video);
     }
 
     /// @brief Constructor specifying the locator and initializing the resource.
     loaded_resource(url locator, execution_context& ctx)
-      : loaded_resource{std::move(locator), ctx.main_video(), ctx.loader()} {}
+      : loaded_resource{std::move(locator), ctx.loader(), ctx.main_video()} {}
 
     /// @brief Indicates if this resource is loaded.
     auto is_loaded() const noexcept -> bool {
         return this->is_initialized();
     }
 
-    /// @brief Indicates if this resource is loaded.
-    /// @see is_loaded
-    explicit operator bool() const noexcept {
-        return is_loaded();
-    }
-
     /// @brief Updates the resource, possibly doing resource load request.
     auto load_if_needed(
-      video_context& video,
       resource_loader& loader,
+      video_context& video,
       span_size_t draw_var_idx = 0) -> work_done {
-        if(!is_loaded() && !is_loading()) {
-            if(const auto request{loader.request_gl_geometry_and_bindings(
-                 locator(), video, draw_var_idx)}) {
-                _request_id = request.request_id();
-                return true;
-            }
-        }
-        return false;
+        return _load_if_needed(loader, video, draw_var_idx);
     }
 
     /// @brief Updates the resource, possibly doing resource load request.
     auto load_if_needed(
-      video_context& video,
       resource_loader& loader,
+      video_context& video,
       const oglplus::vertex_attrib_bindings& bindings,
       span_size_t draw_var_idx = 0) -> work_done {
-        if(!is_loaded() && !is_loading()) {
-            if(const auto request{loader.request_gl_geometry_and_bindings(
-                 locator(), video, bindings, draw_var_idx)}) {
-                _request_id = request.request_id();
-                return true;
-            }
-        }
-        return false;
+        return _load_if_needed(loader, video, bindings, draw_var_idx);
     }
 
     /// @brief Updates the resource, possibly doing resource load request.
     auto load_if_needed(execution_context& ctx, span_size_t draw_var_idx = 0)
       -> work_done {
-        return load_if_needed(ctx.main_video(), ctx.loader(), draw_var_idx);
+        return load_if_needed(ctx.loader(), ctx.main_video(), draw_var_idx);
     }
 
     /// @brief Updates the resource, possibly doing resource load request.
@@ -350,23 +301,12 @@ public:
       const oglplus::vertex_attrib_bindings& bindings,
       span_size_t draw_var_idx = 0) -> work_done {
         return load_if_needed(
-          ctx.main_video(), ctx.loader(), bindings, draw_var_idx);
+          ctx.loader(), ctx.main_video(), bindings, draw_var_idx);
     }
 
-private:
-    void _handle_gl_geometry_and_bindings_loaded(
-      const resource_loader::gl_geometry_and_bindings_load_info& info) noexcept {
-        if(info.request_id == _request_id) {
-            _res() = std::move(info.ref);
-            if(is_loaded()) {
-                this->loaded({.base = info, .resource = *this});
-                this->base_loaded(*this);
-                _request_id = 0;
-            }
-        }
+    auto assign(const typename common::base_load_info& info) noexcept -> bool {
+        return this->_assign(std::move(info.ref));
     }
-
-    signal_binding_key _sig_key{};
 };
 export using gl_geometry_and_bindings_resource =
   loaded_resource<gl_geometry_and_bindings>;

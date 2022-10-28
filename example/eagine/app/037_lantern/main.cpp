@@ -50,11 +50,11 @@ example_lantern::example_lantern(execution_context& ec, video_context& vc)
   , _video{vc}
   , _loader{ec.loader()}
   , _load_progress{ec.progress().activity("Loading resources", 5)}
-  , pumpkin_tex{_video, _loader}
-  , pumpkin{_video, _loader}
-  , screen{_video, _loader}
-  , draw_prog{_video, _loader}
-  , screen_prog{_video, _loader} {
+  , pumpkin_tex{ec}
+  , pumpkin{ec}
+  , screen{ec}
+  , draw_prog{ec}
+  , screen_prog{ec} {
 
     pumpkin_tex.base_loaded.connect(_load_handler());
     pumpkin.base_loaded.connect(_load_handler());
@@ -162,16 +162,16 @@ void example_lantern::update() noexcept {
         gl.clear_color(0.F, 0.F, 0.F, 0.F);
         gl.clear(GL.color_buffer_bit);
 
-        pumpkin_tex.load_if_needed(_video, _loader);
+        pumpkin_tex.load_if_needed(context());
         if(!pumpkin) {
-            pumpkin.load_if_needed(_video, _loader);
+            pumpkin.load_if_needed(context());
         } else {
-            draw_prog.load_if_needed(_video, _loader);
+            draw_prog.load_if_needed(context());
         }
         if(!screen) {
-            screen.load_if_needed(_video, _loader);
+            screen.load_if_needed(context());
         } else {
-            screen_prog.load_if_needed(_video, _loader);
+            screen_prog.load_if_needed(context());
         }
     }
 
@@ -179,11 +179,11 @@ void example_lantern::update() noexcept {
 }
 //------------------------------------------------------------------------------
 void example_lantern::clean_up() noexcept {
-    draw_prog.clean_up(_video, _loader);
-    screen_prog.clean_up(_video, _loader);
-    screen.clean_up(_video, _loader);
-    pumpkin.clean_up(_video, _loader);
-    pumpkin_tex.clean_up(_video, _loader);
+    draw_prog.clean_up(context());
+    screen_prog.clean_up(context());
+    screen.clean_up(context());
+    pumpkin.clean_up(context());
+    pumpkin_tex.clean_up(context());
 }
 //------------------------------------------------------------------------------
 class example_launchpad : public launchpad {

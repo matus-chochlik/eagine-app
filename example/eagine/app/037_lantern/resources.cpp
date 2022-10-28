@@ -12,8 +12,8 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 // draw program
 //------------------------------------------------------------------------------
-draw_program::draw_program(video_context& video, resource_loader& loader)
-  : gl_program_resource{url{"json:///DrawProg"}, video, loader} {
+draw_program::draw_program(execution_context& ctx)
+  : gl_program_resource{url{"json:///DrawProg"}, ctx} {
     loaded.connect(make_callable_ref<&draw_program::_on_loaded>(this));
 }
 //------------------------------------------------------------------------------
@@ -49,8 +49,8 @@ void draw_program::set_texture_unit(
 //------------------------------------------------------------------------------
 // screen program
 //------------------------------------------------------------------------------
-screen_program::screen_program(video_context& video, resource_loader& loader)
-  : gl_program_resource{url{"json:///ScreenProg"}, video, loader} {
+screen_program::screen_program(execution_context& ctx)
+  : gl_program_resource{url{"json:///ScreenProg"}, ctx} {
     loaded.connect(make_callable_ref<&screen_program::_on_loaded>(this));
 }
 //------------------------------------------------------------------------------
@@ -74,8 +74,8 @@ void screen_program::set_texture_unit(
 //------------------------------------------------------------------------------
 // pumpkin
 //------------------------------------------------------------------------------
-pumpkin_geometry::pumpkin_geometry(video_context& video, resource_loader& loader)
-  : gl_geometry_and_bindings_resource{url{"json:///Pumpkin"}, video, loader} {
+pumpkin_geometry::pumpkin_geometry(execution_context& ctx)
+  : gl_geometry_and_bindings_resource{url{"json:///Pumpkin"}, ctx} {
     loaded.connect(make_callable_ref<&pumpkin_geometry::_on_loaded>(this));
 }
 //------------------------------------------------------------------------------
@@ -86,17 +86,16 @@ void pumpkin_geometry::_on_loaded(
 //------------------------------------------------------------------------------
 // texture
 //------------------------------------------------------------------------------
-pumpkin_texture::pumpkin_texture(video_context& video, resource_loader& loader)
-  : gl_texture_resource{url{"eagitex:///PumpkinTex"}, video, loader} {
+pumpkin_texture::pumpkin_texture(execution_context& ctx)
+  : gl_texture_resource{url{"eagitex:///PumpkinTex"}, ctx} {
     loaded.connect(make_callable_ref<&pumpkin_texture::_on_loaded>(this));
 }
 //------------------------------------------------------------------------------
-auto pumpkin_texture::load_if_needed(
-  video_context& video,
-  resource_loader& loader) noexcept -> work_done {
-    const auto& GL = video.gl_api().constants();
+auto pumpkin_texture::load_if_needed(execution_context& ctx) noexcept
+  -> work_done {
+    const auto& GL = ctx.main_video().gl_api().constants();
     return gl_texture_resource::load_if_needed(
-      video, loader, GL.texture_2d_array, GL.texture0 + tex_unit());
+      ctx, GL.texture_2d_array, GL.texture0 + tex_unit());
 }
 //------------------------------------------------------------------------------
 void pumpkin_texture::_on_loaded(
@@ -111,11 +110,10 @@ void pumpkin_texture::_on_loaded(
 //------------------------------------------------------------------------------
 // screen_geometry
 //------------------------------------------------------------------------------
-screen_geometry::screen_geometry(video_context& video, resource_loader& loader)
+screen_geometry::screen_geometry(execution_context& ctx)
   : gl_geometry_and_bindings_resource{
       url{"eagires:///unit_screen?position=true+wrap_coord=true"},
-      video,
-      loader} {}
+      ctx} {}
 //------------------------------------------------------------------------------
 // draw buffers
 //------------------------------------------------------------------------------

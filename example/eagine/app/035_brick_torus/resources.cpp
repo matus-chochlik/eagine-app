@@ -54,8 +54,7 @@ torus_geometry::torus_geometry(execution_context& ctx)
       url{"shape:///unit_torus?"
           "position=true+normal=true+tangent=true+wrap_coord=true+"
           "rings=48+sections=72"},
-      ctx.main_video(),
-      ctx.loader()} {}
+      ctx} {}
 //------------------------------------------------------------------------------
 // textures
 //------------------------------------------------------------------------------

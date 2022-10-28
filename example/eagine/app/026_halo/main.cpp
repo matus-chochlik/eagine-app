@@ -42,9 +42,9 @@ example_halo::example_halo(execution_context& ec, video_context& vc)
   : timeouting_application{ec, std::chrono::seconds{60}}
   , _video{vc}
   , _loader{context().loader()}
-  , _surf_prog{_video, _loader}
-  , _halo_prog{_video, _loader}
-  , _shape{_video, _loader} {
+  , _surf_prog{context()}
+  , _halo_prog{context()}
+  , _shape{context()} {
 
     _surf_prog.base_loaded.connect(_load_handler());
     _halo_prog.base_loaded.connect(_load_handler());
@@ -108,18 +108,18 @@ void example_halo::update() noexcept {
         gl.disable(GL.blend);
         gl.depth_mask(GL.true_);
     } else {
-        _surf_prog.load_if_needed(_video, _loader);
-        _halo_prog.load_if_needed(_video, _loader);
-        _shape.load_if_needed(_video, _loader);
+        _surf_prog.load_if_needed(context());
+        _halo_prog.load_if_needed(context());
+        _shape.load_if_needed(context());
     }
 
     _video.commit();
 }
 //------------------------------------------------------------------------------
 void example_halo::clean_up() noexcept {
-    _surf_prog.clean_up(_video, _loader);
-    _halo_prog.clean_up(_video, _loader);
-    _shape.clean_up(_video, _loader);
+    _surf_prog.clean_up(context());
+    _halo_prog.clean_up(context());
+    _shape.clean_up(context());
     _video.end();
 }
 //------------------------------------------------------------------------------

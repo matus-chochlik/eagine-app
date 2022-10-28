@@ -58,9 +58,9 @@ example_uv_map::example_uv_map(execution_context& ec, video_context& vc)
   : timeouting_application{ec, std::chrono::seconds{30}}
   , _video{vc}
   , _loader{context().loader()}
-  , _shape{url{"json:///HydrntShpe"}, _video, _loader}
-  , _prog{url{"json:///HydrntProg"}, _video, _loader}
-  , _tex{url{"json:///HydrantTex"}, _video, _loader} {
+  , _shape{url{"json:///HydrntShpe"}, ec}
+  , _prog{url{"json:///HydrntProg"}, ec}
+  , _tex{url{"json:///HydrantTex"}, ec} {
     _shape.base_loaded.connect(_load_handler());
     _shape.loaded.connect(_load_shp_handler());
     _prog.base_loaded.connect(_load_handler());
@@ -147,18 +147,18 @@ void example_uv_map::update() noexcept {
 
         _shape.draw(_video);
     } else {
-        _shape.load_if_needed(_video, _loader);
-        _prog.load_if_needed(_video, _loader);
-        _tex.load_if_needed(_video, _loader, GL.texture_2d_array, GL.texture0);
+        _shape.load_if_needed(context());
+        _prog.load_if_needed(context());
+        _tex.load_if_needed(context(), GL.texture_2d_array, GL.texture0);
     }
 
     _video.commit();
 }
 //------------------------------------------------------------------------------
 void example_uv_map::clean_up() noexcept {
-    _tex.clean_up(_video, _loader);
-    _prog.clean_up(_video, _loader);
-    _shape.clean_up(_video, _loader);
+    _tex.clean_up(context());
+    _prog.clean_up(context());
+    _shape.clean_up(context());
     _video.end();
 }
 //------------------------------------------------------------------------------
