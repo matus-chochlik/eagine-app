@@ -234,6 +234,57 @@ export using float_vector_resource = loaded_resource<std::vector<float>>;
 export using vec3_vector_resource =
   loaded_resource<std::vector<math::vector<float, 3, true>>>;
 //------------------------------------------------------------------------------
+export template <typename T, typename P, span_size_t O>
+class loaded_resource<math::bezier_curves<T, P, O>>
+  : public loaded_resource_common<loaded_resource<math::bezier_curves<T, P, O>>> {
+
+    using common =
+      loaded_resource_common<loaded_resource<math::bezier_curves<T, P, O>>>;
+
+public:
+    /// @brief Constructor specifying the locator and initializing the resource.
+    loaded_resource(url locator, resource_loader& loader)
+      : common{std::move(locator)} {
+        this->init(loader);
+    }
+
+    /// @brief Constructor specifying the locator and initializing the resource.
+    loaded_resource(url locator, execution_context& ctx)
+      : loaded_resource{std::move(locator), ctx.loader()} {}
+
+    /// @brief Clean's up this resource.
+    void clean_up(resource_loader& loader) {
+        this->resource().clear();
+        common::_disconnect(loader);
+    }
+
+    /// @brief Clean's up this resource.
+    void clean_up(execution_context& ctx) {
+        clean_up(ctx.loader());
+    }
+
+    /// @brief Indicates if this resource is loaded.
+    auto is_loaded() const noexcept -> bool {
+        return !this->control_points().empty();
+    }
+
+    /// @brief Updates the resource, possibly doing resource load request.
+    auto load_if_needed(resource_loader& loader) -> work_done {
+        return this->_load_if_needed(loader);
+    }
+
+    /// @brief Updates the resource, possibly doing resource load request.
+    auto load_if_needed(execution_context& ctx) -> work_done {
+        return load_if_needed(ctx.loader());
+    }
+
+    auto assign(const typename common::base_load_info& info) noexcept -> bool {
+        return this->_assign(info.curve);
+    }
+};
+export using smooth_vec3_curve =
+  loaded_resource<math::bezier_curves<math::vector<float, 3, true>, float, 3>>;
+//------------------------------------------------------------------------------
 export template <>
 class loaded_resource<gl_geometry_and_bindings>
   : public loaded_resource_common<loaded_resource<gl_geometry_and_bindings>> {

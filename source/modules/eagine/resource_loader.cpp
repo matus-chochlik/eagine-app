@@ -522,12 +522,24 @@ export struct resource_loader_signals {
     struct smooth_vec3_curve_load_info {
         const identifier_t request_id;
         const url& locator;
-        math::cubic_bezier_curves<math::vector<float, 3, true>, float>& loop;
+        math::cubic_bezier_curves<math::vector<float, 3, true>, float>& curve;
     };
+
+    template <>
+    struct get_load_info<
+      math::cubic_bezier_curves<math::vector<float, 3, true>, float>>
+      : std::type_identity<smooth_vec3_curve_load_info> {};
 
     /// @brief Emitted when a smooth closed loop of vec3 values is loaded.
     signal<void(const smooth_vec3_curve_load_info&) noexcept>
       smooth_vec3_curve_loaded;
+
+    auto load_signal(
+      std::type_identity<
+        math::cubic_bezier_curves<math::vector<float, 3, true>, float>>) noexcept
+      -> auto& {
+        return smooth_vec3_curve_loaded;
+    }
 
     /// @brief Type of parameter of the glsl_source_loaded signal.
     /// @see glsl_source_loaded
@@ -879,6 +891,13 @@ public:
     /// @brief Requests a smoothe vec3 curve resource.
     auto request_smooth_vec3_curve(url locator) noexcept
       -> resource_request_result;
+
+    auto request(
+      std::type_identity<
+        math::cubic_bezier_curves<math::vector<float, 3, true>, float>>,
+      url locator) noexcept {
+        return request_smooth_vec3_curve(std::move(locator));
+    }
 
     /// @brief Requests a value tree object resource.
     auto request_value_tree(url locator) noexcept -> resource_request_result;

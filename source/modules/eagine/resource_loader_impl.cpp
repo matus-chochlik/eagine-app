@@ -1127,10 +1127,11 @@ void pending_resource_info::_handle_vec3_vector(
   const pending_resource_info& source,
   const std::vector<math::vector<float, 3, true>>& values) noexcept {
     if(is(resource_kind::smooth_vec3_curve)) {
-        math::cubic_bezier_curves<math::vector<float, 3, true>, float> loop{
+        /// TODO: other kinds of curves
+        math::cubic_bezier_loop<math::vector<float, 3, true>, float> curve{
           view(values)};
         _parent.smooth_vec3_curve_loaded(
-          {.request_id = _request_id, .locator = _locator, .loop = loop});
+          {.request_id = _request_id, .locator = _locator, .curve = curve});
     }
     mark_finished();
 }
