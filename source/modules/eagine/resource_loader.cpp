@@ -666,8 +666,17 @@ export struct resource_loader_signals {
         }
     };
 
+    template <>
+    struct get_load_info<oglplus::owned_texture_name>
+      : std::type_identity<gl_texture_load_info> {};
+
     /// @brief Emitted when a GL texture is successfully created and its parameters set-up.
     signal<void(const gl_texture_load_info&) noexcept> gl_texture_loaded;
+
+    auto load_signal(std::type_identity<oglplus::owned_texture_name>) noexcept
+      -> auto& {
+        return gl_texture_loaded;
+    }
 
     /// @brief Type of parameter of the gl_texture_images_loaded signal.
     /// @see gl_texture_image_loaded
@@ -696,8 +705,17 @@ export struct resource_loader_signals {
         auto gl_api() const noexcept -> const oglplus::gl_api&;
     };
 
+    template <>
+    struct get_load_info<oglplus::owned_buffer_name>
+      : std::type_identity<gl_buffer_load_info> {};
+
     /// @brief Emitted when a GL buffer is successfully created and set-up.
     signal<void(const gl_buffer_load_info&) noexcept> gl_buffer_loaded;
+
+    auto load_signal(std::type_identity<oglplus::owned_buffer_name>) noexcept
+      -> auto& {
+        return gl_buffer_loaded;
+    }
 };
 //------------------------------------------------------------------------------
 template <typename T>
@@ -994,11 +1012,29 @@ public:
       oglplus::texture_target,
       oglplus::texture_unit) noexcept -> resource_request_result;
 
+    auto request(
+      std::type_identity<oglplus::owned_texture_name>,
+      url locator,
+      video_context& video,
+      oglplus::texture_target tex_target,
+      oglplus::texture_unit tex_unit) noexcept {
+        return request_gl_texture(
+          std::move(locator), video, tex_target, tex_unit);
+    }
+
     /// @brief Requests a set-up GL buffer object.
     auto request_gl_buffer(
       url locator,
       video_context&,
       oglplus::buffer_target) noexcept -> resource_request_result;
+
+    auto request(
+      std::type_identity<oglplus::owned_buffer_name>,
+      url locator,
+      video_context& video,
+      oglplus::buffer_target buf_target) noexcept {
+        return request_gl_buffer(std::move(locator), video, buf_target);
+    }
 
 private:
     friend class pending_resource_info;

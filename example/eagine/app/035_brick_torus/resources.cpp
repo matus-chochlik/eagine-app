@@ -62,7 +62,7 @@ example_texture::example_texture(
   url locator,
   oglplus::gl_types::int_type tex_unit,
   execution_context& ctx)
-  : gl_texture_resource{std::move(locator), ctx.main_video(), ctx.loader()}
+  : gl_texture_resource{std::move(locator), ctx}
   , _tex_unit{tex_unit} {
     loaded.connect(make_callable_ref<&example_texture::_on_loaded>(this));
 }
@@ -71,10 +71,7 @@ auto example_texture::load_if_needed(execution_context& ctx) noexcept
   -> work_done {
     const auto& GL = ctx.main_video().gl_api().constants();
     return gl_texture_resource::load_if_needed(
-      ctx.main_video(),
-      ctx.loader(),
-      GL.texture_2d_array,
-      GL.texture0 + tex_unit());
+      ctx, GL.texture_2d_array, GL.texture0 + tex_unit());
 }
 //------------------------------------------------------------------------------
 void example_texture::_on_loaded(

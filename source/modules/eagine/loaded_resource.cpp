@@ -73,7 +73,7 @@ struct resource_load_info {
     /// @brief The base info from the loader signal.
     const base_load_info& base;
     /// @brief The loaded geometry resource.
-    loaded_resource<Resource>& resource;
+    const loaded_resource<Resource>& resource;
 
     resource_load_info(
       const base_load_info& info,
@@ -444,7 +444,7 @@ struct resource_load_info<oglplus::owned_program_name> {
 
     /// @brief The base info from the loader signal.
     const base_load_info& base;
-    /// @brief The loaded geometry resource.
+    /// @brief The loaded program resource.
     loaded_resource<Resource>& resource;
 
     resource_load_info(
@@ -625,106 +625,89 @@ private:
 export using gl_program_resource = loaded_resource<oglplus::owned_program_name>;
 //------------------------------------------------------------------------------
 export template <>
-class loaded_resource<oglplus::owned_texture_name>
-  : public oglplus::owned_texture_name
-  , public loaded_resource_base {
-    using _res_t = oglplus::owned_texture_name;
+struct resource_load_info<oglplus::owned_texture_name> {
+    using Resource = oglplus::owned_texture_name;
+    using base_load_info = typename resource_loader::load_info_t<Resource>;
 
-    auto _res() noexcept -> _res_t& {
-        return *this;
+    /// @brief The base info from the loader signal.
+    const base_load_info& base;
+    /// @brief The loaded texture resource.
+    loaded_resource<Resource>& resource;
+
+    resource_load_info(
+      const base_load_info& info,
+      loaded_resource<Resource>& parent) noexcept
+      : base{info}
+      , resource{parent} {}
+
+    /// @brief Sets the specified floating-point texture parameter value.
+    template <typename Param, typename Value>
+    auto parameter_f(Param param, Value value) const noexcept {
+        return base.parameter_f(param, value);
     }
 
+    /// @brief Sets the specified integral texture parameter value.
+    template <typename Param, typename Value>
+    auto parameter_i(Param param, Value value) const noexcept {
+        return base.parameter_i(param, value);
+    }
+
+    /// @brief Generates texture mipmap.
+    auto generate_mipmap() const noexcept {
+        return base.generate_mipmap();
+    }
+};
+
+export template <>
+class loaded_resource<oglplus::owned_texture_name>
+  : public loaded_resource_common<loaded_resource<oglplus::owned_texture_name>> {
+
+    using common =
+      loaded_resource_common<loaded_resource<oglplus::owned_texture_name>>;
+
 public:
-    /// @brief Signal emmitted when the resource is successfully loaded.
-    signal<void(const loaded_resource_base&) noexcept> base_loaded;
-
-    /// @brief Type of the loaded signal parameter.
-    struct load_info {
-        /// @brief The base info from the loader signal.
-        const resource_loader::gl_texture_load_info& base;
-        /// @brief The loaded texture resource.
-        const loaded_resource<oglplus::owned_texture_name>& resource;
-
-        /// @brief Sets the specified floating-point texture parameter value.
-        template <typename Param, typename Value>
-        auto parameter_f(Param param, Value value) const noexcept {
-            return base.parameter_f(param, value);
-        }
-
-        /// @brief Sets the specified integral texture parameter value.
-        template <typename Param, typename Value>
-        auto parameter_i(Param param, Value value) const noexcept {
-            return base.parameter_i(param, value);
-        }
-
-        /// @brief Generates texture mipmap.
-        auto generate_mipmap() const noexcept {
-            return base.generate_mipmap();
-        }
-    };
-
-    /// @brief Signal emmitted when the resource is successfully loaded.
-    signal<void(const load_info&) noexcept> loaded;
-
     /// @brief Constructor specifying the resource locator.
     loaded_resource(url locator) noexcept
-      : loaded_resource_base{std::move(locator)} {}
+      : common{std::move(locator)} {}
 
     /// @brief Delay-initializes the resource.
-    void init(video_context&, resource_loader& loader) {
-        _sig_key = connect<&loaded_resource::_handle_gl_texture_loaded>(
-          this, loader.gl_texture_loaded);
+    void init(resource_loader& loader, video_context&) {
+        common::_connect(loader);
     }
 
     /// @brief Clean's up this resource.
-    void clean_up(video_context& video, resource_loader& loader) {
-        video.gl_api().clean_up(std::move(_res()));
-        if(_sig_key) {
-            loader.gl_texture_loaded.disconnect(_sig_key);
-            _sig_key = {};
-        }
+    void clean_up(resource_loader& loader, video_context& video) {
+        video.gl_api().clean_up(std::move(resource()));
+        common::_disconnect(loader);
     }
 
     /// @brief Clean's up this resource.
     void clean_up(execution_context& ctx) {
-        clean_up(ctx.main_video(), ctx.loader());
+        clean_up(ctx.loader(), ctx.main_video());
     }
 
     /// @brief Constructor specifying the locator and initializing the resource.
-    loaded_resource(url locator, video_context& video, resource_loader& loader)
+    loaded_resource(url locator, resource_loader& loader, video_context& video)
       : loaded_resource{std::move(locator)} {
-        init(video, loader);
+        init(loader, video);
     }
 
     /// @brief Constructor specifying the locator and initializing the resource.
     loaded_resource(url locator, execution_context& ctx)
-      : loaded_resource{std::move(locator), ctx.main_video(), ctx.loader()} {}
+      : loaded_resource{std::move(locator), ctx.loader(), ctx.main_video()} {}
 
     /// @brief Indicates if this resource is loaded.
     auto is_loaded() const noexcept -> bool {
         return this->is_valid();
     }
 
-    /// @brief Indicates if this resource is loaded.
-    /// @see is_loaded
-    explicit operator bool() const noexcept {
-        return is_loaded();
-    }
-
     /// @brief Updates the resource, possibly doing resource load request.
     auto load_if_needed(
-      video_context& video,
       resource_loader& loader,
+      video_context& video,
       oglplus::texture_target target,
       oglplus::texture_unit unit) -> work_done {
-        if(!is_loaded() && !is_loading()) {
-            if(const auto request{
-                 loader.request_gl_texture(locator(), video, target, unit)}) {
-                _request_id = request.request_id();
-                return true;
-            }
-        }
-        return false;
+        return _load_if_needed(loader, video, target, unit);
     }
 
     /// @brief Updates the resource, possibly doing resource load request.
@@ -732,120 +715,64 @@ public:
       execution_context& ctx,
       oglplus::texture_target target,
       oglplus::texture_unit unit) -> work_done {
-        return load_if_needed(ctx.main_video(), ctx.loader(), target, unit);
+        return load_if_needed(ctx.loader(), ctx.main_video(), target, unit);
     }
 
-private:
-    void _handle_gl_texture_loaded(
-      const resource_loader::gl_texture_load_info& info) noexcept {
-        if(info.request_id == _request_id) {
-            _res() = std::move(info.ref);
-            if(is_loaded()) {
-                this->loaded({.base = info, .resource = *this});
-                this->base_loaded(*this);
-                _request_id = 0;
-            }
-        }
+    auto assign(const typename common::base_load_info& info) noexcept -> bool {
+        return this->_assign(std::move(info.ref));
     }
-
-    signal_binding_key _sig_key{};
 };
 export using gl_texture_resource = loaded_resource<oglplus::owned_texture_name>;
 //------------------------------------------------------------------------------
 export template <>
 class loaded_resource<oglplus::owned_buffer_name>
-  : public oglplus::owned_buffer_name
-  , public loaded_resource_base {
-    using _res_t = oglplus::owned_buffer_name;
+  : public loaded_resource_common<loaded_resource<oglplus::owned_buffer_name>> {
 
-    auto _res() noexcept -> _res_t& {
-        return *this;
-    }
+    using common =
+      loaded_resource_common<loaded_resource<oglplus::owned_buffer_name>>;
 
 public:
-    /// @brief Signal emmitted when the resource is successfully loaded.
-    signal<void(const loaded_resource_base&) noexcept> base_loaded;
-
-    /// @brief Type of the loaded signal parameter.
-    struct load_info {
-        /// @brief The base info from the loader signal.
-        const resource_loader::gl_buffer_load_info& base;
-        /// @brief The loaded buffer resource.
-        const loaded_resource<oglplus::owned_buffer_name>& resource;
-    };
-
-    /// @brief Signal emmitted when the resource is successfully loaded.
-    signal<void(const load_info&) noexcept> loaded;
-
     /// @brief Constructor specifying the resource locator.
     loaded_resource(url locator) noexcept
-      : loaded_resource_base{std::move(locator)} {}
+      : common{std::move(locator)} {}
 
-    /// @brief Delay-initializes the resource.
-    void init(video_context&, resource_loader& loader) {
-        _sig_key = connect<&loaded_resource::_handle_gl_buffer_loaded>(
-          this, loader.gl_buffer_loaded);
+    /// @brief Clean's up this resource.
+    void clean_up(resource_loader& loader, video_context& video) {
+        video.gl_api().clean_up(std::move(resource()));
+        common::_disconnect(loader);
     }
 
     /// @brief Clean's up this resource.
-    void clean_up(video_context& video, resource_loader& loader) {
-        video.gl_api().clean_up(std::move(_res()));
-        if(_sig_key) {
-            loader.gl_buffer_loaded.disconnect(_sig_key);
-            _sig_key = {};
-        }
+    void clean_up(execution_context& ctx) {
+        clean_up(ctx.loader(), ctx.main_video());
     }
 
     /// @brief Constructor specifying the locator and initializing the resource.
-    loaded_resource(url locator, video_context& video, resource_loader& loader)
+    loaded_resource(url locator, resource_loader& loader, video_context& video)
       : loaded_resource{std::move(locator)} {
-        init(video, loader);
+        init(loader, video);
     }
 
     /// @brief Constructor specifying the locator and initializing the resource.
     loaded_resource(url locator, execution_context& ctx)
-      : loaded_resource{std::move(locator), ctx.main_video(), ctx.loader()} {}
+      : loaded_resource{std::move(locator), ctx.loader(), ctx.main_video()} {}
 
     /// @brief Indicates if this resource is loaded.
     auto is_loaded() const noexcept -> bool {
         return this->is_valid();
     }
 
-    /// @brief Indicates if this resource is loaded.
-    /// @see is_loaded
-    explicit operator bool() const noexcept {
-        return is_loaded();
-    }
-
     /// @brief Updates the resource, possibly doing resource load request.
     auto load_if_needed(
-      video_context& video,
       resource_loader& loader,
+      video_context& video,
       oglplus::buffer_target target) -> work_done {
-        if(!is_loaded() && !is_loading()) {
-            if(const auto request{
-                 loader.request_gl_buffer(locator(), video, target)}) {
-                _request_id = request.request_id();
-                return true;
-            }
-        }
-        return false;
+        return _load_if_needed(loader, video, target);
     }
 
-private:
-    void _handle_gl_buffer_loaded(
-      const resource_loader::gl_buffer_load_info& info) noexcept {
-        if(info.request_id == _request_id) {
-            _res() = std::move(info.ref);
-            if(is_loaded()) {
-                this->loaded({.base = info, .resource = *this});
-                this->base_loaded(*this);
-                _request_id = 0;
-            }
-        }
+    auto assign(const typename common::base_load_info& info) noexcept -> bool {
+        return this->_assign(std::move(info.ref));
     }
-
-    signal_binding_key _sig_key{};
 };
 export using gl_buffer_resource = loaded_resource<oglplus::owned_buffer_name>;
 //------------------------------------------------------------------------------
