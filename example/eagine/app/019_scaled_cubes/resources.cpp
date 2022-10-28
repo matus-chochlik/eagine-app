@@ -14,77 +14,52 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 // program
 //------------------------------------------------------------------------------
-void cubes_program::init(execution_context& ec, video_context& vc) {
-    const auto& gl = vc.gl_api();
-
-    gl.create_program() >> prog;
-
-    const auto prog_src{embed<"prog">("scaled_cubes.oglpprog")};
-    gl.build_program(prog, prog_src.unpack(ec));
-    gl.use_program(prog);
-
-    gl.get_uniform_location(prog, "Camera") >> camera_loc;
-    gl.get_uniform_location(prog, "Center") >> center_loc;
-    gl.get_uniform_location(prog, "Time") >> time_loc;
-    gl.get_uniform_location(prog, "Edges") >> edges_loc;
+cubes_program::cubes_program(execution_context& ctx)
+  : gl_program_resource{url{"json:///Program"}, ctx.main_video(), ctx.loader()} {
+    loaded.connect(make_callable_ref<&cubes_program::_on_loaded>(this));
 }
 //------------------------------------------------------------------------------
-void cubes_program::clean_up(video_context& vc) {
-    const auto& gl = vc.gl_api();
-    gl.delete_program(std::move(prog));
+void cubes_program::_on_loaded(
+  const gl_program_resource::load_info& info) noexcept {
+    info.get_uniform_location("Camera") >> camera_loc;
+    info.get_uniform_location("Center") >> center_loc;
+    info.get_uniform_location("Time") >> time_loc;
+    info.get_uniform_location("Edges") >> edges_loc;
 }
 //------------------------------------------------------------------------------
-void cubes_program::set_projection(video_context& vc, orbiting_camera& camera) {
+void cubes_program::set_projection(
+  video_context& video,
+  orbiting_camera& camera) {
     if(camera.has_changed()) {
-        vc.gl_api().set_uniform(
-          prog, camera_loc, camera.matrix(vc.surface_aspect()));
+        set(video, camera_loc, camera.matrix(video.surface_aspect()));
     }
 }
 //------------------------------------------------------------------------------
-void cubes_program::update(execution_context& ec, video_context& vc) {
+void cubes_program::update(execution_context& ec, video_context& video) {
     const auto t = ec.state().frame_time().value();
-    const auto& glapi = vc.gl_api();
-    glapi.set_uniform(
-      prog,
+    set(
+      video,
       center_loc,
       oglplus::to_cartesian(oglplus::unit_spherical_coordinate(
         turns_(t / 3.F),
         oglplus::smooth_lerp(
           right_angles_(1.F), right_angles_(-1.F), t / 5.F))) *
         oglplus::smooth_lerp(0.F, 10.F, t / 7.F));
-    glapi.set_uniform(prog, time_loc, t);
+    set(video, time_loc, t);
 }
 //------------------------------------------------------------------------------
-void cubes_program::bind_position_location(
-  video_context& vc,
-  oglplus::vertex_attrib_location loc) {
-    vc.gl_api().bind_attrib_location(prog, loc, "Position");
+void cubes_program::drawing_surface(video_context& video) {
+    set(video, edges_loc, 0.F);
 }
 //------------------------------------------------------------------------------
-void cubes_program::bind_pivot_location(
-  video_context& vc,
-  oglplus::vertex_attrib_location loc) {
-    vc.gl_api().bind_attrib_location(prog, loc, "Pivot");
-}
-//------------------------------------------------------------------------------
-void cubes_program::bind_coord_location(
-  video_context& vc,
-  oglplus::vertex_attrib_location loc) {
-    vc.gl_api().bind_attrib_location(prog, loc, "Coord");
-}
-//------------------------------------------------------------------------------
-void cubes_program::drawing_surface(video_context& vc) {
-    vc.gl_api().set_uniform(prog, edges_loc, 0.F);
-}
-//------------------------------------------------------------------------------
-void cubes_program::drawing_edges(video_context& vc) {
-    vc.gl_api().set_uniform(prog, edges_loc, 1.F);
+void cubes_program::drawing_edges(video_context& video) {
+    set(video, edges_loc, 1.F);
 }
 //------------------------------------------------------------------------------
 // geometry
 //------------------------------------------------------------------------------
-void cubes_geometry::init(execution_context& ec, video_context& vc) {
-    const auto& glapi = vc.gl_api();
+void cubes_geometry::init(execution_context& ec, video_context& video) {
+    const auto& glapi = video.gl_api();
     const auto& gl = glapi;
 
     oglplus::shape_generator shape(
@@ -141,8 +116,8 @@ void cubes_geometry::init(execution_context& ec, video_context& vc) {
     shape.index_setup(glapi, indices, view(vars), ec.buffer());
 }
 //------------------------------------------------------------------------------
-void cubes_geometry::clean_up(video_context& vc) {
-    const auto& gl = vc.gl_api();
+void cubes_geometry::clean_up(execution_context& ec) {
+    const auto& gl = ec.main_video().gl_api();
     gl.delete_buffers(std::move(indices));
     gl.delete_buffers(std::move(coords));
     gl.delete_buffers(std::move(pivots));

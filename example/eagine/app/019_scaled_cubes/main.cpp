@@ -24,41 +24,45 @@ public:
     void clean_up() noexcept final;
 
 private:
+    void _on_loaded(const gl_program_resource::load_info&) noexcept;
     video_context& _video;
 
-    orbiting_camera camera;
-    cubes_program prog;
-    cubes_geometry cubes;
+    cubes_program _prog;
+    cubes_geometry _cubes;
+
+    orbiting_camera _camera;
 };
 //------------------------------------------------------------------------------
 example_cubes::example_cubes(execution_context& ec, video_context& vc)
   : timeouting_application{ec, std::chrono::seconds{30}}
-  , _video{vc} {
-    const auto& glapi = _video.gl_api();
-    auto& [gl, GL] = glapi;
+  , _video{vc}
+  , _prog{ec} {
+    _prog.loaded.connect(make_callable_ref<&example_cubes::_on_loaded>(this));
 
-    prog.init(ec, vc);
-    cubes.init(ec, vc);
+    _cubes.init(ec, vc);
 
-    prog.bind_position_location(vc, cubes.position_loc());
-    prog.bind_pivot_location(vc, cubes.pivot_loc());
-    prog.bind_coord_location(vc, cubes.coord_loc());
-
-    // camera
-    camera.set_near(0.1F)
+    _camera.set_near(0.1F)
       .set_far(50.F)
       .set_orbit_min(10.2F)
       .set_orbit_max(16.0F)
       .set_fov(degrees_(70));
-    prog.set_projection(vc, camera);
+
+    _camera.connect_inputs(ec).basic_input_mapping(ec);
+    ec.setup_inputs().switch_input_mapping();
+
+    const auto& glapi = _video.gl_api();
+    auto& [gl, GL] = glapi;
 
     gl.clear_color(0.45F, 0.45F, 0.45F, 1.0F);
     gl.enable(GL.depth_test);
     gl.enable(GL.cull_face);
     gl.cull_face(GL.back);
-
-    camera.connect_inputs(ec).basic_input_mapping(ec);
-    ec.setup_inputs().switch_input_mapping();
+}
+//------------------------------------------------------------------------------
+void example_cubes::_on_loaded(
+  const gl_program_resource::load_info& loaded) noexcept {
+    loaded.apply_input_bindings(_cubes.attrib_bindings());
+    _prog.set_projection(_video, _camera);
 }
 //------------------------------------------------------------------------------
 void example_cubes::update() noexcept {
@@ -67,29 +71,33 @@ void example_cubes::update() noexcept {
         reset_timeout();
     }
     if(state.user_idle_too_long()) {
-        camera.idle_update(state, 3.F);
+        _camera.idle_update(state, 3.F);
     }
 
-    const auto& glapi = _video.gl_api();
-    const auto& [gl, GL] = glapi;
+    if(_prog) {
+        const auto& glapi = _video.gl_api();
+        const auto& [gl, GL] = glapi;
 
-    gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
-    prog.update(context(), _video);
-    prog.set_projection(_video, camera);
+        gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
+        _prog.update(context(), _video);
+        _prog.set_projection(_video, _camera);
 
-    prog.drawing_surface(_video);
-    cubes.draw_surface(_video);
+        _prog.drawing_surface(_video);
+        _cubes.draw_surface(_video);
 
-    prog.drawing_edges(_video);
-    cubes.draw_edges(_video);
+        _prog.drawing_edges(_video);
+        _cubes.draw_edges(_video);
+    } else {
+        _prog.load_if_needed(context());
+    }
 
     _video.commit();
 }
 //------------------------------------------------------------------------------
 void example_cubes::clean_up() noexcept {
 
-    prog.clean_up(_video);
-    cubes.clean_up(_video);
+    _prog.clean_up(context());
+    _cubes.clean_up(context());
 
     _video.end();
 }
