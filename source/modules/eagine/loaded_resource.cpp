@@ -313,45 +313,18 @@ export using gl_geometry_and_bindings_resource =
 //------------------------------------------------------------------------------
 export template <>
 class loaded_resource<valtree::compound>
-  : public valtree::compound
-  , public loaded_resource_base {
-    using _res_t = valtree::compound;
+  : public loaded_resource_common<loaded_resource<valtree::compound>> {
 
-    auto _res() noexcept -> _res_t& {
-        return *this;
-    }
+    using common = loaded_resource_common<loaded_resource<valtree::compound>>;
 
 public:
-    /// @brief Signal emmitted when the resource is successfully loaded.
-    signal<void(const loaded_resource_base&) noexcept> base_loaded;
-
-    /// @brief Type of the loaded signal parameter.
-    struct load_info {
-        /// @brief The base info from the loader signal.
-        const resource_loader::value_tree_load_info& base;
-        /// @brief The loaded geometry resource.
-        const loaded_resource<valtree::compound>& resource;
-    };
-
-    /// @brief Signal emmitted when the resource is successfully loaded.
-    signal<void(const load_info&) noexcept> loaded;
-
     /// @brief Constructor specifying the resource locator.
     loaded_resource(url locator) noexcept
-      : loaded_resource_base{std::move(locator)} {}
-
-    /// @brief Delay-initializes the resource.
-    void init(resource_loader& loader) {
-        _sig_key = connect<&loaded_resource::_handle_value_tree_loaded>(
-          this, loader.value_tree_loaded);
-    }
+      : common{std::move(locator)} {}
 
     /// @brief Clean's up this resource.
     void clean_up(resource_loader& loader) {
-        if(_sig_key) {
-            loader.value_tree_loaded.disconnect(_sig_key);
-            _sig_key = {};
-        }
+        common::_disconnect(loader);
     }
 
     /// @brief Clean's up this resource.
@@ -374,21 +347,9 @@ public:
         return bool(static_cast<const valtree::compound&>(*this));
     }
 
-    /// @brief Indicates if this resource is loaded.
-    /// @see is_loaded
-    explicit operator bool() const noexcept {
-        return is_loaded();
-    }
-
     /// @brief Updates the resource, possibly doing resource load request.
     auto load_if_needed(resource_loader& loader) -> work_done {
-        if(!is_loaded() && !is_loading()) {
-            if(const auto request{loader.request_value_tree(locator())}) {
-                _request_id = request.request_id();
-                return true;
-            }
-        }
-        return false;
+        return this->_load_if_needed(loader);
     }
 
     /// @brief Updates the resource, possibly doing resource load request.
@@ -396,20 +357,11 @@ public:
         return load_if_needed(ctx.loader());
     }
 
-private:
-    void _handle_value_tree_loaded(
-      const resource_loader::value_tree_load_info& info) noexcept {
-        if(info.request_id == _request_id) {
-            _res() = std::move(info.tree);
-            if(is_loaded()) {
-                this->loaded({.base = info, .resource = *this});
-                this->base_loaded(*this);
-                _request_id = 0;
-            }
-        }
+    auto assign(const typename common::base_load_info& info) noexcept -> bool {
+        return this->_assign(info.tree);
     }
 
-    signal_binding_key _sig_key{};
+private:
 };
 export using value_tree_resource = loaded_resource<valtree::compound>;
 //------------------------------------------------------------------------------

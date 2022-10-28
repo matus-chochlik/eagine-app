@@ -466,8 +466,16 @@ export struct resource_loader_signals {
         const valtree::compound& tree;
     };
 
+    template <>
+    struct get_load_info<valtree::compound>
+      : std::type_identity<value_tree_load_info> {};
+
     /// @brief Emitted when a value tree is loaded.
     signal<void(const value_tree_load_info&) noexcept> value_tree_loaded;
+
+    auto load_signal(std::type_identity<valtree::compound>) noexcept -> auto& {
+        return value_tree_loaded;
+    }
 
     /// @brief Type of parameter of the float_vector_loaded signal.
     /// @see float_vector_loaded
@@ -838,6 +846,10 @@ public:
 
     /// @brief Requests a value tree object resource.
     auto request_value_tree(url locator) noexcept -> resource_request_result;
+
+    auto request(std::type_identity<valtree::compound>, url locator) noexcept {
+        return request_value_tree(std::move(locator));
+    }
 
     auto request_json_traversal(
       url locator,
