@@ -1112,9 +1112,25 @@ void pending_resource_info::handle_vec3_vector(
       .arg("size", values.size())
       .arg("locator", _locator.str());
 
+    if(const auto cont{continuation()}) {
+        extract(cont)._handle_vec3_vector(*this, values);
+    }
+
     if(is(resource_kind::vec3_vector)) {
         _parent.vec3_vector_loaded(
           {.request_id = _request_id, .locator = _locator, .values = values});
+    }
+    mark_finished();
+}
+//------------------------------------------------------------------------------
+void pending_resource_info::_handle_vec3_vector(
+  const pending_resource_info& source,
+  const std::vector<math::vector<float, 3, true>>& values) noexcept {
+    if(is(resource_kind::smooth_vec3_curve)) {
+        math::cubic_bezier_curves<math::vector<float, 3, true>, float> loop{
+          view(values)};
+        _parent.smooth_vec3_curve_loaded(
+          {.request_id = _request_id, .locator = _locator, .loop = loop});
     }
     mark_finished();
 }
@@ -1762,6 +1778,18 @@ auto resource_loader::request_vec3_vector(url locator) noexcept
     }
     new_request.info().mark_finished();
     return _cancelled_resource(locator, resource_kind::vec3_vector);
+}
+//------------------------------------------------------------------------------
+auto resource_loader::request_smooth_vec3_curve(url locator) noexcept
+  -> resource_request_result {
+    if(const auto src_request{request_vec3_vector(locator)}) {
+        auto new_request{
+          _new_resource(std::move(locator), resource_kind::smooth_vec3_curve)};
+        src_request.set_continuation(new_request);
+
+        return new_request;
+    }
+    return _cancelled_resource(locator, resource_kind::smooth_vec3_curve);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request_value_tree(url locator) noexcept

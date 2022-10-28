@@ -49,6 +49,8 @@ export enum class resource_kind {
     float_vector,
     /// @brief Vector of vec3 values.
     vec3_vector,
+    /// @brief Smooth bezier curve of vec3 points.
+    smooth_vec3_curve,
     /// @brief Vector of mat4 values.
     mat4_vector,
     /// @brief GLSL text.
@@ -280,6 +282,10 @@ private:
       const pending_resource_info& source,
       const valtree::compound& tree) noexcept;
 
+    void _handle_vec3_vector(
+      const pending_resource_info& source,
+      const std::vector<math::vector<float, 3, true>>& values) noexcept;
+
     void _handle_shape_generator(
       const pending_resource_info& source,
       const std::shared_ptr<shapes::generator>& gen) noexcept;
@@ -400,6 +406,13 @@ export struct resource_loader_signals {
     signal<void(identifier_t, resource_kind, const url&) noexcept>
       resource_cancelled;
 
+    template <typename T>
+    struct get_load_info;
+
+    /// @brief Returns the load info type for the specified resource type T.
+    template <typename T>
+    using load_info_t = typename get_load_info<T>::type;
+
     /// @brief Type of parameter of the shape_generator_loaded signal.
     /// @see shape_generator_loaded
     struct shape_generator_load_info {
@@ -455,19 +468,49 @@ export struct resource_loader_signals {
         std::vector<float> values;
     };
 
+    template <>
+    struct get_load_info<std::vector<float>>
+      : std::type_identity<float_vector_load_info> {};
+
     /// @brief Emitted when a vector of floating-point values is loaded.
     signal<void(const float_vector_load_info&) noexcept> float_vector_loaded;
+
+    auto load_signal(std::type_identity<std::vector<float>>) noexcept -> auto& {
+        return float_vector_loaded;
+    }
 
     /// @brief Type of parameter of the vec3_vector_loaded signal.
     /// @see vec3_vector_loaded
     struct vec3_vector_load_info {
         const identifier_t request_id;
         const url& locator;
-        std::vector<math::vector<float, 3, true>> values;
+        std::vector<math::vector<float, 3, true>>& values;
     };
 
-    /// @brief Emitted when a vector of floating-point values is loaded.
+    template <>
+    struct get_load_info<std::vector<math::vector<float, 3, true>>>
+      : std::type_identity<vec3_vector_load_info> {};
+
+    /// @brief Emitted when a vector of vec3 values is loaded.
     signal<void(const vec3_vector_load_info&) noexcept> vec3_vector_loaded;
+
+    auto load_signal(
+      std::type_identity<std::vector<math::vector<float, 3, true>>>) noexcept
+      -> auto& {
+        return vec3_vector_loaded;
+    }
+
+    /// @brief Type of parameter of the smooth_vec3_curve_loaded signal.
+    /// @see smooth_vec3_curve_loaded
+    struct smooth_vec3_curve_load_info {
+        const identifier_t request_id;
+        const url& locator;
+        math::cubic_bezier_curves<math::vector<float, 3, true>, float>& loop;
+    };
+
+    /// @brief Emitted when a smooth closed loop of vec3 values is loaded.
+    signal<void(const smooth_vec3_curve_load_info&) noexcept>
+      smooth_vec3_curve_loaded;
 
     /// @brief Type of parameter of the glsl_source_loaded signal.
     /// @see glsl_source_loaded
@@ -767,8 +810,22 @@ public:
     /// @brief Requests a float vector resource.
     auto request_float_vector(url locator) noexcept -> resource_request_result;
 
+    auto request(std::type_identity<std::vector<float>>, url locator) noexcept {
+        return request_float_vector(std::move(locator));
+    }
+
     /// @brief Requests a float vector resource.
     auto request_vec3_vector(url locator) noexcept -> resource_request_result;
+
+    auto request(
+      std::type_identity<std::vector<math::vector<float, 3, true>>>,
+      url locator) noexcept {
+        return request_vec3_vector(std::move(locator));
+    }
+
+    /// @brief Requests a smoothe vec3 curve resource.
+    auto request_smooth_vec3_curve(url locator) noexcept
+      -> resource_request_result;
 
     /// @brief Requests a value tree object resource.
     auto request_value_tree(url locator) noexcept -> resource_request_result;

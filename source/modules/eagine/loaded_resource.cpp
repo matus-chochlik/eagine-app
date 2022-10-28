@@ -62,46 +62,139 @@ protected:
 //------------------------------------------------------------------------------
 export template <typename Resource>
 class loaded_resource;
-//------------------------------------------------------------------------------
-export template <>
-class loaded_resource<std::vector<math::vector<float, 3, true>>>
-  : public std::vector<math::vector<float, 3, true>>
-  , public loaded_resource_base {
-    using _res_t = std::vector<math::vector<float, 3, true>>;
 
-    auto _res() noexcept -> _res_t& {
-        return *this;
+template <typename Derived>
+class loaded_resource_common;
+
+template <typename Resource>
+struct resource_load_info;
+//------------------------------------------------------------------------------
+template <typename Resource>
+class loaded_resource_common<loaded_resource<Resource>>
+  : public Resource
+  , public loaded_resource_base {
+    using base = loaded_resource_base;
+
+    using Derived = loaded_resource<Resource>;
+
+    auto derived() noexcept -> Derived& {
+        return *static_cast<Derived*>(this);
+    }
+
+    auto derived() const noexcept -> const Derived& {
+        return *static_cast<const Derived*>(this);
     }
 
 public:
+    static constexpr auto resource_tid() noexcept
+      -> std::type_identity<Resource> {
+        return {};
+    }
+
+    /// @brief Type of the base_loaded signal parameter.
+    using base_load_info = typename resource_loader::load_info_t<Resource>;
+
     /// @brief Signal emmitted when the resource is successfully loaded.
     signal<void(const loaded_resource_base&) noexcept> base_loaded;
 
     /// @brief Type of the loaded signal parameter.
-    struct load_info {
-        /// @brief The base info from the loader signal.
-        const resource_loader::vec3_vector_load_info& base;
-        /// @brief The loaded geometry resource.
-        std::vector<math::vector<float, 3, true>>& resource;
-    };
+    using load_info = resource_load_info<Resource>;
 
     /// @brief Signal emmitted when the resource is successfully loaded.
     signal<void(const load_info&) noexcept> loaded;
 
-    /// @brief Constructor specifying the resource locator.
-    loaded_resource(url locator) noexcept
-      : loaded_resource_base{std::move(locator)} {}
-
-    /// @brief Delay-initializes the resource.
-    void init(resource_loader& loader) {
-        _sig_key = connect<&loaded_resource::_handle_vec3_vector_loaded>(
-          this, loader.vec3_vector_loaded);
+    /// @brief Indicates if this resource is loaded.
+    /// @see is_loaded
+    explicit operator bool() const noexcept {
+        return derived().is_loaded();
     }
 
+    /// @brief Delay-initializes the resource.
+    void init(resource_loader& loader) noexcept {
+        _connect(loader);
+    }
+
+    /// @brief Returns a reference to the underlying resource.
+    auto resource() noexcept -> Resource& {
+        return *this;
+    }
+
+protected:
+    /// @brief Constructor specifying the resource locator.
+    loaded_resource_common(url locator) noexcept
+      : loaded_resource_base{std::move(locator)} {}
+
+    void _connect(resource_loader& loader) noexcept {
+        _sig_key = connect<&loaded_resource_common::_handle_loaded>(
+          this, loader.load_signal(resource_tid()));
+    }
+
+    void _disconnect(resource_loader& loader) noexcept {
+        if(_sig_key) {
+            loader.load_signal(resource_tid()).disconnect(_sig_key);
+            _sig_key = {};
+        }
+    }
+
+    template <typename... Args>
+    auto _load_if_needed(resource_loader& loader, Args&&... args) -> work_done {
+        if(!derived().is_loaded() && !is_loading()) {
+            if(const auto request{loader.request(
+                 resource_tid(), locator(), std::forward<Args>(args)...)}) {
+                _request_id = request.request_id();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    template <typename R>
+    auto _assign(R&& initial) noexcept -> bool {
+        resource() = std::forward<R>(initial);
+        return derived().is_loaded();
+    }
+
+private:
+    void _handle_loaded(const base_load_info& info) noexcept {
+        if(info.request_id == _request_id) {
+            if(derived().assign(info)) {
+                loaded(load_info(info));
+                base_loaded(*this);
+                _request_id = 0;
+            }
+        }
+    }
+
+    signal_binding_key _sig_key{};
+};
+//------------------------------------------------------------------------------
+template <typename T>
+struct resource_load_info<std::vector<T>> {
+    using Resource = std::vector<T>;
+    using base_load_info = typename resource_loader::load_info_t<Resource>;
+
+    /// @brief The base info from the loader signal.
+    const base_load_info& base;
+    /// @brief The loaded geometry resource.
+    Resource& resource;
+
+    resource_load_info(const base_load_info& info) noexcept
+      : base{info}
+      , resource{info.values} {}
+};
+
+export template <typename T>
+class loaded_resource<std::vector<T>>
+  : public loaded_resource_common<loaded_resource<std::vector<T>>> {
+
+    using common = loaded_resource_common<loaded_resource<std::vector<T>>>;
+    friend class loaded_resource_common<loaded_resource<std::vector<T>>>;
+
+public:
     /// @brief Constructor specifying the locator and initializing the resource.
     loaded_resource(url locator, resource_loader& loader)
-      : loaded_resource{std::move(locator)} {
-        init(loader);
+      : common{std::move(locator)} {
+        this->init(loader);
     }
 
     /// @brief Constructor specifying the locator and initializing the resource.
@@ -110,11 +203,8 @@ public:
 
     /// @brief Clean's up this resource.
     void clean_up(resource_loader& loader) {
-        _res().clear();
-        if(_sig_key) {
-            loader.vec3_vector_loaded.disconnect(_sig_key);
-            _sig_key = {};
-        }
+        this->resource().clear();
+        common::_disconnect(loader);
     }
 
     /// @brief Clean's up this resource.
@@ -127,21 +217,9 @@ public:
         return !this->empty();
     }
 
-    /// @brief Indicates if this resource is loaded.
-    /// @see is_loaded
-    explicit operator bool() const noexcept {
-        return is_loaded();
-    }
-
     /// @brief Updates the resource, possibly doing resource load request.
     auto load_if_needed(resource_loader& loader) -> work_done {
-        if(!is_loaded() && !is_loading()) {
-            if(const auto request{loader.request_vec3_vector(locator())}) {
-                _request_id = request.request_id();
-                return true;
-            }
-        }
-        return false;
+        return this->_load_if_needed(loader);
     }
 
     /// @brief Updates the resource, possibly doing resource load request.
@@ -149,21 +227,12 @@ public:
         return load_if_needed(ctx.loader());
     }
 
-private:
-    void _handle_vec3_vector_loaded(
-      const resource_loader::vec3_vector_load_info& info) noexcept {
-        if(info.request_id == _request_id) {
-            _res() = std::move(info.values);
-            if(is_loaded()) {
-                this->loaded({.base = info, .resource = _res()});
-                this->base_loaded(*this);
-                _request_id = 0;
-            }
-        }
+    auto assign(const typename common::base_load_info& info) noexcept -> bool {
+        return this->_assign(info.values);
     }
-
-    signal_binding_key _sig_key{};
 };
+//------------------------------------------------------------------------------
+export using float_vector_resource = loaded_resource<std::vector<float>>;
 export using vec3_vector_resource =
   loaded_resource<std::vector<math::vector<float, 3, true>>>;
 //------------------------------------------------------------------------------
