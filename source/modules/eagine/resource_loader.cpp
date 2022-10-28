@@ -8,6 +8,7 @@
 export module eagine.app:resource_loader;
 
 import eagine.core.types;
+import eagine.core.math;
 import eagine.core.memory;
 import eagine.core.container;
 import eagine.core.utility;
@@ -44,6 +45,12 @@ export enum class resource_kind {
     json_text,
     /// @brief YAML text.
     yaml_text,
+    /// @brief Vector of floating-point values.
+    float_vector,
+    /// @brief Vector of vec3 values.
+    vec3_vector,
+    /// @brief Vector of mat4 values.
+    mat4_vector,
     /// @brief GLSL text.
     glsl_text,
     /// @brief Shape generator.
@@ -127,6 +134,14 @@ public:
 
     void add_valtree_stream_input(
       valtree::value_tree_stream_input input) noexcept;
+
+    void handle_float_vector(
+      const pending_resource_info& source,
+      std::vector<float>& values) noexcept;
+
+    void handle_vec3_vector(
+      const pending_resource_info& source,
+      std::vector<math::vector<float, 3, true>>& values) noexcept;
 
     void add_shape_generator(std::shared_ptr<shapes::generator> gen) noexcept;
     void add_gl_shape_context(video_context&) noexcept;
@@ -432,6 +447,28 @@ export struct resource_loader_signals {
     /// @brief Emitted when a value tree is loaded.
     signal<void(const value_tree_load_info&) noexcept> value_tree_loaded;
 
+    /// @brief Type of parameter of the float_vector_loaded signal.
+    /// @see float_vector_loaded
+    struct float_vector_load_info {
+        const identifier_t request_id;
+        const url& locator;
+        std::vector<float> values;
+    };
+
+    /// @brief Emitted when a vector of floating-point values is loaded.
+    signal<void(const float_vector_load_info&) noexcept> float_vector_loaded;
+
+    /// @brief Type of parameter of the vec3_vector_loaded signal.
+    /// @see vec3_vector_loaded
+    struct vec3_vector_load_info {
+        const identifier_t request_id;
+        const url& locator;
+        std::vector<math::vector<float, 3, true>> values;
+    };
+
+    /// @brief Emitted when a vector of floating-point values is loaded.
+    signal<void(const vec3_vector_load_info&) noexcept> vec3_vector_loaded;
+
     /// @brief Type of parameter of the glsl_source_loaded signal.
     /// @see glsl_source_loaded
     struct glsl_source_load_info {
@@ -727,6 +764,12 @@ public:
     /// @brief Does some work and updates internal state (should be called periodically).
     auto update() noexcept -> work_done;
 
+    /// @brief Requests a float vector resource.
+    auto request_float_vector(url locator) noexcept -> resource_request_result;
+
+    /// @brief Requests a float vector resource.
+    auto request_vec3_vector(url locator) noexcept -> resource_request_result;
+
     /// @brief Requests a value tree object resource.
     auto request_value_tree(url locator) noexcept -> resource_request_result;
 
@@ -822,6 +865,8 @@ public:
 
 private:
     friend class pending_resource_info;
+
+    auto _is_json_resource(const url& locator) const noexcept -> bool;
 
     void _init() noexcept;
 

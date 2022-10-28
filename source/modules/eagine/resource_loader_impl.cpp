@@ -14,6 +14,7 @@ module eagine.app;
 import eagine.core.types;
 import eagine.core.memory;
 import eagine.core.string;
+import eagine.core.math;
 import eagine.core.container;
 import eagine.core.reflection;
 import eagine.core.utility;
@@ -49,16 +50,191 @@ auto resource_loader_signals::gl_buffer_load_info::gl_api() const noexcept
     return video.gl_api();
 }
 //------------------------------------------------------------------------------
+template <typename Derived>
+class valtree_builder_base : public valtree::object_builder_impl<Derived> {
+public:
+    valtree_builder_base(
+      const std::shared_ptr<pending_resource_info>& info) noexcept
+      : _parent{info} {}
+
+    void do_add(const basic_string_path&, const auto&) noexcept {}
+
+    void finish() noexcept override {
+        if(auto parent{_parent.lock()}) {
+            extract(parent).mark_loaded();
+        }
+    }
+
+    void failed() noexcept override {
+        if(auto parent{_parent.lock()}) {
+            extract(parent).mark_loaded();
+        }
+    }
+
+protected:
+    std::weak_ptr<pending_resource_info> _parent;
+};
+//------------------------------------------------------------------------------
+// valtree_float_vector_builder
+//------------------------------------------------------------------------------
+class valtree_float_vector_builder
+  : public valtree_builder_base<valtree_float_vector_builder> {
+    using base = valtree_builder_base<valtree_float_vector_builder>;
+
+public:
+    using base::base;
+    using base::do_add;
+
+    template <std::integral T>
+    void do_add(const basic_string_path& path, span<const T>& data) noexcept {
+        if(path.size() == 2) {
+            if(!data.empty()) {
+                if((path.front() == "values") && (path.front() == "data")) {
+                    for(const auto v : data) {
+                        _values.push_back(float(v));
+                    }
+                }
+            }
+        } else if(path.size() == 1) {
+            if(data.has_single_value()) {
+                if((path.front() == "count") || (path.front() == "size")) {
+                    _values.reserve(std_size(extract(data)));
+                }
+            }
+        }
+    }
+
+    template <std::floating_point T>
+    void do_add(const basic_string_path& path, span<const T>& data) noexcept {
+        if(path.size() == 2) {
+            if(!data.empty()) {
+                if((path.front() == "values") && (path.front() == "data")) {
+                    for(const auto v : data) {
+                        _values.push_back(float(v));
+                    }
+                }
+            }
+        }
+    }
+
+    void do_add(
+      const basic_string_path& path,
+      span<const float>& data) noexcept {
+        if(path.size() == 2) {
+            if(!data.empty()) {
+                if((path.front() == "values") && (path.front() == "data")) {
+                    _values.insert(_values.end(), data.begin(), data.end());
+                }
+            }
+        }
+    }
+
+    void finish() noexcept final {
+        if(auto parent{_parent.lock()}) {
+            if(const auto cont{extract(parent).continuation()}) {
+                extract(cont).handle_float_vector(extract(parent), _values);
+            }
+        }
+    }
+
+private:
+    std::vector<float> _values;
+};
+//------------------------------------------------------------------------------
+// valtree_vec3_vector_builder
+//------------------------------------------------------------------------------
+class valtree_vec3_vector_builder
+  : public valtree_builder_base<valtree_vec3_vector_builder> {
+    using base = valtree_builder_base<valtree_vec3_vector_builder>;
+
+public:
+    using base::base;
+    using base::do_add;
+
+    template <typename T>
+    auto _do_add(const basic_string_path& path, span<const T>& data) noexcept
+      -> bool {
+        if(path.size() == 3) {
+            if((path.front() == "values") || (path.front() == "data")) {
+                if(data.has_single_value()) {
+                    if((path.back() == "x") || (path.back() == "r")) {
+                        _temp._v[0] = extract(data);
+                        return true;
+                    } else if((path.back() == "y") || (path.back() == "g")) {
+                        _temp._v[1] = extract(data);
+                        return true;
+                    } else if((path.back() == "z") || (path.back() == "b")) {
+                        _temp._v[2] = extract(data);
+                        return true;
+                    }
+                }
+                if(path.back() == "_") {
+                    for(const auto i : integer_range(data.size())) {
+                        _temp._v[_offs] = data[i];
+                        if(++_offs == 3) {
+                            _offs = 0;
+                            _values.push_back(_temp);
+                            _temp = {0.F, 0.F, 0.F};
+                        }
+                    }
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    template <std::integral T>
+    void do_add(const basic_string_path& path, span<const T>& data) noexcept {
+        if(!_do_add(path, data)) {
+            if((path.size() == 1) && data.has_single_value()) {
+                if((path.front() == "count") || (path.front() == "size")) {
+                    _values.reserve(std_size(extract(data)));
+                }
+            }
+        }
+    }
+
+    template <std::floating_point T>
+    void do_add(const basic_string_path& path, span<const T>& data) noexcept {
+        _do_add(path, data);
+    }
+
+    void finish_object(const basic_string_path& path) noexcept final {
+        if(path.size() == 2) {
+            if((path.front() == "values") || (path.front() == "data")) {
+                _values.push_back(_temp);
+                _temp = {0.F, 0.F, 0.F};
+            }
+        }
+    }
+
+    void finish() noexcept final {
+        if(auto parent{_parent.lock()}) {
+            extract(parent).handle_vec3_vector(extract(parent), _values);
+        }
+    }
+
+private:
+    math::vector<float, 3, true> _temp{0.F, 0.F, 0.F};
+    std::vector<math::vector<float, 3, true>> _values;
+    std::size_t _offs{0U};
+};
+//------------------------------------------------------------------------------
 // valtree_gl_program_builder
 //------------------------------------------------------------------------------
 class valtree_gl_program_builder
-  : public valtree::object_builder_impl<valtree_gl_program_builder> {
+  : public valtree_builder_base<valtree_gl_program_builder> {
+    using base = valtree_builder_base<valtree_gl_program_builder>;
+
 public:
     valtree_gl_program_builder(
       const std::shared_ptr<pending_resource_info>& info,
       video_context& video) noexcept
-      : _parent{info}
+      : base{info}
       , _video{video} {}
+
+    using base::do_add;
 
     void do_add(
       const basic_string_path& path,
@@ -116,8 +292,6 @@ public:
         }
     }
 
-    void do_add(const basic_string_path&, const auto&) noexcept {}
-
     void add_object(const basic_string_path& path) noexcept final {
         if(path.size() == 2) {
             if(path.front() == "inputs") {
@@ -160,20 +334,7 @@ public:
         }
     }
 
-    void finish() noexcept final {
-        if(auto parent{_parent.lock()}) {
-            extract(parent).mark_loaded();
-        }
-    }
-
-    void failed() noexcept final {
-        if(auto parent{_parent.lock()}) {
-            extract(parent).mark_finished();
-        }
-    }
-
 private:
-    std::weak_ptr<pending_resource_info> _parent;
     video_context& _video;
     std::string _input_name;
     oglplus::shader_type _shdr_type;
@@ -310,13 +471,15 @@ struct resource_gl_texture_image_params {
 };
 //------------------------------------------------------------------------------
 class valtree_gl_texture_image_loader
-  : public valtree::object_builder_impl<valtree_gl_texture_image_loader> {
+  : public valtree_builder_base<valtree_gl_texture_image_loader> {
+    using base = valtree_builder_base<valtree_gl_texture_image_loader>;
+
 public:
     valtree_gl_texture_image_loader(
       std::shared_ptr<pending_resource_info> info,
       oglplus::texture_target target,
       const resource_gl_texture_image_params& params) noexcept
-      : _parent{std::move(info)}
+      : base{std::move(info)}
       , _target{target}
       , _params{params} {
         if(const auto parent{_parent.lock()}) {
@@ -351,6 +514,8 @@ public:
         }
         return false;
     }
+
+    using base::do_add;
 
     template <std::integral T>
     void do_add(
@@ -419,8 +584,6 @@ public:
         }
     }
 
-    void do_add(const basic_string_path&, const auto&) noexcept {}
-
     void unparsed_data(span<const memory::const_block> data) noexcept final {
         if(!_decompression.is_initialized()) {
             _success &= init_decompression(data_compression_method::none);
@@ -453,7 +616,6 @@ public:
     }
 
 private:
-    std::weak_ptr<pending_resource_info> _parent;
     memory::buffer _temp;
     stream_decompression _decompression;
     oglplus::texture_target _target;
@@ -475,17 +637,21 @@ struct resource_gl_texture_params {
 };
 //------------------------------------------------------------------------------
 class valtree_gl_texture_builder
-  : public valtree::object_builder_impl<valtree_gl_texture_builder> {
+  : public valtree_builder_base<valtree_gl_texture_builder> {
+    using base = valtree_builder_base<valtree_gl_texture_builder>;
+
 public:
     valtree_gl_texture_builder(
       const std::shared_ptr<pending_resource_info>& info,
       video_context& video,
       oglplus::texture_target tex_target,
       oglplus::texture_unit tex_unit) noexcept
-      : _parent{info}
+      : base{info}
       , _video{video}
       , _tex_target{tex_target}
       , _tex_unit{tex_unit} {}
+
+    using base::do_add;
 
     template <std::integral T>
     void do_add(
@@ -573,8 +739,6 @@ public:
         }
     }
 
-    void do_add(const basic_string_path&, const auto&) noexcept {}
-
     void add_object(const basic_string_path& path) noexcept final {
         if(path.size() == 2) {
             if(path.front() == "images") {
@@ -624,14 +788,7 @@ public:
         }
     }
 
-    void failed() noexcept final {
-        if(const auto parent{_parent.lock()}) {
-            extract(parent).mark_finished();
-        }
-    }
-
 private:
-    std::weak_ptr<pending_resource_info> _parent;
     video_context& _video;
     resource_gl_texture_params _params{};
     url _image_locator;
@@ -653,27 +810,23 @@ struct resource_gl_buffer_params {
 };
 //------------------------------------------------------------------------------
 class valtree_gl_buffer_builder
-  : public valtree::object_builder_impl<valtree_gl_buffer_builder> {
+  : public valtree_builder_base<valtree_gl_buffer_builder> {
+    using base = valtree_builder_base<valtree_gl_buffer_builder>;
+
 public:
     valtree_gl_buffer_builder(
       const std::shared_ptr<pending_resource_info>& info,
       video_context& video,
       oglplus::buffer_target buf_target) noexcept
-      : _parent{info}
+      : base{info}
       , _video{video}
       , _buf_target{buf_target} {}
 
+    using base::do_add;
     // TODO
     void do_add(const basic_string_path&, const auto&) noexcept {}
 
-    void failed() noexcept final {
-        if(const auto parent{_parent.lock()}) {
-            extract(parent).mark_finished();
-        }
-    }
-
 private:
-    std::weak_ptr<pending_resource_info> _parent;
     video_context& _video;
     resource_gl_buffer_params _params{};
     url _image_locator;
@@ -936,8 +1089,38 @@ void pending_resource_info::_handle_value_tree(
     }
 }
 //------------------------------------------------------------------------------
-void pending_resource_info::_handle_shape_generator(
+void pending_resource_info::handle_float_vector(
+  const pending_resource_info&,
+  std::vector<float>& values) noexcept {
+    _parent.log_info("loaded float values")
+      .arg("requestId", _request_id)
+      .arg("size", values.size())
+      .arg("locator", _locator.str());
+
+    if(is(resource_kind::float_vector)) {
+        _parent.float_vector_loaded(
+          {.request_id = _request_id, .locator = _locator, .values = values});
+    }
+    mark_finished();
+}
+//------------------------------------------------------------------------------
+void pending_resource_info::handle_vec3_vector(
   const pending_resource_info& source,
+  std::vector<math::vector<float, 3, true>>& values) noexcept {
+    _parent.log_info("loaded vec3 values")
+      .arg("requestId", _request_id)
+      .arg("size", values.size())
+      .arg("locator", _locator.str());
+
+    if(is(resource_kind::vec3_vector)) {
+        _parent.vec3_vector_loaded(
+          {.request_id = _request_id, .locator = _locator, .values = values});
+    }
+    mark_finished();
+}
+//------------------------------------------------------------------------------
+void pending_resource_info::_handle_shape_generator(
+  const pending_resource_info&,
   const std::shared_ptr<shapes::generator>& gen) noexcept {
     _parent.log_info("loaded shape geometry generator")
       .arg("requestId", _request_id)
@@ -1476,6 +1659,11 @@ auto resource_request_result::info() const noexcept -> pending_resource_info& {
 //------------------------------------------------------------------------------
 // resource_loader
 //------------------------------------------------------------------------------
+auto resource_loader::_is_json_resource(const url& locator) const noexcept
+  -> bool {
+    return locator.has_path_suffix(".json") || locator.has_scheme("json");
+}
+//------------------------------------------------------------------------------
 void resource_loader::_handle_stream_data_appended(
   identifier_t request_id,
   const span_size_t offset,
@@ -1548,9 +1736,37 @@ void resource_loader::_init() noexcept {
       this, blob_stream_cancelled);
 }
 //------------------------------------------------------------------------------
+auto resource_loader::request_float_vector(url locator) noexcept
+  -> resource_request_result {
+    auto new_request{_new_resource(locator, resource_kind::float_vector)};
+
+    if(const auto src_request{request_value_tree_traversal(
+         locator,
+         std::make_shared<valtree_float_vector_builder>(new_request),
+         64)}) {
+        return new_request;
+    }
+    new_request.info().mark_finished();
+    return _cancelled_resource(locator, resource_kind::float_vector);
+}
+//------------------------------------------------------------------------------
+auto resource_loader::request_vec3_vector(url locator) noexcept
+  -> resource_request_result {
+    auto new_request{_new_resource(locator, resource_kind::vec3_vector)};
+
+    if(const auto src_request{request_value_tree_traversal(
+         locator,
+         std::make_shared<valtree_vec3_vector_builder>(new_request),
+         64)}) {
+        return new_request;
+    }
+    new_request.info().mark_finished();
+    return _cancelled_resource(locator, resource_kind::vec3_vector);
+}
+//------------------------------------------------------------------------------
 auto resource_loader::request_value_tree(url locator) noexcept
   -> resource_request_result {
-    if(locator.has_path_suffix(".json") || locator.has_scheme("json")) {
+    if(_is_json_resource(locator)) {
         if(const auto src_request{_new_resource(
              fetch_resource_chunks(
                locator,
@@ -1566,7 +1782,7 @@ auto resource_loader::request_value_tree(url locator) noexcept
         }
     }
 
-    return _cancelled_resource(locator);
+    return _cancelled_resource(locator, resource_kind::value_tree);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request_json_traversal(
@@ -1602,7 +1818,7 @@ auto resource_loader::request_value_tree_traversal(
   url locator,
   std::shared_ptr<valtree::value_tree_visitor> visitor,
   span_size_t max_token_size) noexcept -> resource_request_result {
-    if(locator.has_path_suffix(".json") || locator.has_scheme("json")) {
+    if(_is_json_resource(locator)) {
         return request_json_traversal(
           std::move(locator), std::move(visitor), max_token_size);
     }
