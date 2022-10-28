@@ -82,7 +82,7 @@ void example_edges::update() noexcept {
         _prog.set_projection(context(), _camera);
         _shape.use_and_draw(_video);
     } else {
-        _prog.update(context());
+        _prog.load_if_needed(context());
     }
 
     _video.commit();

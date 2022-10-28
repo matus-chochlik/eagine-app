@@ -88,8 +88,8 @@ void example_torus::update() noexcept {
         prog.set_projection(_video, camera);
         torus.use_and_draw(_video);
     } else {
-        torus.update(_video, _loader);
-        prog.update(_video, _loader);
+        torus.load_if_needed(_video, _loader);
+        prog.load_if_needed(_video, _loader);
     }
 
     _video.commit();

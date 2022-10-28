@@ -49,7 +49,7 @@ class example_texture : public gl_texture_resource {
 public:
     example_texture(url, oglplus::gl_types::int_type, execution_context&);
 
-    auto update(execution_context&) noexcept -> work_done;
+    auto load_if_needed(execution_context&) noexcept -> work_done;
 
     auto tex_unit() const noexcept {
         return _tex_unit;

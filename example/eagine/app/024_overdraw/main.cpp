@@ -96,8 +96,8 @@ void example::update() noexcept {
         _screen_prog.set_screen_size(*this);
         _screen.draw(*this);
     } else {
-        _draw_prog.update(context());
-        _screen_prog.update(context());
+        _draw_prog.load_if_needed(context());
+        _screen_prog.load_if_needed(context());
     }
 
     _video.commit();

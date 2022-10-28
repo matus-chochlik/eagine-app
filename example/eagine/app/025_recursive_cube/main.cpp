@@ -96,8 +96,8 @@ void example_cube::update() noexcept {
         // swap texture draw buffers
         _bufs.swap();
     } else {
-        _prog.update(context());
-        _cube.update(context());
+        _prog.load_if_needed(context());
+        _cube.load_if_needed(context());
     }
 
     _video.commit();

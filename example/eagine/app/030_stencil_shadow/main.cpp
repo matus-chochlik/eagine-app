@@ -190,10 +190,10 @@ void example_stencil_shadow::update() noexcept {
         gl.cull_face(GL.back);
         _wheelcart.draw(_video);
     } else if(_wheelcart) {
-        _draw_prog.update(context());
-        _mask_prog.update(context());
+        _draw_prog.load_if_needed(context());
+        _mask_prog.load_if_needed(context());
     } else {
-        _wheelcart.update(context());
+        _wheelcart.load_if_needed(context());
     }
 
     _video.commit();

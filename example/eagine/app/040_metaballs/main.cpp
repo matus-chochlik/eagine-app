@@ -82,9 +82,9 @@ void example::update() noexcept {
         _srfce_prog.prepare_frame(*this);
         _volume.draw(*this);
     } else {
-        _mball_prog.update(context());
-        _field_prog.update(context());
-        _srfce_prog.update(context());
+        _mball_prog.load_if_needed(context());
+        _field_prog.load_if_needed(context());
+        _srfce_prog.load_if_needed(context());
     }
 
     _video.commit();

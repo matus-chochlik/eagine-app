@@ -91,11 +91,11 @@ pumpkin_texture::pumpkin_texture(video_context& video, resource_loader& loader)
     loaded.connect(make_callable_ref<&pumpkin_texture::_on_loaded>(this));
 }
 //------------------------------------------------------------------------------
-auto pumpkin_texture::update(
+auto pumpkin_texture::load_if_needed(
   video_context& video,
   resource_loader& loader) noexcept -> work_done {
     const auto& GL = video.gl_api().constants();
-    return gl_texture_resource::update(
+    return gl_texture_resource::load_if_needed(
       video, loader, GL.texture_2d_array, GL.texture0 + tex_unit());
 }
 //------------------------------------------------------------------------------

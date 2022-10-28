@@ -80,8 +80,8 @@ void example::update() noexcept {
         _draw_prog.prepare_frame(*this);
         _particles.draw(*this);
     } else {
-        _emit_prog.update(context());
-        _draw_prog.update(context());
+        _emit_prog.load_if_needed(context());
+        _draw_prog.load_if_needed(context());
     }
 
     _video.commit();

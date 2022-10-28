@@ -68,9 +68,10 @@ example_texture::example_texture(
     loaded.connect(make_callable_ref<&example_texture::_on_loaded>(this));
 }
 //------------------------------------------------------------------------------
-auto example_texture::update(execution_context& ctx) noexcept -> work_done {
+auto example_texture::load_if_needed(execution_context& ctx) noexcept
+  -> work_done {
     const auto& GL = ctx.main_video().gl_api().constants();
-    return gl_texture_resource::update(
+    return gl_texture_resource::load_if_needed(
       ctx.main_video(),
       ctx.loader(),
       GL.texture_2d_array,

@@ -71,7 +71,7 @@ class pumpkin_texture : public gl_texture_resource {
 public:
     pumpkin_texture(video_context&, resource_loader&);
 
-    auto update(video_context& video, resource_loader& loader) noexcept
+    auto load_if_needed(video_context& video, resource_loader& loader) noexcept
       -> work_done;
 
     static auto tex_unit() noexcept -> oglplus::texture_unit::value_type {

@@ -143,10 +143,10 @@ void example_parallax::update() noexcept {
             oglplus::matrix_rotation_x(right_angles_(+0.5F)));
         _torus.use_and_draw(_video);
     } else {
-        _prog.update(context());
-        _torus.update(context());
-        _bricks.update(context());
-        _stones.update(context());
+        _prog.load_if_needed(context());
+        _torus.load_if_needed(context());
+        _bricks.load_if_needed(context());
+        _stones.load_if_needed(context());
     }
 
     _video.commit();

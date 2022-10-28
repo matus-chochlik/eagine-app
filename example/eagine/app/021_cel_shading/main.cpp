@@ -88,8 +88,8 @@ void example_cel::update() noexcept {
         _prog.set_modelview(context(), _video);
         _shape.use_and_draw(_video);
     } else {
-        _shape.update(_video, _loader);
-        _prog.update(_video, _loader);
+        _shape.load_if_needed(_video, _loader);
+        _prog.load_if_needed(_video, _loader);
     }
 
     _video.commit();

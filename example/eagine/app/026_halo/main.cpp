@@ -108,9 +108,9 @@ void example_halo::update() noexcept {
         gl.disable(GL.blend);
         gl.depth_mask(GL.true_);
     } else {
-        _surf_prog.update(_video, _loader);
-        _halo_prog.update(_video, _loader);
-        _shape.update(_video, _loader);
+        _surf_prog.load_if_needed(_video, _loader);
+        _halo_prog.load_if_needed(_video, _loader);
+        _shape.load_if_needed(_video, _loader);
     }
 
     _video.commit();

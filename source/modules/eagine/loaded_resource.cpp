@@ -134,7 +134,7 @@ public:
     }
 
     /// @brief Updates the resource, possibly doing resource load request.
-    auto update(
+    auto load_if_needed(
       video_context& video,
       resource_loader& loader,
       span_size_t draw_var_idx = 0) -> work_done {
@@ -149,7 +149,7 @@ public:
     }
 
     /// @brief Updates the resource, possibly doing resource load request.
-    auto update(
+    auto load_if_needed(
       video_context& video,
       resource_loader& loader,
       const oglplus::vertex_attrib_bindings& bindings,
@@ -165,17 +165,18 @@ public:
     }
 
     /// @brief Updates the resource, possibly doing resource load request.
-    auto update(execution_context& ctx, span_size_t draw_var_idx = 0)
+    auto load_if_needed(execution_context& ctx, span_size_t draw_var_idx = 0)
       -> work_done {
-        return update(ctx.main_video(), ctx.loader(), draw_var_idx);
+        return load_if_needed(ctx.main_video(), ctx.loader(), draw_var_idx);
     }
 
     /// @brief Updates the resource, possibly doing resource load request.
-    auto update(
+    auto load_if_needed(
       execution_context& ctx,
       const oglplus::vertex_attrib_bindings& bindings,
       span_size_t draw_var_idx = 0) -> work_done {
-        return update(ctx.main_video(), ctx.loader(), bindings, draw_var_idx);
+        return load_if_needed(
+          ctx.main_video(), ctx.loader(), bindings, draw_var_idx);
     }
 
 private:
@@ -266,7 +267,7 @@ public:
     }
 
     /// @brief Updates the resource, possibly doing resource load request.
-    auto update(resource_loader& loader) -> work_done {
+    auto load_if_needed(resource_loader& loader) -> work_done {
         if(!is_loaded() && !is_loading()) {
             if(const auto request{loader.request_value_tree(locator())}) {
                 _request_id = request.request_id();
@@ -277,8 +278,8 @@ public:
     }
 
     /// @brief Updates the resource, possibly doing resource load request.
-    auto update(execution_context& ctx) -> work_done {
-        return update(ctx.loader());
+    auto load_if_needed(execution_context& ctx) -> work_done {
+        return load_if_needed(ctx.loader());
     }
 
 private:
@@ -369,7 +370,7 @@ public:
     }
 
     /// @brief Updates the resource, possibly doing resource load request.
-    auto update(
+    auto load_if_needed(
       video_context& video,
       resource_loader& loader,
       oglplus::shader_type type) -> work_done {
@@ -384,7 +385,8 @@ public:
     }
 
     /// @brief Updates the resource, possibly doing resource load request.
-    auto update(video_context& video, resource_loader& loader) -> work_done {
+    auto load_if_needed(video_context& video, resource_loader& loader)
+      -> work_done {
         if(!is_loaded() && !is_loading()) {
             if(const auto request{loader.request_gl_shader(locator(), video)}) {
                 _request_id = request.request_id();
@@ -395,14 +397,14 @@ public:
     }
 
     /// @brief Updates the resource, possibly doing resource load request.
-    auto update(execution_context& ctx, oglplus::shader_type type)
+    auto load_if_needed(execution_context& ctx, oglplus::shader_type type)
       -> work_done {
-        return update(ctx.main_video(), ctx.loader(), type);
+        return load_if_needed(ctx.main_video(), ctx.loader(), type);
     }
 
     /// @brief Updates the resource, possibly doing resource load request.
-    auto update(execution_context& ctx) -> work_done {
-        return update(ctx.main_video(), ctx.loader());
+    auto load_if_needed(execution_context& ctx) -> work_done {
+        return load_if_needed(ctx.main_video(), ctx.loader());
     }
 
 private:
@@ -602,7 +604,8 @@ public:
     }
 
     /// @brief Updates the resource, possibly doing resource load request.
-    auto update(video_context& video, resource_loader& loader) -> work_done {
+    auto load_if_needed(video_context& video, resource_loader& loader)
+      -> work_done {
         if(!is_loaded() && !is_loading()) {
             if(const auto request{
                  loader.request_gl_program(locator(), video)}) {
@@ -614,8 +617,8 @@ public:
     }
 
     /// @brief Updates the resource, possibly doing resource load request.
-    auto update(execution_context& ctx) -> work_done {
-        return update(ctx.main_video(), ctx.loader());
+    auto load_if_needed(execution_context& ctx) -> work_done {
+        return load_if_needed(ctx.main_video(), ctx.loader());
     }
 
 private:
@@ -725,7 +728,7 @@ public:
     }
 
     /// @brief Updates the resource, possibly doing resource load request.
-    auto update(
+    auto load_if_needed(
       video_context& video,
       resource_loader& loader,
       oglplus::texture_target target,
@@ -741,11 +744,11 @@ public:
     }
 
     /// @brief Updates the resource, possibly doing resource load request.
-    auto update(
+    auto load_if_needed(
       execution_context& ctx,
       oglplus::texture_target target,
       oglplus::texture_unit unit) -> work_done {
-        return update(ctx.main_video(), ctx.loader(), target, unit);
+        return load_if_needed(ctx.main_video(), ctx.loader(), target, unit);
     }
 
 private:
@@ -831,7 +834,7 @@ public:
     }
 
     /// @brief Updates the resource, possibly doing resource load request.
-    auto update(
+    auto load_if_needed(
       video_context& video,
       resource_loader& loader,
       oglplus::buffer_target target) -> work_done {

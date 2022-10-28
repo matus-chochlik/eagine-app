@@ -92,7 +92,7 @@ void example_bpatch::update() noexcept {
         _prog.set_wireframe_color(_video);
         _shape.draw(context());
     } else {
-        _prog.update(context());
+        _prog.load_if_needed(context());
     }
 
     _video.commit();

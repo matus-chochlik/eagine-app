@@ -67,10 +67,10 @@ example_cube::example_cube(execution_context& ec, video_context& vc)
 //------------------------------------------------------------------------------
 void example_cube::update() noexcept {
     if(!_cube) {
-        _cube.update(context());
+        _cube.load_if_needed(context());
     } else {
         if(!_prog) {
-            _prog.update(context());
+            _prog.load_if_needed(context());
         }
     }
 

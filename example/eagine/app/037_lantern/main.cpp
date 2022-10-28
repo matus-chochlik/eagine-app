@@ -162,16 +162,16 @@ void example_lantern::update() noexcept {
         gl.clear_color(0.F, 0.F, 0.F, 0.F);
         gl.clear(GL.color_buffer_bit);
 
-        pumpkin_tex.update(_video, _loader);
+        pumpkin_tex.load_if_needed(_video, _loader);
         if(!pumpkin) {
-            pumpkin.update(_video, _loader);
+            pumpkin.load_if_needed(_video, _loader);
         } else {
-            draw_prog.update(_video, _loader);
+            draw_prog.load_if_needed(_video, _loader);
         }
         if(!screen) {
-            screen.update(_video, _loader);
+            screen.load_if_needed(_video, _loader);
         } else {
-            screen_prog.update(_video, _loader);
+            screen_prog.load_if_needed(_video, _loader);
         }
     }
 

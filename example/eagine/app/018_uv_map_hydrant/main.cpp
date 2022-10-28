@@ -147,9 +147,9 @@ void example_uv_map::update() noexcept {
 
         _shape.draw(_video);
     } else {
-        _shape.update(_video, _loader);
-        _prog.update(_video, _loader);
-        _tex.update(_video, _loader, GL.texture_2d_array, GL.texture0);
+        _shape.load_if_needed(_video, _loader);
+        _prog.load_if_needed(_video, _loader);
+        _tex.load_if_needed(_video, _loader, GL.texture_2d_array, GL.texture0);
     }
 
     _video.commit();

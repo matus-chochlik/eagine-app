@@ -85,7 +85,7 @@ void example_sphere::update() noexcept {
         _prog.set_projection(_video, _camera);
         _shape.draw(_video);
     } else {
-        _prog.update(_video, _loader);
+        _prog.load_if_needed(_video, _loader);
     }
 
     _video.commit();
