@@ -320,7 +320,7 @@ public:
                     if(auto parent{_parent.lock()}) {
                         auto& loader = extract(parent).loader();
                         if(auto src_request{loader.request_gl_shader(
-                             _shdr_locator, _shdr_type, _video)}) {
+                             _shdr_locator, _video, _shdr_type)}) {
                             src_request.set_continuation(parent);
                             if(!extract(parent).add_gl_program_shader_request(
                                  src_request.request_id())) [[unlikely]] {
@@ -1939,8 +1939,8 @@ auto resource_loader::request_glsl_source(url locator) noexcept
 //------------------------------------------------------------------------------
 auto resource_loader::request_gl_shader(
   url locator,
-  oglplus::shader_type shdr_type,
-  video_context& video) noexcept -> resource_request_result {
+  video_context& video,
+  oglplus::shader_type shdr_type) noexcept -> resource_request_result {
     if(const auto src_request{request_glsl_source(locator)}) {
         auto new_request{
           _new_resource(std::move(locator), resource_kind::gl_shader)};
@@ -1957,7 +1957,7 @@ auto resource_loader::request_gl_shader(
     if(const auto type_arg{locator.argument("shader_type")}) {
         const auto& GL = video.gl_api().constants();
         const auto delegate = [&GL, &locator, &video, this](auto shdr_type) {
-            return request_gl_shader(std::move(locator), shdr_type, video);
+            return request_gl_shader(std::move(locator), video, shdr_type);
         };
         if(type_arg == string_view{"fragment"}) {
             return delegate(GL.fragment_shader);

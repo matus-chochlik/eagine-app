@@ -12,8 +12,8 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 // program
 //------------------------------------------------------------------------------
-sphere_program::sphere_program(video_context& video, resource_loader& loader)
-  : gl_program_resource{url{"json:///Program"}, video, loader} {
+sphere_program::sphere_program(execution_context& ctx)
+  : gl_program_resource{url{"json:///Program"}, ctx} {
     loaded.connect(make_callable_ref<&sphere_program::_on_loaded>(this));
 }
 //------------------------------------------------------------------------------

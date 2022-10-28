@@ -66,7 +66,7 @@ class loaded_resource;
 template <typename Derived>
 class loaded_resource_common;
 
-template <typename Resource>
+export template <typename Resource>
 struct resource_load_info {
     using base_load_info = typename resource_loader::load_info_t<Resource>;
 
@@ -360,221 +360,161 @@ public:
     auto assign(const typename common::base_load_info& info) noexcept -> bool {
         return this->_assign(info.tree);
     }
-
-private:
 };
 export using value_tree_resource = loaded_resource<valtree::compound>;
 //------------------------------------------------------------------------------
 export template <>
 class loaded_resource<oglplus::owned_shader_name>
-  : public oglplus::owned_shader_name
-  , public loaded_resource_base {
-    using _res_t = oglplus::owned_shader_name;
+  : public loaded_resource_common<loaded_resource<oglplus::owned_shader_name>> {
 
-    auto _res() noexcept -> _res_t& {
-        return *this;
-    }
+    using common =
+      loaded_resource_common<loaded_resource<oglplus::owned_shader_name>>;
 
 public:
-    /// @brief Signal emmitted when the resource is successfully loaded.
-    signal<void(const loaded_resource_base&) noexcept> base_loaded;
-
-    /// @brief Type of the loaded signal parameter.
-    struct load_info {
-        /// @brief The base info from the loader signal.
-        const resource_loader::gl_shader_load_info& base;
-        /// @brief The loaded shader resource.
-        const loaded_resource<oglplus::owned_shader_name>& resource;
-    };
-
-    /// @brief Signal emmitted when the resource is successfully loaded.
-    signal<void(const load_info&) noexcept> loaded;
-
     /// @brief Constructor specifying the resource locator.
     loaded_resource(url locator) noexcept
-      : loaded_resource_base{std::move(locator)} {}
+      : common{std::move(locator)} {}
 
     /// @brief Delay-initializes the resource.
-    void init(video_context&, resource_loader& loader) {
-        _sig_key = connect<&loaded_resource::_handle_gl_shader_loaded>(
-          this, loader.gl_shader_loaded);
+    void init(resource_loader& loader, video_context&) {
+        common::_connect(loader);
     }
 
     /// @brief Clean's up this resource.
-    void clean_up(video_context& video, resource_loader& loader) {
-        video.gl_api().clean_up(std::move(_res()));
-        if(_sig_key) {
-            loader.gl_shader_loaded.disconnect(_sig_key);
-            _sig_key = {};
-        }
+    void clean_up(resource_loader& loader, video_context& video) {
+        video.gl_api().clean_up(std::move(resource()));
+        common::_disconnect(loader);
     }
 
     /// @brief Clean's up this resource.
     void clean_up(execution_context& ctx) {
-        clean_up(ctx.main_video(), ctx.loader());
+        clean_up(ctx.loader(), ctx.main_video());
     }
 
     /// @brief Constructor specifying the locator and initializing the resource.
-    loaded_resource(url locator, video_context& video, resource_loader& loader)
+    loaded_resource(url locator, resource_loader& loader, video_context& video)
       : loaded_resource{std::move(locator)} {
-        init(video, loader);
+        init(loader, video);
     }
 
     /// @brief Constructor specifying the locator and initializing the resource.
     loaded_resource(url locator, execution_context& ctx)
-      : loaded_resource{std::move(locator), ctx.main_video(), ctx.loader()} {}
+      : loaded_resource{std::move(locator), ctx.loader(), ctx.main_video()} {}
 
     /// @brief Indicates if this resource is loaded.
     auto is_loaded() const noexcept -> bool {
         return this->is_valid();
     }
 
-    /// @brief Indicates if this resource is loaded.
-    /// @see is_loaded
-    explicit operator bool() const noexcept {
-        return is_loaded();
-    }
-
     /// @brief Updates the resource, possibly doing resource load request.
     auto load_if_needed(
-      video_context& video,
       resource_loader& loader,
+      video_context& video,
       oglplus::shader_type type) -> work_done {
-        if(!is_loaded() && !is_loading()) {
-            if(const auto request{
-                 loader.request_gl_shader(locator(), type, video)}) {
-                _request_id = request.request_id();
-                return true;
-            }
-        }
-        return false;
+        return _load_if_needed(loader, video, type);
     }
 
     /// @brief Updates the resource, possibly doing resource load request.
-    auto load_if_needed(video_context& video, resource_loader& loader)
+    auto load_if_needed(resource_loader& loader, video_context& video)
       -> work_done {
-        if(!is_loaded() && !is_loading()) {
-            if(const auto request{loader.request_gl_shader(locator(), video)}) {
-                _request_id = request.request_id();
-                return true;
-            }
-        }
-        return false;
+        return _load_if_needed(loader, video);
     }
 
     /// @brief Updates the resource, possibly doing resource load request.
     auto load_if_needed(execution_context& ctx, oglplus::shader_type type)
       -> work_done {
-        return load_if_needed(ctx.main_video(), ctx.loader(), type);
+        return load_if_needed(ctx.loader(), ctx.main_video(), type);
     }
 
     /// @brief Updates the resource, possibly doing resource load request.
     auto load_if_needed(execution_context& ctx) -> work_done {
-        return load_if_needed(ctx.main_video(), ctx.loader());
+        return load_if_needed(ctx.loader(), ctx.main_video());
     }
 
-private:
-    void _handle_gl_shader_loaded(
-      const resource_loader::gl_shader_load_info& info) noexcept {
-        if(info.request_id == _request_id) {
-            _res() = std::move(info.ref);
-            if(is_loaded()) {
-                this->loaded({.base = info, .resource = *this});
-                this->base_loaded(*this);
-                _request_id = 0;
-            }
-        }
+    auto assign(const typename common::base_load_info& info) noexcept -> bool {
+        return this->_assign(std::move(info.ref));
     }
-
-    signal_binding_key _sig_key{};
 };
 export using gl_shader_resource = loaded_resource<oglplus::owned_shader_name>;
 //------------------------------------------------------------------------------
 export template <>
-class loaded_resource<oglplus::owned_program_name>
-  : public oglplus::owned_program_name
-  , public loaded_resource_base {
-    using _res_t = oglplus::owned_program_name;
+struct resource_load_info<oglplus::owned_program_name> {
+    using Resource = oglplus::owned_program_name;
+    using base_load_info = typename resource_loader::load_info_t<Resource>;
 
-    auto _res() noexcept -> _res_t& {
-        return *this;
+    /// @brief The base info from the loader signal.
+    const base_load_info& base;
+    /// @brief The loaded geometry resource.
+    loaded_resource<Resource>& resource;
+
+    resource_load_info(
+      const base_load_info& info,
+      loaded_resource<Resource>& parent) noexcept
+      : base{info}
+      , resource{parent} {}
+
+    /// @brief Applies the vertex attrib bindings to the loaded program.
+    auto apply_input_bindings(
+      const oglplus::vertex_attrib_bindings& attrib_bindings) const noexcept
+      -> bool {
+        return base.apply_input_bindings(attrib_bindings);
     }
+
+    /// @brief Uses the loaded program in the relevant GL context.
+    auto use_program() const noexcept {
+        return base.use_program();
+    }
+
+    /// @brief Returns the location of a uniform with the specified name.
+    auto get_uniform_location(const string_view var_name) const noexcept {
+        return base.get_uniform_location(var_name);
+    }
+
+    /// @brief Sets the value of a uniform at the specified location.
+    template <typename T>
+    auto set_uniform(oglplus::uniform_location loc, const T& value)
+      const noexcept {
+        return base.set_uniform(loc, value);
+    }
+
+    /// @brief Sets the value of a uniform having the specified name.
+    template <typename T>
+    auto set_uniform(const string_view var_name, const T& value) const noexcept {
+        return base.set_uniform(var_name, value);
+    }
+
+    /// @brief Returns the location of a storge block with the specified name.
+    auto get_shader_storage_block_index(
+      const string_view var_name) const noexcept {
+        return base.get_shader_storage_block_index(var_name);
+    }
+
+    /// @brief Changes the buffer binding of a shader storage block.
+    auto shader_storage_block_binding(
+      oglplus::shader_storage_block_index index,
+      oglplus::gl_types::uint_type binding) const noexcept {
+        return base.shader_storage_block_binding(index, binding);
+    }
+
+    /// @brief Changes the buffer binding of a shader storage block.
+    auto shader_storage_block_binding(
+      const string_view var_name,
+      oglplus::gl_types::uint_type binding) const noexcept {
+        return base.shader_storage_block_binding(var_name, binding);
+    }
+};
+
+export template <>
+class loaded_resource<oglplus::owned_program_name>
+  : public loaded_resource_common<loaded_resource<oglplus::owned_program_name>> {
+
+    using common =
+      loaded_resource_common<loaded_resource<oglplus::owned_program_name>>;
 
 public:
-    /// @brief Signal emmitted when the resource is successfully loaded.
-    signal<void(const loaded_resource_base&) noexcept> base_loaded;
-
-    /// @brief Type of the loaded signal parameter.
-    struct load_info {
-        /// @brief The base info from the loader signal.
-        const resource_loader::gl_program_load_info& base;
-        /// @brief The loaded program resource.
-        const loaded_resource<oglplus::owned_program_name>& resource;
-
-        /// @brief Applies the vertex attrib bindings to the loaded program.
-        auto apply_input_bindings(
-          const oglplus::vertex_attrib_bindings& attrib_bindings) const noexcept
-          -> bool {
-            return base.apply_input_bindings(attrib_bindings);
-        }
-
-        /// @brief Uses the loaded program in the relevant GL context.
-        auto use_program() const noexcept {
-            return base.use_program();
-        }
-
-        /// @brief Returns the location of a uniform with the specified name.
-        auto get_uniform_location(const string_view var_name) const noexcept {
-            return base.get_uniform_location(var_name);
-        }
-
-        /// @brief Sets the value of a uniform at the specified location.
-        template <typename T>
-        auto set_uniform(oglplus::uniform_location loc, const T& value)
-          const noexcept {
-            return base.set_uniform(loc, value);
-        }
-
-        /// @brief Sets the value of a uniform having the specified name.
-        template <typename T>
-        auto set_uniform(const string_view var_name, const T& value)
-          const noexcept {
-            return base.set_uniform(var_name, value);
-        }
-
-        /// @brief Returns the location of a storge block with the specified name.
-        auto get_shader_storage_block_index(
-          const string_view var_name) const noexcept {
-            return base.get_shader_storage_block_index(var_name);
-        }
-
-        /// @brief Changes the buffer binding of a shader storage block.
-        auto shader_storage_block_binding(
-          oglplus::shader_storage_block_index index,
-          oglplus::gl_types::uint_type binding) const noexcept {
-            return base.shader_storage_block_binding(index, binding);
-        }
-
-        /// @brief Changes the buffer binding of a shader storage block.
-        auto shader_storage_block_binding(
-          const string_view var_name,
-          oglplus::gl_types::uint_type binding) const noexcept {
-            return base.shader_storage_block_binding(var_name, binding);
-        }
-    };
-
-    /// @brief Signal emmitted when the resource is successfully loaded.
-    signal<void(const load_info&) noexcept> loaded;
-
     /// @brief Constructor specifying the resource locator.
     loaded_resource(url locator) noexcept
-      : loaded_resource_base{std::move(locator)} {}
-
-    /// @brief Delay-initializes the resource.
-    void init(video_context&, resource_loader& loader) {
-        _sig_key = connect<&loaded_resource::_handle_gl_program_loaded>(
-          this, loader.gl_program_loaded);
-    }
+      : common{std::move(locator)} {}
 
     /// @brief Makes the current program active within the given API object.
     auto use(const oglplus::gl_api& glapi) noexcept -> loaded_resource& {
@@ -635,74 +575,52 @@ public:
     }
 
     /// @brief Clean's up this resource.
-    void clean_up(video_context& video, resource_loader& loader) {
-        video.gl_api().clean_up(std::move(_res()));
-        if(_sig_key) {
-            loader.gl_program_loaded.disconnect(_sig_key);
-            _sig_key = {};
-        }
+    void clean_up(resource_loader& loader, video_context& video) {
+        video.gl_api().clean_up(std::move(resource()));
+        common::_disconnect(loader);
     }
 
     /// @brief Clean's up this resource.
     void clean_up(execution_context& ctx) {
-        return clean_up(ctx.main_video(), ctx.loader());
+        return clean_up(ctx.loader(), ctx.main_video());
     }
 
     /// @brief Constructor specifying the locator and initializing the resource.
-    loaded_resource(url locator, video_context& video, resource_loader& loader)
+    loaded_resource(url locator, resource_loader& loader, video_context& video)
       : loaded_resource{std::move(locator)} {
-        init(video, loader);
+        init(loader, video);
     }
 
     /// @brief Constructor specifying the locator and initializing the resource.
     loaded_resource(url locator, execution_context& ctx)
-      : loaded_resource{std::move(locator), ctx.main_video(), ctx.loader()} {}
+      : loaded_resource{std::move(locator), ctx.loader(), ctx.main_video()} {}
 
     /// @brief Indicates if this resource is loaded.
     auto is_loaded() const noexcept -> bool {
         return this->is_valid();
     }
 
-    /// @brief Indicates if this resource is loaded.
-    /// @see is_loaded
-    explicit operator bool() const noexcept {
-        return is_loaded();
-    }
-
     /// @brief Updates the resource, possibly doing resource load request.
-    auto load_if_needed(video_context& video, resource_loader& loader)
+    auto load_if_needed(resource_loader& loader, video_context& video)
       -> work_done {
-        if(!is_loaded() && !is_loading()) {
-            if(const auto request{
-                 loader.request_gl_program(locator(), video)}) {
-                _request_id = request.request_id();
-                return true;
-            }
-        }
-        return false;
+        return _load_if_needed(loader, video);
     }
 
     /// @brief Updates the resource, possibly doing resource load request.
     auto load_if_needed(execution_context& ctx) -> work_done {
-        return load_if_needed(ctx.main_video(), ctx.loader());
+        return load_if_needed(ctx.loader(), ctx.main_video());
+    }
+
+    auto assign(const typename common::base_load_info& info) noexcept -> bool {
+        if(this->_assign(std::move(info.ref))) {
+            _inputs = info.input_bindings;
+            return true;
+        }
+        return false;
     }
 
 private:
-    void _handle_gl_program_loaded(
-      const resource_loader::gl_program_load_info& info) noexcept {
-        if(info.request_id == _request_id) {
-            _res() = std::move(info.ref);
-            _inputs = info.input_bindings;
-            if(is_loaded()) {
-                this->loaded({.base = info, .resource = *this});
-                this->base_loaded(*this);
-                _request_id = 0;
-            }
-        }
-    }
-
     oglplus::program_input_bindings _inputs;
-    signal_binding_key _sig_key{};
 };
 export using gl_program_resource = loaded_resource<oglplus::owned_program_name>;
 //------------------------------------------------------------------------------

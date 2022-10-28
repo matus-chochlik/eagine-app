@@ -12,8 +12,8 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 // program
 //------------------------------------------------------------------------------
-torus_program::torus_program(video_context& video, resource_loader& loader)
-  : gl_program_resource{url{"json:///GLProgram"}, video, loader} {
+torus_program::torus_program(execution_context& ctx)
+  : gl_program_resource{url{"json:///GLProgram"}, ctx} {
     loaded.connect(make_callable_ref<&torus_program::_on_loaded>(this));
 }
 //------------------------------------------------------------------------------
@@ -32,10 +32,9 @@ void torus_program::_on_loaded(
 //------------------------------------------------------------------------------
 // geometry
 //------------------------------------------------------------------------------
-torus_geometry::torus_geometry(video_context& video, resource_loader& loader)
+torus_geometry::torus_geometry(execution_context& ctx)
   : gl_geometry_and_bindings_resource{
       url{"shape:///unit_torus?position=true+normal=true+wrap_coord=true"},
-      loader,
-      video} {}
+      ctx} {}
 //------------------------------------------------------------------------------
 } // namespace eagine::app

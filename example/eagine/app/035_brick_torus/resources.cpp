@@ -13,7 +13,7 @@ namespace eagine::app {
 // program
 //------------------------------------------------------------------------------
 torus_program::torus_program(execution_context& ctx)
-  : gl_program_resource{url{"json:///Program"}, ctx.main_video(), ctx.loader()} {
+  : gl_program_resource{url{"json:///Program"}, ctx} {
     loaded.connect(make_callable_ref<&torus_program::_on_loaded>(this));
 }
 //------------------------------------------------------------------------------

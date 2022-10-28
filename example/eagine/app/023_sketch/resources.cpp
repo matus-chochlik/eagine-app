@@ -13,7 +13,7 @@ namespace eagine::app {
 // sketch program
 //------------------------------------------------------------------------------
 sketch_program::sketch_program(execution_context& ctx)
-  : gl_program_resource{url{"json:///Program"}, ctx.main_video(), ctx.loader()} {
+  : gl_program_resource{url{"json:///Program"}, ctx} {
     loaded.connect(make_callable_ref<&sketch_program::_on_loaded>(this));
 }
 //------------------------------------------------------------------------------

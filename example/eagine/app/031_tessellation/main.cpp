@@ -39,7 +39,7 @@ example_sphere::example_sphere(execution_context& ec, video_context& vc)
   , _video{vc}
   , _loader{ec.loader()}
   , _bg{_video, {0.0F, 0.0F, 0.0F, 1.F}, {0.25F, 0.25F, 0.25F, 0.0F}, 1.F}
-  , _prog{_video, _loader} {
+  , _prog{ec} {
     _prog.loaded.connect(
       make_callable_ref<&example_sphere::_on_prog_loaded>(this));
 
@@ -85,14 +85,14 @@ void example_sphere::update() noexcept {
         _prog.set_projection(_video, _camera);
         _shape.draw(_video);
     } else {
-        _prog.load_if_needed(_video, _loader);
+        _prog.load_if_needed(context());
     }
 
     _video.commit();
 }
 //------------------------------------------------------------------------------
 void example_sphere::clean_up() noexcept {
-    _prog.clean_up(_video, _loader);
+    _prog.clean_up(context());
 }
 //------------------------------------------------------------------------------
 class example_launchpad : public launchpad {

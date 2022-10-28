@@ -29,7 +29,6 @@ private:
     }
 
     video_context& _video;
-    resource_loader& _loader;
 
     orbiting_camera camera;
     torus_geometry torus;
@@ -39,9 +38,8 @@ private:
 example_torus::example_torus(execution_context& ec, video_context& vc)
   : timeouting_application{ec, std::chrono::seconds{30}}
   , _video{vc}
-  , _loader{context().loader()}
-  , torus{_video, _loader}
-  , prog{_video, _loader} {
+  , torus{context()}
+  , prog{context()} {
     torus.base_loaded.connect(_load_handler());
     prog.base_loaded.connect(_load_handler());
 

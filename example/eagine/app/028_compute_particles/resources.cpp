@@ -107,7 +107,7 @@ void particles::clean_up(example& e) noexcept {
 // emit program
 //------------------------------------------------------------------------------
 emit_program::emit_program(example& e)
-  : gl_program_resource{url{"json:///EmitProg"}, e.video(), e.loader()} {
+  : gl_program_resource{url{"json:///EmitProg"}, e.context()} {
     loaded.connect(make_callable_ref<&emit_program::_on_loaded>(this));
 }
 //------------------------------------------------------------------------------
@@ -161,7 +161,7 @@ void emit_program::bind_ages(example& e, oglplus::gl_types::uint_type binding) {
 // draw program
 //------------------------------------------------------------------------------
 draw_program::draw_program(example& e)
-  : gl_program_resource{url{"json:///DrawProg"}, e.video(), e.loader()} {
+  : gl_program_resource{url{"json:///DrawProg"}, e.context()} {
     loaded.connect(make_callable_ref<&draw_program::_on_loaded>(this));
 }
 //------------------------------------------------------------------------------

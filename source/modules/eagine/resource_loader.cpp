@@ -553,8 +553,17 @@ export struct resource_loader_signals {
         auto gl_api() const noexcept -> const oglplus::gl_api&;
     };
 
+    template <>
+    struct get_load_info<oglplus::owned_shader_name>
+      : std::type_identity<gl_shader_load_info> {};
+
     /// @brief Emitted when a GL shader is successfully created and compiled.
     signal<void(const gl_shader_load_info&) noexcept> gl_shader_loaded;
+
+    auto load_signal(std::type_identity<oglplus::owned_shader_name>) noexcept
+      -> auto& {
+        return gl_shader_loaded;
+    }
 
     /// @brief Type of parameter of the gl_program_loaded signal.
     /// @see gl_program_loaded
@@ -618,8 +627,17 @@ export struct resource_loader_signals {
         }
     };
 
+    template <>
+    struct get_load_info<oglplus::owned_program_name>
+      : std::type_identity<gl_program_load_info> {};
+
     /// @brief Emitted when a GL program is successfully created and linked.
     signal<void(const gl_program_load_info&) noexcept> gl_program_loaded;
+
+    auto load_signal(std::type_identity<oglplus::owned_program_name>) noexcept
+      -> auto& {
+        return gl_program_loaded;
+    }
 
     /// @brief Type of parameter of the gl_texture_loaded signal.
     /// @see gl_texture_loaded
@@ -919,16 +937,38 @@ public:
     /// @brief Requests a compiled GL shader object of a specified type.
     auto request_gl_shader(
       url locator,
-      oglplus::shader_type,
-      video_context&) noexcept -> resource_request_result;
+      video_context&,
+      oglplus::shader_type) noexcept -> resource_request_result;
+
+    auto request(
+      std::type_identity<oglplus::owned_shader_name>,
+      url locator,
+      video_context& video,
+      oglplus::shader_type shdr_type) noexcept {
+        return request_gl_shader(std::move(locator), video, shdr_type);
+    }
 
     /// @brief Requests a compiled GL shader object of a type specified in URL.
     auto request_gl_shader(url locator, video_context&) noexcept
       -> resource_request_result;
 
+    auto request(
+      std::type_identity<oglplus::owned_shader_name>,
+      url locator,
+      video_context& video) noexcept {
+        return request_gl_shader(std::move(locator), video);
+    }
+
     /// @brief Requests a linked GL program object.
     auto request_gl_program(url locator, video_context&) noexcept
       -> resource_request_result;
+
+    auto request(
+      std::type_identity<oglplus::owned_program_name>,
+      url locator,
+      video_context& video) noexcept {
+        return request_gl_program(std::move(locator), video);
+    }
 
     auto request_gl_texture_image(
       url locator,

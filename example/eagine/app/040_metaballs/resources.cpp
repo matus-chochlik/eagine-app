@@ -127,17 +127,17 @@ void volume_domain::draw(example& e) {
 // metaball program
 //------------------------------------------------------------------------------
 metaball_program::metaball_program(example& e)
-  : gl_program_resource{url{"json:///MBallProg"}, e.video(), e.loader()} {}
+  : gl_program_resource{url{"json:///MBallProg"}, e.context()} {}
 //------------------------------------------------------------------------------
 // field program
 //------------------------------------------------------------------------------
 field_program::field_program(example& e)
-  : gl_program_resource{url{"json:///FieldProg"}, e.video(), e.loader()} {}
+  : gl_program_resource{url{"json:///FieldProg"}, e.context()} {}
 //------------------------------------------------------------------------------
 // surface program
 //------------------------------------------------------------------------------
 surface_program::surface_program(example& e)
-  : gl_program_resource{url{"json:///SrfceProg"}, e.video(), e.loader()} {
+  : gl_program_resource{url{"json:///SrfceProg"}, e.context()} {
     loaded.connect(make_callable_ref<&surface_program::_on_loaded>(this));
 }
 //------------------------------------------------------------------------------

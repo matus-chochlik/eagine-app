@@ -14,7 +14,7 @@ namespace eagine::app {
 // draw program
 //------------------------------------------------------------------------------
 draw_program::draw_program(example& e)
-  : gl_program_resource{url{"json:///DrawProg"}, e.video(), e.loader()} {
+  : gl_program_resource{url{"json:///DrawProg"}, e.context()} {
     loaded.connect(make_callable_ref<&draw_program::_on_loaded>(this));
 }
 //------------------------------------------------------------------------------
@@ -37,7 +37,7 @@ void draw_program::bind_position_location(
 // screen program
 //------------------------------------------------------------------------------
 screen_program::screen_program(example& e)
-  : gl_program_resource{url{"json:///ScreenProg"}, e.video(), e.loader()} {
+  : gl_program_resource{url{"json:///ScreenProg"}, e.context()} {
     loaded.connect(make_callable_ref<&screen_program::_on_loaded>(this));
 }
 //------------------------------------------------------------------------------

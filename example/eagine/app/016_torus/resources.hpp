@@ -20,7 +20,7 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 class torus_program : public gl_program_resource {
 public:
-    torus_program(video_context&, resource_loader&);
+    torus_program(execution_context&);
     void set_projection(video_context&, orbiting_camera& camera);
 
 private:
@@ -32,7 +32,7 @@ private:
 //------------------------------------------------------------------------------
 class torus_geometry : public gl_geometry_and_bindings_resource {
 public:
-    torus_geometry(video_context&, resource_loader&);
+    torus_geometry(execution_context&);
 };
 //------------------------------------------------------------------------------
 } // namespace eagine::app

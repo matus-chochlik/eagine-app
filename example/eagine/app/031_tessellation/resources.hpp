@@ -20,7 +20,7 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 class sphere_program : public gl_program_resource {
 public:
-    sphere_program(video_context&, resource_loader&);
+    sphere_program(execution_context&);
     void set_projection(video_context&, orbiting_camera&);
 
     void bind_offsets_block(video_context&, oglplus::gl_types::uint_type);
