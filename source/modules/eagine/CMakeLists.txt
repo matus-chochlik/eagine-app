@@ -78,6 +78,7 @@ eagine_add_module(
 	eagine.app PARTITION resource_loader
 	IMPORTS
 		eagine.core.types
+		eagine.core.math
 		eagine.core.memory
 		eagine.core.reflection
 		eagine.core.utility
@@ -171,6 +172,7 @@ eagine_add_module(
 		context geometry
 		resource_loader
 		eagine.core.types
+		eagine.core.math
 		eagine.core.memory
 		eagine.core.utility
 		eagine.core.runtime
@@ -212,6 +214,7 @@ eagine_add_module(
 		camera_impl
 		background_impl
 	IMPORTS
+		eagine.core.math
 		eagine.core.string
 		eagine.core.container
 		eagine.core.utility

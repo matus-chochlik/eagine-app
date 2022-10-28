@@ -8,6 +8,7 @@
 export module eagine.app:loaded_resource;
 
 import eagine.core.types;
+import eagine.core.math;
 import eagine.core.memory;
 import eagine.core.utility;
 import eagine.core.runtime;
@@ -61,6 +62,110 @@ protected:
 //------------------------------------------------------------------------------
 export template <typename Resource>
 class loaded_resource;
+//------------------------------------------------------------------------------
+export template <>
+class loaded_resource<std::vector<math::vector<float, 3, true>>>
+  : public std::vector<math::vector<float, 3, true>>
+  , public loaded_resource_base {
+    using _res_t = std::vector<math::vector<float, 3, true>>;
+
+    auto _res() noexcept -> _res_t& {
+        return *this;
+    }
+
+public:
+    /// @brief Signal emmitted when the resource is successfully loaded.
+    signal<void(const loaded_resource_base&) noexcept> base_loaded;
+
+    /// @brief Type of the loaded signal parameter.
+    struct load_info {
+        /// @brief The base info from the loader signal.
+        const resource_loader::vec3_vector_load_info& base;
+        /// @brief The loaded geometry resource.
+        std::vector<math::vector<float, 3, true>>& resource;
+    };
+
+    /// @brief Signal emmitted when the resource is successfully loaded.
+    signal<void(const load_info&) noexcept> loaded;
+
+    /// @brief Constructor specifying the resource locator.
+    loaded_resource(url locator) noexcept
+      : loaded_resource_base{std::move(locator)} {}
+
+    /// @brief Delay-initializes the resource.
+    void init(resource_loader& loader) {
+        _sig_key = connect<&loaded_resource::_handle_vec3_vector_loaded>(
+          this, loader.vec3_vector_loaded);
+    }
+
+    /// @brief Constructor specifying the locator and initializing the resource.
+    loaded_resource(url locator, resource_loader& loader)
+      : loaded_resource{std::move(locator)} {
+        init(loader);
+    }
+
+    /// @brief Constructor specifying the locator and initializing the resource.
+    loaded_resource(url locator, execution_context& ctx)
+      : loaded_resource{std::move(locator), ctx.loader()} {}
+
+    /// @brief Clean's up this resource.
+    void clean_up(resource_loader& loader) {
+        _res().clear();
+        if(_sig_key) {
+            loader.vec3_vector_loaded.disconnect(_sig_key);
+            _sig_key = {};
+        }
+    }
+
+    /// @brief Clean's up this resource.
+    void clean_up(execution_context& ctx) {
+        clean_up(ctx.loader());
+    }
+
+    /// @brief Indicates if this resource is loaded.
+    auto is_loaded() const noexcept -> bool {
+        return !this->empty();
+    }
+
+    /// @brief Indicates if this resource is loaded.
+    /// @see is_loaded
+    explicit operator bool() const noexcept {
+        return is_loaded();
+    }
+
+    /// @brief Updates the resource, possibly doing resource load request.
+    auto load_if_needed(resource_loader& loader) -> work_done {
+        if(!is_loaded() && !is_loading()) {
+            if(const auto request{loader.request_vec3_vector(locator())}) {
+                _request_id = request.request_id();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /// @brief Updates the resource, possibly doing resource load request.
+    auto load_if_needed(execution_context& ctx) -> work_done {
+        return load_if_needed(ctx.loader());
+    }
+
+private:
+    void _handle_vec3_vector_loaded(
+      const resource_loader::vec3_vector_load_info& info) noexcept {
+        if(info.request_id == _request_id) {
+            _res() = std::move(info.values);
+            if(is_loaded()) {
+                this->loaded({.base = info, .resource = _res()});
+                this->base_loaded(*this);
+                _request_id = 0;
+            }
+        }
+    }
+
+    signal_binding_key _sig_key{};
+};
+export using vec3_vector_resource =
+  loaded_resource<std::vector<math::vector<float, 3, true>>>;
 //------------------------------------------------------------------------------
 export template <>
 class loaded_resource<gl_geometry_and_bindings>
