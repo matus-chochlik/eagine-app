@@ -12,14 +12,17 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 // sketch program
 //------------------------------------------------------------------------------
-void sketch_program::init(video_context& vc) {
-    create(vc)
-      .build(vc, embed<"SketchProg">("sketch.oglpprog"))
-      .use(vc)
-      .query(vc, "Model", _model_loc)
-      .query(vc, "View", _view_loc)
-      .query(vc, "Projection", _projection_loc)
-      .query(vc, "viewportDimensions", _vp_dim_loc);
+sketch_program::sketch_program(execution_context& ctx)
+  : gl_program_resource{url{"json:///Program"}, ctx.main_video(), ctx.loader()} {
+    loaded.connect(make_callable_ref<&sketch_program::_on_loaded>(this));
+}
+//------------------------------------------------------------------------------
+void sketch_program::_on_loaded(
+  const gl_program_resource::load_info& info) noexcept {
+    info.get_uniform_location("Model") >> _model_loc;
+    info.get_uniform_location("View") >> _view_loc;
+    info.get_uniform_location("Projection") >> _projection_loc;
+    info.get_uniform_location("viewportDimensions") >> _vp_dim_loc;
 }
 //------------------------------------------------------------------------------
 void sketch_program::prepare_frame(
@@ -33,24 +36,6 @@ void sketch_program::prepare_frame(
       .set(vc, _view_loc, camera.transform_matrix())
       .set(vc, _projection_loc, camera.perspective_matrix(vc.surface_aspect()))
       .set(vc, _vp_dim_loc, oglplus::vec2(width, height));
-}
-//------------------------------------------------------------------------------
-void sketch_program::bind_position_location(
-  video_context& vc,
-  oglplus::vertex_attrib_location loc) {
-    bind(vc, loc, "Position");
-}
-//------------------------------------------------------------------------------
-void sketch_program::bind_normal_location(
-  video_context& vc,
-  oglplus::vertex_attrib_location loc) {
-    bind(vc, loc, "Normal");
-}
-//------------------------------------------------------------------------------
-void sketch_program::bind_coord_location(
-  video_context& vc,
-  oglplus::vertex_attrib_location loc) {
-    bind(vc, loc, "Coord");
 }
 //------------------------------------------------------------------------------
 // geometry

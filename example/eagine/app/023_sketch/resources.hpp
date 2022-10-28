@@ -18,16 +18,14 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 // program
 //------------------------------------------------------------------------------
-class sketch_program : public gpu_program {
+class sketch_program : public gl_program_resource {
 public:
-    void init(video_context&);
+    sketch_program(execution_context&);
     void prepare_frame(video_context&, orbiting_camera& camera, float t);
 
-    void bind_position_location(video_context&, oglplus::vertex_attrib_location);
-    void bind_normal_location(video_context&, oglplus::vertex_attrib_location);
-    void bind_coord_location(video_context&, oglplus::vertex_attrib_location);
-
 private:
+    void _on_loaded(const gl_program_resource::load_info&) noexcept;
+
     oglplus::uniform_location _model_loc;
     oglplus::uniform_location _view_loc;
     oglplus::uniform_location _projection_loc;
