@@ -113,16 +113,6 @@ eagine_add_module(
 )
 
 eagine_add_module(
-	eagine.app PARTITION gpu_program
-	IMPORTS
-		context
-		eagine.core.types
-		eagine.core.memory
-		eagine.core.resource
-		eagine.oglplus
-)
-
-eagine_add_module(
 	eagine.app PARTITION framebuffer
 	IMPORTS
 		context
@@ -196,7 +186,6 @@ eagine_add_module(
 		resource_loader
 		context
 		main
-		gpu_program
 		framebuffer
 		geometry
 		camera

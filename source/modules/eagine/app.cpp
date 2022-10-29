@@ -18,7 +18,6 @@ export import :resource_loader;
 export import :loaded_resource;
 export import :context;
 export import :main;
-export import :gpu_program;
 export import :framebuffer;
 export import :geometry;
 export import :camera;
