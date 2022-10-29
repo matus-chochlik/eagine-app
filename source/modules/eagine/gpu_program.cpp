@@ -54,21 +54,6 @@ public:
 
     auto add_shader(
       video_context& vc,
-      const oglplus::shader_source_block& shdr_src_blk) -> gpu_program& {
-        base::add_shader(vc.gl_api(), shdr_src_blk);
-        return *this;
-    }
-
-    auto add_shader(
-      video_context& vc,
-      const oglplus::shader_source_block& shdr_src_blk,
-      const string_view label) -> gpu_program& {
-        base::add_shader(vc.gl_api(), shdr_src_blk, label);
-        return *this;
-    }
-
-    auto add_shader(
-      video_context& vc,
       oglplus::shader_type shdr_type,
       const embedded_resource& shdr_src_res) -> gpu_program& {
         return add_shader(
@@ -89,50 +74,10 @@ public:
           label);
     }
 
-    auto add_shader(video_context& vc, const embedded_resource& shdr_src_res)
-      -> gpu_program& {
-        return add_shader(
-          vc, oglplus::shader_source_block{shdr_src_res.unpack(vc.parent())});
-    }
-
-    auto add_shader(
-      video_context& vc,
-      const embedded_resource& shdr_src_res,
-      const string_view label) -> gpu_program& {
-        return add_shader(
-          vc,
-          oglplus::shader_source_block{shdr_src_res.unpack(vc.parent())},
-          label);
-    }
-
     using base::link;
 
     auto link(video_context& vc) -> gpu_program& {
         base::link(vc.gl_api());
-        return *this;
-    }
-
-    using base::build;
-
-    auto build(
-      video_context& vc,
-      const oglplus::program_source_block& prog_src_blk) -> gpu_program& {
-        base::build(vc.gl_api(), prog_src_blk);
-        return *this;
-    }
-
-    auto build(video_context& vc, const embedded_resource& prog_src_res)
-      -> gpu_program& {
-        return build(
-          vc, oglplus::program_source_block{prog_src_res.unpack(vc.parent())});
-    }
-
-    using base::init;
-
-    auto init(
-      video_context& vc,
-      const oglplus::program_source_block& prog_src_blk) -> gpu_program& {
-        base::init(vc.gl_api(), prog_src_blk);
         return *this;
     }
 
