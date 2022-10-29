@@ -23,16 +23,23 @@ public:
       const std::shared_ptr<shapes::generator>&);
 
     void update() noexcept final;
+    void clean_up() noexcept final;
 
 private:
+    void _on_resource_loaded(const loaded_resource_base&) noexcept;
+
+    auto _load_handler() noexcept {
+        return make_callable_ref<&example_arrow::_on_resource_loaded>(this);
+    }
+
     video_context& _video;
 
-    orbiting_camera camera;
+    depth_program _depth_prog;
+    draw_program _draw_prog;
+    shape_geometry _shape;
+    depth_texture _depth_tex;
 
-    depth_program depth_prog;
-    draw_program draw_prog;
-    shape_geometry shape;
-    depth_texture depth_tex;
+    orbiting_camera _camera;
 };
 //------------------------------------------------------------------------------
 example_arrow::example_arrow(
@@ -40,42 +47,44 @@ example_arrow::example_arrow(
   video_context& vc,
   const std::shared_ptr<shapes::generator>& gen)
   : timeouting_application{ec, std::chrono::seconds{30}}
-  , _video{vc} {
-    const auto& glapi = _video.gl_api();
-    const auto& [gl, GL] = glapi;
+  , _video{vc}
+  , _depth_prog{ec}
+  , _draw_prog{ec} {
+    _depth_prog.base_loaded.connect(_load_handler());
+    _draw_prog.base_loaded.connect(_load_handler());
 
-    shape.init(gen, vc);
-    vc.clean_up_later(shape);
-    depth_tex.init(ec, vc);
-    vc.clean_up_later(depth_tex);
+    _shape.init(gen, vc);
+    _depth_tex.init(ec, vc);
 
-    depth_prog.init(vc);
-    vc.clean_up_later(depth_prog);
-    depth_prog.bind_position_location(vc, shape.position_loc());
-
-    draw_prog.init(vc);
-    vc.clean_up_later(draw_prog);
-    draw_prog.bind_position_location(vc, shape.position_loc());
-    draw_prog.bind_normal_location(vc, shape.normal_loc());
-    draw_prog.set_depth_texture(vc, depth_tex.texture_unit());
-
-    // camera
-    const auto sr = shape.bounding_sphere().radius();
-    camera.set_near(sr * 0.1F)
+    const auto sr = _shape.bounding_sphere().radius();
+    _camera.set_near(sr * 0.1F)
       .set_far(sr * 3.0F)
       .set_orbit_min(sr * 1.2F)
       .set_orbit_max(sr * 1.7F)
       .set_fov(degrees_(80.F));
-    depth_prog.set_camera(vc, camera);
-    draw_prog.set_camera(vc, camera);
+    _depth_prog.set_camera(vc, _camera);
+    _draw_prog.set_camera(vc, _camera);
+
+    _camera.connect_inputs(ec).basic_input_mapping(ec);
+    ec.setup_inputs().switch_input_mapping();
+
+    const auto& glapi = _video.gl_api();
+    const auto& [gl, GL] = glapi;
 
     gl.clear_color(0.45F, 0.45F, 0.45F, 0.0F);
     gl.enable(GL.depth_test);
     gl.enable(GL.cull_face);
     gl.cull_face(GL.back);
-
-    camera.connect_inputs(ec).basic_input_mapping(ec);
-    ec.setup_inputs().switch_input_mapping();
+}
+//------------------------------------------------------------------------------
+void example_arrow::_on_resource_loaded(
+  const loaded_resource_base& loaded) noexcept {
+    if(loaded.is(_depth_prog)) {
+        _depth_prog.apply_input_bindings(_video, _shape);
+    }
+    if(loaded.is(_draw_prog)) {
+        _draw_prog.apply_input_bindings(_video, _shape);
+    }
 }
 //------------------------------------------------------------------------------
 void example_arrow::update() noexcept {
@@ -84,35 +93,47 @@ void example_arrow::update() noexcept {
         reset_timeout();
     }
     if(state.user_idle_too_long()) {
-        camera.idle_update(state, 5);
+        _camera.idle_update(state, 5);
     }
 
-    const auto& glapi = _video.gl_api();
-    auto& [gl, GL] = glapi;
+    if(_depth_prog && _draw_prog) {
+        const auto& glapi = _video.gl_api();
+        auto& [gl, GL] = glapi;
 
-    gl.clear_depth(0);
-    gl.clear(GL.depth_buffer_bit);
+        gl.clear_depth(0);
+        gl.clear(GL.depth_buffer_bit);
 
-    gl.enable(GL.depth_test);
-    gl.depth_func(GL.greater);
-    gl.enable(GL.cull_face);
-    gl.cull_face(GL.front);
-    depth_prog.use(_video);
-    depth_prog.set_camera(_video, camera);
-    shape.use(_video);
-    shape.draw(_video);
+        gl.enable(GL.depth_test);
+        gl.depth_func(GL.greater);
+        gl.enable(GL.cull_face);
+        gl.cull_face(GL.front);
+        _depth_prog.use(_video);
+        _depth_prog.set_camera(_video, _camera);
+        _shape.use(_video);
+        _shape.draw(_video);
 
-    depth_tex.copy_from_fb(_video);
+        _depth_tex.copy_from_fb(_video);
 
-    gl.clear_depth(1);
-    gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
-    gl.depth_func(GL.less);
-    gl.cull_face(GL.back);
-    draw_prog.update(context(), _video);
-    draw_prog.set_camera(_video, camera);
-    shape.draw(_video);
+        gl.clear_depth(1);
+        gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
+        gl.depth_func(GL.less);
+        gl.cull_face(GL.back);
+        _draw_prog.update(context(), _video);
+        _draw_prog.set_camera(_video, _camera);
+        _shape.draw(_video);
+    } else {
+        _depth_prog.load_if_needed(context());
+        _draw_prog.load_if_needed(context());
+    }
 
     _video.commit();
+}
+//------------------------------------------------------------------------------
+void example_arrow::clean_up() noexcept {
+    _shape.clean_up(_video);
+    _depth_tex.clean_up(_video);
+    _depth_prog.clean_up(context());
+    _draw_prog.clean_up(context());
 }
 //------------------------------------------------------------------------------
 class example_launchpad : public launchpad {
