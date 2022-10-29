@@ -20,30 +20,41 @@ public:
     example_fur(execution_context&, video_context&);
 
     void update() noexcept final;
+    void clean_up() noexcept final;
 
 private:
+    void _on_loaded(const loaded_resource_base&) noexcept;
+
     video_context& _video;
     background_icosahedron _bg;
 
     oglplus::tmat<float, 4, 4, true> prev_model;
 
-    orbiting_camera camera;
-    shape_textures shape_tex;
-    surface_program surf_prog;
-    hair_program hair_prog;
-    shape_surface surf;
-    shape_hair hair;
+    hair_program _hair_prog;
+    surface_program _surf_prog;
+    shape_textures _shape_tex;
+    shape_surface _surf;
+    shape_hair _hair;
+
+    orbiting_camera _camera;
+    bool _use_monkey_shape{false};
 };
 //------------------------------------------------------------------------------
 example_fur::example_fur(execution_context& ec, video_context& vc)
   : timeouting_application{ec, std::chrono::seconds{120}}
   , _video{vc}
-  , _bg{_video, {0.1F, 0.1F, 0.1F, 1.F}, {0.35F, 0.40F, 0.30F, 0.0F}, 1.F} {
+  , _bg{_video, {0.1F, 0.1F, 0.1F, 1.F}, {0.35F, 0.40F, 0.30F, 0.0F}, 1.F}
+  , _hair_prog{ec}
+  , _surf_prog{ec} {
+    _hair_prog.base_loaded.connect(
+      make_callable_ref<&example_fur::_on_loaded>(this));
+    _surf_prog.base_loaded.connect(
+      make_callable_ref<&example_fur::_on_loaded>(this));
 
-    const bool use_monkey_shape = ec.main_context().args().find("--monkey");
+    _use_monkey_shape = ec.main_context().args().find("--monkey");
 
     const auto gen = [&]() -> std::shared_ptr<shapes::generator> {
-        if(use_monkey_shape) {
+        if(_use_monkey_shape) {
             const auto json_text =
               as_chars(embed<"MonkeyJson">("monkey.json").unpack(ec));
             return shapes::from_value_tree(
@@ -64,48 +75,43 @@ example_fur::example_fur(execution_context& ec, video_context& vc)
           1.F);
     }();
 
-    shape_tex.init(vc);
-    surf_prog.init(vc);
-    hair_prog.init(vc);
-    surf.init(vc, gen);
-    hair.init(vc, gen);
-
-    surf_prog.use(vc);
-    surf_prog.bind_position_location(vc, surf.position_loc());
-    surf_prog.bind_texcoord_location(vc, surf.wrap_coord_loc());
-    surf_prog.bind_occlusion_location(vc, surf.occlusion_loc());
-    if(use_monkey_shape) {
-        surf_prog.set_texture(vc, shape_tex.map_unit_monkey());
-    } else {
-        surf_prog.set_texture(vc, shape_tex.map_unit_zebra());
-    }
-
-    hair_prog.use(vc);
-    hair_prog.bind_position_location(vc, hair.position_loc());
-    hair_prog.bind_normal_location(vc, hair.normal_loc());
-    hair_prog.bind_texcoord_location(vc, hair.wrap_coord_loc());
-    hair_prog.bind_occlusion_location(vc, hair.occlusion_loc());
-    if(use_monkey_shape) {
-        hair_prog.set_texture(vc, shape_tex.map_unit_monkey());
-    } else {
-        hair_prog.set_texture(vc, shape_tex.map_unit_zebra());
-    }
+    _shape_tex.init(_video);
+    _surf.init(_video, gen);
+    _hair.init(_video, gen);
 
     prev_model = oglplus::matrix_rotation_y(radians_(0.F)) *
                  oglplus::matrix_rotation_x(radians_(0.F));
 
-    // camera
     const auto bs = gen->bounding_sphere();
     const auto sr = bs.radius();
-    camera.set_target(bs.center())
+    _camera.set_target(bs.center())
       .set_near(0.1F * sr)
       .set_far(50.F * sr)
       .set_orbit_min(1.2F * sr)
       .set_orbit_max(2.2F * sr)
       .set_fov(degrees_(45));
 
-    camera.connect_inputs(ec).basic_input_mapping(ec);
+    _camera.connect_inputs(ec).basic_input_mapping(ec);
     ec.setup_inputs().switch_input_mapping();
+}
+//------------------------------------------------------------------------------
+void example_fur::_on_loaded(const loaded_resource_base& loaded) noexcept {
+    if(loaded.is(_surf_prog)) {
+        _surf_prog.apply_input_bindings(_video, _surf);
+        if(_use_monkey_shape) {
+            _surf_prog.set_texture(_video, _shape_tex.map_unit_monkey());
+        } else {
+            _surf_prog.set_texture(_video, _shape_tex.map_unit_zebra());
+        }
+    }
+    if(loaded.is(_hair_prog)) {
+        _hair_prog.apply_input_bindings(_video, _hair);
+        if(_use_monkey_shape) {
+            _hair_prog.set_texture(_video, _shape_tex.map_unit_monkey());
+        } else {
+            _hair_prog.set_texture(_video, _shape_tex.map_unit_zebra());
+        }
+    }
 }
 //------------------------------------------------------------------------------
 void example_fur::update() noexcept {
@@ -114,28 +120,39 @@ void example_fur::update() noexcept {
         reset_timeout();
     }
     if(state.user_idle_too_long()) {
-        camera.idle_update(state, 11.F);
+        _camera.idle_update(state, 11.F);
     }
 
     const auto t = state.frame_time().value();
     const auto model = oglplus::matrix_rotation_y(degrees_(-t * 23.F)) *
                        oglplus::matrix_rotation_x(degrees_(t * 41.F));
 
-    _bg.clear(_video, camera);
+    if(_surf_prog && _hair_prog) {
+        _bg.clear(_video, _camera);
 
-    surf_prog.use(_video);
-    surf_prog.set_projection(_video, camera);
-    surf_prog.set_model(_video, model);
-    surf.use_and_draw(_video);
+        _surf_prog.use(_video);
+        _surf_prog.set_projection(_video, _camera);
+        _surf_prog.set_model(_video, model);
+        _surf.use_and_draw(_video);
 
-    hair_prog.use(_video);
-    hair_prog.set_projection(_video, camera);
-    hair_prog.set_model(_video, prev_model, model);
-    hair.use_and_draw(_video);
+        _hair_prog.use(_video);
+        _hair_prog.set_projection(_video, _camera);
+        _hair_prog.set_model(_video, prev_model, model);
+        _hair.use_and_draw(_video);
+    } else {
+        _surf_prog.load_if_needed(context());
+        _hair_prog.load_if_needed(context());
+    }
 
     prev_model = model;
 
     _video.commit();
+}
+//------------------------------------------------------------------------------
+void example_fur::clean_up() noexcept {
+    _shape_tex.clean_up(_video);
+    _surf_prog.clean_up(context());
+    _hair_prog.clean_up(context());
 }
 //------------------------------------------------------------------------------
 class example_launchpad : public launchpad {

@@ -12,16 +12,16 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 // surface program
 //------------------------------------------------------------------------------
-void surface_program::init(video_context& vc) {
-    const auto prog_src{embed<"SurfProg">("furry_torus_surface.oglpprog")};
-    create(vc)
-      .label(vc, "surface program")
-      .build(vc, prog_src.unpack(vc.parent()))
-      .use(vc)
-      .query(vc, "Model", model_loc)
-      .query(vc, "Camera", camera_loc)
-      .query(vc, "Tex", texture_loc)
-      .clean_up_later(vc);
+surface_program::surface_program(execution_context& ctx)
+  : gl_program_resource{url{"json:///SurfProg"}, ctx} {
+    loaded.connect(make_callable_ref<&surface_program::_on_loaded>(this));
+}
+//------------------------------------------------------------------------------
+void surface_program::_on_loaded(
+  const gl_program_resource::load_info& info) noexcept {
+    info.get_uniform_location("Model") >> model_loc;
+    info.get_uniform_location("Camera") >> camera_loc;
+    info.get_uniform_location("Tex") >> texture_loc;
 }
 //------------------------------------------------------------------------------
 void surface_program::set_projection(
@@ -42,37 +42,19 @@ void surface_program::set_texture(
     set(vc, texture_loc, unit);
 }
 //------------------------------------------------------------------------------
-void surface_program::bind_position_location(
-  video_context& vc,
-  oglplus::vertex_attrib_location loc) {
-    bind(vc, loc, "Position");
-}
-//------------------------------------------------------------------------------
-void surface_program::bind_texcoord_location(
-  video_context& vc,
-  oglplus::vertex_attrib_location loc) {
-    bind(vc, loc, "TexCoord");
-}
-//------------------------------------------------------------------------------
-void surface_program::bind_occlusion_location(
-  video_context& vc,
-  oglplus::vertex_attrib_location loc) {
-    bind(vc, loc, "Occlusion");
-}
-//------------------------------------------------------------------------------
 // hair program
 //------------------------------------------------------------------------------
-void hair_program::init(video_context& vc) {
-    const auto prog_src{embed<"HairProg">("furry_torus_hair.oglpprog")};
-    create(vc)
-      .label(vc, "hair program")
-      .build(vc, prog_src.unpack(vc.parent()))
-      .use(vc)
-      .query(vc, "PrevModel", prev_model_loc)
-      .query(vc, "CurrModel", curr_model_loc)
-      .query(vc, "Camera", camera_loc)
-      .query(vc, "Tex", texture_loc)
-      .clean_up_later(vc);
+hair_program::hair_program(execution_context& ctx)
+  : gl_program_resource{url{"json:///HairProg"}, ctx} {
+    loaded.connect(make_callable_ref<&hair_program::_on_loaded>(this));
+}
+//------------------------------------------------------------------------------
+void hair_program::_on_loaded(
+  const gl_program_resource::load_info& info) noexcept {
+    info.get_uniform_location("PrevModel") >> prev_model_loc;
+    info.get_uniform_location("CurrModel") >> curr_model_loc;
+    info.get_uniform_location("Camera") >> camera_loc;
+    info.get_uniform_location("Tex") >> texture_loc;
 }
 //------------------------------------------------------------------------------
 void hair_program::set_projection(video_context& vc, orbiting_camera& camera) {
@@ -91,30 +73,6 @@ void hair_program::set_texture(
   video_context& vc,
   oglplus::gl_types::int_type unit) {
     set(vc, texture_loc, unit);
-}
-//------------------------------------------------------------------------------
-void hair_program::bind_position_location(
-  video_context& vc,
-  oglplus::vertex_attrib_location loc) {
-    bind(vc, loc, "Position");
-}
-//------------------------------------------------------------------------------
-void hair_program::bind_normal_location(
-  video_context& vc,
-  oglplus::vertex_attrib_location loc) {
-    bind(vc, loc, "Normal");
-}
-//------------------------------------------------------------------------------
-void hair_program::bind_texcoord_location(
-  video_context& vc,
-  oglplus::vertex_attrib_location loc) {
-    bind(vc, loc, "TexCoord");
-}
-//------------------------------------------------------------------------------
-void hair_program::bind_occlusion_location(
-  video_context& vc,
-  oglplus::vertex_attrib_location loc) {
-    bind(vc, loc, "Occlusion");
 }
 //------------------------------------------------------------------------------
 // surface geometry

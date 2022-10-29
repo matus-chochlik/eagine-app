@@ -18,29 +18,24 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 // program
 //------------------------------------------------------------------------------
-class surface_program : public gpu_program {
+class surface_program : public gl_program_resource {
 public:
-    void init(video_context&);
+    surface_program(execution_context&);
     void set_projection(video_context&, orbiting_camera& camera);
     void set_model(video_context&, const oglplus::trfmat<4>&);
     void set_texture(video_context&, oglplus::gl_types::int_type);
 
-    void bind_position_location(video_context&, oglplus::vertex_attrib_location);
-    void bind_texcoord_location(video_context&, oglplus::vertex_attrib_location);
-    void bind_occlusion_location(
-      video_context&,
-      oglplus::vertex_attrib_location);
-
 private:
-    oglplus::owned_program_name prog;
+    void _on_loaded(const gl_program_resource::load_info&) noexcept;
+
     oglplus::uniform_location model_loc;
     oglplus::uniform_location camera_loc;
     oglplus::uniform_location texture_loc;
 };
 //------------------------------------------------------------------------------
-class hair_program : public gpu_program {
+class hair_program : public gl_program_resource {
 public:
-    void init(video_context&);
+    hair_program(execution_context&);
     void set_projection(video_context&, orbiting_camera& camera);
     void set_model(
       video_context&,
@@ -48,15 +43,9 @@ public:
       const oglplus::trfmat<4>& curr);
     void set_texture(video_context&, oglplus::gl_types::int_type);
 
-    void bind_position_location(video_context&, oglplus::vertex_attrib_location);
-    void bind_normal_location(video_context&, oglplus::vertex_attrib_location);
-    void bind_texcoord_location(video_context&, oglplus::vertex_attrib_location);
-    void bind_occlusion_location(
-      video_context&,
-      oglplus::vertex_attrib_location);
-
 private:
-    oglplus::owned_program_name prog;
+    void _on_loaded(const gl_program_resource::load_info&) noexcept;
+
     oglplus::uniform_location prev_model_loc;
     oglplus::uniform_location curr_model_loc;
     oglplus::uniform_location camera_loc;
