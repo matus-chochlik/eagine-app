@@ -12,6 +12,7 @@ import eagine.core.math;
 import eagine.core.memory;
 import eagine.core.utility;
 import eagine.core.runtime;
+import eagine.core.reflection;
 import eagine.core.value_tree;
 import eagine.shapes;
 import eagine.oglplus;
@@ -362,6 +363,28 @@ public:
 export using gl_geometry_and_bindings_resource =
   loaded_resource<gl_geometry_and_bindings>;
 //------------------------------------------------------------------------------
+export template <>
+struct resource_load_info<valtree::compound> {
+    using Resource = valtree::compound;
+    using base_load_info = typename resource_loader::load_info_t<Resource>;
+
+    /// @brief The base info from the loader signal.
+    const base_load_info& base;
+    /// @brief The loaded program resource.
+    loaded_resource<Resource>& resource;
+
+    resource_load_info(
+      const base_load_info& info,
+      loaded_resource<Resource>& parent) noexcept
+      : base{info}
+      , resource{parent} {}
+
+    /// @brief Loads the data from the value tree resource into an object.
+    auto load(default_mapped_struct auto& object) noexcept -> bool {
+        return base.load(object);
+    }
+};
+
 export template <>
 class loaded_resource<valtree::compound>
   : public loaded_resource_common<loaded_resource<valtree::compound>> {

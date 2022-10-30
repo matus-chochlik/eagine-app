@@ -81,6 +81,7 @@ eagine_add_module(
 		eagine.core.math
 		eagine.core.memory
 		eagine.core.reflection
+		eagine.core.serialization
 		eagine.core.utility
 		eagine.core.runtime
 		eagine.shapes
@@ -166,6 +167,7 @@ eagine_add_module(
 		eagine.core.memory
 		eagine.core.utility
 		eagine.core.runtime
+		eagine.core.reflection
 		eagine.core.value_tree
 		eagine.shapes
 		eagine.oglplus

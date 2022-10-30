@@ -11,6 +11,8 @@ import eagine.core.types;
 import eagine.core.math;
 import eagine.core.memory;
 import eagine.core.container;
+import eagine.core.reflection;
+import eagine.core.serialization;
 import eagine.core.utility;
 import eagine.core.runtime;
 import eagine.core.main_ctx;
@@ -464,6 +466,13 @@ export struct resource_loader_signals {
         const identifier_t request_id;
         const url& locator;
         const valtree::compound& tree;
+
+        /// @brief Loads the data from the value tree resource into an object.
+        auto load(default_mapped_struct auto& object) noexcept -> bool {
+            valtree_deserializer_backend backend{tree};
+            const auto errors{deserialize(object, backend)};
+            return !errors;
+        }
     };
 
     template <>
