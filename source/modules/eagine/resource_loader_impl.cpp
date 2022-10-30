@@ -823,6 +823,21 @@ public:
       , _buf_target{buf_target} {}
 
     using base::do_add;
+
+    void do_add(
+      const basic_string_path& path,
+      span<const string_view> data) noexcept {
+        if(path.size() == 1) {
+            if(path.front() == "label") {
+                if(has_value(data)) {
+                    if(auto parent{_parent.lock()}) {
+                        extract(parent).add_label(extract(data));
+                    }
+                }
+            }
+        }
+    }
+
     // TODO
     void do_add(const basic_string_path&, const auto&) noexcept {}
 
@@ -869,6 +884,9 @@ void pending_resource_info::add_label(const string_view label) noexcept {
     } else if(std::holds_alternative<_pending_gl_texture_state>(_state)) {
         auto& pgts = std::get<_pending_gl_texture_state>(_state);
         pgts.video.get().gl_api().object_label(pgts.tex, label);
+    } else if(std::holds_alternative<_pending_gl_buffer_state>(_state)) {
+        auto& pgts = std::get<_pending_gl_buffer_state>(_state);
+        pgts.video.get().gl_api().object_label(pgts.buf, label);
     }
 }
 //------------------------------------------------------------------------------
