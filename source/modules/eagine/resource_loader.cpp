@@ -469,7 +469,7 @@ export struct resource_loader_signals {
         const valtree::compound& tree;
 
         /// @brief Loads the data from the value tree resource into an object.
-        auto load(default_mapped_struct auto& object) noexcept -> bool {
+        auto load(default_mapped_struct auto& object) const noexcept -> bool {
             valtree_deserializer_backend backend{tree};
             const auto errors{deserialize(object, backend)};
             return !errors;
@@ -478,7 +478,7 @@ export struct resource_loader_signals {
         /// @brief Loads the data from the value tree resource into an object.
         auto load(
           default_mapped_struct auto& object,
-          const basic_string_path& path) noexcept -> bool {
+          const basic_string_path& path) const noexcept -> bool {
             valtree_deserializer_backend backend{tree, tree.find(path)};
             const auto errors{deserialize(object, backend)};
             return !errors;

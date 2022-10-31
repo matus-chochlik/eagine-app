@@ -31,6 +31,9 @@ public:
     loaded_resource_base(url locator) noexcept
       : _locator_str{locator.release_string()} {}
 
+    /// @brief Signal emmitted when the resource is successfully loaded.
+    signal<void(const loaded_resource_base&) noexcept> base_loaded;
+
     /// @brief Returns this resource's URL.
     auto locator() const noexcept -> url {
         return {_locator_str};
@@ -60,6 +63,108 @@ public:
 protected:
     std::string _locator_str;
     identifier_t _request_id{0};
+};
+//------------------------------------------------------------------------------
+export template <typename Resource>
+class loaded_resource
+  : public Resource
+  , public loaded_resource_base {
+    static_assert(default_mapped_struct<Resource>);
+
+public:
+    using base_load_info =
+      typename resource_loader::load_info_t<valtree::compound>;
+
+    /// @brief Returns a reference to the underlying resource.
+    auto resource() noexcept -> Resource& {
+        return *this;
+    }
+
+    /// @brief Returns a const reference to the underlying resource.
+    auto resource() const noexcept -> const Resource& {
+        return *this;
+    }
+
+    /// @brief Constructor specifying the resource locator.
+    loaded_resource(url locator) noexcept
+      : loaded_resource_base{std::move(locator)} {}
+
+    /// @brief Delay-initializes the resource.
+    void init(resource_loader& loader) noexcept {
+        _connect(loader);
+    }
+
+    /// @brief Constructor specifying the locator and initializing the resource.
+    loaded_resource(url locator, resource_loader& loader)
+      : loaded_resource_base{std::move(locator)} {
+        init(loader);
+    }
+
+    /// @brief Constructor specifying the locator and initializing the resource.
+    loaded_resource(url locator, execution_context& ctx)
+      : loaded_resource{std::move(locator), ctx.loader()} {}
+
+    /// @brief Clean's up this resource.
+    void clean_up(resource_loader& loader) {
+        this->resource().clear();
+        _disconnect(loader);
+    }
+
+    /// @brief Clean's up this resource.
+    void clean_up(execution_context& ctx) {
+        clean_up(ctx.loader());
+    }
+
+    /// @brief Indicates if this resource is loaded.
+    auto is_loaded() const noexcept -> bool {
+        return _loaded;
+    }
+
+    /// @brief Indicates if this resource is loaded.
+    /// @see is_loaded
+    explicit operator bool() const noexcept {
+        return is_loaded();
+    }
+
+    /// @brief Updates the resource, possibly doing resource load request.
+    auto load_if_needed(resource_loader& loader) -> work_done {
+        if(!is_loaded() && !is_loading()) {
+            if(const auto request{loader.request_value_tree(locator())}) {
+                _request_id = request.request_id();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /// @brief Updates the resource, possibly doing resource load request.
+    auto load_if_needed(execution_context& ctx) -> work_done {
+        return load_if_needed(ctx.loader());
+    }
+
+private:
+    void _connect(resource_loader& loader) noexcept {
+        _sig_key = connect<&loaded_resource::_handle_loaded>(
+          this, loader.value_tree_loaded);
+    }
+
+    void _disconnect(resource_loader& loader) noexcept {
+        if(_sig_key) {
+            loader.value_tree_loaded.disconnect(_sig_key);
+            _sig_key = {};
+        }
+    }
+
+    void _handle_loaded(const base_load_info& info) noexcept {
+        if(info.request_id == _request_id) {
+            _loaded = info.load(resource());
+            base_loaded(*this);
+            _request_id = 0;
+        }
+    }
+
+    signal_binding_key _sig_key{};
+    bool _loaded{false};
 };
 //------------------------------------------------------------------------------
 export template <typename Resource>
@@ -108,9 +213,6 @@ public:
 
     /// @brief Type of the base_loaded signal parameter.
     using base_load_info = typename resource_loader::load_info_t<Resource>;
-
-    /// @brief Signal emmitted when the resource is successfully loaded.
-    signal<void(const loaded_resource_base&) noexcept> base_loaded;
 
     /// @brief Type of the loaded signal parameter.
     using load_info = resource_load_info<Resource>;
@@ -381,14 +483,13 @@ struct resource_load_info<valtree::compound> {
       , resource{parent} {}
 
     /// @brief Loads the data from the value tree resource into an object.
-    auto load(default_mapped_struct auto& object) noexcept -> bool {
+    auto load(default_mapped_struct auto& object) const noexcept -> bool {
         return base.load(object);
     }
 
     /// @brief Loads the data from the value tree resource into an object.
-    auto load(
-      default_mapped_struct auto& object,
-      const basic_string_path& path) noexcept -> bool {
+    auto load(default_mapped_struct auto& object, const basic_string_path& path)
+      const noexcept -> bool {
         return base.load(object, path);
     }
 };
