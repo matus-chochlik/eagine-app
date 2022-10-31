@@ -10,6 +10,7 @@ export module eagine.app:loaded_resource;
 import eagine.core.types;
 import eagine.core.math;
 import eagine.core.memory;
+import eagine.core.string;
 import eagine.core.utility;
 import eagine.core.runtime;
 import eagine.core.reflection;
@@ -382,6 +383,13 @@ struct resource_load_info<valtree::compound> {
     /// @brief Loads the data from the value tree resource into an object.
     auto load(default_mapped_struct auto& object) noexcept -> bool {
         return base.load(object);
+    }
+
+    /// @brief Loads the data from the value tree resource into an object.
+    auto load(
+      default_mapped_struct auto& object,
+      const basic_string_path& path) noexcept -> bool {
+        return base.load(object, path);
     }
 };
 

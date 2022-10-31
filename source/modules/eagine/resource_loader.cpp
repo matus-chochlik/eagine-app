@@ -10,6 +10,7 @@ export module eagine.app:resource_loader;
 import eagine.core.types;
 import eagine.core.math;
 import eagine.core.memory;
+import eagine.core.string;
 import eagine.core.container;
 import eagine.core.reflection;
 import eagine.core.serialization;
@@ -470,6 +471,15 @@ export struct resource_loader_signals {
         /// @brief Loads the data from the value tree resource into an object.
         auto load(default_mapped_struct auto& object) noexcept -> bool {
             valtree_deserializer_backend backend{tree};
+            const auto errors{deserialize(object, backend)};
+            return !errors;
+        }
+
+        /// @brief Loads the data from the value tree resource into an object.
+        auto load(
+          default_mapped_struct auto& object,
+          const basic_string_path& path) noexcept -> bool {
+            valtree_deserializer_backend backend{tree, tree.find(path)};
             const auto errors{deserialize(object, backend)};
             return !errors;
         }

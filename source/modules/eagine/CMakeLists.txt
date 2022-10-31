@@ -80,6 +80,7 @@ eagine_add_module(
 		eagine.core.types
 		eagine.core.math
 		eagine.core.memory
+		eagine.core.string
 		eagine.core.reflection
 		eagine.core.serialization
 		eagine.core.utility
@@ -165,6 +166,7 @@ eagine_add_module(
 		eagine.core.types
 		eagine.core.math
 		eagine.core.memory
+		eagine.core.string
 		eagine.core.utility
 		eagine.core.runtime
 		eagine.core.reflection
