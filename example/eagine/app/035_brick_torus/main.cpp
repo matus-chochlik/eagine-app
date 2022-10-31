@@ -32,7 +32,6 @@ private:
     void _switch_texture(const input&) noexcept;
 
     video_context& _video;
-    resource_loader& _loader;
 
     torus_program _prog;
     torus_geometry _torus;
@@ -46,7 +45,6 @@ private:
 example_parallax::example_parallax(execution_context& ec, video_context& vc)
   : timeouting_application{ec, std::chrono::seconds{90}}
   , _video{vc}
-  , _loader{ec.loader()}
   , _prog{ec}
   , _torus{ec}
   , _bricks{ec}

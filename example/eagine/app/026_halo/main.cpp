@@ -29,7 +29,6 @@ private:
     }
 
     video_context& _video;
-    resource_loader& _loader;
 
     surface_program _surf_prog;
     halo_program _halo_prog;
@@ -41,7 +40,6 @@ private:
 example_halo::example_halo(execution_context& ec, video_context& vc)
   : timeouting_application{ec, std::chrono::seconds{60}}
   , _video{vc}
-  , _loader{context().loader()}
   , _surf_prog{context()}
   , _halo_prog{context()}
   , _shape{context()} {

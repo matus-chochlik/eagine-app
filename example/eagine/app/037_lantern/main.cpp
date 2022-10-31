@@ -31,7 +31,6 @@ private:
     }
 
     video_context& _video;
-    resource_loader& _loader;
     activity_progress _load_progress;
 
     draw_buffers draw_bufs;
@@ -48,7 +47,6 @@ private:
 example_lantern::example_lantern(execution_context& ec, video_context& vc)
   : timeouting_application{ec, std::chrono::seconds{90}}
   , _video{vc}
-  , _loader{ec.loader()}
   , _load_progress{ec.progress().activity("Loading resources", 5)}
   , pumpkin_tex{ec}
   , pumpkin{ec}

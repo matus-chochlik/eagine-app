@@ -29,7 +29,6 @@ private:
     }
 
     video_context& _video;
-    resource_loader& _loader;
 
     orbiting_camera _camera;
     icosahedron_geometry _shape;
@@ -40,7 +39,6 @@ private:
 example_cel::example_cel(execution_context& ec, video_context& vc)
   : timeouting_application{ec, std::chrono::seconds{30}}
   , _video{vc}
-  , _loader{context().loader()}
   , _shape{context()}
   , _prog{context()}
   , _bg{_video, {0.1F, 0.1F, 0.1F, 1.0F}, {0.4F, 0.4F, 0.4F, 0.0F}, 1.F} {

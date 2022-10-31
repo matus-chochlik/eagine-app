@@ -43,7 +43,6 @@ private:
     }
 
     video_context& _video;
-    resource_loader& _loader;
     gl_geometry_and_bindings_resource _shape;
     gl_program_resource _prog;
     gl_texture_resource _tex;
@@ -57,7 +56,6 @@ private:
 example_uv_map::example_uv_map(execution_context& ec, video_context& vc)
   : timeouting_application{ec, std::chrono::seconds{30}}
   , _video{vc}
-  , _loader{context().loader()}
   , _shape{url{"json:///HydrntShpe"}, ec}
   , _prog{url{"json:///HydrntProg"}, ec}
   , _tex{url{"json:///HydrantTex"}, ec} {

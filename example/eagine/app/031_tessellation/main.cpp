@@ -25,7 +25,6 @@ private:
     void _on_prog_loaded(const gl_program_resource::load_info&) noexcept;
 
     video_context& _video;
-    resource_loader& _loader;
     background_icosahedron _bg;
 
     sphere_program _prog;
@@ -37,7 +36,6 @@ private:
 example_sphere::example_sphere(execution_context& ec, video_context& vc)
   : timeouting_application{ec, std::chrono::seconds{30}}
   , _video{vc}
-  , _loader{ec.loader()}
   , _bg{_video, {0.0F, 0.0F, 0.0F, 1.F}, {0.25F, 0.25F, 0.25F, 0.0F}, 1.F}
   , _prog{ec} {
     _prog.loaded.connect(
