@@ -715,6 +715,19 @@ public:
         return use(ctx.main_video());
     }
 
+    /// @brief Returns the location of a uniform with the specified name.
+    auto get_uniform_location(
+      const oglplus::gl_api& glapi,
+      const string_view var_name) const noexcept {
+        return glapi.get_uniform_location(*this, var_name);
+    }
+
+    /// @brief Returns the location of a uniform with the specified name.
+    auto get_uniform_location(video_context& video, const string_view var_name)
+      const noexcept {
+        return get_uniform_location(video.gl_api(), var_name);
+    }
+
     /// @brief Sets the value of a uniform variable
     template <typename T>
     auto set(

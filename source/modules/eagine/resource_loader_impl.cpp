@@ -429,6 +429,9 @@ static auto texture_iformat_from_string(
         } else if(str == "r8") {
             v = 0x8229;
             return true;
+        } else if(str == "r8ui") {
+            v = 0x8232;
+            return true;
         }
         // TODO
     }
@@ -448,6 +451,9 @@ static auto texture_format_from_string(
             return true;
         } else if(str == "red") {
             v = 0x1903;
+            return true;
+        } else if(str == "red_integer") {
+            v = 0x8D94;
             return true;
         }
         // TODO
