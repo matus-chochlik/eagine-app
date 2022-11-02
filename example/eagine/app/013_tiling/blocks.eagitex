@@ -1,0 +1,10 @@
+{"levels":4
+,"width":16
+,"height":16
+,"depth":16
+,"channels":1
+,"data_type":"unsigned_byte"
+,"format":"red"
+,"iformat":"r8"
+,"images":[{"url":"eagitexi:///BlocksImg"}]
+}

@@ -3,27 +3,27 @@
 # See accompanying file LICENSE_1_0.txt or copy at
 #  http://www.boost.org/LICENSE_1_0.txt
 #
-
 add_executable(app-013_tiling main.cpp)
 add_dependencies(app-013_tiling eagine-app-examples)
 
 eagine_embed_target_resources(
 	TARGET app-013_tiling
-	INPUT_TARGETS
-	tiles_r4_s1024_a6
-	tileset_thicket16
-	tileset_blocks16
-	tileset_nodes16
-	tileset_connections16
 	RESOURCES
-    	VertShader "vertex.glsl"
+		VertShader "vertex.glsl"
 		FragShader "fragment.glsl"
-		TilingTex "tiles_r4_s1024_a6"
-		Nodes512 "tileset_nodes16"
-		Blocks512 "tileset_blocks16"
-		Conncts51 "tileset_connections16"
-		Thicket512 "tileset_thicket16"
+		Program    "program.json"
+		TilingTex  "tiling.eagitex"
+		TilingImg  "tiling.eagitexi"
+		BlocksTex  "blocks.eagitex"
+		BlocksImg  "blocks.eagitexi"
+		CnnctsTex  "connections.eagitex"
+		CnnctsImg  "connections.eagitexi"
+		NodesTex   "nodes.eagitex"
+		NodesImg   "nodes.eagitexi"
+		ThicketTex "thicket.eagitex"
+		ThicketImg "thicket.eagitexi"
 	PACKED
+	ENABLE_SEARCH
 )
 eagine_add_exe_analysis(app-013_tiling)
 
