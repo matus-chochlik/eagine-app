@@ -31,7 +31,13 @@ public:
     loaded_resource_base(url locator) noexcept
       : _locator_str{locator.release_string()} {}
 
-    /// @brief Signal emmitted when the resource is successfully loaded.
+    loaded_resource_base(loaded_resource_base&&) = delete;
+    loaded_resource_base(const loaded_resource_base&) = delete;
+    auto operator=(loaded_resource_base&&) = delete;
+    auto operator=(const loaded_resource_base&) = delete;
+    ~loaded_resource_base() noexcept = default;
+
+    /// @brief Signal emitted when the resource is successfully loaded.
     signal<void(const loaded_resource_base&) noexcept> base_loaded;
 
     /// @brief Returns this resource's URL.
@@ -184,19 +190,15 @@ public:
       : loaded_resource_base{std::move(locator)} {}
 
     /// @brief Delay-initializes the resource.
-    void init(resource_loader& loader) noexcept {
-        _connect(loader);
-    }
-
-    /// @brief Constructor specifying the locator and initializing the resource.
-    loaded_resource(url locator, resource_loader& loader)
-      : loaded_resource_base{std::move(locator)} {
-        init(loader);
+    void init(execution_context& ctx) noexcept {
+        _connect(ctx.loader());
     }
 
     /// @brief Constructor specifying the locator and initializing the resource.
     loaded_resource(url locator, execution_context& ctx)
-      : loaded_resource{std::move(locator), ctx.loader()} {}
+      : loaded_resource_base{std::move(locator)} {
+        init(ctx);
+    }
 
     /// @brief Clean's up this resource.
     void clean_up(resource_loader& loader) {
@@ -264,12 +266,6 @@ private:
 export template <typename Resource>
 class loaded_resource;
 
-export template <
-  typename Derived,
-  typename Params = resource_load_params<Derived>,
-  typename CtxParams = resource_load_context_params<Params>>
-class loaded_resource_common;
-
 export template <typename Resource>
 struct resource_load_info {
     using base_load_info = typename resource_loader::load_info_t<Resource>;
@@ -285,6 +281,12 @@ struct resource_load_info {
       : base{info}
       , resource{parent} {}
 };
+
+export template <
+  typename Derived,
+  typename Params = resource_load_params<Derived>,
+  typename CtxParams = resource_load_context_params<Params>>
+class loaded_resource_common;
 //------------------------------------------------------------------------------
 export template <typename Resource, typename... P, typename... Cp>
 class loaded_resource_common<
@@ -322,6 +324,16 @@ public:
     /// @brief Signal emmitted when the resource is successfully loaded.
     signal<void(const load_info&) noexcept> loaded;
 
+    /// @brief Constructor specifying the resource locator.
+    loaded_resource_common(url locator) noexcept
+      : loaded_resource_base{std::move(locator)} {}
+
+    /// @brief Constructor specifying the resource locator.
+    loaded_resource_common(url locator, execution_context& ctx) noexcept
+      : loaded_resource_base{std::move(locator)} {
+        derived().init(ctx);
+    }
+
     /// @brief Indicates if this resource is loaded.
     /// @see is_loaded
     explicit operator bool() const noexcept {
@@ -329,9 +341,8 @@ public:
     }
 
     /// @brief Delay-initializes the resource.
-    template <typename... Args>
-    void init(resource_loader& loader, const Args&...) noexcept {
-        _connect(loader);
+    void init(execution_context& ctx) noexcept {
+        _connect(ctx.loader());
     }
 
     /// @brief Returns a reference to the underlying resource.
@@ -379,10 +390,6 @@ public:
     }
 
 protected:
-    /// @brief Constructor specifying the resource locator.
-    loaded_resource_common(url locator) noexcept
-      : loaded_resource_base{std::move(locator)} {}
-
     void _connect(resource_loader& loader) noexcept {
         _sig_key = connect<&loaded_resource_common::_handle_loaded>(
           this, loader.load_signal(resource_tid()));
@@ -422,15 +429,7 @@ class loaded_resource<std::vector<T>>
     using common = loaded_resource_common<loaded_resource<std::vector<T>>>;
 
 public:
-    /// @brief Constructor specifying the locator and initializing the resource.
-    loaded_resource(url locator, resource_loader& loader)
-      : common{std::move(locator)} {
-        this->init(loader);
-    }
-
-    /// @brief Constructor specifying the locator and initializing the resource.
-    loaded_resource(url locator, execution_context& ctx)
-      : loaded_resource{std::move(locator), ctx.loader()} {}
+    using common::common;
 
     /// @brief Clean's up this resource.
     void clean_up(resource_loader& loader) {
@@ -465,15 +464,7 @@ class loaded_resource<math::bezier_curves<T, P, O>>
       loaded_resource_common<loaded_resource<math::bezier_curves<T, P, O>>>;
 
 public:
-    /// @brief Constructor specifying the locator and initializing the resource.
-    loaded_resource(url locator, resource_loader& loader)
-      : common{std::move(locator)} {
-        this->init(loader);
-    }
-
-    /// @brief Constructor specifying the locator and initializing the resource.
-    loaded_resource(url locator, execution_context& ctx)
-      : loaded_resource{std::move(locator), ctx.loader()} {}
+    using common::common;
 
     /// @brief Clean's up this resource.
     void clean_up(resource_loader& loader) {
@@ -510,9 +501,7 @@ class loaded_resource<gl_geometry_and_bindings>
       loaded_resource_common<loaded_resource<gl_geometry_and_bindings>>;
 
 public:
-    /// @brief Constructor specifying the resource locator.
-    loaded_resource(url locator) noexcept
-      : common{std::move(locator)} {}
+    using common::common;
 
     /// @brief Clean's up this resource.
     void clean_up(resource_loader& loader, video_context& video) {
@@ -524,16 +513,6 @@ public:
     void clean_up(execution_context& ctx) {
         clean_up(ctx.loader(), ctx.main_video());
     }
-
-    /// @brief Constructor specifying the locator and initializing the resource.
-    loaded_resource(url locator, resource_loader& loader, video_context& video)
-      : loaded_resource{std::move(locator)} {
-        this->init(loader, video);
-    }
-
-    /// @brief Constructor specifying the locator and initializing the resource.
-    loaded_resource(url locator, execution_context& ctx)
-      : loaded_resource{std::move(locator), ctx.loader(), ctx.main_video()} {}
 
     /// @brief Indicates if this resource is loaded.
     auto is_loaded() const noexcept -> bool {
@@ -589,9 +568,7 @@ class loaded_resource<valtree::compound>
     using common = loaded_resource_common<loaded_resource<valtree::compound>>;
 
 public:
-    /// @brief Constructor specifying the resource locator.
-    loaded_resource(url locator) noexcept
-      : common{std::move(locator)} {}
+    using common::common;
 
     /// @brief Clean's up this resource.
     void clean_up(resource_loader& loader) {
@@ -602,16 +579,6 @@ public:
     void clean_up(execution_context& ctx) {
         clean_up(ctx.loader());
     }
-
-    /// @brief Constructor specifying the locator and initializing the resource.
-    loaded_resource(url locator, resource_loader& loader)
-      : loaded_resource{std::move(locator)} {
-        init(loader);
-    }
-
-    /// @brief Constructor specifying the locator and initializing the resource.
-    loaded_resource(url locator, execution_context& ctx)
-      : loaded_resource{std::move(locator), ctx.loader()} {}
 
     /// @brief Indicates if this resource is loaded.
     auto is_loaded() const noexcept -> bool {
@@ -636,14 +603,7 @@ class loaded_resource<oglplus::owned_shader_name>
       loaded_resource_common<loaded_resource<oglplus::owned_shader_name>>;
 
 public:
-    /// @brief Constructor specifying the resource locator.
-    loaded_resource(url locator) noexcept
-      : common{std::move(locator)} {}
-
-    /// @brief Delay-initializes the resource.
-    void init(resource_loader& loader, video_context&) {
-        common::_connect(loader);
-    }
+    using common::common;
 
     /// @brief Clean's up this resource.
     void clean_up(resource_loader& loader, video_context& video) {
@@ -655,16 +615,6 @@ public:
     void clean_up(execution_context& ctx) {
         clean_up(ctx.loader(), ctx.main_video());
     }
-
-    /// @brief Constructor specifying the locator and initializing the resource.
-    loaded_resource(url locator, resource_loader& loader, video_context& video)
-      : loaded_resource{std::move(locator)} {
-        init(loader, video);
-    }
-
-    /// @brief Constructor specifying the locator and initializing the resource.
-    loaded_resource(url locator, execution_context& ctx)
-      : loaded_resource{std::move(locator), ctx.loader(), ctx.main_video()} {}
 
     /// @brief Indicates if this resource is loaded.
     auto is_loaded() const noexcept -> bool {
@@ -756,9 +706,7 @@ class loaded_resource<oglplus::owned_program_name>
       loaded_resource_common<loaded_resource<oglplus::owned_program_name>>;
 
 public:
-    /// @brief Constructor specifying the resource locator.
-    loaded_resource(url locator) noexcept
-      : common{std::move(locator)} {}
+    using common::common;
 
     /// @brief Makes the current program active within the given API object.
     auto use(const oglplus::gl_api& glapi) noexcept -> loaded_resource& {
@@ -842,16 +790,6 @@ public:
         return clean_up(ctx.loader(), ctx.main_video());
     }
 
-    /// @brief Constructor specifying the locator and initializing the resource.
-    loaded_resource(url locator, resource_loader& loader, video_context& video)
-      : loaded_resource{std::move(locator)} {
-        init(loader, video);
-    }
-
-    /// @brief Constructor specifying the locator and initializing the resource.
-    loaded_resource(url locator, execution_context& ctx)
-      : loaded_resource{std::move(locator), ctx.loader(), ctx.main_video()} {}
-
     /// @brief Indicates if this resource is loaded.
     auto is_loaded() const noexcept -> bool {
         return this->is_valid();
@@ -918,14 +856,7 @@ class loaded_resource<oglplus::owned_texture_name>
       loaded_resource_common<loaded_resource<oglplus::owned_texture_name>>;
 
 public:
-    /// @brief Constructor specifying the resource locator.
-    loaded_resource(url locator) noexcept
-      : common{std::move(locator)} {}
-
-    /// @brief Delay-initializes the resource.
-    void init(resource_loader& loader, video_context&) {
-        common::_connect(loader);
-    }
+    using common::common;
 
     /// @brief Clean's up this resource.
     void clean_up(resource_loader& loader, video_context& video) {
@@ -937,16 +868,6 @@ public:
     void clean_up(execution_context& ctx) {
         clean_up(ctx.loader(), ctx.main_video());
     }
-
-    /// @brief Constructor specifying the locator and initializing the resource.
-    loaded_resource(url locator, resource_loader& loader, video_context& video)
-      : loaded_resource{std::move(locator)} {
-        init(loader, video);
-    }
-
-    /// @brief Constructor specifying the locator and initializing the resource.
-    loaded_resource(url locator, execution_context& ctx)
-      : loaded_resource{std::move(locator), ctx.loader(), ctx.main_video()} {}
 
     /// @brief Indicates if this resource is loaded.
     auto is_loaded() const noexcept -> bool {
@@ -971,10 +892,6 @@ class loaded_resource<oglplus::owned_buffer_name>
       loaded_resource_common<loaded_resource<oglplus::owned_buffer_name>>;
 
 public:
-    /// @brief Constructor specifying the resource locator.
-    loaded_resource(url locator) noexcept
-      : common{std::move(locator)} {}
-
     /// @brief Clean's up this resource.
     void clean_up(resource_loader& loader, video_context& video) {
         video.gl_api().clean_up(std::move(resource()));
@@ -985,16 +902,6 @@ public:
     void clean_up(execution_context& ctx) {
         clean_up(ctx.loader(), ctx.main_video());
     }
-
-    /// @brief Constructor specifying the locator and initializing the resource.
-    loaded_resource(url locator, resource_loader& loader, video_context& video)
-      : loaded_resource{std::move(locator)} {
-        init(loader, video);
-    }
-
-    /// @brief Constructor specifying the locator and initializing the resource.
-    loaded_resource(url locator, execution_context& ctx)
-      : loaded_resource{std::move(locator), ctx.loader(), ctx.main_video()} {}
 
     /// @brief Indicates if this resource is loaded.
     auto is_loaded() const noexcept -> bool {

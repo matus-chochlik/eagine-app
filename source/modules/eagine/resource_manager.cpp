@@ -30,8 +30,8 @@ public:
       basic_resource_manager<Resources...>& manager,
       url locator,
       Args&&... args)
-      : managed_resource{manager.add(
-          loaded_resource<Resource>{std::move(locator), manager.context()},
+      : managed_resource{manager.template do_add<Resource>(
+          std::move(locator),
           std::forward<Args>(args)...)} {}
 
     auto resource() const noexcept -> loaded_resource<Resource>& {
@@ -57,6 +57,19 @@ public:
         return *this;
     }
 
+    auto connect(
+      callable_ref<
+        void(const typename loaded_resource<Resource>::load_info&) noexcept>
+        handler) noexcept -> managed_resource& {
+        _ref.loaded.connect(std::move(handler));
+        return *this;
+    }
+
+    template <auto MemFnPtr, typename C>
+    auto connect_to(C* obj) noexcept -> managed_resource& {
+        return connect(make_callable_ref<MemFnPtr>(obj));
+    }
+
 private:
     loaded_resource<Resource>& _ref;
 };
@@ -74,15 +87,16 @@ public:
       : _ctx{ctx} {}
 
     template <typename Resource, typename... Args>
-    auto add(loaded_resource<Resource> res, Args&&... args)
-      -> managed_resource<Resource> {
+    auto do_add(url locator, Args&&... args) -> managed_resource<Resource> {
         auto& res_vec{std::get<_r_transf<Resource>>(_resources)};
         res_vec.emplace_back(
           std::make_unique<
             std::tuple<loaded_resource<Resource>, resource_load_params<Resource>>>(
-            std::move(res),
+            std::move(locator),
             resource_load_params<Resource>{std::forward<Args>(args)...}));
-        return std::get<0>(*res_vec.back());
+        auto& res = std::get<0>(*res_vec.back());
+        res.init(_ctx);
+        return {res};
     }
 
     auto context() const noexcept -> execution_context& {

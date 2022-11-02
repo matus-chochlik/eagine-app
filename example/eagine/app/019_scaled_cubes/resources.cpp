@@ -15,7 +15,7 @@ namespace eagine::app {
 // program
 //------------------------------------------------------------------------------
 cubes_program::cubes_program(execution_context& ctx)
-  : gl_program_resource{url{"json:///Program"}, ctx.loader(), ctx.main_video()} {
+  : gl_program_resource{url{"json:///Program"}, ctx} {
     loaded.connect(make_callable_ref<&cubes_program::_on_loaded>(this));
 }
 //------------------------------------------------------------------------------
