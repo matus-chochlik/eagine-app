@@ -108,6 +108,18 @@ struct resource_load_utils<Resource, std::tuple<P...>> {
         return ctx.loader().request(
           std::type_identity<Resource>{}, std::move(locator), params...);
     }
+
+    template <std::size_t... I>
+    auto request(
+      execution_context& ctx,
+      url locator,
+      const std::tuple<P...>& params,
+      std::index_sequence<I...>) -> resource_request_result {
+        return ctx.loader().request(
+          std::type_identity<Resource>{},
+          std::move(locator),
+          std::get<I>(params)...);
+    }
 };
 
 export template <typename Resource, typename... P>
@@ -129,6 +141,18 @@ struct resource_load_utils<Resource, std::tuple<video_context&, P...>> {
           std::move(locator),
           ctx.main_video(),
           params...);
+    }
+
+    template <std::size_t... I>
+    auto request(
+      execution_context& ctx,
+      url locator,
+      const std::tuple<video_context&, P...>& params,
+      std::index_sequence<I...> = {}) -> resource_request_result {
+        return ctx.loader().request(
+          std::type_identity<Resource>{},
+          std::move(locator),
+          std::get<I>(params)...);
     }
 };
 //------------------------------------------------------------------------------
@@ -338,6 +362,22 @@ public:
         return false;
     }
 
+    /// @brief Updates the resource, possibly doing resource load request.
+    auto load_if_needed(execution_context& ctx, const std::tuple<P...>& params)
+      -> work_done {
+        if(!derived().is_loaded() && !is_loading()) {
+            if(const auto request{utils::request(
+                 ctx,
+                 locator(),
+                 params,
+                 std::make_index_sequence<sizeof...(P)>())}) {
+                _request_id = request.request_id();
+                return true;
+            }
+        }
+        return false;
+    }
+
 protected:
     /// @brief Constructor specifying the resource locator.
     loaded_resource_common(url locator) noexcept
@@ -407,8 +447,6 @@ public:
     auto is_loaded() const noexcept -> bool {
         return !this->empty();
     }
-
-    using common::load_if_needed;
 
     auto assign(const typename common::base_load_info& info) noexcept -> bool {
         return this->_assign(info.values);
@@ -501,6 +539,8 @@ public:
     auto is_loaded() const noexcept -> bool {
         return this->is_initialized();
     }
+
+    using common::load_if_needed;
 
     /// @brief Updates the resource, possibly doing resource load request.
     auto load_if_needed(execution_context& ctx) -> work_done {
@@ -921,7 +961,7 @@ export using gl_texture_resource = loaded_resource<oglplus::owned_texture_name>;
 //------------------------------------------------------------------------------
 template <>
 struct get_resource_load_params<oglplus::owned_buffer_name>
-  : std::type_identity<std::tuple<video_context&>> {};
+  : std::type_identity<std::tuple<video_context&, oglplus::buffer_target>> {};
 
 export template <>
 class loaded_resource<oglplus::owned_buffer_name>
