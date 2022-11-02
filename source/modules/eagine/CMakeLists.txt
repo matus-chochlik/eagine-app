@@ -176,6 +176,16 @@ eagine_add_module(
 )
 
 eagine_add_module(
+	eagine.app PARTITION resource_manager
+	IMPORTS
+		loaded_resource context
+		resource_loader
+		eagine.core.types
+		eagine.core.utility
+		eagine.core.runtime
+)
+
+eagine_add_module(
 	eagine.app
 	PP_NAME APP
 	INTERFACES app
@@ -195,6 +205,7 @@ eagine_add_module(
 		camera
 		background
 		loaded_resource
+		resource_manager
 	SOURCES
 		options_impl
 		state_impl

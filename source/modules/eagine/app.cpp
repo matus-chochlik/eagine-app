@@ -17,6 +17,7 @@ export import :framedump_raw;
 export import :resource_loader;
 export import :loaded_resource;
 export import :context;
+export import :resource_manager;
 export import :main;
 export import :framebuffer;
 export import :geometry;
