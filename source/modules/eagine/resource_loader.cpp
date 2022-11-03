@@ -28,6 +28,7 @@ import <variant>;
 
 namespace eagine::app {
 
+export class orbiting_camera;
 export class video_context;
 export class audio_context;
 export class gl_geometry_and_bindings;
@@ -57,6 +58,8 @@ export enum class resource_kind {
     smooth_vec3_curve,
     /// @brief Vector of mat4 values.
     mat4_vector,
+    /// @brief Camera parameters.
+    camera_parameters,
     /// @brief GLSL text.
     glsl_text,
     /// @brief Shape generator.
@@ -387,6 +390,10 @@ auto make_valtree_float_vector_builder(
 auto make_valtree_vec3_vector_builder(
   const std::shared_ptr<pending_resource_info>& parent) noexcept
   -> std::unique_ptr<valtree::object_builder>;
+auto make_valtree_camera_parameters_builder(
+  const std::shared_ptr<pending_resource_info>& parent,
+  orbiting_camera&) noexcept -> std::unique_ptr<valtree::object_builder>;
+//------------------------------------------------------------------------------
 auto make_valtree_gl_program_builder(
   const std::shared_ptr<pending_resource_info>& parent,
   video_context& video) noexcept -> std::unique_ptr<valtree::object_builder>;
@@ -974,6 +981,17 @@ public:
         math::cubic_bezier_curves<math::vector<float, 3, true>, float>>,
       url locator) noexcept {
         return request_smooth_vec3_curve(std::move(locator));
+    }
+
+    /// @brief Requests camera parameters.
+    auto request_camera_parameters(url locator, orbiting_camera&) noexcept
+      -> resource_request_result;
+
+    auto request(
+      std::type_identity<std::vector<float>>,
+      url locator,
+      orbiting_camera& camera) noexcept {
+        return request_camera_parameters(std::move(locator), camera);
     }
 
     /// @brief Requests a value tree object resource.

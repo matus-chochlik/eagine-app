@@ -732,6 +732,21 @@ auto resource_loader::request_smooth_vec3_curve(url locator) noexcept
     return _cancelled_resource(locator, resource_kind::smooth_vec3_curve);
 }
 //------------------------------------------------------------------------------
+auto resource_loader::request_camera_parameters(
+  url locator,
+  orbiting_camera& camera) noexcept -> resource_request_result {
+    auto new_request{_new_resource(locator, resource_kind::camera_parameters)};
+
+    if(const auto src_request{request_value_tree_traversal(
+         locator,
+         make_valtree_camera_parameters_builder(new_request, camera),
+         64)}) {
+        return new_request;
+    }
+    new_request.info().mark_finished();
+    return _cancelled_resource(locator, resource_kind::camera_parameters);
+}
+//------------------------------------------------------------------------------
 auto resource_loader::request_value_tree(url locator) noexcept
   -> resource_request_result {
     if(_is_json_resource(locator)) {
