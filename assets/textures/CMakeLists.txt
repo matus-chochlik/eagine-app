@@ -5,9 +5,6 @@
 
 oglplus_add_texture(zebra_fur)
 
-oglplus_add_texture(crate_2_color)
-oglplus_add_texture(crate_2_light)
-
 oglplus_add_texture(barrel_1_color)
 oglplus_add_texture(barrel_1_aoccl)
 oglplus_add_texture(barrel_1_rough)

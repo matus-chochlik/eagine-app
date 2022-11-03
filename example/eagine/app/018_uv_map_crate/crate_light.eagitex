@@ -1,0 +1,11 @@
+{"levels":1
+,"width":1024
+,"height":1024
+,"channels":3
+,"data_type":"unsigned_byte"
+,"format":"red"
+,"iformat":"r8"
+,"label":"crate ambient occlusion"
+,"images":
+[{"url":"eagitexi:///CrateLtImg"}]
+}

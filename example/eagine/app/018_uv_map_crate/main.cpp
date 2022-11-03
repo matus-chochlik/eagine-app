@@ -25,14 +25,14 @@ private:
 
     void _on_shp_loaded(
       const gl_geometry_and_bindings_resource::load_info&) noexcept;
+    void _on_tex_loaded(const gl_texture_resource::load_info&) noexcept;
 
     video_context& _video;
     resource_manager _resources;
     managed_gl_program _prog;
     managed_gl_geometry_and_bindings _crate;
-
-    oglplus::owned_texture_name color_tex{};
-    oglplus::owned_texture_name light_tex{};
+    managed_gl_texture _color_tex;
+    managed_gl_texture _light_tex;
 
     oglplus::uniform_location _camera_loc;
     orbiting_camera camera;
@@ -43,45 +43,28 @@ example_uv_map::example_uv_map(execution_context& ec, video_context& vc)
   , _video{vc}
   , _resources{ec}
   , _prog{_resources, url{"json:///Program"}, _video}
-  , _crate{_resources, url{"json:///Crate"}, _video, 0} {
+  , _crate{_resources, url{"json:///Crate"}, _video, 0}
+  , _color_tex{
+      _resources,
+      url{"eagitex:///CrateColor"},
+      _video,
+      _video.gl_api().texture_2d,
+      _video.gl_api().texture0 + 0}
+  , _light_tex{
+      _resources,
+      url{"eagitex:///CrateLight"},
+      _video,
+      _video.gl_api().texture_2d,
+      _video.gl_api().texture0 + 1} {
+
     _prog.connect_to<&example_uv_map::_on_loaded>(this);
     _crate.connect_to<&example_uv_map::_on_loaded>(this);
     _crate.connect_to<&example_uv_map::_on_shp_loaded>(this);
+    _color_tex.connect_to<&example_uv_map::_on_tex_loaded>(this);
+    _light_tex.connect_to<&example_uv_map::_on_tex_loaded>(this);
 
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
-
-    // color texture
-    const auto color_tex_src{embed<"ColorTex">("crate_2_color")};
-
-    gl.gen_textures() >> color_tex;
-    gl.active_texture(GL.texture0);
-    gl.bind_texture(GL.texture_2d, color_tex);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_min_filter, GL.linear);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_mag_filter, GL.linear);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_wrap_s, GL.clamp_to_border);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_wrap_t, GL.clamp_to_border);
-    glapi.spec_tex_image2d(
-      GL.texture_2d,
-      0,
-      0,
-      oglplus::texture_image_block(color_tex_src.unpack(ec)));
-
-    // light texture
-    const auto light_tex_src{embed<"LightTex">("crate_2_light")};
-
-    gl.gen_textures() >> light_tex;
-    gl.active_texture(GL.texture0 + 1);
-    gl.bind_texture(GL.texture_2d, light_tex);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_min_filter, GL.linear);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_mag_filter, GL.linear);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_wrap_s, GL.clamp_to_border);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_wrap_t, GL.clamp_to_border);
-    glapi.spec_tex_image2d(
-      GL.texture_2d,
-      0,
-      0,
-      oglplus::texture_image_block(light_tex_src.unpack(ec)));
 
     gl.clear_color(0.35F, 0.35F, 0.35F, 1.0F);
     gl.enable(GL.depth_test);
@@ -114,6 +97,15 @@ void example_uv_map::_on_shp_loaded(
       .set_fov(degrees_(70));
 }
 //------------------------------------------------------------------------------
+void example_uv_map::_on_tex_loaded(
+  const gl_texture_resource::load_info& loaded) noexcept {
+    const auto& GL = _video.gl_api().constants();
+    loaded.parameter_i(GL.texture_min_filter, GL.linear);
+    loaded.parameter_i(GL.texture_mag_filter, GL.linear);
+    loaded.parameter_i(GL.texture_wrap_s, GL.clamp_to_border);
+    loaded.parameter_i(GL.texture_wrap_t, GL.clamp_to_border);
+}
+//------------------------------------------------------------------------------
 void example_uv_map::update() noexcept {
     auto& state = context().state();
     if(state.is_active()) {
@@ -138,11 +130,6 @@ void example_uv_map::update() noexcept {
 }
 //------------------------------------------------------------------------------
 void example_uv_map::clean_up() noexcept {
-    const auto& gl = _video.gl_api();
-
-    gl.delete_textures(std::move(light_tex));
-    gl.delete_textures(std::move(color_tex));
-
     _resources.clean_up();
     _video.end();
 }
