@@ -1,0 +1,8 @@
+{"inputs":
+{"Position": {"attrib":"position"}
+,"Normal": {"attrib":"normal"}
+,"WrapCoord": {"attrib":"wrap_coord"}}
+,"shaders":
+[{"url":"glsl:///VertShdr","type":"vertex"}
+,{"url":"glsl:///FragShdr","type":"fragment"}]
+}

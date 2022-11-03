@@ -142,9 +142,7 @@ void example_tiling::_on_loaded(const loaded_resource_base&) noexcept {
         _prog->apply_input_bindings(_video, _cube);
         _prog->get_uniform_location(_video, "Camera") >> _camera_loc;
         _prog->get_uniform_location(_video, "TilesetTex") >> _tileset_tex_loc;
-        oglplus::uniform_location tiling_tex_loc;
-        _prog->get_uniform_location(_video, "TilingTex") >> tiling_tex_loc;
-        _prog->set(_video, tiling_tex_loc, 0);
+        _prog->set_uniform(_video, "TilingTex", 0);
     }
     reset_timeout();
 }

@@ -21,98 +21,35 @@ public:
     void clean_up() noexcept final;
 
 private:
+    void _on_loaded(const loaded_resource_base&) noexcept;
+
+    void _on_shp_loaded(
+      const gl_geometry_and_bindings_resource::load_info&) noexcept;
+
     video_context& _video;
-
-    std::vector<oglplus::shape_draw_operation> _ops;
-    oglplus::owned_vertex_array_name vao;
-
-    oglplus::owned_buffer_name positions;
-    oglplus::owned_buffer_name normals;
-    oglplus::owned_buffer_name wrap_coords;
-    oglplus::owned_buffer_name indices;
+    resource_manager _resources;
+    managed_gl_program _prog;
+    managed_gl_geometry_and_bindings _crate;
 
     oglplus::owned_texture_name color_tex{};
     oglplus::owned_texture_name light_tex{};
 
-    oglplus::owned_program_name prog;
-
+    oglplus::uniform_location _camera_loc;
     orbiting_camera camera;
-    oglplus::uniform_location camera_loc;
 };
 //------------------------------------------------------------------------------
 example_uv_map::example_uv_map(execution_context& ec, video_context& vc)
   : timeouting_application{ec, std::chrono::seconds{30}}
-  , _video{vc} {
+  , _video{vc}
+  , _resources{ec}
+  , _prog{_resources, url{"json:///Program"}, _video}
+  , _crate{_resources, url{"json:///Crate"}, _video, 0} {
+    _prog.connect_to<&example_uv_map::_on_loaded>(this);
+    _crate.connect_to<&example_uv_map::_on_loaded>(this);
+    _crate.connect_to<&example_uv_map::_on_shp_loaded>(this);
+
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
-
-    // program
-    gl.create_program() >> prog;
-    glapi.add_shader(
-      prog,
-      GL.vertex_shader,
-      oglplus::glsl_string_ref(embed<"VertShader">("vertex.glsl").unpack(ec)));
-    glapi.add_shader(
-      prog,
-      GL.fragment_shader,
-      oglplus::glsl_string_ref(
-        embed<"FragShader">("fragment.glsl").unpack(ec)));
-    gl.link_program(prog);
-    gl.use_program(prog);
-
-    // geometry
-    auto json_text = as_chars(embed<"ShapeJson">("crate_2.json").unpack(ec));
-    oglplus::shape_generator shape(
-      glapi,
-      shapes::from_value_tree(
-        valtree::from_json_text(json_text, ec.main_context()), ec.as_parent()));
-
-    _ops.resize(std_size(shape.operation_count()));
-    shape.instructions(glapi, cover(_ops));
-
-    // vao
-    gl.gen_vertex_arrays() >> vao;
-    gl.bind_vertex_array(vao);
-
-    // positions
-    oglplus::vertex_attrib_location position_loc{0};
-    gl.gen_buffers() >> positions;
-    shape.attrib_setup(
-      glapi,
-      vao,
-      positions,
-      position_loc,
-      eagine::shapes::vertex_attrib_kind::position,
-      context().buffer());
-    gl.bind_attrib_location(prog, position_loc, "Position");
-
-    // normals
-    oglplus::vertex_attrib_location normal_loc{1};
-    gl.gen_buffers() >> normals;
-    shape.attrib_setup(
-      glapi,
-      vao,
-      normals,
-      normal_loc,
-      eagine::shapes::vertex_attrib_kind::normal,
-      context().buffer());
-    gl.bind_attrib_location(prog, normal_loc, "Normal");
-
-    // wrap_coords
-    oglplus::vertex_attrib_location wrap_coord_loc{2};
-    gl.gen_buffers() >> wrap_coords;
-    shape.attrib_setup(
-      glapi,
-      vao,
-      wrap_coords,
-      wrap_coord_loc,
-      eagine::shapes::vertex_attrib_kind::wrap_coord,
-      context().buffer());
-    gl.bind_attrib_location(prog, wrap_coord_loc, "WrapCoord");
-
-    // indices
-    gl.gen_buffers() >> indices;
-    shape.index_setup(glapi, indices, context().buffer());
 
     // color texture
     const auto color_tex_src{embed<"ColorTex">("crate_2_color")};
@@ -129,9 +66,6 @@ example_uv_map::example_uv_map(execution_context& ec, video_context& vc)
       0,
       0,
       oglplus::texture_image_block(color_tex_src.unpack(ec)));
-    oglplus::uniform_location color_tex_loc;
-    gl.get_uniform_location(prog, "ColorTex") >> color_tex_loc;
-    glapi.set_uniform(prog, color_tex_loc, 0);
 
     // light texture
     const auto light_tex_src{embed<"LightTex">("crate_2_light")};
@@ -148,20 +82,6 @@ example_uv_map::example_uv_map(execution_context& ec, video_context& vc)
       0,
       0,
       oglplus::texture_image_block(light_tex_src.unpack(ec)));
-    oglplus::uniform_location light_tex_loc;
-    gl.get_uniform_location(prog, "LightTex") >> light_tex_loc;
-    glapi.set_uniform(prog, light_tex_loc, 1);
-
-    // camera
-    const auto bs = shape.bounding_sphere();
-    const auto sr = bs.radius();
-    gl.get_uniform_location(prog, "Camera") >> camera_loc;
-    camera.set_target(bs.center())
-      .set_near(sr * 0.1F)
-      .set_far(sr * 5.0F)
-      .set_orbit_min(sr * 1.2F)
-      .set_orbit_max(sr * 2.4F)
-      .set_fov(degrees_(70));
 
     gl.clear_color(0.35F, 0.35F, 0.35F, 1.0F);
     gl.enable(GL.depth_test);
@@ -170,6 +90,28 @@ example_uv_map::example_uv_map(execution_context& ec, video_context& vc)
 
     camera.connect_inputs(ec).basic_input_mapping(ec);
     ec.setup_inputs().switch_input_mapping();
+}
+//------------------------------------------------------------------------------
+void example_uv_map::_on_loaded(const loaded_resource_base&) noexcept {
+    if(_prog && _crate) {
+        _prog->apply_input_bindings(_video, _crate);
+        _prog->get_uniform_location(_video, "Camera") >> _camera_loc;
+        _prog->set_uniform(_video, "ColorTex", 0);
+        _prog->set_uniform(_video, "LightTex", 1);
+    }
+    reset_timeout();
+}
+//------------------------------------------------------------------------------
+void example_uv_map::_on_shp_loaded(
+  const gl_geometry_and_bindings_resource::load_info& loaded) noexcept {
+    const auto bs = loaded.base.shape.bounding_sphere();
+    const auto sr = bs.radius();
+    camera.set_target(bs.center())
+      .set_near(sr * 0.1F)
+      .set_far(sr * 5.0F)
+      .set_orbit_min(sr * 1.2F)
+      .set_orbit_max(sr * 2.4F)
+      .set_fov(degrees_(70));
 }
 //------------------------------------------------------------------------------
 void example_uv_map::update() noexcept {
@@ -181,14 +123,16 @@ void example_uv_map::update() noexcept {
         camera.idle_update(state, 3.F);
     }
 
-    const auto& glapi = _video.gl_api();
-    const auto& [gl, GL] = glapi;
+    if(_resources.are_loaded()) {
+        const auto& glapi = _video.gl_api();
+        const auto& [gl, GL] = glapi;
 
-    gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
-    if(camera.has_changed()) {
-        glapi.set_uniform(prog, camera_loc, camera.matrix(_video));
+        gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
+        _prog->set(glapi, _camera_loc, camera.matrix(_video));
+        _crate->draw(glapi);
+    } else {
+        _resources.load();
     }
-    oglplus::draw_using_instructions(glapi, view(_ops));
 
     _video.commit();
 }
@@ -198,13 +142,8 @@ void example_uv_map::clean_up() noexcept {
 
     gl.delete_textures(std::move(light_tex));
     gl.delete_textures(std::move(color_tex));
-    gl.delete_program(std::move(prog));
-    gl.delete_buffers(std::move(indices));
-    gl.delete_buffers(std::move(wrap_coords));
-    gl.delete_buffers(std::move(normals));
-    gl.delete_buffers(std::move(positions));
-    gl.delete_vertex_arrays(std::move(vao));
 
+    _resources.clean_up();
     _video.end();
 }
 //------------------------------------------------------------------------------

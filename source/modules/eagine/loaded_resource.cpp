@@ -737,7 +737,26 @@ public:
         return get_uniform_location(video.gl_api(), var_name);
     }
 
-    /// @brief Sets the value of a uniform variable
+    /// @brief Sets the value of a uniform variable with the specified name.
+    template <typename T>
+    auto set_uniform(
+      const oglplus::gl_api& glapi,
+      const string_view var_name,
+      T&& value) -> loaded_resource& {
+        oglplus::uniform_location loc;
+        glapi.get_uniform_location(*this, var_name) >> loc;
+        glapi.set_uniform(*this, loc, std::forward<T>(value));
+        return *this;
+    }
+
+    /// @brief Sets the value of a uniform variable with the specified name.
+    template <typename T>
+    auto set_uniform(video_context& video, const string_view var_name, T&& value)
+      -> loaded_resource& {
+        return set_uniform(video.gl_api(), var_name, std::forward<T>(value));
+    }
+
+    /// @brief Sets the value of a uniform variable with the specified location.
     template <typename T>
     auto set(
       const oglplus::gl_api& glapi,
@@ -747,7 +766,7 @@ public:
         return *this;
     }
 
-    /// @brief Sets the value of a uniform variable
+    /// @brief Sets the value of a uniform variable with the specified location.
     template <typename T>
     auto set(video_context& video, oglplus::uniform_location loc, T&& value)
       -> loaded_resource& {
