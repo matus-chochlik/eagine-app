@@ -28,6 +28,7 @@ private:
 
     oglplus::owned_buffer_name positions;
     oglplus::owned_buffer_name colors;
+    oglplus::owned_buffer_name occlusion;
     oglplus::owned_buffer_name indices;
 
     oglplus::owned_program_name prog;
@@ -68,12 +69,24 @@ example_shape::example_shape(execution_context& ec, video_context& vc)
     gl.use_program(prog);
 
     // geometry
-    auto json_source = embed<"ShapeJson">("shape.json");
+    auto get_json_source = [&]() -> embedded_resource {
+        const auto& args{ec.main_context().args()};
+        if(args.find("--stool")) {
+            return embed<"Stool">("stool.json");
+        }
+        if(args.find("--crate")) {
+            return embed<"Crate">("crate.json");
+        }
+        if(args.find("--guitar")) {
+            return embed<"Guitar">("guitar.json");
+        }
+        return embed<"ShapeJson">("shape.json");
+    };
     oglplus::shape_generator shape(
       glapi,
       shapes::from_value_tree(
         valtree::from_json_text(
-          as_chars(json_source.unpack(vc.parent())), ec.main_context()),
+          as_chars(get_json_source().unpack(vc.parent())), ec.main_context()),
         ec.as_parent()));
 
     _ops.resize(std_size(shape.operation_count()));
@@ -106,6 +119,18 @@ example_shape::example_shape(execution_context& ec, video_context& vc)
       eagine::shapes::vertex_attrib_kind::color,
       context().buffer());
     gl.bind_attrib_location(prog, color_loc, "Color");
+
+    // occlusion
+    oglplus::vertex_attrib_location occl_loc{2};
+    gl.gen_buffers() >> occlusion;
+    shape.attrib_setup(
+      glapi,
+      vao,
+      occlusion,
+      occl_loc,
+      eagine::shapes::vertex_attrib_kind::occlusion,
+      context().buffer());
+    gl.bind_attrib_location(prog, occl_loc, "Occl");
 
     // indices
     gl.gen_buffers() >> indices;
