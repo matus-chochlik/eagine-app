@@ -40,7 +40,7 @@ private:
     static auto _cube_url() {
         return url{
           "shape:///unit_round_cube?"
-          "positions=true+normals=true+face_coord=true+divisions=32"};
+          "position=true+normal=true+face_coord=true+divisions=32"};
     }
     static auto _tiling_tex_url() {
         return url{"json:///TilingTex"};
