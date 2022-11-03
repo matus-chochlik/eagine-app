@@ -356,6 +356,55 @@ private:
     resource_kind _kind{resource_kind::unknown};
 };
 //------------------------------------------------------------------------------
+template <typename Derived>
+class valtree_builder_base : public valtree::object_builder_impl<Derived> {
+public:
+    valtree_builder_base(
+      const std::shared_ptr<pending_resource_info>& info) noexcept
+      : _parent{info} {}
+
+    void do_add(const basic_string_path&, const auto&) noexcept {}
+
+    void finish() noexcept override {
+        if(auto parent{_parent.lock()}) {
+            extract(parent).mark_loaded();
+        }
+    }
+
+    void failed() noexcept override {
+        if(auto parent{_parent.lock()}) {
+            extract(parent).mark_loaded();
+        }
+    }
+
+protected:
+    std::weak_ptr<pending_resource_info> _parent;
+};
+//------------------------------------------------------------------------------
+auto make_valtree_float_vector_builder(
+  const std::shared_ptr<pending_resource_info>& parent) noexcept
+  -> std::unique_ptr<valtree::object_builder>;
+auto make_valtree_vec3_vector_builder(
+  const std::shared_ptr<pending_resource_info>& parent) noexcept
+  -> std::unique_ptr<valtree::object_builder>;
+auto make_valtree_gl_program_builder(
+  const std::shared_ptr<pending_resource_info>& parent,
+  video_context& video) noexcept -> std::unique_ptr<valtree::object_builder>;
+auto make_valtree_gl_texture_image_loader(
+  const std::shared_ptr<pending_resource_info>& parent,
+  oglplus::texture_target,
+  const resource_gl_texture_image_params& params) noexcept
+  -> std::unique_ptr<valtree::object_builder>;
+auto make_valtree_gl_texture_builder(
+  const std::shared_ptr<pending_resource_info>& parent,
+  video_context& video,
+  oglplus::texture_target,
+  oglplus::texture_unit) noexcept -> std::unique_ptr<valtree::object_builder>;
+auto make_valtree_gl_buffer_builder(
+  const std::shared_ptr<pending_resource_info>& parent,
+  video_context& video,
+  oglplus::buffer_target) noexcept -> std::unique_ptr<valtree::object_builder>;
+//------------------------------------------------------------------------------
 /// @brief Result of resource request operation.
 /// @see resource_kind
 export class resource_request_result {

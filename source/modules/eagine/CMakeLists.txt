@@ -217,6 +217,8 @@ eagine_add_module(
 		opengl_eglplus_impl
 		opengl_glfw3_impl
 		resource_loader_impl
+		resource_builders_impl
+		resource_gl_builders_impl
 		context_impl
 		camera_impl
 		background_impl

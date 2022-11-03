@@ -34,7 +34,8 @@ public:
       basic_resource_manager<Resources...>& manager,
       url locator,
       Args&&... args)
-      : managed_resource{manager.template do_add<Resource>(
+      : managed_resource{manager.do_add(
+          std::type_identity<Resource>{},
           std::move(locator),
           std::forward<Args>(args)...)} {}
 
@@ -91,8 +92,9 @@ public:
       : _ctx{ctx} {}
 
     template <typename Resource, typename... Args>
-    auto do_add(url locator, Args&&... args) -> managed_resource<Resource> {
-        auto& res_vec{std::get<_r_transf<Resource>>(_resources)};
+    auto do_add(std::type_identity<Resource> rtid, url locator, Args&&... args)
+      -> managed_resource<Resource> {
+        auto& res_vec{_get(rtid)};
         res_vec.emplace_back(
           std::make_unique<
             std::tuple<loaded_resource<Resource>, resource_load_params<Resource>>>(
@@ -121,6 +123,11 @@ public:
     }
 
 private:
+    template <typename Resource>
+    auto _get(std::type_identity<Resource>) noexcept -> _r_transf<Resource>& {
+        return std::get<_r_transf<Resource>>(_resources);
+    }
+
     static constexpr auto _is() noexcept {
         return std::make_index_sequence<sizeof...(Resources)>();
     }
