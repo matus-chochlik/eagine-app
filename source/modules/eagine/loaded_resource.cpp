@@ -468,7 +468,7 @@ public:
 
     /// @brief Clean's up this resource.
     void clean_up(resource_loader& loader) {
-        this->resource().clear();
+        this->clear();
         common::_disconnect(loader);
     }
 
@@ -486,7 +486,7 @@ public:
         return this->_assign(info.curve);
     }
 };
-export using smooth_vec3_curve =
+export using smooth_vec3_curve_resource =
   loaded_resource<math::bezier_curves<math::vector<float, 3, true>, float, 3>>;
 //------------------------------------------------------------------------------
 template <>

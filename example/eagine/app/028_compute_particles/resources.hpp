@@ -19,7 +19,7 @@ class example;
 //------------------------------------------------------------------------------
 // path
 //------------------------------------------------------------------------------
-class particle_path : public smooth_vec3_curve {
+class particle_path : public smooth_vec3_curve_resource {
 public:
     particle_path(example&);
 };

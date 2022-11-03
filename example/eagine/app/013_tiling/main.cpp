@@ -13,18 +13,6 @@ import eagine.app;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-using resource_manager = basic_resource_manager<
-  gl_geometry_and_bindings_resource,
-  gl_shader_resource,
-  gl_program_resource,
-  gl_texture_resource,
-  gl_buffer_resource>;
-
-using managed_gl_geometry_and_bindings =
-  managed_resource<gl_geometry_and_bindings>;
-using managed_gl_program = managed_resource<oglplus::owned_program_name>;
-using managed_gl_texture = managed_resource<oglplus::owned_texture_name>;
-//------------------------------------------------------------------------------
 class example_tiling : public timeouting_application {
 public:
     example_tiling(execution_context&, video_context&);

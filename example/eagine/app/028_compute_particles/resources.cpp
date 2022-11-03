@@ -14,7 +14,7 @@ namespace eagine::app {
 // path
 //------------------------------------------------------------------------------
 particle_path::particle_path(example& e)
-  : smooth_vec3_curve{url{"json:///PathPoints"}, e.context()} {}
+  : smooth_vec3_curve_resource{url{"json:///PathPoints"}, e.context()} {}
 //------------------------------------------------------------------------------
 // particles
 //------------------------------------------------------------------------------

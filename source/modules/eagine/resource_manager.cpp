@@ -8,9 +8,13 @@
 export module eagine.app:resource_manager;
 
 import eagine.core.types;
+import eagine.core.math;
 import eagine.core.utility;
 import eagine.core.runtime;
+import eagine.core.value_tree;
+import eagine.oglplus;
 import :loaded_resource;
+import :geometry;
 import :context;
 import <tuple>;
 import <utility>;
@@ -166,5 +170,29 @@ private:
     execution_context& _ctx;
     std::tuple<_lr_transf<Resources>...> _resources;
 };
+//------------------------------------------------------------------------------
+export using managed_float_vector = managed_resource<std::vector<float>>;
+export using managed_vec3_vector =
+  managed_resource<std::vector<math::vector<float, 3, true>>>;
+export using managed_smooth_vec3_curve =
+  managed_resource<math::bezier_curves<math::vector<float, 3, true>, float, 3>>;
+export using managed_value_tree = managed_resource<valtree::compound>;
+export using managed_gl_geometry_and_bindings =
+  managed_resource<gl_geometry_and_bindings>;
+export using managed_gl_shader = managed_resource<oglplus::owned_shader_name>;
+export using managed_gl_program = managed_resource<oglplus::owned_program_name>;
+export using managed_gl_texture = managed_resource<oglplus::owned_texture_name>;
+export using managed_gl_buffer = managed_resource<oglplus::owned_buffer_name>;
+//------------------------------------------------------------------------------
+export using resource_manager = basic_resource_manager<
+  float_vector_resource,
+  vec3_vector_resource,
+  smooth_vec3_curve_resource,
+  value_tree_resource,
+  gl_geometry_and_bindings_resource,
+  gl_shader_resource,
+  gl_program_resource,
+  gl_texture_resource,
+  gl_buffer_resource>;
 //------------------------------------------------------------------------------
 } // namespace eagine::app

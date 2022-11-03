@@ -178,11 +178,14 @@ eagine_add_module(
 eagine_add_module(
 	eagine.app PARTITION resource_manager
 	IMPORTS
-		loaded_resource context
-		resource_loader
+		loaded_resource geometry
+		context resource_loader
 		eagine.core.types
+		eagine.core.math
 		eagine.core.utility
 		eagine.core.runtime
+		eagine.core.value_tree
+		eagine.oglplus
 )
 
 eagine_add_module(
