@@ -1354,6 +1354,9 @@ auto pending_resource_info::handle_gl_texture_params(
           .arg("iformat", params.iformat);
 
         auto& pgts = std::get<_pending_gl_texture_state>(_state);
+        pgts.pparams = &params;
+        pgts.levels = span_size(params.levels);
+
         auto& glapi = pgts.video.get().gl_api();
         glapi.operations().active_texture(pgts.tex_unit);
         glapi.bind_texture(pgts.tex_target, pgts.tex);
@@ -1469,6 +1472,28 @@ auto pending_resource_info::handle_gl_texture_params(
     return false;
 }
 //------------------------------------------------------------------------------
+void pending_resource_info::_clear_gl_texture_image(
+  const _pending_gl_texture_state& pgts,
+  const resource_gl_texture_params& params,
+  span_size_t level,
+  const memory::const_block data) noexcept {
+    _parent.log_info("clearing GL texture image")
+      .arg("requestId", _request_id)
+      .arg("level", level)
+      .arg("dataSize", data.size())
+      .arg("locator", locator().str());
+
+    auto& glapi = pgts.video.get().gl_api();
+    if(glapi.clear_tex_image) {
+        glapi.clear_tex_image(
+          pgts.tex,
+          limit_cast<oglplus::gl_types::int_type>(level),
+          oglplus::pixel_format{params.format},
+          oglplus::pixel_data_type{params.data_type},
+          data);
+    }
+}
+//------------------------------------------------------------------------------
 void pending_resource_info::_handle_gl_texture_image(
   const pending_resource_info& source,
   const oglplus::texture_target target,
@@ -1577,6 +1602,7 @@ void pending_resource_info::_handle_gl_texture_image(
                 if(const auto pos{
                      pgts.pending_requests.find(source.request_id())};
                    pos != pgts.pending_requests.end()) {
+                    pgts.level_images_done.set(std_size(params.level), true);
                     add_image_data(pgts.video.get().gl_api(), pgts);
 
                     pgts.pending_requests.erase(pos);
@@ -1598,11 +1624,23 @@ void pending_resource_info::_handle_gl_texture_image(
 auto pending_resource_info::_finish_gl_texture(
   _pending_gl_texture_state& pgts) noexcept -> bool {
     if(pgts.loaded && pgts.pending_requests.empty()) {
+        const auto& gl = pgts.video.get().gl_api().operations();
+        gl.active_texture(pgts.tex_unit);
+
+        assert(pgts.pparams);
+        const auto& params{*pgts.pparams};
+        for(const auto level : integer_range(pgts.levels)) {
+            if(!pgts.level_images_done[std_size(level)]) {
+                _clear_gl_texture_image(pgts, params, level, {});
+            }
+        }
+
         _parent.log_info("loaded and set-up GL texture object")
           .arg("requestId", _request_id)
+          .arg("levels", pgts.levels)
+          .arg("images", pgts.level_images_done.count())
           .arg("locator", _locator.str());
 
-        const auto& gl = pgts.video.get().gl_api().operations();
         // TODO: call this earlier (before all images are loaded)?
         _parent.gl_texture_loaded(
           {.request_id = _request_id,

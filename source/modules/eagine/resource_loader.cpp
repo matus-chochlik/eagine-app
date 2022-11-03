@@ -20,6 +20,7 @@ import eagine.core.main_ctx;
 import eagine.shapes;
 import eagine.oglplus;
 import eagine.msgbus;
+import <bitset>;
 import <memory>;
 import <functional>;
 import <utility>;
@@ -247,10 +248,13 @@ private:
 
     struct _pending_gl_texture_state {
         std::reference_wrapper<video_context> video;
+        const resource_gl_texture_params* pparams{nullptr};
+        flat_set<identifier_t> pending_requests;
+        std::bitset<32> level_images_done;
+        span_size_t levels{0};
         oglplus::texture_target tex_target;
         oglplus::texture_unit tex_unit;
         oglplus::owned_texture_name tex;
-        flat_set<identifier_t> pending_requests;
         bool loaded{false};
     };
 
@@ -312,6 +316,11 @@ private:
       oglplus::owned_shader_name& shdr) noexcept;
 
     auto _finish_gl_texture(_pending_gl_texture_state&) noexcept -> bool;
+    void _clear_gl_texture_image(
+      const _pending_gl_texture_state&,
+      const resource_gl_texture_params&,
+      span_size_t level,
+      const memory::const_block) noexcept;
     void _handle_gl_texture_image(
       const pending_resource_info& source,
       const oglplus::texture_target,
