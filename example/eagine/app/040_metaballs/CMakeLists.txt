@@ -17,6 +17,7 @@ eagine_embed_target_resources(
 		SrfceGeom  "geometry.glsl"
 		SrfceFrag  "fragment.glsl"
 		SrfceProg  "prog_surface.json"
+		Camera     "camera.json"
 	PACKED
 	ENABLE_SEARCH
 )

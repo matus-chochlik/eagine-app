@@ -59,6 +59,7 @@ private:
     metaball_program _mball_prog;
     field_program _field_prog;
     surface_program _srfce_prog;
+    pending_resource_requests _other;
 
     orbiting_camera _camera;
 };

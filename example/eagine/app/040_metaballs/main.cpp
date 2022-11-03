@@ -16,18 +16,16 @@ example::example(execution_context& ec, video_context& vc)
   , _bg{_video, {0.5F, 0.5F, 0.5F, 1.F}, {0.25F, 0.25F, 0.25F, 0.0F}, 1.F}
   , _mball_prog{*this}
   , _field_prog{*this}
-  , _srfce_prog{*this} {
+  , _srfce_prog{*this}
+  , _other{context()} {
+    _other.add(
+      ec.loader().request_camera_parameters(url{"json:///Camera"}, _camera));
+
     _mball_prog.loaded.connect(_load_handler());
     _field_prog.loaded.connect(_load_handler());
     _srfce_prog.loaded.connect(_load_handler());
 
     _volume.init(*this);
-
-    _camera.set_near(0.1F)
-      .set_far(50.F)
-      .set_orbit_min(7.0F)
-      .set_orbit_max(8.0F)
-      .set_fov(degrees_(75.F));
 
     _camera.connect_inputs(ec).basic_input_mapping(ec);
     ec.setup_inputs().switch_input_mapping();
@@ -63,7 +61,7 @@ void example::update() noexcept {
         _camera.idle_update(state, 7.F);
     }
 
-    if(_mball_prog && _field_prog && _srfce_prog) {
+    if(_mball_prog && _field_prog && _srfce_prog && _other) {
         const auto& glapi = _video.gl_api();
         const auto& [gl, GL] = glapi;
 

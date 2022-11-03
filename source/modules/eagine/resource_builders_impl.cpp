@@ -204,7 +204,7 @@ public:
                 if(path.front() == "near") {
                     _camera.set_near(value);
                 } else if(path.front() == "far") {
-                    _camera.set_near(value);
+                    _camera.set_far(value);
                 } else if(path.front() == "orbit_min") {
                     _camera.set_orbit_min(value);
                 } else if(path.front() == "orbit_max") {

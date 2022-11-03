@@ -57,16 +57,16 @@ void pending_resource_info::mark_loaded() noexcept {
         auto& pgps = std::get<_pending_gl_program_state>(_state);
         pgps.loaded = true;
         _finish_gl_program(pgps);
-    }
-    if(std::holds_alternative<_pending_gl_texture_state>(_state)) {
+    } else if(std::holds_alternative<_pending_gl_texture_state>(_state)) {
         auto& pgts = std::get<_pending_gl_texture_state>(_state);
         pgts.loaded = true;
         _finish_gl_texture(pgts);
-    }
-    if(std::holds_alternative<_pending_gl_buffer_state>(_state)) {
+    } else if(std::holds_alternative<_pending_gl_buffer_state>(_state)) {
         auto& pgbs = std::get<_pending_gl_buffer_state>(_state);
         pgbs.loaded = true;
         _finish_gl_buffer(pgbs);
+    } else if(_kind == resource_kind::camera_parameters) {
+        _parent.resource_loaded(_request_id, _kind, _locator);
     }
 }
 //------------------------------------------------------------------------------
@@ -220,6 +220,7 @@ auto pending_resource_info::update() noexcept -> work_done {
               {.request_id = _request_id,
                .locator = _locator,
                .generator = shape_gen});
+            _parent.resource_loaded(_request_id, _kind, _locator);
             something_done();
         }
         _state = std::monostate{};
@@ -261,6 +262,7 @@ void pending_resource_info::_handle_json_text(
         }
         _parent.value_tree_loaded(
           {.request_id = _request_id, .locator = _locator, .tree = tree});
+        _parent.resource_loaded(_request_id, _kind, _locator);
     } else if(is(resource_kind::value_tree_traversal)) {
         if(std::holds_alternative<_pending_valtree_traversal_state>(_state)) {
             auto& pvts = std::get<_pending_valtree_traversal_state>(_state);
@@ -319,6 +321,7 @@ void pending_resource_info::handle_float_vector(
     if(is(resource_kind::float_vector)) {
         _parent.float_vector_loaded(
           {.request_id = _request_id, .locator = _locator, .values = values});
+        _parent.resource_loaded(_request_id, _kind, _locator);
     }
     mark_finished();
 }
@@ -338,6 +341,7 @@ void pending_resource_info::handle_vec3_vector(
     if(is(resource_kind::vec3_vector)) {
         _parent.vec3_vector_loaded(
           {.request_id = _request_id, .locator = _locator, .values = values});
+        _parent.resource_loaded(_request_id, _kind, _locator);
     }
     mark_finished();
 }
@@ -351,6 +355,7 @@ void pending_resource_info::_handle_vec3_vector(
           view(values)};
         _parent.smooth_vec3_curve_loaded(
           {.request_id = _request_id, .locator = _locator, .curve = curve});
+        _parent.resource_loaded(_request_id, _kind, _locator);
     }
     mark_finished();
 }
@@ -372,6 +377,7 @@ void pending_resource_info::_handle_shape_generator(
             }
             _parent.gl_shape_loaded(
               {.request_id = _request_id, .locator = _locator, .shape = shape});
+            _parent.resource_loaded(_request_id, _kind, _locator);
         }
     }
     mark_finished();
@@ -405,6 +411,7 @@ void pending_resource_info::_handle_gl_shape(
                .locator = _locator,
                .shape = shape,
                .ref = geom});
+            _parent.resource_loaded(_request_id, _kind, _locator);
             if(geom) {
                 geom.clean_up(pggbs.video);
             }
@@ -442,6 +449,7 @@ void pending_resource_info::_handle_glsl_strings(
         }
         _parent.glsl_source_loaded(
           {.request_id = _request_id, .locator = _locator, .source = glsl_src});
+        _parent.resource_loaded(_request_id, _kind, _locator);
     }
     mark_finished();
 }
@@ -472,6 +480,7 @@ void pending_resource_info::_handle_glsl_source(
                .type = pgss.shdr_type,
                .name = shdr,
                .ref = shdr});
+            _parent.resource_loaded(_request_id, _kind, _locator);
 
             if(shdr) {
                 gl.delete_shader(std::move(shdr));
@@ -499,6 +508,7 @@ auto pending_resource_info::_finish_gl_program(
            .name = pgps.prog,
            .ref = pgps.prog,
            .input_bindings = pgps.input_bindings});
+        _parent.resource_loaded(_request_id, _kind, _locator);
 
         if(pgps.prog) {
             gl.delete_program(std::move(pgps.prog));
@@ -570,6 +580,7 @@ auto pending_resource_info::_finish_gl_texture(
            .locator = _locator,
            .video = pgts.video,
            .name = pgts.tex});
+        _parent.resource_loaded(_request_id, _kind, _locator);
 
         if(pgts.tex) {
             gl.delete_textures(std::move(pgts.tex));
@@ -1052,5 +1063,11 @@ auto resource_loader::update() noexcept -> work_done {
 
     return something_done;
 }
+//------------------------------------------------------------------------------
+// pending_resource_requests
+//------------------------------------------------------------------------------
+pending_resource_requests::pending_resource_requests(
+  execution_context& ctx) noexcept
+  : pending_resource_requests{ctx.loader()} {}
 //------------------------------------------------------------------------------
 } // namespace eagine::app

@@ -28,6 +28,7 @@ import <variant>;
 
 namespace eagine::app {
 
+export class execution_context;
 export class orbiting_camera;
 export class video_context;
 export class audio_context;
@@ -438,6 +439,11 @@ public:
         return _info;
     }
 
+    /// @brief Returns a reference to the parent loader.
+    auto loader() const noexcept -> resource_loader& {
+        return info().loader();
+    }
+
     /// @brief Returns the unique id of the request.
     auto request_id() const noexcept -> identifier_t {
         return extract(_info).request_id();
@@ -473,6 +479,10 @@ export struct resource_loader_signals {
     /// @brief Emitted then the loading of a resource is cancelled.
     signal<void(identifier_t, resource_kind, const url&) noexcept>
       resource_cancelled;
+
+    /// @brief Emitted when any resource is successfully loaded
+    signal<void(identifier_t, resource_kind, const url&) noexcept>
+      resource_loaded;
 
     template <typename T>
     struct get_load_info;
@@ -891,6 +901,7 @@ concept resource_gl_buffer_loaded_observer =
 //------------------------------------------------------------------------------
 /// @brief Loader of resources of various types.
 /// @see resource_request_result
+/// @see pending_resource_requests
 export class resource_loader
   : public msgbus::resource_data_consumer_node
   , public resource_loader_signals {
@@ -949,6 +960,11 @@ public:
             connect<&O::handle_gl_buffer_loaded>(
               &observer, this->gl_buffer_loaded);
         }
+    }
+
+    /// @brief Indicates if this loader has any pending requests.
+    auto has_pending_requests() const noexcept -> bool {
+        return !_pending.empty();
     }
 
     void forget_resource(identifier_t request_id) noexcept;
@@ -1200,6 +1216,55 @@ private:
     flat_map<identifier_t, std::shared_ptr<pending_resource_info>> _pending;
     flat_map<identifier_t, std::shared_ptr<pending_resource_info>> _finished;
     flat_map<identifier_t, std::shared_ptr<pending_resource_info>> _cancelled;
+};
+//------------------------------------------------------------------------------
+/// @brief Class tracking specific pending resource load requests.
+/// @see resource_loader
+/// @see resource_request_result
+export class pending_resource_requests {
+public:
+    /// @brief Construction from a reference to resource_loader.
+    pending_resource_requests(resource_loader& loader) noexcept
+      : _sig_bind{loader.resource_loaded.bind(
+          make_callable_ref<&pending_resource_requests::_handle_loaded>(
+            this))} {}
+
+    /// @brief Construction from a reference to execution_context.
+    pending_resource_requests(execution_context&) noexcept;
+
+    /// @brief Adds a new resource request to be tracked.
+    auto add(const resource_request_result& res) noexcept
+      -> pending_resource_requests& {
+        _request_ids.insert(res.request_id());
+        return *this;
+    }
+
+    /// @brief Returns the number of currently pending resource requests.
+    auto pending_count() const noexcept -> span_size_t {
+        return span_size(_request_ids.size());
+    }
+
+    /// @brief Indicates if all the tracked requests finished loading.
+    auto all_are_loaded() const noexcept -> bool {
+        return _request_ids.empty();
+    }
+
+    /// @brief Indicates if all the tracked requests finished loading.
+    /// @see all_are_loaded
+    explicit operator bool() const noexcept {
+        return all_are_loaded();
+    }
+
+private:
+    void _handle_loaded(
+      const identifier_t request_id,
+      resource_kind,
+      const url&) noexcept {
+        _request_ids.erase(request_id);
+    }
+
+    signal_binding _sig_bind;
+    flat_set<identifier_t> _request_ids;
 };
 //------------------------------------------------------------------------------
 } // namespace eagine::app
