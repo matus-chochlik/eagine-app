@@ -18,14 +18,14 @@ namespace eagine::app {
 // background_icosahedron
 //------------------------------------------------------------------------------
 background_icosahedron::background_icosahedron(
-  video_context& vc,
+  video_context& video,
   const oglplus::vec4 edge_color,
   const oglplus::vec4 face_color,
   const float depth) noexcept
   : _ecolor{edge_color}
   , _fcolor{face_color}
   , _depth{depth} {
-    const auto& glapi = vc.gl_api();
+    const auto& glapi = video.gl_api();
     const auto& [gl, GL] = glapi;
     memory::buffer temp;
 
@@ -138,9 +138,9 @@ background_icosahedron::background_icosahedron(
     shape.index_setup(glapi, _indices, temp);
 }
 //------------------------------------------------------------------------------
-auto background_icosahedron::clean_up(video_context& vc) noexcept
+auto background_icosahedron::clean_up(video_context& video) noexcept
   -> background_icosahedron& {
-    const auto& gl = vc.gl_api();
+    const auto& gl = video.gl_api();
 
     gl.delete_program(std::move(_prog));
     gl.delete_buffers(std::move(_indices));
@@ -150,15 +150,15 @@ auto background_icosahedron::clean_up(video_context& vc) noexcept
 }
 //------------------------------------------------------------------------------
 auto background_icosahedron::clear(
-  video_context& vc,
+  video_context& video,
   const orbiting_camera& camera) noexcept -> background_icosahedron& {
-    const auto glapi = vc.gl_api();
+    const auto glapi = video.gl_api();
     const auto& [gl, GL] = glapi;
     const auto radius{(camera.skybox_distance())};
 
     gl.clear(GL.color_buffer_bit);
     gl.use_program(_prog);
-    glapi.set_uniform(_prog, _camera_loc, camera.matrix(vc));
+    glapi.set_uniform(_prog, _camera_loc, camera.matrix(video));
     glapi.set_uniform(_prog, _scale_loc, radius);
     gl.disable(GL.depth_test);
     gl.disable(GL.cull_face);
@@ -179,22 +179,12 @@ auto background_icosahedron::clear(
 // background_skybox
 //------------------------------------------------------------------------------
 background_skybox::background_skybox(
-  video_context& vc,
-  const oglplus::texture_image_block& cube_img) noexcept {
-    const auto& glapi = vc.gl_api();
+  video_context& video,
+  oglplus::gl_types::enum_type tex_unit) noexcept
+  : _tex_unit{tex_unit} {
+    const auto& glapi = video.gl_api();
     const auto& [gl, GL] = glapi;
     memory::buffer temp;
-
-    gl.gen_textures() >> _cube_tex;
-    gl.active_texture(vc.gl_api().texture0 + _tex_unit);
-    gl.bind_texture(GL.texture_cube_map, _cube_tex);
-    gl.tex_parameter_i(GL.texture_cube_map, GL.texture_min_filter, GL.linear);
-    gl.tex_parameter_i(GL.texture_cube_map, GL.texture_mag_filter, GL.linear);
-    gl.tex_parameter_i(
-      GL.texture_cube_map, GL.texture_wrap_s, GL.clamp_to_edge);
-    gl.tex_parameter_i(
-      GL.texture_cube_map, GL.texture_wrap_t, GL.clamp_to_edge);
-    glapi.spec_tex_image_cube(0, 0, cube_img);
 
     gl.create_program() >> _prog;
 
@@ -317,7 +307,7 @@ background_skybox::background_skybox(
     gl.get_uniform_location(_prog, "Scale") >> _scale_loc;
     gl.get_uniform_location(_prog, "Tex") >> _tex_loc;
 
-    glapi.set_uniform(_prog, _tex_loc, _tex_unit);
+    glapi.set_uniform(_prog, _tex_loc, oglplus::gl_types::int_type(_tex_unit));
 
     oglplus::shape_generator shape{
       glapi,
@@ -353,16 +343,10 @@ background_skybox::background_skybox(
     shape.index_setup(glapi, _indices, temp);
 }
 //------------------------------------------------------------------------------
-background_skybox::background_skybox(
-  video_context& vc,
-  memory::const_block cube_blk) noexcept
-  : background_skybox{vc, oglplus::texture_image_block{cube_blk}} {}
-//------------------------------------------------------------------------------
-auto background_skybox::clean_up(video_context& vc) noexcept
+auto background_skybox::clean_up(video_context& video) noexcept
   -> background_skybox& {
-    const auto& gl = vc.gl_api();
+    const auto& gl = video.gl_api();
 
-    gl.delete_textures(std::move(_cube_tex));
     gl.delete_program(std::move(_prog));
     gl.delete_buffers(std::move(_indices));
     gl.delete_buffers(std::move(_coords));
@@ -372,13 +356,13 @@ auto background_skybox::clean_up(video_context& vc) noexcept
 }
 //------------------------------------------------------------------------------
 auto background_skybox::clear(
-  video_context& vc,
+  video_context& video,
   const orbiting_camera& camera) noexcept -> background_skybox& {
-    const auto glapi = vc.gl_api();
+    const auto glapi = video.gl_api();
     const auto& [gl, GL] = glapi;
 
     gl.use_program(_prog);
-    glapi.set_uniform(_prog, _camera_loc, camera.matrix(vc));
+    glapi.set_uniform(_prog, _camera_loc, camera.matrix(video));
     glapi.set_uniform(_prog, _scale_loc, camera.skybox_distance());
     gl.bind_vertex_array(_vao);
     gl.disable(GL.depth_test);

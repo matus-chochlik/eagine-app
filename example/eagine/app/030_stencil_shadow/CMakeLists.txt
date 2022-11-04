@@ -8,8 +8,6 @@ add_dependencies(app-030_stencil_shadow eagine-app-examples)
 
 eagine_embed_target_resources(
 	TARGET app-030_stencil_shadow
-	INPUT_TARGETS
-		cloudy_day
 	RESOURCES
 		DrawVert   "draw_vertex.glsl"
 		DrawFrag   "draw_fragment.glsl"
@@ -19,6 +17,8 @@ eagine_embed_target_resources(
 		MaskFrag   "mask_fragment.glsl"
 		MaskProg   "mask_prog.json"
 		Wheelcart  "wheelcart.json"
+		CloudyDay  "cloudy_day.eagitex"
+		CloudyImg  "cloudy_day.eagitexi"
 		CartColor  "wheelcart_color.eagitex"
 		CartClrImg "wheelcart_color.eagitexi"
 		CartAOccl  "wheelcart_aoccl.eagitex"

@@ -559,6 +559,12 @@ public:
                     if(texture_target_from_string(data, tgt)) {
                         _image_target = oglplus::texture_target{tgt};
                     } else {
+                        if(auto parent{_parent.lock()}) {
+                            extract(parent)
+                              .loader()
+                              .log_error("invalid texture target '${name}'")
+                              .arg("name", extract(data));
+                        }
                         _success = false;
                     }
                 }

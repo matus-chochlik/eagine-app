@@ -6,4 +6,3 @@
 oglplus_add_texture(zebra_fur)
 oglplus_add_texture(monkey)
 
-oglplus_add_texture(cloudy_day)
