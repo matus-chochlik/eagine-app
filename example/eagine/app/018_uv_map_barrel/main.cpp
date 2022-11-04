@@ -22,174 +22,97 @@ public:
 
 private:
     video_context& _video;
+    void _on_loaded(const loaded_resource_base&) noexcept;
 
-    std::vector<oglplus::shape_draw_operation> _ops;
-    oglplus::owned_vertex_array_name vao;
+    void _on_shp_loaded(
+      const gl_geometry_and_bindings_resource::load_info&) noexcept;
+    void _on_tex_loaded(const gl_texture_resource::load_info&) noexcept;
 
-    oglplus::owned_buffer_name positions;
-    oglplus::owned_buffer_name normals;
-    oglplus::owned_buffer_name wrap_coords;
-    oglplus::owned_buffer_name indices;
+    resource_manager _resources;
+    managed_gl_program _prog;
+    managed_gl_geometry_and_bindings _barrel;
+    managed_gl_texture _color_tex;
+    managed_gl_texture _aoccl_tex;
+    managed_gl_texture _rough_tex;
 
-    oglplus::owned_texture_name color_tex{};
-    oglplus::owned_texture_name aoccl_tex{};
-    oglplus::owned_texture_name rough_tex{};
-
-    oglplus::owned_program_name prog;
-
-    orbiting_camera camera;
-    oglplus::uniform_location camera_loc;
+    oglplus::uniform_location _camera_loc;
+    orbiting_camera _camera;
 };
 //------------------------------------------------------------------------------
 example_uv_map::example_uv_map(execution_context& ec, video_context& vc)
   : timeouting_application{ec, std::chrono::seconds{30}}
-  , _video{vc} {
+  , _video{vc}
+  , _resources{ec}
+  , _prog{_resources, url{"json:///Program"}, _video}
+  , _barrel{_resources, url{"json:///Barrel"}, _video, 0} 
+  , _color_tex{
+      _resources,
+	  url{"eagitex:///BarelColor"},
+	  _video,
+	  _video.gl_api().texture_2d,
+	  _video.gl_api().texture0 + 0}
+  , _aoccl_tex{
+      _resources,
+      url{"eagitex:///BarelAOccl"},
+      _video,
+      _video.gl_api().texture_2d,
+      _video.gl_api().texture0 + 1}
+  , _rough_tex{
+     _resources,
+     url{"eagitex:///BarelRough"},
+     _video,
+     _video.gl_api().texture_2d,
+     _video.gl_api().texture0 + 2} {
+
+    _prog.connect_to<&example_uv_map::_on_loaded>(this);
+    _barrel.connect_to<&example_uv_map::_on_loaded>(this);
+    _barrel.connect_to<&example_uv_map::_on_shp_loaded>(this);
+    _color_tex.connect_to<&example_uv_map::_on_tex_loaded>(this);
+    _aoccl_tex.connect_to<&example_uv_map::_on_tex_loaded>(this);
+    _rough_tex.connect_to<&example_uv_map::_on_tex_loaded>(this);
+
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
-
-    // program
-    gl.create_program() >> prog;
-    glapi.add_shader(
-      prog,
-      GL.vertex_shader,
-      oglplus::glsl_string_ref(embed<"VertShader">("vertex.glsl").unpack(ec)));
-    glapi.add_shader(
-      prog,
-      GL.fragment_shader,
-      oglplus::glsl_string_ref(
-        embed<"FragShader">("fragment.glsl").unpack(ec)));
-    gl.link_program(prog);
-    gl.use_program(prog);
-
-    // geometry
-    auto json_text = as_chars(embed<"ShapeJson">("barrel_1.json").unpack(ec));
-    oglplus::shape_generator shape(
-      glapi,
-      shapes::from_value_tree(
-        valtree::from_json_text(json_text, ec.main_context()), ec.as_parent()));
-
-    _ops.resize(std_size(shape.operation_count()));
-    shape.instructions(glapi, cover(_ops));
-
-    // vao
-    gl.gen_vertex_arrays() >> vao;
-    gl.bind_vertex_array(vao);
-
-    // positions
-    oglplus::vertex_attrib_location position_loc{0};
-    gl.gen_buffers() >> positions;
-    shape.attrib_setup(
-      glapi,
-      vao,
-      positions,
-      position_loc,
-      eagine::shapes::vertex_attrib_kind::position,
-      context().buffer());
-    gl.bind_attrib_location(prog, position_loc, "Position");
-
-    // normals
-    oglplus::vertex_attrib_location normal_loc{1};
-    gl.gen_buffers() >> normals;
-    shape.attrib_setup(
-      glapi,
-      vao,
-      normals,
-      normal_loc,
-      eagine::shapes::vertex_attrib_kind::normal,
-      context().buffer());
-    gl.bind_attrib_location(prog, normal_loc, "Normal");
-
-    // wrap_coords
-    oglplus::vertex_attrib_location wrap_coord_loc{2};
-    gl.gen_buffers() >> wrap_coords;
-    shape.attrib_setup(
-      glapi,
-      vao,
-      wrap_coords,
-      wrap_coord_loc,
-      eagine::shapes::vertex_attrib_kind::wrap_coord,
-      context().buffer());
-    gl.bind_attrib_location(prog, wrap_coord_loc, "WrapCoord");
-
-    // indices
-    gl.gen_buffers() >> indices;
-    shape.index_setup(glapi, indices, context().buffer());
-
-    // color texture
-    const auto color_tex_src{embed<"ColorTex">("barrel_1_color")};
-
-    gl.gen_textures() >> color_tex;
-    gl.active_texture(GL.texture0);
-    gl.bind_texture(GL.texture_2d, color_tex);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_min_filter, GL.linear);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_mag_filter, GL.linear);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_wrap_s, GL.clamp_to_border);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_wrap_t, GL.clamp_to_border);
-    glapi.spec_tex_image2d(
-      GL.texture_2d,
-      0,
-      0,
-      oglplus::texture_image_block(color_tex_src.unpack(ec)));
-    oglplus::uniform_location color_tex_loc;
-    gl.get_uniform_location(prog, "ColorTex") >> color_tex_loc;
-    glapi.set_uniform(prog, color_tex_loc, 0);
-
-    // light texture
-    const auto light_tex_src{embed<"LightTex">("barrel_1_aoccl")};
-
-    gl.gen_textures() >> aoccl_tex;
-    gl.active_texture(GL.texture0 + 1);
-    gl.bind_texture(GL.texture_2d, aoccl_tex);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_min_filter, GL.linear);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_mag_filter, GL.linear);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_wrap_s, GL.clamp_to_border);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_wrap_t, GL.clamp_to_border);
-    glapi.spec_tex_image2d(
-      GL.texture_2d,
-      0,
-      0,
-      oglplus::texture_image_block(light_tex_src.unpack(ec)));
-    oglplus::uniform_location light_tex_loc;
-    gl.get_uniform_location(prog, "LightTex") >> light_tex_loc;
-    glapi.set_uniform(prog, light_tex_loc, 1);
-
-    // roughness texture
-    const auto rough_tex_src{embed<"RoughTex">("barrel_1_rough")};
-
-    gl.gen_textures() >> rough_tex;
-    gl.active_texture(GL.texture0 + 2);
-    gl.bind_texture(GL.texture_2d, rough_tex);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_min_filter, GL.linear);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_mag_filter, GL.linear);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_wrap_s, GL.clamp_to_border);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_wrap_t, GL.clamp_to_border);
-    glapi.spec_tex_image2d(
-      GL.texture_2d,
-      0,
-      0,
-      oglplus::texture_image_block(rough_tex_src.unpack(ec)));
-    oglplus::uniform_location rough_tex_loc;
-    gl.get_uniform_location(prog, "RoughTex") >> rough_tex_loc;
-    glapi.set_uniform(prog, rough_tex_loc, 2);
-
-    // camera
-    const auto bs = shape.bounding_sphere();
-    const auto sr = bs.radius();
-    gl.get_uniform_location(prog, "Camera") >> camera_loc;
-    camera.set_target(bs.center())
-      .set_near(sr * 0.1F)
-      .set_far(sr * 5.0F)
-      .set_orbit_min(sr * 1.2F)
-      .set_orbit_max(sr * 2.4F)
-      .set_fov(degrees_(70));
 
     gl.clear_color(0.35F, 0.35F, 0.35F, 1.0F);
     gl.enable(GL.depth_test);
     gl.enable(GL.cull_face);
     gl.cull_face(GL.back);
 
-    camera.connect_inputs(ec).basic_input_mapping(ec);
+    _camera.connect_inputs(ec).basic_input_mapping(ec);
     ec.setup_inputs().switch_input_mapping();
+}
+//------------------------------------------------------------------------------
+void example_uv_map::_on_loaded(const loaded_resource_base&) noexcept {
+    if(_prog && _barrel) {
+        _prog->apply_input_bindings(_video, _barrel);
+        _prog->get_uniform_location(_video, "Camera") >> _camera_loc;
+        _prog->set_uniform(_video, "ColorTex", 0);
+        _prog->set_uniform(_video, "LightTex", 1);
+        _prog->set_uniform(_video, "RoughTex", 2);
+    }
+    reset_timeout();
+}
+//------------------------------------------------------------------------------
+void example_uv_map::_on_shp_loaded(
+  const gl_geometry_and_bindings_resource::load_info& loaded) noexcept {
+    const auto bs = loaded.base.shape.bounding_sphere();
+    const auto sr = bs.radius();
+    _camera.set_target(bs.center())
+      .set_near(sr * 0.1F)
+      .set_far(sr * 5.0F)
+      .set_orbit_min(sr * 1.2F)
+      .set_orbit_max(sr * 2.4F)
+      .set_fov(degrees_(70));
+}
+//------------------------------------------------------------------------------
+void example_uv_map::_on_tex_loaded(
+  const gl_texture_resource::load_info& loaded) noexcept {
+    const auto& GL = _video.gl_api().constants();
+    loaded.parameter_i(GL.texture_min_filter, GL.linear);
+    loaded.parameter_i(GL.texture_mag_filter, GL.linear);
+    loaded.parameter_i(GL.texture_wrap_s, GL.clamp_to_border);
+    loaded.parameter_i(GL.texture_wrap_t, GL.clamp_to_border);
 }
 //------------------------------------------------------------------------------
 void example_uv_map::update() noexcept {
@@ -198,34 +121,25 @@ void example_uv_map::update() noexcept {
         reset_timeout();
     }
     if(state.user_idle_too_long()) {
-        camera.idle_update(state, 5.F);
+        _camera.idle_update(state, 5.F);
     }
 
-    const auto& glapi = _video.gl_api();
-    const auto& [gl, GL] = glapi;
+    if(_resources.are_loaded()) {
+        const auto& glapi = _video.gl_api();
+        const auto& [gl, GL] = glapi;
+        gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
 
-    gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
-    if(camera.has_changed()) {
-        glapi.set_uniform(prog, camera_loc, camera.matrix(_video));
+        _prog->set(glapi, _camera_loc, _camera.matrix(_video));
+        _barrel->draw(glapi);
+    } else {
+        _resources.load();
     }
-    oglplus::draw_using_instructions(glapi, view(_ops));
 
     _video.commit();
 }
 //------------------------------------------------------------------------------
 void example_uv_map::clean_up() noexcept {
-    const auto& gl = _video.gl_api();
-
-    gl.delete_textures(std::move(rough_tex));
-    gl.delete_textures(std::move(aoccl_tex));
-    gl.delete_textures(std::move(color_tex));
-    gl.delete_program(std::move(prog));
-    gl.delete_buffers(std::move(indices));
-    gl.delete_buffers(std::move(wrap_coords));
-    gl.delete_buffers(std::move(normals));
-    gl.delete_buffers(std::move(positions));
-    gl.delete_vertex_arrays(std::move(vao));
-
+    _resources.clean_up();
     _video.end();
 }
 //------------------------------------------------------------------------------

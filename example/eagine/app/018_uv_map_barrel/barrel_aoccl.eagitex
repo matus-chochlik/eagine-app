@@ -1,0 +1,11 @@
+{"levels":1
+,"width":1024
+,"height":1024
+,"channels":3
+,"data_type":"unsigned_byte"
+,"format":"rgb"
+,"iformat":"rgb8"
+,"label":"barrel ambient occlusion"
+,"images":
+[{"url":"eagitexi:///BarelAOImg"}]
+}
