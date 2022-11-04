@@ -23,6 +23,9 @@ public:
     void clean_up() noexcept final;
 
 private:
+    auto _gen_url() noexcept -> url;
+    auto _tex_url() noexcept -> url;
+
     void _on_loaded(const loaded_resource_base&) noexcept;
 
     video_context& _video;
@@ -32,85 +35,75 @@ private:
 
     hair_program _hair_prog;
     surface_program _surf_prog;
-    shape_textures _shape_tex;
+    shape_texture _shape_tex;
+    shape_generator_resource _shape_gen;
     shape_surface _surf;
     shape_hair _hair;
 
     orbiting_camera _camera;
-    bool _use_monkey_shape{false};
 };
+//------------------------------------------------------------------------------
+auto example_fur::_tex_url() noexcept -> url {
+    return url{"json:///ZebraTex"};
+}
+//------------------------------------------------------------------------------
+auto example_fur::_gen_url() noexcept -> url {
+    return url{
+      "shapes:///unit_torus?"
+      "position=true+normal=true+wrap_coord=true+occlusion=true+"
+      "radius_ratio=0.6"};
+}
 //------------------------------------------------------------------------------
 example_fur::example_fur(execution_context& ec, video_context& vc)
   : timeouting_application{ec, std::chrono::seconds{120}}
   , _video{vc}
   , _bg{_video, {0.1F, 0.1F, 0.1F, 1.F}, {0.35F, 0.40F, 0.30F, 0.0F}, 1.F}
-  , _hair_prog{ec}
-  , _surf_prog{ec} {
+  , _hair_prog{context()}
+  , _surf_prog{context()}
+  , _shape_tex{_tex_url(), context()}
+  , _shape_gen{_gen_url(), context()} {
     _hair_prog.base_loaded.connect(
       make_callable_ref<&example_fur::_on_loaded>(this));
     _surf_prog.base_loaded.connect(
       make_callable_ref<&example_fur::_on_loaded>(this));
-
-    _use_monkey_shape = ec.main_context().args().find("--monkey");
-
-    const auto gen = [&]() -> std::shared_ptr<shapes::generator> {
-        if(_use_monkey_shape) {
-            const auto json_text =
-              as_chars(embed<"MonkeyJson">("monkey.json").unpack(ec));
-            return shapes::from_value_tree(
-              valtree::from_json_text(json_text, ec.main_context()),
-              ec.as_parent());
-        }
-        return shapes::scale_wrap_coords(
-          shapes::unit_torus(
-            shapes::vertex_attrib_kind::position |
-              shapes::vertex_attrib_kind::normal |
-              shapes::vertex_attrib_kind::wrap_coord |
-              shapes::vertex_attrib_kind::occlusion,
-            18,
-            36,
-            0.6F),
-          4.F,
-          2.F,
-          1.F);
-    }();
-
-    _shape_tex.init(_video);
-    _surf.init(_video, gen);
-    _hair.init(_video, gen);
+    _shape_gen.base_loaded.connect(
+      make_callable_ref<&example_fur::_on_loaded>(this));
 
     prev_model = oglplus::matrix_rotation_y(radians_(0.F)) *
                  oglplus::matrix_rotation_x(radians_(0.F));
-
-    const auto bs = gen->bounding_sphere();
-    const auto sr = bs.radius();
-    _camera.set_target(bs.center())
-      .set_near(0.1F * sr)
-      .set_far(50.F * sr)
-      .set_orbit_min(1.2F * sr)
-      .set_orbit_max(2.2F * sr)
-      .set_fov(degrees_(45));
 
     _camera.connect_inputs(ec).basic_input_mapping(ec);
     ec.setup_inputs().switch_input_mapping();
 }
 //------------------------------------------------------------------------------
 void example_fur::_on_loaded(const loaded_resource_base& loaded) noexcept {
-    if(loaded.is(_surf_prog)) {
-        _surf_prog.apply_input_bindings(_video, _surf);
-        if(_use_monkey_shape) {
-            _surf_prog.set_texture(_video, _shape_tex.map_unit_monkey());
-        } else {
-            _surf_prog.set_texture(_video, _shape_tex.map_unit_zebra());
-        }
+    if(loaded.is(_shape_gen)) {
+        auto gen{[&loaded, this]() -> std::shared_ptr<shapes::generator> {
+            if(loaded.locator().has_path("/unit_torus")) {
+                return shapes::scale_wrap_coords(_shape_gen, 4.F, 2.F, 1.F);
+            }
+            return _shape_gen;
+        }()};
+
+        _surf.init(_video, gen);
+        _hair.init(_video, gen);
+
+        const auto bs = gen->bounding_sphere();
+        const auto sr = bs.radius();
+        _camera.set_target(bs.center())
+          .set_near(0.1F * sr)
+          .set_far(50.F * sr)
+          .set_orbit_min(1.2F * sr)
+          .set_orbit_max(2.2F * sr)
+          .set_fov(degrees_(45));
     }
-    if(loaded.is(_hair_prog)) {
+    if(_shape_gen && _surf_prog) {
+        _surf_prog.apply_input_bindings(_video, _surf);
+        _surf_prog.set_uniform(_video, "Tex", 0);
+    }
+    if(_shape_gen && _hair_prog) {
         _hair_prog.apply_input_bindings(_video, _hair);
-        if(_use_monkey_shape) {
-            _hair_prog.set_texture(_video, _shape_tex.map_unit_monkey());
-        } else {
-            _hair_prog.set_texture(_video, _shape_tex.map_unit_zebra());
-        }
+        _hair_prog.set_uniform(_video, "Tex", 0);
     }
 }
 //------------------------------------------------------------------------------
@@ -127,7 +120,7 @@ void example_fur::update() noexcept {
     const auto model = oglplus::matrix_rotation_y(degrees_(-t * 23.F)) *
                        oglplus::matrix_rotation_x(degrees_(t * 41.F));
 
-    if(_surf_prog && _hair_prog) {
+    if(_surf_prog && _hair_prog && _shape_gen && _shape_tex) {
         _bg.clear(_video, _camera);
 
         _surf_prog.use(_video);
@@ -140,8 +133,11 @@ void example_fur::update() noexcept {
         _hair_prog.set_model(_video, prev_model, model);
         _hair.use_and_draw(_video);
     } else {
+        const auto& GL = _video.gl_api().constants();
         _surf_prog.load_if_needed(context());
         _hair_prog.load_if_needed(context());
+        _shape_gen.load_if_needed(context());
+        _shape_tex.load_if_needed(context(), GL.texture_2d, GL.texture0);
     }
 
     prev_model = model;
@@ -150,7 +146,7 @@ void example_fur::update() noexcept {
 }
 //------------------------------------------------------------------------------
 void example_fur::clean_up() noexcept {
-    _shape_tex.clean_up(_video);
+    _shape_tex.clean_up(context());
     _surf_prog.clean_up(context());
     _hair_prog.clean_up(context());
 }

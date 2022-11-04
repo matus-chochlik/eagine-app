@@ -272,7 +272,7 @@ struct resource_load_info {
 
     /// @brief The base info from the loader signal.
     const base_load_info& base;
-    /// @brief The loaded geometry resource.
+    /// @brief The loaded resource.
     const loaded_resource<Resource>& resource;
 
     resource_load_info(
@@ -347,6 +347,11 @@ public:
 
     /// @brief Returns a reference to the underlying resource.
     auto resource() noexcept -> Resource& {
+        return *this;
+    }
+
+    /// @brief Returns a const reference to the underlying resource.
+    auto resource() const noexcept -> const Resource& {
         return *this;
     }
 
@@ -488,6 +493,40 @@ public:
 };
 export using smooth_vec3_curve_resource =
   loaded_resource<math::bezier_curves<math::vector<float, 3, true>, float, 3>>;
+//------------------------------------------------------------------------------
+export template <>
+class loaded_resource<std::shared_ptr<shapes::generator>>
+  : public loaded_resource_common<
+      loaded_resource<std::shared_ptr<shapes::generator>>> {
+
+    using common =
+      loaded_resource_common<loaded_resource<std::shared_ptr<shapes::generator>>>;
+
+public:
+    using common::common;
+
+    /// @brief Clean's up this resource.
+    void clean_up(resource_loader& loader) {
+        resource().reset();
+        common::_disconnect(loader);
+    }
+
+    /// @brief Clean's up this resource.
+    void clean_up(execution_context& ctx) {
+        clean_up(ctx.loader());
+    }
+
+    /// @brief Indicates if this resource is loaded.
+    auto is_loaded() const noexcept -> bool {
+        return bool(resource());
+    }
+
+    auto assign(const typename common::base_load_info& info) noexcept -> bool {
+        return this->_assign(info.generator);
+    }
+};
+export using shape_generator_resource =
+  loaded_resource<std::shared_ptr<shapes::generator>>;
 //------------------------------------------------------------------------------
 template <>
 struct get_resource_load_params<gl_geometry_and_bindings>

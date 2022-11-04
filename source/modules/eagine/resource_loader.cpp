@@ -499,9 +499,19 @@ export struct resource_loader_signals {
         const std::shared_ptr<shapes::generator>& generator;
     };
 
+    template <>
+    struct get_load_info<std::shared_ptr<shapes::generator>>
+      : std::type_identity<shape_generator_load_info> {};
+
     /// @brief Emitted when a shape generator is loaded.
     signal<void(const shape_generator_load_info&) noexcept>
       shape_generator_loaded;
+
+    auto load_signal(
+      std::type_identity<std::shared_ptr<shapes::generator>>) noexcept
+      -> auto& {
+        return shape_generator_loaded;
+    }
 
     /// @brief Type of parameter of the gl_shape_loaded signal.
     /// @see gl_shape_loaded
@@ -511,8 +521,17 @@ export struct resource_loader_signals {
         const oglplus::shape_generator& shape;
     };
 
+    template <>
+    struct get_load_info<oglplus::shape_generator>
+      : std::type_identity<gl_shape_load_info> {};
+
     /// @brief Emitted when a oglplus shape wrapper is loaded.
     signal<void(const gl_shape_load_info&) noexcept> gl_shape_loaded;
+
+    auto load_signal(std::type_identity<oglplus::shape_generator>) noexcept
+      -> auto& {
+        return gl_shape_loaded;
+    }
 
     /// @brief Type of parameter of the gl_geometry_and_bindings_loaded signal.
     /// @see gl_geometry_and_bindings_loaded
@@ -1043,9 +1062,22 @@ public:
     auto request_shape_generator(url locator) noexcept
       -> resource_request_result;
 
+    auto request(
+      std::type_identity<std::shared_ptr<shapes::generator>>,
+      url locator) noexcept {
+        return request_shape_generator(std::move(locator));
+    }
+
     /// @brief Requests a oglplus shape generator wrapper object.
     auto request_gl_shape(url locator, video_context&) noexcept
       -> resource_request_result;
+
+    auto request(
+      std::type_identity<oglplus::shape_generator>,
+      url locator,
+      video_context& video) noexcept {
+        return request_gl_shape(std::move(locator), video);
+    }
 
     /// @brief Requests a shape geometry and attrib bindings object.
     auto request_gl_geometry_and_bindings(

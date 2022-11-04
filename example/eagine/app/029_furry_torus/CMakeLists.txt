@@ -12,9 +12,6 @@ add_dependencies(app-029_furry_torus eagine-app-examples)
 
 eagine_embed_target_resources(
 	TARGET app-029_furry_torus
-	INPUT_TARGETS
-		zebra_fur
-		monkey
 	RESOURCES
 		SurfVert  "surface_vertex.glsl"
 		SurfFrag  "surface_fragment.glsl"
@@ -23,6 +20,9 @@ eagine_embed_target_resources(
 		HairGeom  "hair_geometry.glsl"
 		HairFrag  "hair_fragment.glsl"
 		HairProg  "hair_prog.json"
+		ZebraTex  "zebra_fur.eagitex"
+		ZebraImg  "zebra_fur.eagitexi"
+		MonkyShp  "monkey.json"
 	PACKED
 	ENABLE_SEARCH
 )
