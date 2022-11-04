@@ -4,11 +4,6 @@
 #  http://www.boost.org/LICENSE_1_0.txt
 
 oglplus_add_texture(zebra_fur)
-
-oglplus_add_texture(wheelcart_1_color)
-oglplus_add_texture(wheelcart_1_aoccl)
-
 oglplus_add_texture(monkey)
 
-oglplus_add_texture(cube_map)
 oglplus_add_texture(cloudy_day)

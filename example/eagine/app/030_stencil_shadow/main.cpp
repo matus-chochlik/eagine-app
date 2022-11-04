@@ -22,7 +22,7 @@ public:
 
 private:
     void _on_prog_loaded(const gl_program_resource::load_info&) noexcept;
-    void _on_resource_loaded(const loaded_resource_base&) noexcept;
+    void _on_tex_loaded(const gl_texture_resource::load_info&) noexcept;
 
     video_context& _video;
     background_skybox _bg;
@@ -30,9 +30,8 @@ private:
     gl_program_resource _draw_prog;
     gl_program_resource _mask_prog;
     gl_geometry_and_bindings_resource _wheelcart;
-
-    oglplus::owned_texture_name color_tex{};
-    oglplus::owned_texture_name light_tex{};
+    gl_texture_resource _color_tex;
+    gl_texture_resource _light_tex;
 
     oglplus::uniform_location camera_draw_loc;
     oglplus::uniform_location camera_mask_loc;
@@ -51,46 +50,20 @@ example_stencil_shadow::example_stencil_shadow(
   , _bg{_video, embed<"CubeMap">("cloudy_day").unpack(ec)}
   , _draw_prog{url{"json:///DrawProg"}, context()}
   , _mask_prog{url{"json:///MaskProg"}, context()}
-  , _wheelcart{url{"json:///Wheelcart"}, context()} {
+  , _wheelcart{url{"json:///Wheelcart"}, context()}
+  , _color_tex{url{"json:///CartColor"}, context()}
+  , _light_tex{url{"json:///CartAOccl"}, context()} {
     _draw_prog.loaded.connect(
       make_callable_ref<&example_stencil_shadow::_on_prog_loaded>(this));
     _mask_prog.loaded.connect(
       make_callable_ref<&example_stencil_shadow::_on_prog_loaded>(this));
+    _color_tex.loaded.connect(
+      make_callable_ref<&example_stencil_shadow::_on_tex_loaded>(this));
+    _light_tex.loaded.connect(
+      make_callable_ref<&example_stencil_shadow::_on_tex_loaded>(this));
 
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
-
-    // color texture
-    const auto color_tex_src{embed<"ColorTex">("wheelcart_1_color")};
-
-    gl.gen_textures() >> color_tex;
-    gl.active_texture(GL.texture0);
-    gl.bind_texture(GL.texture_2d, color_tex);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_min_filter, GL.linear);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_mag_filter, GL.linear);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_wrap_s, GL.clamp_to_border);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_wrap_t, GL.clamp_to_border);
-    glapi.spec_tex_image2d(
-      GL.texture_2d,
-      0,
-      0,
-      oglplus::texture_image_block(color_tex_src.unpack(ec)));
-
-    // light texture
-    const auto light_tex_src{embed<"LightTex">("wheelcart_1_aoccl")};
-
-    gl.gen_textures() >> light_tex;
-    gl.active_texture(GL.texture0 + 1);
-    gl.bind_texture(GL.texture_2d, light_tex);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_min_filter, GL.linear);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_mag_filter, GL.linear);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_wrap_s, GL.clamp_to_border);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_wrap_t, GL.clamp_to_border);
-    glapi.spec_tex_image2d(
-      GL.texture_2d,
-      0,
-      0,
-      oglplus::texture_image_block(light_tex_src.unpack(ec)));
 
     gl.enable(GL.depth_test);
     gl.enable(GL.cull_face);
@@ -127,6 +100,15 @@ void example_stencil_shadow::_on_prog_loaded(
     }
 }
 //------------------------------------------------------------------------------
+void example_stencil_shadow::_on_tex_loaded(
+  const gl_texture_resource::load_info& loaded) noexcept {
+    const auto& GL = _video.gl_api().constants();
+    loaded.parameter_i(GL.texture_min_filter, GL.linear);
+    loaded.parameter_i(GL.texture_mag_filter, GL.linear);
+    loaded.parameter_i(GL.texture_wrap_s, GL.clamp_to_border);
+    loaded.parameter_i(GL.texture_wrap_t, GL.clamp_to_border);
+}
+//------------------------------------------------------------------------------
 void example_stencil_shadow::update() noexcept {
     auto& state = context().state();
     if(state.is_active()) {
@@ -136,10 +118,10 @@ void example_stencil_shadow::update() noexcept {
         camera.idle_update(state, 11.F);
     }
 
-    if(_draw_prog && _mask_prog && _wheelcart) {
-        const auto& glapi = _video.gl_api();
-        const auto& [gl, GL] = glapi;
+    const auto& glapi = _video.gl_api();
+    const auto& [gl, GL] = glapi;
 
+    if(_draw_prog && _mask_prog && _wheelcart && _color_tex && _light_tex) {
         const auto ft = state.frame_time().value();
         const auto light_angle{turns_(ft * 0.1F)};
         const oglplus::vec3 light_dir{
@@ -189,11 +171,15 @@ void example_stencil_shadow::update() noexcept {
         glapi.set_uniform(_draw_prog, camera_draw_loc, camera.matrix(_video));
         gl.cull_face(GL.back);
         _wheelcart.draw(_video);
-    } else if(_wheelcart) {
-        _draw_prog.load_if_needed(context());
-        _mask_prog.load_if_needed(context());
     } else {
-        _wheelcart.load_if_needed(context());
+        if(_wheelcart) {
+            _draw_prog.load_if_needed(context());
+            _mask_prog.load_if_needed(context());
+        } else {
+            _wheelcart.load_if_needed(context());
+        }
+        _color_tex.load_if_needed(context(), GL.texture_2d, GL.texture0 + 0);
+        _light_tex.load_if_needed(context(), GL.texture_2d, GL.texture0 + 1);
     }
 
     _video.commit();
@@ -201,14 +187,10 @@ void example_stencil_shadow::update() noexcept {
 //------------------------------------------------------------------------------
 void example_stencil_shadow::clean_up() noexcept {
     _bg.clean_up(_video);
-    _wheelcart.clean_up(context());
+    _light_tex.clean_up(context());
+    _color_tex.clean_up(context());
     _mask_prog.clean_up(context());
     _draw_prog.clean_up(context());
-
-    const auto& gl = _video.gl_api();
-    gl.clean_up(std::move(light_tex));
-    gl.clean_up(std::move(color_tex));
-
     _video.end();
 }
 //------------------------------------------------------------------------------

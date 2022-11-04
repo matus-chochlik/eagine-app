@@ -110,13 +110,11 @@ void example_uv_map::_on_prg_loaded(
 //------------------------------------------------------------------------------
 void example_uv_map::_on_tex_loaded(
   const gl_texture_resource::load_info& loaded) noexcept {
-    const auto& [gl, GL] = loaded.base.gl_api();
-    gl.tex_parameter_i(GL.texture_2d_array, GL.texture_min_filter, GL.linear);
-    gl.tex_parameter_i(GL.texture_2d_array, GL.texture_mag_filter, GL.linear);
-    gl.tex_parameter_i(
-      GL.texture_2d_array, GL.texture_wrap_s, GL.clamp_to_border);
-    gl.tex_parameter_i(
-      GL.texture_2d_array, GL.texture_wrap_t, GL.clamp_to_border);
+    const auto& GL = _video.gl_api().constants();
+    loaded.parameter_i(GL.texture_min_filter, GL.linear);
+    loaded.parameter_i(GL.texture_mag_filter, GL.linear);
+    loaded.parameter_i(GL.texture_wrap_s, GL.clamp_to_border);
+    loaded.parameter_i(GL.texture_wrap_t, GL.clamp_to_border);
 }
 //------------------------------------------------------------------------------
 void example_uv_map::update() noexcept {

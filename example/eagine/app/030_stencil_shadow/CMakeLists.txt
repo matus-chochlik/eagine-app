@@ -3,29 +3,26 @@
 # See accompanying file LICENSE_1_0.txt or copy at
 #  http://www.boost.org/LICENSE_1_0.txt
 #
-configure_file(
-	"${PROJECT_SOURCE_DIR}/assets/models/wheelcart_1.json"
-	"${CMAKE_CURRENT_BINARY_DIR}/wheelcart_1.json"
-)
-
 add_executable(app-030_stencil_shadow main.cpp)
 add_dependencies(app-030_stencil_shadow eagine-app-examples)
 
 eagine_embed_target_resources(
 	TARGET app-030_stencil_shadow
 	INPUT_TARGETS
-		wheelcart_1_color
-		wheelcart_1_aoccl
 		cloudy_day
 	RESOURCES
-		DrawVert  "draw_vertex.glsl"
-		DrawFrag  "draw_fragment.glsl"
-		DrawProg  "draw_prog.json"
-		MaskVert  "mask_vertex.glsl"
-		MaskGeom  "mask_geometry.glsl"
-		MaskFrag  "mask_fragment.glsl"
-		MaskProg  "mask_prog.json"
-		Wheelcart "wheelcart_1.json"
+		DrawVert   "draw_vertex.glsl"
+		DrawFrag   "draw_fragment.glsl"
+		DrawProg   "draw_prog.json"
+		MaskVert   "mask_vertex.glsl"
+		MaskGeom   "mask_geometry.glsl"
+		MaskFrag   "mask_fragment.glsl"
+		MaskProg   "mask_prog.json"
+		Wheelcart  "wheelcart.json"
+		CartColor  "wheelcart_color.eagitex"
+		CartClrImg "wheelcart_color.eagitexi"
+		CartAOccl  "wheelcart_aoccl.eagitex"
+		CartAOImg  "wheelcart_aoccl.eagitexi"
 	PACKED
 	ENABLE_SEARCH
 )
