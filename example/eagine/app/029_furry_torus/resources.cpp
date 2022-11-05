@@ -102,8 +102,6 @@ void shape_texture::_on_loaded(
     info.parameter_i(GL.texture_mag_filter, GL.linear);
     info.parameter_i(GL.texture_wrap_s, GL.repeat);
     info.parameter_i(GL.texture_wrap_t, GL.repeat);
-    info.parameter_i(GL.texture_swizzle_g, GL.red);
-    info.parameter_i(GL.texture_swizzle_b, GL.red);
     info.generate_mipmap();
 }
 //------------------------------------------------------------------------------

@@ -5,6 +5,8 @@
 ,"data_type":"unsigned_byte"
 ,"format":"red"
 ,"iformat":"r8"
+,"swizzle_g":"red"
+,"swizzle_b":"red"
 ,"images":
 [{"url":"eagitexi:///ZebraImg"}]
 }

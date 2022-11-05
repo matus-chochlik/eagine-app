@@ -168,6 +168,9 @@ public:
       std::string name,
       shapes::vertex_attrib_variant) noexcept -> bool;
 
+    void handle_gl_texture_i_param(
+      const oglplus::texture_parameter param,
+      const oglplus::gl_types::int_type value) noexcept;
     void handle_gl_texture_image(
       const oglplus::texture_target,
       const resource_gl_texture_image_params&,

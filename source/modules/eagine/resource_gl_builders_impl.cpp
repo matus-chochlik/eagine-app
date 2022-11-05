@@ -272,6 +272,28 @@ static auto texture_format_from_string(
     return false;
 }
 //------------------------------------------------------------------------------
+static auto texture_swizzle_from_string(
+  span<const string_view> data,
+  oglplus::gl_types::enum_type& v) noexcept -> bool {
+    if(data.has_single_value()) {
+        const auto str{extract(data)};
+        if(str == "red") {
+            v = 0x1903;
+            return true;
+        } else if(str == "green") {
+            v = 0x1904;
+            return true;
+        } else if(str == "blue") {
+            v = 0x1905;
+            return true;
+        } else if(str == "alpha") {
+            v = 0x1906;
+            return true;
+        }
+    }
+    return false;
+}
+//------------------------------------------------------------------------------
 struct resource_gl_texture_image_params {
     oglplus::gl_types::int_type dimensions{0};
     oglplus::gl_types::int_type level{0};
@@ -532,6 +554,9 @@ public:
       const basic_string_path& path,
       const span<const string_view> data) noexcept {
         if(path.size() == 1) {
+            using It = oglplus::gl_types::int_type;
+            using Et = oglplus::gl_types::enum_type;
+
             if(path.front() == "label") {
                 if(has_value(data)) {
                     if(const auto parent{_parent.lock()}) {
@@ -545,6 +570,26 @@ public:
                 _success &= texture_format_from_string(data, _params.format);
             } else if(path.front() == "iformat") {
                 _success &= texture_iformat_from_string(data, _params.iformat);
+            } else if(path.front() == "swizzle_r") {
+                Et e{0};
+                if(_success &= texture_swizzle_from_string(data, e)) {
+                    _i_params.emplace_back(0x8E42, It(e));
+                }
+            } else if(path.front() == "swizzle_g") {
+                Et e{0};
+                if(_success &= texture_swizzle_from_string(data, e)) {
+                    _i_params.emplace_back(0x8E43, It(e));
+                }
+            } else if(path.front() == "swizzle_b") {
+                Et e{0};
+                if(_success &= texture_swizzle_from_string(data, e)) {
+                    _i_params.emplace_back(0x8E44, It(e));
+                }
+            } else if(path.front() == "swizzle_a") {
+                Et e{0};
+                if(_success &= texture_swizzle_from_string(data, e)) {
+                    _i_params.emplace_back(0x8E45, It(e));
+                }
             }
         } else if(path.size() == 3) {
             if(path.front() == "images") {
@@ -614,6 +659,10 @@ public:
                       img_request.request_id());
                 }
                 _image_requests.clear();
+                for(const auto [param, value] : _i_params) {
+                    extract(parent).handle_gl_texture_i_param(
+                      oglplus::texture_parameter{param}, value);
+                }
                 extract(parent).mark_loaded();
             } else {
                 extract(parent).mark_finished();
@@ -632,6 +681,9 @@ private:
     std::vector<
       std::tuple<url, oglplus::texture_target, resource_gl_texture_image_params>>
       _image_requests;
+    std::vector<
+      std::tuple<oglplus::gl_types::enum_type, oglplus::gl_types::int_type>>
+      _i_params;
     bool _success{true};
 };
 //------------------------------------------------------------------------------
@@ -775,6 +827,28 @@ auto pending_resource_info::handle_gl_texture_params(
     return false;
 }
 //------------------------------------------------------------------------------
+void pending_resource_info::handle_gl_texture_i_param(
+  const oglplus::texture_parameter param,
+  const oglplus::gl_types::int_type value) noexcept {
+    _parent.log_info("setting GL texture parameter")
+      .arg("requestId", _request_id)
+      .arg("locator", locator().str());
+
+    if(is(resource_kind::gl_texture)) {
+        if(std::holds_alternative<_pending_gl_texture_state>(_state)) {
+            auto& pgts = std::get<_pending_gl_texture_state>(_state);
+            if(pgts.tex) [[likely]] {
+                const auto& glapi = pgts.video.get().gl_api();
+                if(glapi.texture_parameter_i) {
+                    glapi.texture_parameter_i(pgts.tex, param, value);
+                } else if(glapi.tex_parameter_i) {
+                    glapi.tex_parameter_i(pgts.tex_target, param, value);
+                }
+            }
+        }
+    }
+}
+//------------------------------------------------------------------------------
 void pending_resource_info::_clear_gl_texture_image(
   const _pending_gl_texture_state& pgts,
   const resource_gl_texture_params& params,
@@ -835,7 +909,7 @@ void pending_resource_info::_handle_gl_texture_image(
                 glapi.operations().active_texture(pgts.tex_unit);
                 glapi.bind_texture(pgts.tex_target, pgts.tex);
                 glapi.tex_sub_image3d(
-                  pgts.tex_target,
+                  target,
                   params.level,
                   params.x_offs,
                   params.y_offs,
@@ -863,7 +937,7 @@ void pending_resource_info::_handle_gl_texture_image(
                 glapi.operations().active_texture(pgts.tex_unit);
                 glapi.bind_texture(pgts.tex_target, pgts.tex);
                 glapi.tex_sub_image2d(
-                  pgts.tex_target,
+                  target,
                   params.level,
                   params.x_offs,
                   params.y_offs,
@@ -887,7 +961,7 @@ void pending_resource_info::_handle_gl_texture_image(
                 glapi.operations().active_texture(pgts.tex_unit);
                 glapi.bind_texture(pgts.tex_target, pgts.tex);
                 glapi.tex_sub_image1d(
-                  pgts.tex_target,
+                  target,
                   params.level,
                   params.x_offs,
                   params.width,
