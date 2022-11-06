@@ -1,6 +1,7 @@
 {"inputs":
-{"Position": {"attrib":"position"}
-,"VPivot": {"attrib":"vertex_pivot"}}
+{"PPivot": {"attrib":"pivot_pivot"}
+,"VPivot": {"attrib":"vertex_pivot"}
+,"Position": {"attrib":"position"}}
 ,"shaders":
 [{"url":"glsl:///VertShader","type":"vertex"}
 ,{"url":"glsl:///TCtlShader","type":"tess_control"}

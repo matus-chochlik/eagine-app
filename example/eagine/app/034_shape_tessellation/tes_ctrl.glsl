@@ -2,20 +2,23 @@
 
 layout(vertices = 3) out;
 
-in vec3 vertPosition[];
+in vec3 vertPPivot[];
 in vec3 vertVPivot[];
+in vec3 vertPosition[];
 in float vertDistance[];
 
-out vec3 tecoPosition[];
+out vec3 tecoPPivot[];
 out vec3 tecoVPivot[];
+out vec3 tecoPosition[];
 
 int tessLevel(float dist) {
     return 1 + int(256.0 / pow(dist * 0.5 + 1.0, 2.0));
 }
 
 void main() {
-    tecoPosition[gl_InvocationID] = vertPosition[gl_InvocationID];
+    tecoPPivot[gl_InvocationID] = vertPPivot[gl_InvocationID];
     tecoVPivot[gl_InvocationID] = vertVPivot[gl_InvocationID];
+    tecoPosition[gl_InvocationID] = vertPosition[gl_InvocationID];
 
     if(gl_InvocationID == 0) {
         gl_TessLevelInner[0] = tessLevel(
