@@ -11,6 +11,7 @@ set_target_properties(
 	PROPERTIES FOLDER "Example/App"
 )
 
+
 add_subdirectory(001_basic_info)
 add_subdirectory(001_clear)
 add_subdirectory(002_spectrum)
@@ -45,6 +46,7 @@ add_subdirectory(029_furry_torus)
 add_subdirectory(030_stencil_shadow)
 add_subdirectory(031_tessellation)
 add_subdirectory(032_translucent_arrow)
+add_subdirectory(034_shape_tessellation)
 add_subdirectory(035_brick_torus)
 add_subdirectory(037_lantern)
 add_subdirectory(040_metaballs)

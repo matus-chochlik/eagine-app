@@ -1,0 +1,38 @@
+{
+	"vertex_count": 4,
+	"position": [{
+		"values_per_vertex": 3,
+		"type": "float",
+		"data": [
+			 0.943, 0.000,-0.333,
+			-0.471,-0.817,-0.333, 
+			-0.471, 0.817,-0.333, 
+			 0.000, 0.000, 1.000
+		]
+	}],
+	"vertex_pivot": [{
+		"values_per_vertex": 3,
+		"type": "float",
+		"data": [
+			0, 0, 0,
+			0, 0, 0,
+			0, 0, 0,
+			0, 0, 0
+		]
+	}],
+	"index_type": "unsigned_16",
+	"indices": [
+		0, 1, 2,
+		0, 3, 1,
+		1, 3, 2,
+		2, 3, 0
+	],
+	"instructions": [{
+		"mode": "patches",
+		"first": 0,
+		"count": 12,
+		"index_type": "unsigned_16",
+		"cw_face_winding": false
+	}]
+}
+
