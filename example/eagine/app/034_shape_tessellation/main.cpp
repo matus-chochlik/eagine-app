@@ -80,7 +80,7 @@ void example_tess::_on_loaded(const loaded_resource_base& loaded) noexcept {
           .set_near(0.01F * sr)
           .set_far(100.F * sr)
           .set_orbit_min(1.1F * sr)
-          .set_orbit_max(5.0F * sr)
+          .set_orbit_max(10.0F * sr)
           .set_fov(degrees_(45.F));
     }
     if(_prog && _geom) {
