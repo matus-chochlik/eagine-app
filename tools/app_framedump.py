@@ -510,12 +510,20 @@ class Framedump(object):
     def framesToPng(self):
         for info in self.generateFrames():
             if info["zlib"]:
-                print(info["prefix"])
                 with open(info["path"], "rb") as zipped:
                     os.unlink(info["path"])
                     info["path"] = info["prefix"] + ".raw"
                     with open(info["path"], "wb") as unzipped:
-                        unzipped.write(zlib.decompress(zipped.read()))
+                        zobj = zlib.decompressobj()
+                        while True:
+                            zdata = zipped.read(64 * 1024)
+                            if not zdata:
+                                rdata = zobj.flush()
+                                if rdata: unzipped.write(rdata)
+                                break
+                            rdata = zobj.decompress(zdata)
+                            if rdata: unzipped.write(rdata)
+                        del zobj
             assert os.path.isfile(info["path"])
 
             png_path = os.path.join(
