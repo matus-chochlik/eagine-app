@@ -80,7 +80,7 @@ void example_tess::_on_loaded(const loaded_resource_base& loaded) noexcept {
           .set_near(0.01F * sr)
           .set_far(100.F * sr)
           .set_orbit_min(1.1F * sr)
-          .set_orbit_max(10.0F * sr)
+          .set_orbit_max(20.0F * sr)
           .set_fov(degrees_(45.F));
     }
     if(_prog && _geom) {
@@ -95,7 +95,7 @@ void example_tess::update() noexcept {
         reset_timeout();
     }
     if(state.user_idle_too_long()) {
-        _camera.idle_update(state, 17.F);
+        _camera.idle_update(state, 7.F);
     }
 
     if(_prog && _geom) {

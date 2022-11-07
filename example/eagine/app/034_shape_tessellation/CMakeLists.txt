@@ -18,7 +18,7 @@ eagine_embed_target_resources(
 		tetrasphre "tetrasphere.eagimesh"
 		octasphere "octasphere.eagimesh"
 		sqre_torus "square_torus.eagimesh"
-		shape1     "shape1.eagimesh"
+		capsule    "capsule.eagimesh"
 	PACKED
 	ENABLE_SEARCH
 )
