@@ -55,7 +55,7 @@ auto example_tess::_shape_url(identifier id) -> url {
 }
 //------------------------------------------------------------------------------
 example_tess::example_tess(execution_context& ec, video_context& vc)
-  : timeouting_application{ec, std::chrono::seconds{30}}
+  : timeouting_application{ec, std::chrono::seconds{60}}
   , _video{vc}
   , _bg{_video, {0.0F, 0.0F, 0.0F, 1.F}, {0.25F, 0.25F, 0.25F, 0.0F}, 1.F}
   , _prog{ec}

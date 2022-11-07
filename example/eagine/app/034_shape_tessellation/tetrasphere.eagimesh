@@ -34,20 +34,20 @@
 		"values_per_vertex": 1,
 		"type": "float",
 		"data": [
-			1,633,
-			1,633,
-			1,633,
-			1,633
+			1.633,
+			1.633,
+			1.633,
+			1.633
 		]
 	}],
 	"face_area": [{
 		"values_per_vertex": 1,
 		"type": "float",
 		"data": [
-			1,155,
-			1,155,
-			1,155,
-			1,155
+			1.155,
+			1.155,
+			1.155,
+			1.155
 		]
 	}],
 	"index_type": "unsigned_16",

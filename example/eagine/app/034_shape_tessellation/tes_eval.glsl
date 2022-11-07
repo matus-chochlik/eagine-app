@@ -10,40 +10,53 @@ in vec3 tecoPosition[];
 
 out vec3 teevColor;
 
+vec3 normalizeCoef(vec3 c) {
+	return c / dot(c, vec3(1.0));
+}
+
 void main() {
-	const float Eps = 0.0001;
-	const float Exp = 3.0 / 2.0;
-	vec3 Coef = sqrt(gl_TessCoord.xyz);
-	Coef = vec3(pow(Coef.x, Exp), pow(Coef.y, Exp), pow(Coef.z, Exp));
-	Coef = Coef / (Coef.x + Coef.y + Coef.z);
+	const float Eps = 0.001;
+	const float Exp = 2.0 / 3.0;
+	vec3 Coefs = normalizeCoef(pow(gl_TessCoord.xyz, vec3(Exp)));
 
-	mat3 PPivot;
-	mat3 PivVec;
-	vec3 VecLen;
-	for(int r=0; r<3; ++r) {
-		PPivot[r] = tecoPPivot[r];
-		PivVec[r] = tecoVPivot[r] - tecoPPivot[r];
-		VecLen[r] = length(PivVec[r]);
-		if(VecLen[r] > Eps) {
-			PivVec[r] = PivVec[r] / VecLen[r];
+	mat3 PPivots;
+	mat3 VPivots;
+	mat3 Positions;
+	mat3 PivVecs;
+	mat3 PosVecs;
+	vec3 PivLens;
+	vec3 PosLens;
+
+	for(int c=0; c<3; ++c) {
+		PPivots[c] = tecoPPivot[c];
+		PivVecs[c] = tecoVPivot[c] - tecoPPivot[c];
+		VPivots[c] = tecoVPivot[c];
+		PosVecs[c] = tecoPosition[c] - tecoVPivot[c];
+		Positions[c] = tecoPosition[c];
+
+		PivLens[c] = length(PivVecs[c]);
+		if(PivLens[c] > Eps) {
+			PivVecs[c] /= PivLens[c];
 		} else {
-			PivVec[r] = vec3(1.0);
+			PivVecs[c] = vec3(1.0);
+		}
+
+		PosLens[c] = length(PosVecs[c]);
+		if(PosLens[c] > Eps) {
+			PosVecs[c] /= PosLens[c];
+		} else {
+			PosVecs[c] = vec3(1.0);
 		}
 	}
-	vec3 VPivot = (PPivot * Coef) + normalize(PivVec * Coef) * dot(VecLen, Coef);
+	vec3 PPivot = (PPivots * Coefs);
+	vec3 VPivot = (VPivots * Coefs);
 
-	for(int r=0; r<3; ++r) {
-		PivVec[r] = tecoPosition[r] - tecoVPivot[r];
-		VecLen[r] = length(PivVec[r]);
-		if(VecLen[r] > Eps) {
-			PivVec[r] = PivVec[r] / VecLen[r];
-		} else {
-			PivVec[r] = vec3(1.0);
-		}
-	}
+	vec3 NewPos =
+		PPivot+
+		normalize(PivVecs * Coefs) * dot(PivLens, Coefs)+
+		normalize(PosVecs * Coefs) * dot(PosLens, Coefs);
 
-	vec3 Position = VPivot + normalize(PivVec * Coef) * dot(VecLen, Coef);
-    gl_Position = CameraMatrix * vec4(Position, 1.0);
+    gl_Position = CameraMatrix * vec4(NewPos, 1.0);
 
 	teevColor = vec3(0.8);
 }
