@@ -42,7 +42,9 @@ private:
 auto example_tess::_shape_id() -> identifier {
     if(const auto arg{context().main_context().args().find("--shape").next()}) {
         if(const identifier res_id{arg.get()}) {
-            if(context().loader().has_embedded_resource(res_id)) {
+            if(
+              (res_id == identifier{"icosphere"}) ||
+              context().loader().has_embedded_resource(res_id)) {
                 return res_id;
             }
         }
@@ -51,6 +53,16 @@ auto example_tess::_shape_id() -> identifier {
 }
 //------------------------------------------------------------------------------
 auto example_tess::_shape_url(identifier id) -> url {
+    if(id == identifier{"icosphere"}) {
+        return url{
+          "shape:///unit_icosahedron"
+          "?to_patches=true"
+          "+pivot_pivot=true"
+          "+vertex_pivot=true"
+          "+position=true"
+          "+opposite_length=true"
+          "+face_area=true"};
+    }
     return context().loader().embedded_resource_locator("json", id);
 }
 //------------------------------------------------------------------------------
@@ -98,9 +110,9 @@ void example_tess::update() noexcept {
         _camera.idle_update(state, 17.F);
     }
 
-    if(_prog && _geom) {
-        _bg.clear(_video, _camera);
+    _bg.clear(_video, _camera);
 
+    if(_prog && _geom) {
         _prog.use(_video);
         _prog.set_projection(_video, _camera);
         _geom.use(_video);
