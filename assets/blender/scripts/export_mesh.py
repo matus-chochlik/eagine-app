@@ -781,6 +781,7 @@ def export_single(options, bdata, name, obj, mesh):
 
     index_type = "unsigned_16" if vertex_index < 2**16 else "unsigned_32"
     result["vertex_count"] = vertex_index
+    result["index_count"] = len(indices)
     result["index_type"] = index_type
     result["indices"] = indices
     result["instructions"] = [{
@@ -791,6 +792,32 @@ def export_single(options, bdata, name, obj, mesh):
         "cw_face_winding": False
     }]
     return result
+# ------------------------------------------------------------------------------
+def do_export_one(options, result):
+    def _dump(item):
+        json.dump(item, options.output, separators=(',', ':'))
+
+    options.output.write('{')
+    options.output.write('"name":')
+    _dump(result["name"]);
+    result.pop("name")
+    for name in [
+        "vertex_count",
+        "index_count",
+        "index_type",
+        "indices",
+        "instructions"]:
+        options.output.write('\n,')
+        options.output.write('"%s":' % name)
+        _dump(result[name]);
+        result.pop(name)
+
+    for name, item in result.items():
+        options.output.write('\n,')
+        options.output.write('"%s":' % name)
+        _dump(item);
+
+    options.output.write('\n}')
 # ------------------------------------------------------------------------------
 def do_export(options):
     try:
@@ -803,8 +830,17 @@ def do_export(options):
             del mesh
 
         if len(result) == 1:
-            result = result[0]
-        json.dump(result, options.output, separators=(',', ':'))
+            do_export_one(options, result[0])
+        else:
+            options.output.write("[\n")
+            first = True
+            for part in result:
+                if first:
+                    First = false
+                else:
+                    options.output.write(",\n")
+                do_export_one(options, part)
+            options.output.write("]")
     except ModuleNotFoundError:
         sys.stderr.write("must be run from blender!\n")
 # ------------------------------------------------------------------------------
