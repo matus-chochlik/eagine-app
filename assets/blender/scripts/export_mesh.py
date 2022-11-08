@@ -50,6 +50,9 @@ class ExportMeshArgParser(argparse.ArgumentParser):
                 "pivot",
                 "pivot_pivot",
                 "vertex_pivot",
+                "opposite_length",
+                "edge_length",
+                "face_area",
                 "face_coord",
                 "wrap_coord",
                 "color",
@@ -260,16 +263,24 @@ def fix_color(options, c):
         return (f(c[0]), f(c[1]), f(c[2]))
     return (f(c[0]), f(c[1]), f(c[2]), f(c[3]))
 # ------------------------------------------------------------------------------
+def vdiff(u, v):
+    return tuple(uc-vc for uc, vc in zip(u, v))
+# ------------------------------------------------------------------------------
+def dotp(u, v):
+    return sum(tuple(uc*vc for uc, vc in zip(u, v)))
+# ------------------------------------------------------------------------------
+def crossp(u, v):
+    return (u[1]*v[2]-u[2]*v[1], u[2]*v[0]-u[0]*v[2], u[0]*v[1]-u[1]*v[0])
+# ------------------------------------------------------------------------------
+def vlen(v):
+    return math.sqrt(dotp(v, v))
+# ------------------------------------------------------------------------------
+def triangle_arms(a, b, c):
+    return (vdiff(b, a), vdiff(c, a))
+# ------------------------------------------------------------------------------
 def degenerate_triangle(a, b, c):
-    _diff = lambda u, v: tuple(uc-vc for uc, vc in zip(u, v))
-    _dot = lambda u, v: sum(tuple(uc*vc for uc, vc in zip(u, v)))
-    _len = lambda u: math.sqrt(_dot(u, u))
-    _cross = lambda u, v: (u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0])
-
-    ab = _diff(b, a)
-    ac = _diff(c, a)
-
-    return _len(_cross(ab, ac)) <= max(_len(ab), _len(ac))*0.000001
+    ab, ac = triangle_arms(a, b, c)
+    return vlen(crossp(ab, ac)) <= max(vlen(ab), vlen(ac))*0.000001
 # ------------------------------------------------------------------------------
 def get_diffuse_color(mat):
     # TODO Material.use_nodes / Material.node_tree
@@ -278,6 +289,14 @@ def get_diffuse_color(mat):
 def get_specular_color(mat):
     # TODO Material.use_nodes / Material.node_tree
     return mat.specular_color
+# ------------------------------------------------------------------------------
+def get_edge_length(v1, v2, tri):
+    v = (tri[v2][i]-tri[v1][i] for i in range(3))
+    return math.sqrt(sum(e*e for e in v))
+# ------------------------------------------------------------------------------
+def get_face_area(a, b, c):
+    ab, ac = triangle_arms(a, b, c)
+    return vlen(crossp(ab, ac)) * 0.5
 # ------------------------------------------------------------------------------
 def has_same_values(options, obj, mesh, lil, fl, ll, vl, lir, fr, lr, vr):
     if vl.co != vr.co:
@@ -301,6 +320,16 @@ def has_same_values(options, obj, mesh, lil, fl, ll, vl, lir, fr, lr, vr):
         for vcs in mesh.vertex_colors:
             if vcs.data[lil].color != vcs.data[lir].color:
                 return False
+    if options.exp_opposite_length:
+        # TODO
+        return False
+    if options.exp_edge_length:
+        # TODO
+        return False
+    if options.exp_face_area:
+        # TODO
+        return False
+
     if options.exp_polygon_id:
         if fl.index != fr.index:
             return False
@@ -388,6 +417,15 @@ def export_single(options, bdata, name, obj, mesh):
     if options.exp_wrap_coord:
         result["wrap_coord"] = []
 
+    if options.exp_opposite_length:
+        result["opposite_length"] = []
+
+    if options.exp_edge_length:
+        result["edge_length"] = []
+
+    if options.exp_face_area:
+        result["face_area"] = []
+
     if options.exp_weight:
         result["weight"] = []
 
@@ -413,6 +451,9 @@ def export_single(options, bdata, name, obj, mesh):
     normals = []
     tangentials = []
     bitangentials = []
+    oppo_lengths = []
+    edge_lengths = []
+    face_areas = []
     polygon_ids = []
     material_ids = []
 
@@ -451,17 +492,18 @@ def export_single(options, bdata, name, obj, mesh):
     op = options.occlude_precision
 
     for meshface in mesh.polygons:
-        s = meshface.loop_start
+        start_index = meshface.loop_start
         assert meshface.loop_total == 3
 
-        tri_pos = (mesh.vertices[mesh.loops[s+i].vertex_index].co for i in range(3))
+        tri_pos = tuple(mesh.vertices[mesh.loops[start_index+i].vertex_index].co for i in range(3))
     
         if not options.keep_degenerate:
             if degenerate_triangle(*tri_pos):
                 continue
 
         fn = [fixnum(x, p) for x in fixvec(meshface.normal)]
-        for loop_index in range(s, s + 3):
+        for vert_index in range(3):
+            loop_index = start_index + vert_index
             meshloop = mesh.loops[loop_index]
             meshvert = mesh.vertices[meshloop.vertex_index]
 
@@ -527,6 +569,30 @@ def export_single(options, bdata, name, obj, mesh):
                             coords[uvs.name] += [fixnum(c, p) for c in uv]
                         except KeyError:
                             pass
+                if options.exp_opposite_length:
+                    oppo_lengths.append(fixnum(get_edge_length(
+                        (vert_index + 1) % 3,
+                        (vert_index + 2) % 3,
+                        tri_pos),
+                        p))
+                if options.exp_edge_length:
+                    oppo_lengths.append(fixnum(get_edge_length(
+                        (vert_index + 2) % 3,
+                        (vert_index + 0) % 3,
+                        tri_pos),
+                        p))
+                    edge_lengths.append(fixnum(get_edge_length(
+                        (vert_index + 0) % 3,
+                        (vert_index + 1) % 3,
+                        tri_pos),
+                        p))
+                    edge_lengths.append(fixnum(get_edge_length(
+                        (vert_index + 1) % 3,
+                        (vert_index + 2) % 3,
+                        tri_pos),
+                        p))
+                if options.exp_face_area:
+                    face_areas.append(fixnum(get_face_area(*tri_pos), p))
                 if options.exp_weight:
                     for grp in obj.vertex_groups:
                         try:
@@ -595,6 +661,24 @@ def export_single(options, bdata, name, obj, mesh):
     if options.exp_bitangential:
         result["bitangential"].append({
             "data": bitangentials
+        })
+
+    if options.exp_opposite_length:
+        result["opposite_length"].append({
+            "values_per_vertex":1,
+            "data":oppo_lengths
+        })
+
+    if options.exp_edge_length:
+        result["edge_length"].append({
+            "values_per_vertex":3,
+            "data":edge_lengths
+        })
+
+    if options.exp_face_area:
+        result["face_area"].append({
+            "values_per_vertex":1,
+            "data":face_areas 
         })
 
     if options.exp_color or\
