@@ -117,6 +117,20 @@ class ExportMeshArgParser(argparse.ArgumentParser):
         )
 
         self.add_argument(
+            '--vertex-pivot-mesh', '-mvp',
+            dest="vertex_pivot_meshes",
+            action="append",
+            default=[]
+        )
+
+        self.add_argument(
+            '--pivot-pivot-mesh', '-mpp',
+            dest="pivot_pivot_meshes",
+            action="append",
+            default=[]
+        )
+
+        self.add_argument(
             '--precision', '-P',
             dest="precision",
             type=self._positive_int,
@@ -188,6 +202,16 @@ class ExportMeshArgParser(argparse.ArgumentParser):
 
     # --------------------------------------------------------------------------
     def process_parsed_options(self, options):
+        options.all_meshes = []
+        for i in range(len(options.meshes)):
+            def _lget(l, i):
+                return l[i] if i < len(l) else None
+            options.all_meshes.append((
+                options.meshes[i],
+                _lget(options.vertex_pivot_meshes, i),
+                _lget(options.pivot_pivot_meshes, i)))
+
+
         if options.output_path:
             options.prefix = os.path.dirname(options.output_path)
             if not os.path.isdir(options.prefix):
@@ -298,9 +322,17 @@ def get_face_area(a, b, c):
     ab, ac = triangle_arms(a, b, c)
     return vlen(crossp(ab, ac)) * 0.5
 # ------------------------------------------------------------------------------
-def has_same_values(options, obj, mesh, linfo, lil, fl, ll, vl, rinfo, lir, fr, lr, vr):
+def has_same_values(options, objs, meshes, linfo, lil, fl, ll, vl, rinfo, lir, fr, lr, vr):
+    obj = objs[0]
+    mesh = meshes[0]
     if vl.co != vr.co:
         return False
+    if options.exp_vertex_pivot:
+        if meshes[1].vertices[ll.vertex_index].co != meshes[1].vertices[lr.vertex_index].co:
+            return False
+    if options.exp_pivot_pivot:
+        if meshes[2].vertices[ll.vertex_index].co != meshes[2].vertices[lr.vertex_index].co:
+            return False
     if options.exp_vert_normal:
         if vl.normal != vr.normal:
             return False
@@ -384,16 +416,24 @@ def data_type_from(l):
     return "float"
 
 # ------------------------------------------------------------------------------
-def export_single(options, bdata, name, obj, mesh):
+def export_single(options, bdata, names, objs, meshes):
+    obj = objs[0]
+    mesh = meshes[0]
     if options.exp_normal or options.exp_tangential or options.exp_bitangential:
         mesh.calc_tangents() # TODO for each uv-map?
 
     result = {}
-    result["name"] = name
+    result["name"] = names[0]
     result["position"] = []
 
     if options.exp_pivot:
         result["pivot"] = []
+
+    if options.exp_vertex_pivot:
+        result["vertex_pivot"] = []
+
+    if options.exp_pivot_pivot:
+        result["pivot_pivot"] = []
 
     if options.exp_normal or options.exp_vert_normal or options.exp_face_normal:
         result["normal"] = []
@@ -442,6 +482,8 @@ def export_single(options, bdata, name, obj, mesh):
     indices = []
     positions = []
     pivots = []
+    vertex_pivots = []
+    pivot_pivots = []
     vert_normals = []
     face_normals = []
     normals = []
@@ -491,7 +533,8 @@ def export_single(options, bdata, name, obj, mesh):
         start_index = meshface.loop_start
         assert meshface.loop_total == 3
 
-        tri_pos = tuple(mesh.vertices[mesh.loops[start_index+i].vertex_index].co for i in range(3))
+        tri_pos = tuple(
+            mesh.vertices[mesh.loops[start_index+i].vertex_index].co for i in range(3))
     
         if not options.keep_degenerate:
             if degenerate_triangle(*tri_pos):
@@ -594,8 +637,8 @@ def export_single(options, bdata, name, obj, mesh):
                 old_vert_key = (old_face_index, old_loop_index, emit_index)
                 if has_same_values(
                     options,
-                    obj,
-                    mesh,
+                    objs,
+                    meshes,
                     emitted_info.get(old_vert_key, {}),
                     old_loop_index,
                     mesh.polygons[old_face_index],
@@ -614,6 +657,12 @@ def export_single(options, bdata, name, obj, mesh):
                 positions += [fixnum(x, p) for x in fixvec(meshvert.co)]
                 if options.exp_pivot:
                     pivots += [fixnum(x, p) for x in fixvec(obj.location)]
+                if options.exp_vertex_pivot:
+                    vpvert = meshes[1].vertices[meshloop.vertex_index]
+                    vertex_pivots += [fixnum(x, p) for x in fixvec(vpvert.co)]
+                if options.exp_pivot_pivot:
+                    ppvert = meshes[2].vertices[meshloop.vertex_index]
+                    pivot_pivots += [fixnum(x, p) for x in fixvec(ppvert.co)]
                 if options.exp_vert_normal:
                     vert_normals += [fixnum(x, p) for x in fixvec(meshvert.normal)]
                 if options.exp_face_normal:
@@ -681,6 +730,16 @@ def export_single(options, bdata, name, obj, mesh):
     if options.exp_pivot:
         result["pivot"].append({
             "data": pivots
+        })
+
+    if options.exp_vertex_pivot:
+        result["vertex_pivot"].append({
+            "data": vertex_pivots
+        })
+
+    if options.exp_pivot_pivot:
+        result["pivot_pivot"].append({
+            "data": pivot_pivots
         })
 
     if options.exp_normal:
@@ -819,15 +878,54 @@ def do_export_one(options, result):
 
     options.output.write('\n}')
 # ------------------------------------------------------------------------------
+def fetch_obj_mesh(options, bpy_data, name):
+    obj = bpy_data.objects[name]
+    return obj, triangulate(options, obj)
+# ------------------------------------------------------------------------------
+def fetch_meshes(options, bpy_data):
+    def _are_meshes_consistent(m1, m2):
+        if len(m1.vertices) != len(m2.vertices):
+            return False
+        if len(m1.polygons) != len(m2.polygons):
+            return False
+        # TODO more checks  
+        return True
+
+    for name_po, name_vp, name_pp in options.all_meshes:
+        # positions
+        obj_po, msh_po = fetch_obj_mesh(options, bpy_data, name_po)
+
+        # vertex pivots
+        if name_vp == name_po:
+            obj_vp, msh_vp = obj_po, msh_po
+        else:
+            name_vp = name_po
+            obj_vp, msh_vp = fetch_obj_mesh(options, bpy_data, name_vp)
+            assert _are_meshes_consistent(msh_po, msh_vp)
+
+        # pivot pivots
+        if name_pp == name_vp:
+            obj_pp, msh_pp = obj_vp, msh_vp
+        else:
+            name_pp = name_vp
+            obj_pp, msh_pp = fetch_obj_mesh(options, bpy_data, name_pp)
+            assert _are_meshes_consistent(msh_vp, msh_pp)
+
+        yield (
+            (name_po, name_vp, name_pp),
+            (obj_po, obj_vp, obj_pp),
+            (msh_po, msh_vp, msh_pp))
+
+# ------------------------------------------------------------------------------
 def do_export(options):
     try:
         import bpy
         result = []
 
-        for name, obj in [(n, bpy.data.objects[n]) for n in options.meshes]:
-            mesh = triangulate(options, obj)
-            result.append(export_single(options, bpy.data, name, obj, mesh))
-            del mesh
+        for names, objs, meshes in fetch_meshes(options, bpy.data):
+            result.append(export_single(options, bpy.data, names, objs, meshes))
+            for mesh in meshes:
+                del mesh
 
         if len(result) == 1:
             do_export_one(options, result[0])
