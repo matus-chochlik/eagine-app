@@ -25,10 +25,10 @@ void main() {
 	float EdgeDist = dot(Dist, Mask * 0.5);
 
 	gl_TessLevelOuter[gl_InvocationID] =
-		min(1 + int((64.0 * vertEdgeLen[gl_InvocationID]) / EdgeDist), 120);
+		min(1 + int((48.0 * vertEdgeLen[gl_InvocationID]) / EdgeDist), 120);
 
     if(gl_InvocationID == 0) {
 		gl_TessLevelInner[0] =
-			min(1 + int((64.0 * vertFaceArea[0]) / EdgeDist), 120);
+			min(1 + int((48.0 * vertFaceArea[0]) / EdgeDist), 120);
     }
 }

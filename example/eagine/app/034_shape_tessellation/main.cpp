@@ -95,7 +95,7 @@ void example_tess::update() noexcept {
         reset_timeout();
     }
     if(state.user_idle_too_long()) {
-        _camera.idle_update(state, 7.F);
+        _camera.idle_update(state, 17.F);
     }
 
     if(_prog && _geom) {
