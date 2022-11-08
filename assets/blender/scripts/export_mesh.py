@@ -351,17 +351,11 @@ def has_same_values(options, obj, mesh, linfo, lil, fl, ll, vl, rinfo, lir, fr, 
         for uvs in mesh.uv_layers:
             if uvs.data[lil].uv != uvs.data[lir].uv:
                 return False
-    if options.exp_weight or options.exp_occlusion:
-        for grp in obj.vertex_groups:
-            try:
-                wl = grp.weight(vl.index)
-            except RuntimeError:
-                wl = 0.0
-            try:
-                wr = grp.weight(vr.index)
-            except RuntimeError:
-                wr = 0.0
-            if wl != wr:
+    if options.exp_weight:
+        if linfo.get("groups", {"left":False}) != rinfo.get("groups", {"right":True}):
+                return False
+    if options.exp_occlusion:
+        if linfo.get("occls", {"left":False}) != rinfo.get("occls", {"right":True}):
                 return False
 
     return True
@@ -510,12 +504,33 @@ def export_single(options, bdata, name, obj, mesh):
             meshvert = mesh.vertices[meshloop.vertex_index]
 
             new_vert_key = (meshface.index, meshloop.index, vertex_index)
+
             def _vert_info():
                 try:
                     return emitted_info[new_vert_key]
                 except KeyError:
                     emitted_info[new_vert_key] = {}
                     return emitted_info[new_vert_key]
+
+            def _vert_subinfo(name):
+                vert_info = _vert_info()
+                try:
+                    return vert_info[name]
+                except KeyError:
+                    vert_info[name] = {}
+                    return vert_info[name]
+
+            def _vert_groups():
+                return _vert_subinfo("groups")
+
+            def _set_vert_group(name, value):
+                _vert_groups()[name] = value
+
+            def _vert_occls():
+                return vert_subinfo("occls")
+
+            def _set_vert_occls(name, value):
+                _vert_occls()[name] = value
 
             if options.exp_opposite_length:
                 _vert_info()["oppo_length"] =\
@@ -544,6 +559,34 @@ def export_single(options, bdata, name, obj, mesh):
             if options.exp_face_area:
                 _vert_info()["face_area"] =\
                     fixnum(get_face_area(*tri_pos), p)
+            if options.exp_weight:
+                for grp in obj.vertex_groups:
+                    try:
+                        try:
+                            w = grp.weight(meshvert.index)
+                            _set_vert_group(
+                                grp.name,
+                                fixcomp(options.weight_type, w, wp))
+                        except RuntimeError:
+                            _set_vert_group(
+                                grp.name,
+                                fixcomp(options.weight_type, 0, wp))
+                    except KeyError:
+                        pass
+            if options.exp_occlusion:
+                for grp in obj.vertex_groups:
+                    try:
+                        try:
+                            w = grp.weight(meshvert.index)
+                            _set_vert_occls(
+                                grp.name,
+                                fixcomp(options.occlude_type, w, wp))
+                        except RuntimeError:
+                            _set_vert_occls(
+                                grp.name,
+                                fixcomp(options.occlude_type, 0, wp))
+                    except KeyError:
+                        pass
 
             emitted_vert = emitted[meshvert.index]
             reused_vertex = False
@@ -620,33 +663,11 @@ def export_single(options, bdata, name, obj, mesh):
                 if options.exp_face_area:
                     face_areas.append(_vert_info()["face_area"])
                 if options.exp_weight:
-                    for grp in obj.vertex_groups:
-                        try:
-                            try:
-                                w = grp.weight(meshvert.index)
-                                groups[grp.name].append(
-                                    fixcomp(options.weight_type, w, wp)
-                                )
-                            except RuntimeError:
-                                groups[grp.name].append(
-                                    fixcomp(options.weight_type, 0, wp)
-                                )
-                        except KeyError:
-                            pass
+                    for name, value in _vert_groups().items():
+                        groups[name].append(value)
                 if options.exp_occlusion:
-                    for grp in obj.vertex_groups:
-                        try:
-                            try:
-                                w = grp.weight(meshvert.index)
-                                occls[grp.name].append(
-                                    fixcomp(options.occlude_type, w, op)
-                                )
-                            except RuntimeError:
-                                occls[grp.name].append(
-                                    fixcomp(options.occlude_type, 0, op)
-                                )
-                        except KeyError:
-                            pass
+                    for name, value in _vert_occls().items():
+                        occls[name].append(value)
 
                 emitted_vert.add(new_vert_key)
                 indices.append(vertex_index)
