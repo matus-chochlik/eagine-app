@@ -170,6 +170,13 @@ class ExportMeshArgParser(argparse.ArgumentParser):
         )
 
         self.add_argument(
+            '--keep-degenerate', '-D',
+            dest="keep_degenerate",
+            action="store_true",
+            default=False
+        )
+
+        self.add_argument(
             '--no-alpha', '-A',
             dest="export_alpha",
             action="store_false",
@@ -449,8 +456,9 @@ def export_single(options, bdata, name, obj, mesh):
 
         tri_pos = (mesh.vertices[mesh.loops[s+i].vertex_index].co for i in range(3))
     
-        if degenerate_triangle(*tri_pos):
-            continue
+        if not options.keep_degenerate:
+            if degenerate_triangle(*tri_pos):
+                continue
 
         fn = [fixnum(x, p) for x in fixvec(meshface.normal)]
         for loop_index in range(s, s + 3):
