@@ -899,7 +899,8 @@ def fetch_meshes(options, bpy_data):
         if name_vp == name_po:
             obj_vp, msh_vp = obj_po, msh_po
         else:
-            name_vp = name_po
+            if name_vp is None:
+                name_vp = name_po
             obj_vp, msh_vp = fetch_obj_mesh(options, bpy_data, name_vp)
             assert _are_meshes_consistent(msh_po, msh_vp)
 
@@ -907,7 +908,8 @@ def fetch_meshes(options, bpy_data):
         if name_pp == name_vp:
             obj_pp, msh_pp = obj_vp, msh_vp
         else:
-            name_pp = name_vp
+            if name_pp is None:
+                name_pp = name_vp
             obj_pp, msh_pp = fetch_obj_mesh(options, bpy_data, name_pp)
             assert _are_meshes_consistent(msh_vp, msh_pp)
 
