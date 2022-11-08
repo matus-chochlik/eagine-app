@@ -360,6 +360,18 @@ void pending_resource_info::_handle_vec3_vector(
     mark_finished();
 }
 //------------------------------------------------------------------------------
+auto pending_resource_info::_apply_shape_modifiers(
+  std::shared_ptr<shapes::generator> gen) noexcept
+  -> std::shared_ptr<shapes::generator> {
+    if(_locator.query().arg_has_value("to_patches", true)) {
+        _parent.log_info("applying 'to_patches' shape modifier")
+          .arg("requestId", _request_id)
+          .arg("locator", _locator.str());
+        gen = shapes::to_patches(std::move(gen));
+    }
+    return gen;
+}
+//------------------------------------------------------------------------------
 void pending_resource_info::_handle_shape_generator(
   const pending_resource_info&,
   const std::shared_ptr<shapes::generator>& gen) noexcept {
@@ -371,7 +383,7 @@ void pending_resource_info::_handle_shape_generator(
         if(std::holds_alternative<_pending_gl_shape_state>(_state)) {
             auto& pgss = std::get<_pending_gl_shape_state>(_state);
             const oglplus::shape_generator shape{
-              pgss.video.get().gl_api(), gen};
+              pgss.video.get().gl_api(), _apply_shape_modifiers(gen)};
             if(const auto cont{continuation()}) {
                 extract(cont)._handle_gl_shape(*this, shape);
             }

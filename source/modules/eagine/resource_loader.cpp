@@ -300,6 +300,8 @@ private:
       const pending_resource_info& source,
       const std::vector<math::vector<float, 3, true>>& values) noexcept;
 
+    auto _apply_shape_modifiers(std::shared_ptr<shapes::generator>) noexcept
+      -> std::shared_ptr<shapes::generator>;
     void _handle_shape_generator(
       const pending_resource_info& source,
       const std::shared_ptr<shapes::generator>& gen) noexcept;
