@@ -298,7 +298,7 @@ def get_face_area(a, b, c):
     ab, ac = triangle_arms(a, b, c)
     return vlen(crossp(ab, ac)) * 0.5
 # ------------------------------------------------------------------------------
-def has_same_values(options, obj, mesh, lil, fl, ll, vl, lir, fr, lr, vr):
+def has_same_values(options, obj, mesh, linfo, lil, fl, ll, vl, rinfo, lir, fr, lr, vr):
     if vl.co != vr.co:
         return False
     if options.exp_vert_normal:
@@ -320,15 +320,16 @@ def has_same_values(options, obj, mesh, lil, fl, ll, vl, lir, fr, lr, vr):
         for vcs in mesh.vertex_colors:
             if vcs.data[lil].color != vcs.data[lir].color:
                 return False
+
     if options.exp_opposite_length:
-        # TODO
-        return False
+        if linfo.get("oppo_length", -1) != rinfo.get("oppo_length", -2):
+            return False
     if options.exp_edge_length:
-        # TODO
-        return False
+        if linfo.get("edge_length", -1) != rinfo.get("edge_length", -2):
+            return False
     if options.exp_face_area:
-        # TODO
-        return False
+        if linfo.get("face_area", -1) != rinfo.get("face_area", -2):
+            return False
 
     if options.exp_polygon_id:
         if fl.index != fr.index:
@@ -439,6 +440,7 @@ def export_single(options, bdata, name, obj, mesh):
         result["material_id"] = []
 
     emitted = {}
+    emitted_info = {}
     for meshvert in mesh.vertices:
         emitted[meshvert.index] = set()
 
@@ -507,17 +509,56 @@ def export_single(options, bdata, name, obj, mesh):
             meshloop = mesh.loops[loop_index]
             meshvert = mesh.vertices[meshloop.vertex_index]
 
+            new_vert_key = (meshface.index, meshloop.index, vertex_index)
+            def _vert_info():
+                try:
+                    return emitted_info[new_vert_key]
+                except KeyError:
+                    emitted_info[new_vert_key] = {}
+                    return emitted_info[new_vert_key]
+
+            if options.exp_opposite_length:
+                _vert_info()["oppo_length"] =\
+                    fixnum(get_edge_length(
+                        (vert_index + 1) % 3,
+                        (vert_index + 2) % 3,
+                        tri_pos),
+                        p)
+            if options.exp_edge_length:
+                _vert_info()["edge_length"] = (
+                    fixnum(get_edge_length(
+                        (vert_index + 2) % 3,
+                        (vert_index + 0) % 3,
+                        tri_pos),
+                        p),
+                    fixnum(get_edge_length(
+                        (vert_index + 0) % 3,
+                        (vert_index + 1) % 3,
+                        tri_pos),
+                        p),
+                    fixnum(get_edge_length(
+                        (vert_index + 1) % 3,
+                        (vert_index + 2) % 3,
+                        tri_pos),
+                        p))
+            if options.exp_face_area:
+                _vert_info()["face_area"] =\
+                    fixnum(get_face_area(*tri_pos), p)
+
             emitted_vert = emitted[meshvert.index]
             reused_vertex = False
             for old_face_index, old_loop_index, emit_index in emitted_vert:
+                old_vert_key = (old_face_index, old_loop_index, emit_index)
                 if has_same_values(
                     options,
                     obj,
                     mesh,
+                    emitted_info.get(old_vert_key, {}),
                     old_loop_index,
                     mesh.polygons[old_face_index],
                     mesh.loops[old_loop_index],
                     meshvert,
+                    emitted_info.get(new_vert_key, {}),
                     loop_index,
                     meshface,
                     meshloop,
@@ -570,29 +611,14 @@ def export_single(options, bdata, name, obj, mesh):
                         except KeyError:
                             pass
                 if options.exp_opposite_length:
-                    oppo_lengths.append(fixnum(get_edge_length(
-                        (vert_index + 1) % 3,
-                        (vert_index + 2) % 3,
-                        tri_pos),
-                        p))
+                    oppo_lengths.append(_vert_info()["oppo_length"])
                 if options.exp_edge_length:
-                    oppo_lengths.append(fixnum(get_edge_length(
-                        (vert_index + 2) % 3,
-                        (vert_index + 0) % 3,
-                        tri_pos),
-                        p))
-                    edge_lengths.append(fixnum(get_edge_length(
-                        (vert_index + 0) % 3,
-                        (vert_index + 1) % 3,
-                        tri_pos),
-                        p))
-                    edge_lengths.append(fixnum(get_edge_length(
-                        (vert_index + 1) % 3,
-                        (vert_index + 2) % 3,
-                        tri_pos),
-                        p))
+                    l0, l1, l2 = _vert_info()["edge_length"]
+                    oppo_lengths.append(fixnum(l0, p))
+                    edge_lengths.append(fixnum(l1, p))
+                    edge_lengths.append(fixnum(l2, p))
                 if options.exp_face_area:
-                    face_areas.append(fixnum(get_face_area(*tri_pos), p))
+                    face_areas.append(_vert_info()["face_area"])
                 if options.exp_weight:
                     for grp in obj.vertex_groups:
                         try:
@@ -622,7 +648,7 @@ def export_single(options, bdata, name, obj, mesh):
                         except KeyError:
                             pass
 
-                emitted_vert.add((meshface.index, meshloop.index, vertex_index))
+                emitted_vert.add(new_vert_key)
                 indices.append(vertex_index)
 
                 vertex_index += 1
