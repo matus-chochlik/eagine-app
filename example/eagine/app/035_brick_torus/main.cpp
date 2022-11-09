@@ -31,6 +31,8 @@ private:
     void _apply_texture() noexcept;
     void _switch_texture(const input&) noexcept;
 
+    puzzle_progress<4> _load_progress;
+
     video_context& _video;
 
     torus_program _prog;
@@ -44,6 +46,7 @@ private:
 //------------------------------------------------------------------------------
 example_parallax::example_parallax(execution_context& ec, video_context& vc)
   : timeouting_application{ec, std::chrono::seconds{90}}
+  , _load_progress{ec.progress(), "Loading resources"}
   , _video{vc}
   , _prog{ec}
   , _torus{ec}
@@ -89,6 +92,7 @@ void example_parallax::_on_resource_loaded(
         _prog.apply_input_bindings(_video, _torus);
     }
     _apply_texture();
+    _load_progress.update_progress(_prog && _torus && _bricks && _stones);
 }
 //------------------------------------------------------------------------------
 void example_parallax::_apply_texture() noexcept {
@@ -118,7 +122,7 @@ void example_parallax::update() noexcept {
         _camera.idle_update(state, 17.F);
     }
 
-    if(_prog && _torus && _bricks && _stones) {
+    if(_load_progress.done()) {
         const auto rad = radians_(state.frame_time().value());
         const auto& glapi = _video.gl_api();
         const auto& [gl, GL] = glapi;

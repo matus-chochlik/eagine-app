@@ -30,8 +30,8 @@ private:
         return make_callable_ref<&example_lantern::_on_resource_loaded>(this);
     }
 
+    puzzle_progress<5> _load_progress;
     video_context& _video;
-    activity_progress _load_progress;
 
     draw_buffers draw_bufs;
     pumpkin_texture pumpkin_tex;
@@ -41,13 +41,12 @@ private:
     screen_program screen_prog;
 
     orbiting_camera camera;
-    bool _has_all_resources{false};
 };
 //------------------------------------------------------------------------------
 example_lantern::example_lantern(execution_context& ec, video_context& vc)
   : timeouting_application{ec, std::chrono::seconds{90}}
+  , _load_progress{ec.progress(), "Loading resources"}
   , _video{vc}
-  , _load_progress{ec.progress().activity("Loading resources", 5)}
   , pumpkin_tex{ec}
   , pumpkin{ec}
   , screen{ec}
@@ -65,7 +64,7 @@ example_lantern::example_lantern(execution_context& ec, video_context& vc)
     // camera
     camera.set_pitch_max(degrees_(30.F))
       .set_pitch_min(degrees_(-25.F))
-      .set_fov(degrees_(50))
+      .set_fov(degrees_(60))
       .set_azimuth(degrees_(180));
 
     _video.gl_api().operations().clear_depth(1.0);
@@ -83,8 +82,8 @@ void example_lantern::_on_resource_loaded(
         camera.set_target(bs.center())
           .set_near(sr * 0.01F)
           .set_far(sr * 50.0F)
-          .set_orbit_min(sr * 1.2F)
-          .set_orbit_max(sr * 2.4F);
+          .set_orbit_min(sr * 2.0F)
+          .set_orbit_max(sr * 3.0F);
     }
     if(loaded.is_one_of(pumpkin, draw_prog)) {
         if(pumpkin && draw_prog) {
@@ -107,13 +106,7 @@ void example_lantern::_on_resource_loaded(
     }
     reset_timeout();
     _load_progress.update_progress(
-      int(bool(pumpkin_tex)) + int(bool(pumpkin)) + int(bool(screen)) +
-      int(bool(draw_prog)) + int(bool(screen_prog)));
-    _has_all_resources =
-      pumpkin_tex && pumpkin && screen && draw_prog && screen_prog;
-    if(_has_all_resources) {
-        _load_progress.finish();
-    }
+      pumpkin_tex, pumpkin, screen, draw_prog, screen_prog);
 }
 //------------------------------------------------------------------------------
 void example_lantern::update() noexcept {
@@ -128,7 +121,7 @@ void example_lantern::update() noexcept {
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
 
-    if(_has_all_resources) {
+    if(_load_progress.done()) {
         const auto t = state.frame_time().value();
         const auto ambient =
           math::blend(0.05F, 0.30F, math::cosine_wave01(t / 5.F));

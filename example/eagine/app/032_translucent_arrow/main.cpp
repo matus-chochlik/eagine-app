@@ -58,9 +58,9 @@ example_arrow::example_arrow(
 
     const auto sr = _shape.bounding_sphere().radius();
     _camera.set_near(sr * 0.1F)
-      .set_far(sr * 3.0F)
-      .set_orbit_min(sr * 1.2F)
-      .set_orbit_max(sr * 1.7F)
+      .set_far(sr * 5.0F)
+      .set_orbit_min(sr * 2.0F)
+      .set_orbit_max(sr * 3.0F)
       .set_fov(degrees_(80.F));
     _depth_prog.set_camera(vc, _camera);
     _draw_prog.set_camera(vc, _camera);

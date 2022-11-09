@@ -100,9 +100,9 @@ void example_uv_map::_on_shp_loaded(
     const auto sr = bs.radius();
     _camera.set_target(bs.center())
       .set_near(sr * 0.1F)
-      .set_far(sr * 5.0F)
-      .set_orbit_min(sr * 1.2F)
-      .set_orbit_max(sr * 2.4F)
+      .set_far(sr * 10.0F)
+      .set_orbit_min(sr * 1.8F)
+      .set_orbit_max(sr * 3.6F)
       .set_fov(degrees_(70));
 }
 //------------------------------------------------------------------------------

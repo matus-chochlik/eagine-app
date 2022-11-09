@@ -93,8 +93,8 @@ void example_fur::_on_loaded(const loaded_resource_base& loaded) noexcept {
         _camera.set_target(bs.center())
           .set_near(0.1F * sr)
           .set_far(50.F * sr)
-          .set_orbit_min(1.2F * sr)
-          .set_orbit_max(2.2F * sr)
+          .set_orbit_min(1.3F * sr)
+          .set_orbit_max(2.6F * sr)
           .set_fov(degrees_(45));
     }
     if(_shape_gen && _surf_prog) {
