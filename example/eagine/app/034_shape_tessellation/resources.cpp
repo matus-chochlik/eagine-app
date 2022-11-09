@@ -22,6 +22,11 @@ void tess_program::_on_loaded(
     info.get_uniform_location("CameraMatrix") >> camera_matrix_loc;
     info.get_uniform_location("CameraPosition") >> camera_position_loc;
     info.get_uniform_location("ViewportDimensions") >> viewport_dim_loc;
+    info.get_uniform_location("Factor") >> factor_loc;
+}
+//------------------------------------------------------------------------------
+void tess_program::set_factor(video_context& vc, float factor) {
+    set(vc, factor_loc, factor);
 }
 //------------------------------------------------------------------------------
 void tess_program::set_projection(video_context& vc, orbiting_camera& camera) {

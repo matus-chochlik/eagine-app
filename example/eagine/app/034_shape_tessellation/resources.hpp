@@ -22,6 +22,7 @@ class tess_program : public gl_program_resource {
 public:
     tess_program(execution_context&);
     void set_projection(video_context&, orbiting_camera&);
+    void set_factor(video_context&, float);
 
 private:
     void _on_loaded(const gl_program_resource::load_info&) noexcept;
@@ -29,6 +30,7 @@ private:
     oglplus::uniform_location camera_matrix_loc;
     oglplus::uniform_location camera_position_loc;
     oglplus::uniform_location viewport_dim_loc;
+    oglplus::uniform_location factor_loc;
 };
 //------------------------------------------------------------------------------
 // geometry

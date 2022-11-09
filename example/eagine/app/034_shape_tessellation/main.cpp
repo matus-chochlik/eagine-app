@@ -92,7 +92,7 @@ void example_tess::_on_loaded(const loaded_resource_base& loaded) noexcept {
           .set_near(0.01F * sr)
           .set_far(100.F * sr)
           .set_orbit_min(1.1F * sr)
-          .set_orbit_max(20.0F * sr)
+          .set_orbit_max(3.0F * sr)
           .set_fov(degrees_(45.F));
     }
     if(_prog && _geom) {
@@ -113,8 +113,10 @@ void example_tess::update() noexcept {
     _bg.clear(_video, _camera);
 
     if(_prog && _geom) {
+        const auto t = state.frame_time().value();
         _prog.use(_video);
         _prog.set_projection(_video, _camera);
+        _prog.set_factor(_video, math::sine_wave01(t / 7.F));
         _geom.use(_video);
         _geom.draw(_video);
     } else {

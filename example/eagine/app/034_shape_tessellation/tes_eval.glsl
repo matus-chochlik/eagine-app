@@ -15,9 +15,7 @@ vec3 normalizeCoef(vec3 c) {
 }
 
 void main() {
-	const float Eps = 0.001;
-	const float Exp = 2.0 / 3.0;
-	vec3 Coefs = normalizeCoef(pow(gl_TessCoord.xyz, vec3(Exp)));
+	const float Eps = 0.0001;
 
 	mat3 PPivots;
 	mat3 VPivots;
@@ -26,6 +24,8 @@ void main() {
 	mat3 PosVecs;
 	vec3 PivLens;
 	vec3 PosLens;
+	vec3 Exps;
+	float AtEdge = max(gl_TessCoord.x, max(gl_TessCoord.y, gl_TessCoord.z));
 
 	for(int c=0; c<3; ++c) {
 		PPivots[c] = tecoPPivot[c];
@@ -47,14 +47,15 @@ void main() {
 		} else {
 			PosVecs[c] = vec3(1.0);
 		}
+		Exps[c] = mix(1.0 / 3.0, 1.0, AtEdge);
 	}
-	vec3 PPivot = (PPivots * Coefs);
-	vec3 VPivot = (VPivots * Coefs);
+
+	vec3 Coefs = normalizeCoef(pow(gl_TessCoord.xyz, Exps));
 
 	vec3 NewPos =
-		PPivot+
-		normalize(PivVecs * Coefs) * dot(PivLens, Coefs)+
-		normalize(PosVecs * Coefs) * dot(PosLens, Coefs);
+		(PPivots * Coefs) +
+		normalize(PivVecs * Coefs) * dot(PivLens, Coefs) * 0.5 +
+		normalize(PosVecs * Coefs) * dot(PosLens, Coefs) * 0.5 ;
 
     gl_Position = CameraMatrix * vec4(NewPos, 1.0);
 
