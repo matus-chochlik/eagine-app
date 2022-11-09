@@ -187,6 +187,13 @@ class ExportMeshArgParser(argparse.ArgumentParser):
         )
 
         self.add_argument(
+            '--patches', '-p',
+            dest="patches",
+            action="store_true",
+            default=False
+        )
+
+        self.add_argument(
             '--keep-degenerate', '-D',
             dest="keep_degenerate",
             action="store_true",
@@ -844,7 +851,7 @@ def export_single(options, bdata, names, objs, meshes):
     result["index_type"] = index_type
     result["indices"] = indices
     result["instructions"] = [{
-        "mode": "triangles",
+        "mode": "patches" if options.patches else "triangles",
         "first": 0,
         "count": len(indices),
         "index_type": index_type,
