@@ -55,12 +55,7 @@ struct glfw3_activity_progress_info {
 };
 #endif
 //------------------------------------------------------------------------------
-struct glfw3_update_context {
-#if EAGINE_APP_HAS_IMGUI
-    span<const glfw3_activity_progress_info> activities;
-#endif
-};
-//------------------------------------------------------------------------------
+class glfw3_opengl_provider;
 class glfw3_opengl_window
   : public main_ctx_object
   , public video_provider
@@ -69,20 +64,20 @@ public:
     glfw3_opengl_window(
       application_config&,
       const identifier instance_id,
-      main_ctx_parent parent);
+      glfw3_opengl_provider& parent);
 
     glfw3_opengl_window(
       application_config&,
       const identifier instance_id,
       const string_view instance,
-      main_ctx_parent parent);
+      glfw3_opengl_provider& parent);
 
     auto initialize(
       const launch_options&,
       const video_options&,
       const span<GLFWmonitor* const>) -> bool;
 
-    void update(execution_context&, const glfw3_update_context&);
+    void update(execution_context&);
 
     void clean_up();
 
@@ -118,9 +113,11 @@ public:
         _wheel_change_y += y;
     }
 
-    auto handle_progress(const glfw3_update_context&) noexcept -> bool;
+    void show_progress() noexcept;
+    auto handle_progress() noexcept -> bool;
 
 private:
+    glfw3_opengl_provider& _provider;
     identifier _instance_id;
     application_config_value<bool> _imgui_enabled;
 
@@ -180,6 +177,72 @@ private:
     bool _backtick_was_pressed{false};
 };
 //------------------------------------------------------------------------------
+class glfw3_opengl_provider final
+  : public main_ctx_object
+  , public hmi_provider
+  , public progress_observer {
+public:
+    glfw3_opengl_provider(main_ctx_parent parent);
+    glfw3_opengl_provider(glfw3_opengl_provider&&) = delete;
+    glfw3_opengl_provider(const glfw3_opengl_provider&) = delete;
+    auto operator=(glfw3_opengl_provider&&) = delete;
+    auto operator=(const glfw3_opengl_provider&) = delete;
+    ~glfw3_opengl_provider() noexcept final;
+
+    auto is_implemented() const noexcept -> bool final;
+    auto implementation_name() const noexcept -> string_view final;
+
+    auto is_initialized() -> bool final;
+    auto should_initialize(execution_context&) -> bool final;
+    auto initialize(execution_context&) -> bool final;
+    void update(execution_context&) final;
+    void clean_up(execution_context&) final;
+
+    void input_enumerate(
+      callable_ref<void(std::shared_ptr<input_provider>)>) final;
+    void video_enumerate(
+      callable_ref<void(std::shared_ptr<video_provider>)>) final;
+    void audio_enumerate(
+      callable_ref<void(std::shared_ptr<audio_provider>)>) final;
+
+#if EAGINE_APP_HAS_IMGUI
+    auto activities() const noexcept
+      -> span<const glfw3_activity_progress_info> {
+        return view(_activities);
+    }
+#endif
+
+    void activity_begun(
+      const activity_progress_id_t parent_id,
+      const activity_progress_id_t activity_id,
+      const string_view title,
+      const span_size_t total_steps) noexcept final;
+
+    void activity_finished(
+      const activity_progress_id_t parent_id,
+      const activity_progress_id_t activity_id,
+      const string_view title,
+      span_size_t total_steps) noexcept final;
+
+    void activity_updated(
+      const activity_progress_id_t parent_id,
+      const activity_progress_id_t activity_id,
+      const span_size_t current,
+      const span_size_t total) noexcept final;
+
+private:
+#if EAGINE_APP_HAS_GLFW3
+    std::map<identifier, std::shared_ptr<glfw3_opengl_window>> _windows;
+#if EAGINE_APP_HAS_IMGUI
+    std::vector<glfw3_activity_progress_info> _activities;
+#endif
+#endif
+    auto _get_progress_callback() noexcept -> callable_ref<bool() noexcept>;
+    auto _handle_progress() noexcept -> bool;
+};
+//------------------------------------------------------------------------------
+// glfw3_opengl_window_scroll_callback
+//------------------------------------------------------------------------------
 void glfw3_opengl_window_scroll_callback(GLFWwindow* window, double x, double y) {
     if(auto raw_that{glfwGetWindowUserPointer(window)}) {
         auto that = reinterpret_cast<glfw3_opengl_window*>(raw_that);
@@ -191,8 +254,9 @@ glfw3_opengl_window::glfw3_opengl_window(
   application_config& c,
   const identifier instance_id,
   const string_view instance,
-  main_ctx_parent parent)
+  glfw3_opengl_provider& parent)
   : main_ctx_object{"GLFW3Wndow", parent}
+  , _provider{parent}
   , _instance_id{instance_id}
   , _imgui_enabled{
       c,
@@ -342,43 +406,42 @@ auto glfw3_opengl_window::add_ui_button(
 glfw3_opengl_window::glfw3_opengl_window(
   application_config& cfg,
   const identifier instance_id,
-  main_ctx_parent parent)
+  glfw3_opengl_provider& parent)
   : glfw3_opengl_window{cfg, instance_id, instance_id.name(), parent} {}
 //------------------------------------------------------------------------------
-auto glfw3_opengl_window::handle_progress(
-  [[maybe_unused]] const glfw3_update_context& upd_ctx) noexcept -> bool {
+void glfw3_opengl_window::show_progress() noexcept {
+#if EAGINE_APP_HAS_IMGUI
+    const auto& activities{_provider.activities()};
+    if(!activities.empty()) {
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        ImGuiWindowFlags window_flags = 0;
+        // NOLINTNEXTLINE(hicpp-signed-bitwise)
+        window_flags |= ImGuiWindowFlags_NoResize;
+        ImGui::SetNextWindowSize(ImVec2(float(_window_width) * 0.8F, 0.F));
+        ImGui::Begin("Activities", nullptr, window_flags);
+        for(const auto& info : activities) {
+            const auto progress =
+              float(info.current_steps) / float(info.total_steps);
+            ImGui::TextUnformatted(info.title.c_str());
+            ImGui::ProgressBar(progress, ImVec2(-1.F, 0.F));
+        }
+        ImGui::End();
+        ImGui::EndFrame();
+        ImGui::Render();
+        if(const auto draw_data{ImGui::GetDrawData()}) {
+            ImGui_ImplOpenGL3_RenderDrawData(draw_data);
+        }
+    }
+#endif
+}
+//------------------------------------------------------------------------------
+auto glfw3_opengl_window::handle_progress() noexcept -> bool {
     bool result = false;
     if(_window) {
         result = glfwGetKey(_window, GLFW_KEY_ESCAPE) != GLFW_PRESS;
-        if(_imgui_enabled) {
-#if EAGINE_APP_HAS_IMGUI
-            if(!upd_ctx.activities.empty()) {
-                ImGui_ImplOpenGL3_NewFrame();
-                ImGui_ImplGlfw_NewFrame();
-                ImGui::NewFrame();
-
-                ImGuiWindowFlags window_flags = 0;
-                // NOLINTNEXTLINE(hicpp-signed-bitwise)
-                window_flags |= ImGuiWindowFlags_NoResize;
-                ImGui::SetNextWindowSize(
-                  ImVec2(float(_window_width) * 0.8F, 0.F));
-                ImGui::Begin("Activities", nullptr, window_flags);
-                for(const auto& info : upd_ctx.activities) {
-                    const auto progress =
-                      float(info.current_steps) / float(info.total_steps);
-                    ImGui::TextUnformatted(info.title.c_str());
-                    ImGui::ProgressBar(progress, ImVec2(-1.F, 0.F));
-                }
-                ImGui::End();
-                ImGui::EndFrame();
-                ImGui::Render();
-                if(const auto draw_data{ImGui::GetDrawData()}) {
-                    ImGui_ImplOpenGL3_RenderDrawData(draw_data);
-                }
-            }
-#endif
-            glfwSwapBuffers(_window);
-        }
     }
     return result;
 }
@@ -529,10 +592,13 @@ void glfw3_opengl_window::video_end(execution_context&) {
 void glfw3_opengl_window::video_commit(execution_context&) {
     assert(_window);
 #if EAGINE_APP_HAS_IMGUI
-    if(_imgui_enabled && _imgui_visible) {
-        if(const auto draw_data{ImGui::GetDrawData()}) {
-            ImGui_ImplOpenGL3_RenderDrawData(draw_data);
+    if(_imgui_enabled) {
+        if(_imgui_visible) {
+            if(const auto draw_data{ImGui::GetDrawData()}) {
+                ImGui_ImplOpenGL3_RenderDrawData(draw_data);
+            }
         }
+        show_progress();
     }
 #endif
     glfwSwapBuffers(_window);
@@ -610,13 +676,12 @@ void glfw3_opengl_window::mapping_commit(
       _enabled_signals.contains(message_id{"Cursor", "MotionY"});
 }
 //------------------------------------------------------------------------------
-void glfw3_opengl_window::update(
-  execution_context& exec_ctx,
-  [[maybe_unused]] const glfw3_update_context& upd_ctx) {
+void glfw3_opengl_window::update(execution_context& exec_ctx) {
 
     if(_imgui_enabled && _imgui_visible) {
         assert(_parent_context);
 #if EAGINE_APP_HAS_IMGUI
+        const auto& upd_ctx{_provider.activities()};
         const auto& par_ctx = *_parent_context;
         const auto& state = exec_ctx.state();
         const auto frame_dur = state.frame_duration().value();
@@ -640,7 +705,7 @@ void glfw3_opengl_window::update(
         ImGui::Text("Frames per second: %.0f", frames_per_second);
         // NOLINTNEXTLINE(hicpp-vararg)
         ImGui::Text(
-          "Activities in progress: %ld", long(upd_ctx.activities.size()));
+          "Activities in progress: %ld", long(_provider.activities().size()));
 
         if(_input_sink) {
             auto& sink = extract(_input_sink);
@@ -800,62 +865,7 @@ void glfw3_opengl_window::clean_up() {
 }
 #endif // EAGINE_APP_HAS_GLFW3
 //------------------------------------------------------------------------------
-class glfw3_opengl_provider final
-  : public main_ctx_object
-  , public hmi_provider
-  , public progress_observer {
-public:
-    glfw3_opengl_provider(main_ctx_parent parent);
-    glfw3_opengl_provider(glfw3_opengl_provider&&) = delete;
-    glfw3_opengl_provider(const glfw3_opengl_provider&) = delete;
-    auto operator=(glfw3_opengl_provider&&) = delete;
-    auto operator=(const glfw3_opengl_provider&) = delete;
-    ~glfw3_opengl_provider() noexcept final;
-
-    auto is_implemented() const noexcept -> bool final;
-    auto implementation_name() const noexcept -> string_view final;
-
-    auto is_initialized() -> bool final;
-    auto should_initialize(execution_context&) -> bool final;
-    auto initialize(execution_context&) -> bool final;
-    void update(execution_context&) final;
-    void clean_up(execution_context&) final;
-
-    void input_enumerate(
-      callable_ref<void(std::shared_ptr<input_provider>)>) final;
-    void video_enumerate(
-      callable_ref<void(std::shared_ptr<video_provider>)>) final;
-    void audio_enumerate(
-      callable_ref<void(std::shared_ptr<audio_provider>)>) final;
-
-    void activity_begun(
-      const activity_progress_id_t parent_id,
-      const activity_progress_id_t activity_id,
-      const string_view title,
-      const span_size_t total_steps) noexcept final;
-
-    void activity_finished(
-      const activity_progress_id_t parent_id,
-      const activity_progress_id_t activity_id,
-      const string_view title,
-      span_size_t total_steps) noexcept final;
-
-    void activity_updated(
-      const activity_progress_id_t parent_id,
-      const activity_progress_id_t activity_id,
-      const span_size_t current,
-      const span_size_t total) noexcept final;
-
-private:
-#if EAGINE_APP_HAS_GLFW3
-    std::map<identifier, std::shared_ptr<glfw3_opengl_window>> _windows;
-#if EAGINE_APP_HAS_IMGUI
-    std::vector<glfw3_activity_progress_info> _activities;
-#endif
-#endif
-    auto _get_progress_callback() noexcept -> callable_ref<bool() noexcept>;
-    auto _handle_progress() noexcept -> bool;
-};
+// glfw3_opengl_provider
 //------------------------------------------------------------------------------
 glfw3_opengl_provider::glfw3_opengl_provider(main_ctx_parent parent)
   : main_ctx_object{"GLFW3Prvdr", parent} {
@@ -876,14 +886,10 @@ auto glfw3_opengl_provider::_get_progress_callback() noexcept
 //------------------------------------------------------------------------------
 auto glfw3_opengl_provider::_handle_progress() noexcept -> bool {
 #if EAGINE_APP_HAS_GLFW3
-    glfw3_update_context upd_ctx{};
-#if EAGINE_APP_HAS_IMGUI
-    upd_ctx.activities = cover(_activities);
-#endif
     glfwPollEvents();
     for(auto& entry : _windows) {
         assert(std::get<1>(entry));
-        if(!extract(std::get<1>(entry)).handle_progress(upd_ctx)) {
+        if(!extract(std::get<1>(entry)).handle_progress()) {
             return false;
         }
     }
@@ -946,7 +952,7 @@ auto glfw3_opengl_provider::initialize(execution_context& exec_ctx) -> bool {
 
             if(should_create_window) {
                 if(const auto new_win{std::make_shared<glfw3_opengl_window>(
-                     this->main_context().config(), inst, this->as_parent())}) {
+                     this->main_context().config(), inst, *this)}) {
                     if(extract(new_win).initialize(
                          options, video_opts, monitors)) {
                         _windows[inst] = new_win;
@@ -968,13 +974,9 @@ auto glfw3_opengl_provider::initialize(execution_context& exec_ctx) -> bool {
 void glfw3_opengl_provider::update(
   [[maybe_unused]] execution_context& exec_ctx) {
 #if EAGINE_APP_HAS_GLFW3
-    glfw3_update_context upd_ctx{};
-#if EAGINE_APP_HAS_IMGUI
-    upd_ctx.activities = cover(_activities);
-#endif
     glfwPollEvents();
     for(auto& entry : _windows) {
-        entry.second->update(exec_ctx, upd_ctx);
+        entry.second->update(exec_ctx);
     }
 #endif // EAGINE_APP_HAS_GLFW3
 }
