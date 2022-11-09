@@ -59,7 +59,7 @@ class FramedumpArgumentParser(argparse.ArgumentParser):
             raise argparse.ArgumentTypeError(msg)
 
         self.add_argument(
-            "--work-dir", "-w", 
+            "--work-dir", "-w",
             metavar='DIR-PATH',
             dest='work_dir_path',
             nargs='?',
@@ -68,7 +68,7 @@ class FramedumpArgumentParser(argparse.ArgumentParser):
         )
 
         self.add_argument(
-            "--application", "-a", 
+            "--application", "-a",
             metavar='EXECUTABLE-PATH',
             dest='application_path',
             nargs='?',
@@ -77,7 +77,7 @@ class FramedumpArgumentParser(argparse.ArgumentParser):
         )
 
         self.add_argument(
-            "--output", "-o", 
+            "--output", "-o",
             metavar='OUTPUT-FILE',
             dest='output_path',
             nargs='?',
@@ -119,7 +119,7 @@ class FramedumpArgumentParser(argparse.ArgumentParser):
             dest="frame_size",
             action="store_const",
             const=[1920,1080]
-            
+
         )
 
         self.add_argument(
@@ -238,11 +238,11 @@ class FramedumpArgumentParser(argparse.ArgumentParser):
         )
 
         self.add_argument(
-            "--mastodon-gif",
-            help="""Render a GIF for MAstodon""",
+            "--mastodon-vid",
+            help="""Render a video for Mastodon""",
             default=False,
             action="store_true",
-            dest="mastodon_gif"
+            dest="mastodon_vid"
         )
 
         self.add_argument(
@@ -311,8 +311,8 @@ class FramedumpArgumentParser(argparse.ArgumentParser):
                     self.fps = 24
                     self.render_scale = 2
                     self.max_bytes = "14500k"
-                elif self.mastodon_gif:
-                    self.gif_output = True
+                elif self.mastodon_vid:
+                    self.gif_output = False
                     self.frame_size[0] = 420
                     self.frame_size[1] = 240
                     self.fps = 20
@@ -325,7 +325,7 @@ class FramedumpArgumentParser(argparse.ArgumentParser):
                     if self.gif_output:
                         self.output_path = os.path.realpath("oglplus.gif")
                     else:
-                        self.output_path = os.path.realpath("oglplus.avi")
+                        self.output_path = os.path.realpath("oglplus.mp4")
 
 
             # ------------------------------------------------------------------
