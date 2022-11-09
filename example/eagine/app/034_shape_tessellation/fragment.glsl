@@ -13,5 +13,5 @@ void main() {
     vec3 FaceColor = geomColor;
     const vec3 EdgeColor = vec3(0.2, 0.2, 0.2);
 
-    fragColor = mix(FaceColor, EdgeColor, EdgeAlpha * mix(0.50, 0.25, Factor));
+    fragColor = mix(FaceColor, EdgeColor, EdgeAlpha * mix(0.75, 0.50, Factor));
 }

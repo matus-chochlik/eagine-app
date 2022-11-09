@@ -93,7 +93,7 @@ void example_tess::_on_loaded(const loaded_resource_base& loaded) noexcept {
           .set_far(100.F * sr)
           .set_orbit_min(1.1F * sr)
           .set_orbit_max(3.0F * sr)
-          .set_fov(degrees_(45.F));
+          .set_fov(degrees_(30.F));
     }
     if(_prog && _geom) {
         _prog.apply_input_bindings(_video, _geom);
