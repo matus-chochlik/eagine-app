@@ -235,10 +235,7 @@ eagine_add_module(
 		eagine.eglplus
 		eagine.oglplus
 		eagine.oalplus
-)
-target_link_libraries(
-	eagine.app
-	PUBLIC
-	eagine-app-imgui
-	EAGine::Deps::GLFW3
+	PRIVATE_LINK_LIBRARIES
+		eagine-app-imgui
+		EAGine::Deps::GLFW3
 )

@@ -38,6 +38,7 @@ import eagine.core.utility;
 import eagine.core.valid_if;
 import eagine.core.c_api;
 import eagine.core.main_ctx;
+import <string>;
 import <vector>;
 import <map>;
 
@@ -527,13 +528,13 @@ void glfw3_opengl_window::video_end(execution_context&) {
 //------------------------------------------------------------------------------
 void glfw3_opengl_window::video_commit(execution_context&) {
     assert(_window);
-    if(_imgui_enabled && _imgui_visible) {
 #if EAGINE_APP_HAS_IMGUI
+    if(_imgui_enabled && _imgui_visible) {
         if(const auto draw_data{ImGui::GetDrawData()}) {
             ImGui_ImplOpenGL3_RenderDrawData(draw_data);
         }
-#endif
     }
+#endif
     glfwSwapBuffers(_window);
 }
 //------------------------------------------------------------------------------
@@ -641,7 +642,6 @@ void glfw3_opengl_window::update(
         ImGui::Text(
           "Activities in progress: %ld", long(upd_ctx.activities.size()));
 
-#if EAGINE_APP_HAS_IMGUI
         if(_input_sink) {
             auto& sink = extract(_input_sink);
             for(auto& bs : _ui_button_states) {
@@ -652,7 +652,6 @@ void glfw3_opengl_window::update(
                 }
             }
         }
-#endif
 
         if(ImGui::Button("Hide")) {
             _imgui_visible = false;
