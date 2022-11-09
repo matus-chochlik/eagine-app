@@ -113,7 +113,6 @@ public:
         _wheel_change_y += y;
     }
 
-    void show_progress() noexcept;
     auto handle_progress() noexcept -> bool;
 
 private:
@@ -409,35 +408,6 @@ glfw3_opengl_window::glfw3_opengl_window(
   glfw3_opengl_provider& parent)
   : glfw3_opengl_window{cfg, instance_id, instance_id.name(), parent} {}
 //------------------------------------------------------------------------------
-void glfw3_opengl_window::show_progress() noexcept {
-#if EAGINE_APP_HAS_IMGUI
-    const auto& activities{_provider.activities()};
-    if(!activities.empty()) {
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-
-        ImGuiWindowFlags window_flags = 0;
-        // NOLINTNEXTLINE(hicpp-signed-bitwise)
-        window_flags |= ImGuiWindowFlags_NoResize;
-        ImGui::SetNextWindowSize(ImVec2(float(_window_width) * 0.8F, 0.F));
-        ImGui::Begin("Activities", nullptr, window_flags);
-        for(const auto& info : activities) {
-            const auto progress =
-              float(info.current_steps) / float(info.total_steps);
-            ImGui::TextUnformatted(info.title.c_str());
-            ImGui::ProgressBar(progress, ImVec2(-1.F, 0.F));
-        }
-        ImGui::End();
-        ImGui::EndFrame();
-        ImGui::Render();
-        if(const auto draw_data{ImGui::GetDrawData()}) {
-            ImGui_ImplOpenGL3_RenderDrawData(draw_data);
-        }
-    }
-#endif
-}
-//------------------------------------------------------------------------------
 auto glfw3_opengl_window::handle_progress() noexcept -> bool {
     bool result = false;
     if(_window) {
@@ -593,12 +563,11 @@ void glfw3_opengl_window::video_commit(execution_context&) {
     assert(_window);
 #if EAGINE_APP_HAS_IMGUI
     if(_imgui_enabled) {
-        if(_imgui_visible) {
+        if(_imgui_visible || !_provider.activities().empty()) {
             if(const auto draw_data{ImGui::GetDrawData()}) {
                 ImGui_ImplOpenGL3_RenderDrawData(draw_data);
             }
         }
-        show_progress();
     }
 #endif
     glfwSwapBuffers(_window);
@@ -678,10 +647,10 @@ void glfw3_opengl_window::mapping_commit(
 //------------------------------------------------------------------------------
 void glfw3_opengl_window::update(execution_context& exec_ctx) {
 
-    if(_imgui_enabled && _imgui_visible) {
+    if(_imgui_enabled) {
         assert(_parent_context);
 #if EAGINE_APP_HAS_IMGUI
-        const auto& upd_ctx{_provider.activities()};
+        const auto activities{_provider.activities()};
         const auto& par_ctx = *_parent_context;
         const auto& state = exec_ctx.state();
         const auto frame_dur = state.frame_duration().value();
@@ -692,46 +661,65 @@ void glfw3_opengl_window::update(execution_context& exec_ctx) {
         ImGui::NewFrame();
 
         ImGuiWindowFlags window_flags = 0;
-        // NOLINTNEXTLINE(hicpp-signed-bitwise)
-        window_flags |= ImGuiWindowFlags_NoResize;
-        ImGui::Begin("Application", nullptr, window_flags);
-        // NOLINTNEXTLINE(hicpp-vararg)
-        ImGui::Text("Dimensions: %dx%d", _window_width, _window_height);
-        // NOLINTNEXTLINE(hicpp-vararg)
-        ImGui::Text("Frame number: %ld", long(par_ctx.frame_number()));
-        // NOLINTNEXTLINE(hicpp-vararg)
-        ImGui::Text("Frame time: %.1f [ms]", frame_dur * 1000.F);
-        // NOLINTNEXTLINE(hicpp-vararg)
-        ImGui::Text("Frames per second: %.0f", frames_per_second);
-        // NOLINTNEXTLINE(hicpp-vararg)
-        ImGui::Text(
-          "Activities in progress: %ld", long(_provider.activities().size()));
+        if(!activities.empty()) {
+            // NOLINTNEXTLINE(hicpp-signed-bitwise)
+            window_flags |= ImGuiWindowFlags_NoResize;
+            ImGui::SetNextWindowSize(ImVec2(float(_window_width) * 0.8F, 0.F));
+            ImGui::Begin("Activities", nullptr, window_flags);
+            for(const auto& info : activities) {
+                const auto progress =
+                  float(info.current_steps) / float(info.total_steps);
+                ImGui::TextUnformatted(info.title.c_str());
+                ImGui::ProgressBar(progress, ImVec2(-1.F, 0.F));
+            }
+            ImGui::End();
+        }
 
-        if(_input_sink) {
-            auto& sink = extract(_input_sink);
-            for(auto& bs : _ui_button_states) {
-                if(bs.pressed.assign(ImGui::Button(bs.button_label.c_str()))) {
-                    sink.consume(
-                      {bs.button_id, input_value_kind::absolute_norm},
-                      bs.pressed);
+        if(_imgui_visible) {
+            window_flags = 0;
+            // NOLINTNEXTLINE(hicpp-signed-bitwise)
+            window_flags |= ImGuiWindowFlags_NoResize;
+            ImGui::Begin("Application", nullptr, window_flags);
+            // NOLINTNEXTLINE(hicpp-vararg)
+            ImGui::Text("Dimensions: %dx%d", _window_width, _window_height);
+            // NOLINTNEXTLINE(hicpp-vararg)
+            ImGui::Text("Frame number: %ld", long(par_ctx.frame_number()));
+            // NOLINTNEXTLINE(hicpp-vararg)
+            ImGui::Text("Frame time: %.1f [ms]", frame_dur * 1000.F);
+            // NOLINTNEXTLINE(hicpp-vararg)
+            ImGui::Text("Frames per second: %.0f", frames_per_second);
+            // NOLINTNEXTLINE(hicpp-vararg)
+            ImGui::Text(
+              "Activities in progress: %ld",
+              long(_provider.activities().size()));
+
+            if(_input_sink) {
+                auto& sink = extract(_input_sink);
+                for(auto& bs : _ui_button_states) {
+                    if(bs.pressed.assign(
+                         ImGui::Button(bs.button_label.c_str()))) {
+                        sink.consume(
+                          {bs.button_id, input_value_kind::absolute_norm},
+                          bs.pressed);
+                    }
                 }
             }
-        }
 
-        if(ImGui::Button("Hide")) {
-            _imgui_visible = false;
+            if(ImGui::Button("Hide")) {
+                _imgui_visible = false;
+            }
+            ImGui::SameLine();
+            if(ImGui::Button("Quit")) {
+                glfwSetWindowShouldClose(_window, GLFW_TRUE);
+            }
+            if(ImGui::IsItemHovered()) {
+                ImGui::BeginTooltip();
+                // NOLINTNEXTLINE(hicpp-vararg)
+                ImGui::Text("Closes the application");
+                ImGui::EndTooltip();
+            }
+            ImGui::End();
         }
-        ImGui::SameLine();
-        if(ImGui::Button("Quit")) {
-            glfwSetWindowShouldClose(_window, GLFW_TRUE);
-        }
-        if(ImGui::IsItemHovered()) {
-            ImGui::BeginTooltip();
-            // NOLINTNEXTLINE(hicpp-vararg)
-            ImGui::Text("Closes the application");
-            ImGui::EndTooltip();
-        }
-        ImGui::End();
 
         ImGui::EndFrame();
         ImGui::Render();

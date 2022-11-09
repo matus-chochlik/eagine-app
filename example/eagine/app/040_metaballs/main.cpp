@@ -12,6 +12,7 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 example::example(execution_context& ec, video_context& vc)
   : timeouting_application{ec, std::chrono::seconds{60}}
+  , _load_progress{ec.progress(), "Loading resources"}
   , _video{vc}
   , _bg{_video, {0.5F, 0.5F, 0.5F, 1.F}, {0.25F, 0.25F, 0.25F, 0.0F}, 1.F}
   , _mball_prog{*this}
@@ -50,6 +51,8 @@ void example::_on_loaded(const gl_program_resource::load_info& loaded) noexcept 
           "ConfigsBlock", _volume.configs_binding());
         _srfce_prog.bind_corner_location(*this, _volume.corner_loc());
     }
+    _load_progress.update_progress(
+      _mball_prog && _field_prog && _srfce_prog && _other);
 }
 //------------------------------------------------------------------------------
 void example::update() noexcept {
@@ -61,7 +64,7 @@ void example::update() noexcept {
         _camera.idle_update(state, 7.F);
     }
 
-    if(_mball_prog && _field_prog && _srfce_prog && _other) {
+    if(_load_progress.done()) {
         const auto& glapi = _video.gl_api();
         const auto& [gl, GL] = glapi;
 

@@ -52,6 +52,7 @@ private:
     }
 
     cleanup_group _cleanup;
+    puzzle_progress<4> _load_progress;
     video_context& _video;
     background_icosahedron _bg;
     volume_domain _volume;

@@ -21,9 +21,11 @@ public:
     void clean_up() noexcept final;
 
 private:
+    void _on_loaded(const loaded_resource_base&) noexcept;
     void _on_prog_loaded(const gl_program_resource::load_info&) noexcept;
     void _on_tex_loaded(const gl_texture_resource::load_info&) noexcept;
 
+    puzzle_progress<6> _load_progress;
     video_context& _video;
     background_skybox _bg;
 
@@ -47,6 +49,7 @@ example_stencil_shadow::example_stencil_shadow(
   execution_context& ec,
   video_context& vc)
   : timeouting_application{ec, std::chrono::seconds{90}}
+  , _load_progress{ec.progress(), "Loading resources"}
   , _video{vc}
   , _bg{_video, 0}
   , _draw_prog{url{"json:///DrawProg"}, context()}
@@ -55,6 +58,8 @@ example_stencil_shadow::example_stencil_shadow(
   , _cube_tex{url{"json:///CloudyDay"}, context()}
   , _color_tex{url{"json:///CartColor"}, context()}
   , _light_tex{url{"json:///CartAOccl"}, context()} {
+    _wheelcart.base_loaded.connect(
+      make_callable_ref<&example_stencil_shadow::_on_loaded>(this));
     _draw_prog.loaded.connect(
       make_callable_ref<&example_stencil_shadow::_on_prog_loaded>(this));
     _mask_prog.loaded.connect(
@@ -87,6 +92,12 @@ example_stencil_shadow::example_stencil_shadow(
     ec.setup_inputs().switch_input_mapping();
 }
 //------------------------------------------------------------------------------
+void example_stencil_shadow::_on_loaded(const loaded_resource_base&) noexcept {
+    _load_progress.update_progress(
+      _draw_prog && _mask_prog && _wheelcart && _color_tex && _light_tex &&
+      _cube_tex);
+}
+//------------------------------------------------------------------------------
 void example_stencil_shadow::_on_prog_loaded(
   const gl_program_resource::load_info& loaded) noexcept {
     if(loaded.resource.is(_draw_prog)) {
@@ -102,6 +113,7 @@ void example_stencil_shadow::_on_prog_loaded(
         loaded.get_uniform_location("LightDir") >> light_dir_mask_loc;
         loaded.get_uniform_location("Camera") >> camera_mask_loc;
     }
+    _on_loaded(loaded.resource);
 }
 //------------------------------------------------------------------------------
 void example_stencil_shadow::_on_tex_loaded(
@@ -111,6 +123,7 @@ void example_stencil_shadow::_on_tex_loaded(
     loaded.parameter_i(GL.texture_mag_filter, GL.linear);
     loaded.parameter_i(GL.texture_wrap_s, GL.clamp_to_edge);
     loaded.parameter_i(GL.texture_wrap_t, GL.clamp_to_edge);
+    _on_loaded(loaded.resource);
 }
 //------------------------------------------------------------------------------
 void example_stencil_shadow::update() noexcept {
@@ -125,9 +138,7 @@ void example_stencil_shadow::update() noexcept {
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
 
-    if(
-      _draw_prog && _mask_prog && _wheelcart && _color_tex && _light_tex &&
-      _cube_tex) {
+    if(_load_progress.done()) {
         const auto ft = state.frame_time().value();
         const auto light_angle{turns_(ft * 0.1F)};
         const oglplus::vec3 light_dir{

@@ -28,6 +28,7 @@ private:
 
     void _on_loaded(const loaded_resource_base&) noexcept;
 
+    puzzle_progress<4> _load_progress;
     video_context& _video;
     background_icosahedron _bg;
 
@@ -56,6 +57,7 @@ auto example_fur::_gen_url() noexcept -> url {
 //------------------------------------------------------------------------------
 example_fur::example_fur(execution_context& ec, video_context& vc)
   : timeouting_application{ec, std::chrono::seconds{120}}
+  , _load_progress{ec.progress(), "Loading resources"}
   , _video{vc}
   , _bg{_video, {0.1F, 0.1F, 0.1F, 1.F}, {0.35F, 0.40F, 0.30F, 0.0F}, 1.F}
   , _hair_prog{context()}
@@ -65,6 +67,8 @@ example_fur::example_fur(execution_context& ec, video_context& vc)
     _hair_prog.base_loaded.connect(
       make_callable_ref<&example_fur::_on_loaded>(this));
     _surf_prog.base_loaded.connect(
+      make_callable_ref<&example_fur::_on_loaded>(this));
+    _shape_tex.base_loaded.connect(
       make_callable_ref<&example_fur::_on_loaded>(this));
     _shape_gen.base_loaded.connect(
       make_callable_ref<&example_fur::_on_loaded>(this));
@@ -105,6 +109,8 @@ void example_fur::_on_loaded(const loaded_resource_base& loaded) noexcept {
         _hair_prog.apply_input_bindings(_video, _hair);
         _hair_prog.set_uniform(_video, "Tex", 0);
     }
+    _load_progress.update_progress(
+      _surf_prog && _hair_prog && _shape_gen && _shape_tex);
 }
 //------------------------------------------------------------------------------
 void example_fur::update() noexcept {
@@ -120,9 +126,9 @@ void example_fur::update() noexcept {
     const auto model = oglplus::matrix_rotation_y(degrees_(-t * 23.F)) *
                        oglplus::matrix_rotation_x(degrees_(t * 41.F));
 
-    if(_surf_prog && _hair_prog && _shape_gen && _shape_tex) {
-        _bg.clear(_video, _camera);
+    _bg.clear(_video, _camera);
 
+    if(_load_progress.done()) {
         _surf_prog.use(_video);
         _surf_prog.set_projection(_video, _camera);
         _surf_prog.set_model(_video, model);
