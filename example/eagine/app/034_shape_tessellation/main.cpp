@@ -44,6 +44,7 @@ auto example_tess::_shape_id() -> identifier {
         if(const identifier res_id{arg.get()}) {
             if(
               (res_id == identifier{"icosphere"}) ||
+              (res_id == identifier{"torus"}) ||
               context().loader().has_embedded_resource(res_id)) {
                 return res_id;
             }
@@ -56,6 +57,16 @@ auto example_tess::_shape_url(identifier id) -> url {
     if(id == identifier{"icosphere"}) {
         return url{
           "shape:///unit_icosahedron"
+          "?to_patches=true"
+          "+pivot_pivot=true"
+          "+vertex_pivot=true"
+          "+position=true"
+          "+opposite_length=true"
+          "+face_area=true"};
+    }
+    if(id == identifier{"torus"}) {
+        return url{
+          "shape:///unit_torus"
           "?to_patches=true"
           "+pivot_pivot=true"
           "+vertex_pivot=true"
