@@ -45,7 +45,7 @@ public:
       const basic_string_path& path,
       span<const string_view> data) noexcept {
         if(path.size() == 1) {
-            if(path.front() == "label") {
+            if(path.starts_with("label")) {
                 if(has_value(data)) {
                     if(auto parent{_parent.lock()}) {
                         extract(parent).add_label(extract(data));
@@ -53,7 +53,7 @@ public:
                 }
             }
         } else if((path.size() == 3) && data) {
-            if((path.front() == "inputs") && (path.back() == "attrib")) {
+            if((path.starts_with("inputs")) && (path.ends_with("attrib"))) {
                 if(const auto kind{
                      from_string<shapes::vertex_attrib_kind>(extract(data))}) {
                     _attrib_kind = extract(kind);
@@ -61,12 +61,12 @@ public:
                     _input_name.clear();
                 }
             }
-            if(path.front() == "shaders") {
-                if(path.back() == "url") {
+            if(path.starts_with("shaders")) {
+                if(path.ends_with("url")) {
                     if(data.has_single_value()) {
                         _shdr_locator = {to_string(extract(data))};
                     }
-                } else if(path.back() == "type") {
+                } else if(path.ends_with("type")) {
                     auto& GL = _video.gl_api().constants();
                     if(data.has_single_value()) {
                         if(extract(data) == "fragment") {
@@ -91,7 +91,7 @@ public:
     template <std::integral T>
     void do_add(const basic_string_path& path, span<const T>& data) noexcept {
         if((path.size() == 3) && data) {
-            if((path.front() == "inputs") && (path.back() == "variant")) {
+            if((path.starts_with("inputs")) && (path.ends_with("variant"))) {
                 _attrib_variant_index = span_size(extract(data));
             }
         }
@@ -99,11 +99,11 @@ public:
 
     void add_object(const basic_string_path& path) noexcept final {
         if(path.size() == 2) {
-            if(path.front() == "inputs") {
+            if(path.starts_with("inputs")) {
                 _input_name = to_string(path.back());
                 _attrib_kind = shapes::vertex_attrib_kind::position;
                 _attrib_variant_index = 0;
-            } else if(path.front() == "shaders") {
+            } else if(path.starts_with("shaders")) {
                 _shdr_locator = {};
                 _shdr_type = _video.gl_api().constants().fragment_shader;
             }
@@ -112,7 +112,7 @@ public:
 
     void finish_object(const basic_string_path& path) noexcept final {
         if(path.size() == 2) {
-            if(path.front() == "inputs") {
+            if(path.starts_with("inputs")) {
                 if(!_input_name.empty()) {
                     if(auto parent{_parent.lock()}) {
                         extract(parent).add_gl_program_input_binding(
@@ -120,7 +120,7 @@ public:
                           {_attrib_kind, _attrib_variant_index});
                     }
                 }
-            } else if(path.front() == "shaders") {
+            } else if(path.starts_with("shaders")) {
                 if(_shdr_locator) {
                     if(auto parent{_parent.lock()}) {
                         auto& loader = extract(parent).loader();
@@ -327,14 +327,10 @@ public:
     }
 
     auto append_image_data(const memory::const_block blk) noexcept -> bool {
-        if(const auto parent{_parent.lock()}) {
-            extract(parent)
-              .loader()
-              .log_debug("appending texture image data")
-              .tag("apndImgDta")
-              .arg("offset", _temp.size())
-              .arg("size", blk.size());
-        }
+        log_debug("appending texture image data")
+          .tag("apndImgDta")
+          .arg("offset", _temp.size())
+          .arg("size", blk.size());
         memory::append_to(blk, _temp);
         //  TODO: progressive image specification once we have enough
         //  data for width * some constant so that the temp buffer
@@ -361,37 +357,37 @@ public:
       const basic_string_path& path,
       const span<const T> data) noexcept {
         if(path.size() == 1) {
-            if(path.front() == "level") {
+            if(path.starts_with("level")) {
                 _success &= assign_if_fits(data, _params.level);
-            } else if(path.front() == "x_offs") {
+            } else if(path.starts_with("x_offs")) {
                 _success &= assign_if_fits(data, _params.x_offs);
                 _params.dimensions = std::max(_params.dimensions, 1);
-            } else if(path.front() == "y_offs") {
+            } else if(path.starts_with("y_offs")) {
                 _success &= assign_if_fits(data, _params.y_offs);
                 _params.dimensions = std::max(_params.dimensions, 2);
-            } else if(path.front() == "z_offs") {
+            } else if(path.starts_with("z_offs")) {
                 _success &= assign_if_fits(data, _params.z_offs);
                 _params.dimensions = std::max(_params.dimensions, 3);
-            } else if(path.front() == "channels") {
+            } else if(path.starts_with("channels")) {
                 _success &= assign_if_fits(data, _params.channels);
-            } else if(path.front() == "width") {
+            } else if(path.starts_with("width")) {
                 _success &= assign_if_fits(data, _params.width);
                 _params.dimensions = std::max(_params.dimensions, 1);
-            } else if(path.front() == "height") {
+            } else if(path.starts_with("height")) {
                 _success &= assign_if_fits(data, _params.height);
                 if(_params.height > 1) {
                     _params.dimensions = std::max(_params.dimensions, 2);
                 }
-            } else if(path.front() == "depth") {
+            } else if(path.starts_with("depth")) {
                 _success &= assign_if_fits(data, _params.depth);
                 if(_params.depth > 1) {
                     _params.dimensions = std::max(_params.dimensions, 3);
                 }
-            } else if(path.front() == "data_type") {
+            } else if(path.starts_with("data_type")) {
                 _success &= assign_if_fits(data, _params.data_type);
-            } else if(path.front() == "format") {
+            } else if(path.starts_with("format")) {
                 _success &= assign_if_fits(data, _params.format);
-            } else if(path.front() == "iformat") {
+            } else if(path.starts_with("iformat")) {
                 _success &= assign_if_fits(data, _params.iformat);
             }
         }
@@ -401,14 +397,14 @@ public:
       const basic_string_path& path,
       const span<const string_view> data) noexcept {
         if(path.size() == 1) {
-            if(path.front() == "data_type") {
+            if(path.starts_with("data_type")) {
                 _success &=
                   texture_data_type_from_string(data, _params.data_type);
-            } else if(path.front() == "format") {
+            } else if(path.starts_with("format")) {
                 _success &= texture_format_from_string(data, _params.format);
-            } else if(path.front() == "iformat") {
+            } else if(path.starts_with("iformat")) {
                 _success &= texture_iformat_from_string(data, _params.iformat);
-            } else if(path.front() == "data_filter") {
+            } else if(path.starts_with("data_filter")) {
                 if(data.has_single_value()) {
                     if(const auto method{
                          from_string<data_compression_method>(extract(data))}) {
@@ -507,41 +503,41 @@ public:
       const basic_string_path& path,
       const span<const T> data) noexcept {
         if(path.size() == 1) {
-            if(path.front() == "levels") {
+            if(path.starts_with("levels")) {
                 _success &= assign_if_fits(data, _params.levels);
-            } else if(path.front() == "width") {
+            } else if(path.starts_with("width")) {
                 _success &= assign_if_fits(data, _params.width);
                 _params.dimensions = std::max(_params.dimensions, 1);
-            } else if(path.front() == "height") {
+            } else if(path.starts_with("height")) {
                 _success &= assign_if_fits(data, _params.height);
                 if(_params.height > 1) {
                     _params.dimensions = std::max(_params.dimensions, 2);
                 }
-            } else if(path.front() == "depth") {
+            } else if(path.starts_with("depth")) {
                 _success &= assign_if_fits(data, _params.depth);
                 if(_params.depth > 1) {
                     _params.dimensions = std::max(_params.dimensions, 3);
                 }
-            } else if(path.front() == "data_type") {
+            } else if(path.starts_with("data_type")) {
                 _success &= assign_if_fits(data, _params.data_type);
-            } else if(path.front() == "format") {
+            } else if(path.starts_with("format")) {
                 _success &= assign_if_fits(data, _params.format);
-            } else if(path.front() == "iformat") {
+            } else if(path.starts_with("iformat")) {
                 _success &= assign_if_fits(data, _params.iformat);
             }
         } else if(path.size() == 3) {
-            if(path.front() == "images") {
-                if(path.back() == "level") {
+            if(path.starts_with("images")) {
+                if(path.ends_with("level")) {
                     _success &= assign_if_fits(data, _image_params.level);
-                } else if(path.back() == "x_offs") {
+                } else if(path.ends_with("x_offs")) {
                     _success &= assign_if_fits(data, _image_params.x_offs);
                     _image_params.dimensions =
                       std::max(_image_params.dimensions, 1);
-                } else if(path.back() == "y_offs") {
+                } else if(path.ends_with("y_offs")) {
                     _success &= assign_if_fits(data, _image_params.y_offs);
                     _image_params.dimensions =
                       std::max(_image_params.dimensions, 2);
-                } else if(path.back() == "z_offs") {
+                } else if(path.ends_with("z_offs")) {
                     _success &= assign_if_fits(data, _image_params.z_offs);
                     _image_params.dimensions =
                       std::max(_image_params.dimensions, 3);
@@ -557,59 +553,55 @@ public:
             using It = oglplus::gl_types::int_type;
             using Et = oglplus::gl_types::enum_type;
 
-            if(path.front() == "label") {
+            if(path.starts_with("label")) {
                 if(has_value(data)) {
                     if(const auto parent{_parent.lock()}) {
                         extract(parent).add_label(extract(data));
                     }
                 }
-            } else if(path.front() == "data_type") {
+            } else if(path.starts_with("data_type")) {
                 _success &=
                   texture_data_type_from_string(data, _params.data_type);
-            } else if(path.front() == "format") {
+            } else if(path.starts_with("format")) {
                 _success &= texture_format_from_string(data, _params.format);
-            } else if(path.front() == "iformat") {
+            } else if(path.starts_with("iformat")) {
                 _success &= texture_iformat_from_string(data, _params.iformat);
-            } else if(path.front() == "swizzle_r") {
+            } else if(path.starts_with("swizzle_r")) {
                 Et e{0};
                 if(_success &= texture_swizzle_from_string(data, e)) {
                     _i_params.emplace_back(0x8E42, It(e));
                 }
-            } else if(path.front() == "swizzle_g") {
+            } else if(path.starts_with("swizzle_g")) {
                 Et e{0};
                 if(_success &= texture_swizzle_from_string(data, e)) {
                     _i_params.emplace_back(0x8E43, It(e));
                 }
-            } else if(path.front() == "swizzle_b") {
+            } else if(path.starts_with("swizzle_b")) {
                 Et e{0};
                 if(_success &= texture_swizzle_from_string(data, e)) {
                     _i_params.emplace_back(0x8E44, It(e));
                 }
-            } else if(path.front() == "swizzle_a") {
+            } else if(path.starts_with("swizzle_a")) {
                 Et e{0};
                 if(_success &= texture_swizzle_from_string(data, e)) {
                     _i_params.emplace_back(0x8E45, It(e));
                 }
             }
         } else if(path.size() == 3) {
-            if(path.front() == "images") {
-                if(path.back() == "url") {
+            if(path.starts_with("images")) {
+                if(path.ends_with("url")) {
                     if(has_value(data)) {
                         _image_locator = {to_string(extract(data))};
                     } else {
                         _success = false;
                     }
-                } else if(path.back() == "target") {
+                } else if(path.ends_with("target")) {
                     oglplus::gl_types::enum_type tgt{0};
                     if(texture_target_from_string(data, tgt)) {
                         _image_target = oglplus::texture_target{tgt};
                     } else {
-                        if(auto parent{_parent.lock()}) {
-                            extract(parent)
-                              .loader()
-                              .log_error("invalid texture target '${name}'")
-                              .arg("name", extract(data));
-                        }
+                        log_error("invalid texture target '${name}'")
+                          .arg("name", extract(data));
                         _success = false;
                     }
                 }
@@ -619,7 +611,7 @@ public:
 
     void add_object(const basic_string_path& path) noexcept final {
         if(path.size() == 2) {
-            if(path.front() == "images") {
+            if(path.starts_with("images")) {
                 _image_locator = {};
                 _image_params = {};
                 _image_target = _tex_target;
@@ -638,7 +630,7 @@ public:
                 }
             }
         } else if(path.size() == 2) {
-            if(path.front() == "images") {
+            if(path.starts_with("images")) {
                 if(_image_locator) {
                     _image_requests.emplace_back(
                       std::move(_image_locator), _image_target, _image_params);
@@ -1031,7 +1023,7 @@ public:
       const basic_string_path& path,
       span<const string_view> data) noexcept {
         if(path.size() == 1) {
-            if(path.front() == "label") {
+            if(path.starts_with("label")) {
                 if(has_value(data)) {
                     if(auto parent{_parent.lock()}) {
                         extract(parent).add_label(extract(data));

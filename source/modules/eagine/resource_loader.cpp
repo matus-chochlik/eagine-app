@@ -62,6 +62,8 @@ export enum class resource_kind {
     mat4_vector,
     /// @brief Camera parameters.
     camera_parameters,
+    /// @brief User input setup on the execution context.
+    input_setup,
     /// @brief GLSL text.
     glsl_text,
     /// @brief Shape generator.
@@ -422,6 +424,9 @@ auto make_valtree_vec3_vector_builder(
 auto make_valtree_camera_parameters_builder(
   const std::shared_ptr<pending_resource_info>& parent,
   orbiting_camera&) noexcept -> std::unique_ptr<valtree::object_builder>;
+auto make_valtree_input_setup_builder(
+  const std::shared_ptr<pending_resource_info>& parent,
+  execution_context&) noexcept -> std::unique_ptr<valtree::object_builder>;
 //------------------------------------------------------------------------------
 auto make_valtree_gl_program_builder(
   const std::shared_ptr<pending_resource_info>& parent,
@@ -1046,17 +1051,6 @@ public:
         return request_smooth_vec3_curve(std::move(locator));
     }
 
-    /// @brief Requests camera parameters.
-    auto request_camera_parameters(url locator, orbiting_camera&) noexcept
-      -> resource_request_result;
-
-    auto request(
-      std::type_identity<std::vector<float>>,
-      url locator,
-      orbiting_camera& camera) noexcept {
-        return request_camera_parameters(std::move(locator), camera);
-    }
-
     /// @brief Requests a value tree object resource.
     auto request_value_tree(url locator) noexcept -> resource_request_result;
 
@@ -1085,6 +1079,14 @@ public:
       url locator,
       std::shared_ptr<valtree::object_builder>,
       span_size_t max_token_size) noexcept -> resource_request_result;
+
+    /// @brief Requests camera parameters.
+    auto request_camera_parameters(url locator, orbiting_camera&) noexcept
+      -> resource_request_result;
+
+    /// @brief Requests user input setup.
+    auto request_input_setup(url locator, execution_context&) noexcept
+      -> resource_request_result;
 
     /// @brief Requests a shape geometry generator / loader object.
     auto request_shape_generator(url locator) noexcept

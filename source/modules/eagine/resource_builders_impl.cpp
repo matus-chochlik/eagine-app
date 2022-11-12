@@ -15,8 +15,10 @@ import eagine.core.types;
 import eagine.core.math;
 import eagine.core.memory;
 import eagine.core.string;
+import eagine.core.identifier;
 import eagine.core.value_tree;
 import eagine.core.units;
+import <string>;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
@@ -31,10 +33,10 @@ public:
     using base::do_add;
 
     template <std::integral T>
-    void do_add(const basic_string_path& path, span<const T>& data) noexcept {
+    void do_add(const basic_string_path& path, span<const T> data) noexcept {
         if(path.size() == 2) {
             if(!data.empty()) {
-                if((path.front() == "values") && (path.front() == "data")) {
+                if((path.starts_with("values")) || (path.starts_with("data"))) {
                     for(const auto v : data) {
                         _values.push_back(float(v));
                     }
@@ -42,7 +44,7 @@ public:
             }
         } else if(path.size() == 1) {
             if(data.has_single_value()) {
-                if((path.front() == "count") || (path.front() == "size")) {
+                if((path.starts_with("count")) || (path.starts_with("size"))) {
                     _values.reserve(std_size(extract(data)));
                 }
             }
@@ -50,10 +52,10 @@ public:
     }
 
     template <std::floating_point T>
-    void do_add(const basic_string_path& path, span<const T>& data) noexcept {
+    void do_add(const basic_string_path& path, span<const T> data) noexcept {
         if(path.size() == 2) {
             if(!data.empty()) {
-                if((path.front() == "values") && (path.front() == "data")) {
+                if((path.starts_with("values")) && (path.starts_with("data"))) {
                     for(const auto v : data) {
                         _values.push_back(float(v));
                     }
@@ -62,12 +64,10 @@ public:
         }
     }
 
-    void do_add(
-      const basic_string_path& path,
-      span<const float>& data) noexcept {
+    void do_add(const basic_string_path& path, span<const float> data) noexcept {
         if(path.size() == 2) {
             if(!data.empty()) {
-                if((path.front() == "values") && (path.front() == "data")) {
+                if((path.starts_with("values")) && (path.starts_with("data"))) {
                     _values.insert(_values.end(), data.begin(), data.end());
                 }
             }
@@ -103,23 +103,23 @@ public:
     using base::do_add;
 
     template <typename T>
-    auto _do_add(const basic_string_path& path, span<const T>& data) noexcept
+    auto _do_add(const basic_string_path& path, span<const T> data) noexcept
       -> bool {
         if(path.size() == 3) {
-            if((path.front() == "values") || (path.front() == "data")) {
+            if((path.starts_with("values")) || (path.starts_with("data"))) {
                 if(data.has_single_value()) {
-                    if((path.back() == "x") || (path.back() == "r")) {
+                    if((path.ends_with("x")) || (path.ends_with("r"))) {
                         _temp._v[0] = extract(data);
                         return true;
-                    } else if((path.back() == "y") || (path.back() == "g")) {
+                    } else if((path.ends_with("y")) || (path.ends_with("g"))) {
                         _temp._v[1] = extract(data);
                         return true;
-                    } else if((path.back() == "z") || (path.back() == "b")) {
+                    } else if((path.ends_with("z")) || (path.ends_with("b"))) {
                         _temp._v[2] = extract(data);
                         return true;
                     }
                 }
-                if(path.back() == "_") {
+                if(path.ends_with("_")) {
                     for(const auto i : integer_range(data.size())) {
                         _temp._v[_offs] = data[i];
                         if(++_offs == 3) {
@@ -136,10 +136,10 @@ public:
     }
 
     template <std::integral T>
-    void do_add(const basic_string_path& path, span<const T>& data) noexcept {
+    void do_add(const basic_string_path& path, span<const T> data) noexcept {
         if(!_do_add(path, data)) {
             if((path.size() == 1) && data.has_single_value()) {
-                if((path.front() == "count") || (path.front() == "size")) {
+                if((path.starts_with("count")) || (path.starts_with("size"))) {
                     _values.reserve(std_size(extract(data)));
                 }
             }
@@ -147,13 +147,13 @@ public:
     }
 
     template <std::floating_point T>
-    void do_add(const basic_string_path& path, span<const T>& data) noexcept {
+    void do_add(const basic_string_path& path, span<const T> data) noexcept {
         _do_add(path, data);
     }
 
     void finish_object(const basic_string_path& path) noexcept final {
         if(path.size() == 2) {
-            if((path.front() == "values") || (path.front() == "data")) {
+            if((path.starts_with("values")) || (path.starts_with("data"))) {
                 _values.push_back(_temp);
                 _temp = {0.F, 0.F, 0.F};
             }
@@ -197,43 +197,43 @@ public:
     template <typename T>
     void parse_param(
       const basic_string_path& path,
-      span<const T>& data) noexcept {
+      span<const T> data) noexcept {
         if((path.size() == 1) && data.has_single_value()) {
             const auto value{extract(data)};
             if(value > 0.F) {
-                if(path.front() == "near") {
+                if(path.starts_with("near")) {
                     _camera.set_near(value);
-                } else if(path.front() == "far") {
+                } else if(path.starts_with("far")) {
                     _camera.set_far(value);
-                } else if(path.front() == "orbit_min") {
+                } else if(path.starts_with("orbit_min")) {
                     _camera.set_orbit_min(value);
-                } else if(path.front() == "orbit_max") {
+                } else if(path.starts_with("orbit_max")) {
                     _camera.set_orbit_max(value);
-                } else if(path.front() == "fov_deg") {
+                } else if(path.starts_with("fov_deg")) {
                     _camera.set_fov(degrees_(value));
-                } else if(path.front() == "fov_rad") {
+                } else if(path.starts_with("fov_rad")) {
                     _camera.set_fov(radians_(value));
                 }
             }
-            if(path.front() == "azimuth_deg") {
+            if(path.starts_with("azimuth_deg")) {
                 _camera.set_azimuth(degrees_(value));
-            } else if(path.front() == "azimuth_rad") {
+            } else if(path.starts_with("azimuth_rad")) {
                 _camera.set_azimuth(radians_(value));
-            } else if(path.front() == "elevation_deg") {
+            } else if(path.starts_with("elevation_deg")) {
                 _camera.set_elevation(degrees_(value));
-            } else if(path.front() == "elevation_rad") {
+            } else if(path.starts_with("elevation_rad")) {
                 _camera.set_elevation(radians_(value));
             }
         }
     }
 
     template <std::integral T>
-    void do_add(const basic_string_path& path, span<const T>& data) noexcept {
+    void do_add(const basic_string_path& path, span<const T> data) noexcept {
         parse_param(path, data);
     }
 
     template <std::floating_point T>
-    void do_add(const basic_string_path& path, span<const T>& data) noexcept {
+    void do_add(const basic_string_path& path, span<const T> data) noexcept {
         parse_param(path, data);
     }
 
@@ -247,6 +247,176 @@ auto make_valtree_camera_parameters_builder(
   -> std::unique_ptr<valtree::object_builder> {
     return std::make_unique<valtree_orbiting_camera_parameters_builder>(
       parent, camera);
+}
+//------------------------------------------------------------------------------
+// input parameters
+//------------------------------------------------------------------------------
+class valtree_orbiting_input_setup_builder
+  : public valtree_builder_base<valtree_orbiting_input_setup_builder> {
+    using base = valtree_builder_base<valtree_orbiting_input_setup_builder>;
+
+public:
+    valtree_orbiting_input_setup_builder(
+      const std::shared_ptr<pending_resource_info>& parent,
+      execution_context& ctx) noexcept
+      : base{parent}
+      , _ctx{ctx} {}
+
+    using base::do_add;
+
+    auto parse_msg_id(
+      const span<const string_view> data,
+      message_id& dest) noexcept -> bool {
+        if(data.size() == 2) {
+            if(identifier::can_be_encoded(data.front())) {
+                if(identifier::can_be_encoded(data.back())) {
+                    dest = message_id{
+                      identifier{data.front()}, identifier{data.back()}};
+                    return true;
+                }
+            }
+        } else if(data.has_single_value()) {
+            if(_str_data_offs == 0) {
+                if(identifier::can_be_encoded(extract(data))) {
+                    _temp_id = identifier{extract(data)};
+                }
+            } else if(_str_data_offs == 1) {
+                if(identifier::can_be_encoded(extract(data))) {
+                    dest = message_id{_temp_id, identifier{extract(data)}};
+                    return true;
+                }
+            }
+        }
+        _str_data_offs += data.size();
+        return false;
+    }
+
+    auto is_parsing_input() const noexcept -> bool {
+        return _status_l1 == status_type_l1::parsing_input;
+    }
+
+    auto is_parsing_slot() const noexcept -> bool {
+        return _status_l1 == status_type_l1::parsing_slot;
+    }
+
+    auto add_input() noexcept -> bool {
+        assert(is_parsing_input());
+        if(_parsed_input_id && _parsed_type && _parsed_label) {
+            if(_type == "ui_button") {
+                _ctx.add_ui_button(_label, _input_id);
+                _status_l1 = status_type_l1::unknown;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    auto add_slot_mapping() noexcept -> bool {
+        assert(is_parsing_slot());
+        if(_parsed_slot_id) {
+            if(_parsed_input_id && _parsed_type) {
+                if(_type == "trigger") {
+                    _parsed_input_id = false;
+                    _parsed_type = false;
+                    _ctx.map_input(
+                      _slot_id, _input_id, input_setup().trigger());
+                } else {
+                    log_error("invalid input type '${type}")
+                      .arg("slot", _slot_id)
+                      .arg("signal", _input_id)
+                      .arg("type", _type);
+                }
+            }
+        }
+        return false;
+    }
+
+    void do_add(
+      const basic_string_path& path,
+      const span<const string_view> data) noexcept {
+        if(path.ends_with("label")) {
+            if(data.has_single_value()) {
+                memory::assign_to(extract(data), _label);
+                _parsed_label = !_label.empty();
+            }
+        } else if(path.ends_with("type")) {
+            if(data.has_single_value()) {
+                memory::assign_to(extract(data), _type);
+                _parsed_type = !_type.empty();
+                if(is_parsing_slot()) {
+                    add_slot_mapping();
+                }
+            }
+        } else if(path.ends_with("_")) {
+            const auto parent{path.parent()};
+            if(parent.ends_with("input")) {
+                if(parse_msg_id(data, _input_id)) {
+                    _parsed_input_id = true;
+                    if(parent.size() == 2) {
+                        _status_l1 = status_type_l1::parsing_input;
+                    } else {
+                        if(is_parsing_slot()) {
+                            add_slot_mapping();
+                        }
+                    }
+                }
+            } else if(parent.ends_with("slot")) {
+                if(parse_msg_id(data, _slot_id)) {
+                    if(parent.size() == 2) {
+                        _parsed_slot_id = true;
+                        _status_l1 = status_type_l1::parsing_slot;
+                    }
+                }
+            }
+        }
+    }
+
+    void add_object(const basic_string_path& path) noexcept final {
+        _str_data_offs = 0;
+        if(path.is("_")) {
+            _status_l1 = status_type_l1::unknown;
+            _parsed_type = false;
+            _parsed_label = false;
+            _parsed_input_id = false;
+            _parsed_slot_id = false;
+        }
+    }
+
+    void finish_object(const basic_string_path& path) noexcept final {
+        if(path.is("_")) {
+            if(is_parsing_input()) {
+                add_input();
+            }
+        }
+    }
+
+    void finish() noexcept final {
+        _ctx.switch_input_mapping();
+        base::finish();
+    }
+
+private:
+    enum class status_type_l1 { unknown, parsing_input, parsing_slot };
+
+    execution_context& _ctx;
+    std::string _type;
+    std::string _label;
+    message_id _input_id;
+    message_id _slot_id;
+    identifier _temp_id;
+    span_size_t _str_data_offs{0};
+
+    status_type_l1 _status_l1{status_type_l1::unknown};
+    bool _parsed_type;
+    bool _parsed_label;
+    bool _parsed_input_id;
+    bool _parsed_slot_id;
+};
+//------------------------------------------------------------------------------
+auto make_valtree_input_setup_builder(
+  const std::shared_ptr<pending_resource_info>& parent,
+  execution_context& ctx) noexcept -> std::unique_ptr<valtree::object_builder> {
+    return std::make_unique<valtree_orbiting_input_setup_builder>(parent, ctx);
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

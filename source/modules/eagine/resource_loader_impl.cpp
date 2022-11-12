@@ -67,6 +67,8 @@ void pending_resource_info::mark_loaded() noexcept {
         _finish_gl_buffer(pgbs);
     } else if(_kind == resource_kind::camera_parameters) {
         _parent.resource_loaded(_request_id, _kind, _locator);
+    } else if(_kind == resource_kind::input_setup) {
+        _parent.resource_loaded(_request_id, _kind, _locator);
     }
 }
 //------------------------------------------------------------------------------
@@ -755,21 +757,6 @@ auto resource_loader::request_smooth_vec3_curve(url locator) noexcept
     return _cancelled_resource(locator, resource_kind::smooth_vec3_curve);
 }
 //------------------------------------------------------------------------------
-auto resource_loader::request_camera_parameters(
-  url locator,
-  orbiting_camera& camera) noexcept -> resource_request_result {
-    auto new_request{_new_resource(locator, resource_kind::camera_parameters)};
-
-    if(const auto src_request{request_value_tree_traversal(
-         locator,
-         make_valtree_camera_parameters_builder(new_request, camera),
-         64)}) {
-        return new_request;
-    }
-    new_request.info().mark_finished();
-    return _cancelled_resource(locator, resource_kind::camera_parameters);
-}
-//------------------------------------------------------------------------------
 auto resource_loader::request_value_tree(url locator) noexcept
   -> resource_request_result {
     if(_is_json_resource(locator)) {
@@ -839,6 +826,34 @@ auto resource_loader::request_value_tree_traversal(
       std::move(locator),
       valtree::make_building_value_tree_visitor(std::move(builder)),
       max_token_size);
+}
+//------------------------------------------------------------------------------
+auto resource_loader::request_camera_parameters(
+  url locator,
+  orbiting_camera& camera) noexcept -> resource_request_result {
+    auto new_request{_new_resource(locator, resource_kind::camera_parameters)};
+
+    if(const auto src_request{request_value_tree_traversal(
+         locator,
+         make_valtree_camera_parameters_builder(new_request, camera),
+         64)}) {
+        return new_request;
+    }
+    new_request.info().mark_finished();
+    return _cancelled_resource(locator, resource_kind::camera_parameters);
+}
+//------------------------------------------------------------------------------
+auto resource_loader::request_input_setup(
+  url locator,
+  execution_context& ctx) noexcept -> resource_request_result {
+    auto new_request{_new_resource(locator, resource_kind::input_setup)};
+
+    if(const auto src_request{request_value_tree_traversal(
+         locator, make_valtree_input_setup_builder(new_request, ctx), 64)}) {
+        return new_request;
+    }
+    new_request.info().mark_finished();
+    return _cancelled_resource(locator, resource_kind::input_setup);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request_shape_generator(url locator) noexcept

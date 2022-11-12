@@ -565,6 +565,9 @@ auto execution_context::connect_input(
   const message_id input_id,
   const input_handler handler) -> execution_context& {
     _connected_inputs.emplace(input_id, handler);
+    log_info("added input slot ${input}")
+      .tag("connInput")
+      .arg("input", input_id);
     return *this;
 }
 //------------------------------------------------------------------------------
@@ -588,6 +591,11 @@ auto execution_context::map_input(
   const message_id signal_id,
   const input_setup setup) -> execution_context& {
     _input_mappings[mapping_id].emplace(signal_id, input_id, setup);
+    log_info("mapped input signal ${signal} to input slot ${input}")
+      .tag("mapInput")
+      .arg("signal", signal_id)
+      .arg("input", input_id)
+      .arg("mapping", mapping_id);
     return *this;
 }
 //------------------------------------------------------------------------------
