@@ -85,6 +85,7 @@ eagine_add_module(
 		eagine.core.serialization
 		eagine.core.utility
 		eagine.core.runtime
+		eagine.core.logging
 		eagine.shapes
 		eagine.oglplus
 		eagine.msgbus

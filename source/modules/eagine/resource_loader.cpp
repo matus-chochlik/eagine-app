@@ -16,6 +16,7 @@ import eagine.core.reflection;
 import eagine.core.serialization;
 import eagine.core.utility;
 import eagine.core.runtime;
+import eagine.core.logging;
 import eagine.core.main_ctx;
 import eagine.shapes;
 import eagine.oglplus;
@@ -365,12 +366,37 @@ private:
     resource_kind _kind{resource_kind::unknown};
 };
 //------------------------------------------------------------------------------
-template <typename Derived>
-class valtree_builder_base : public valtree::object_builder_impl<Derived> {
+class valtree_builder_common {
 public:
-    valtree_builder_base(
+    valtree_builder_common(
       const std::shared_ptr<pending_resource_info>& info) noexcept
       : _parent{info} {}
+
+    auto log(log_event_severity severity, const string_view format) noexcept
+      -> log_entry;
+
+    auto log_error(const string_view format) noexcept {
+        return log(log_event_severity::error, format);
+    }
+
+    auto log_info(const string_view format) noexcept {
+        return log(log_event_severity::info, format);
+    }
+
+    auto log_debug(const string_view format) noexcept {
+        return log(log_event_severity::debug, format);
+    }
+
+protected:
+    std::weak_ptr<pending_resource_info> _parent;
+};
+//------------------------------------------------------------------------------
+template <typename Derived>
+class valtree_builder_base
+  : public valtree::object_builder_impl<Derived>
+  , public valtree_builder_common {
+public:
+    using valtree_builder_common::valtree_builder_common;
 
     void do_add(const basic_string_path&, const auto&) noexcept {}
 
@@ -385,9 +411,6 @@ public:
             extract(parent).mark_loaded();
         }
     }
-
-protected:
-    std::weak_ptr<pending_resource_info> _parent;
 };
 //------------------------------------------------------------------------------
 auto make_valtree_float_vector_builder(
@@ -1254,6 +1277,15 @@ private:
     flat_map<identifier_t, std::shared_ptr<pending_resource_info>> _finished;
     flat_map<identifier_t, std::shared_ptr<pending_resource_info>> _cancelled;
 };
+//------------------------------------------------------------------------------
+inline auto valtree_builder_common::log(
+  log_event_severity severity,
+  const string_view format) noexcept -> log_entry {
+    if(auto parent{_parent.lock()}) [[likely]] {
+        return extract(parent).loader().log(severity, format);
+    }
+    return {{}, {}, severity, {}, nullptr};
+}
 //------------------------------------------------------------------------------
 /// @brief Class tracking specific pending resource load requests.
 /// @see resource_loader
