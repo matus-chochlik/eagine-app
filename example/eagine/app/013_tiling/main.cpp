@@ -46,6 +46,7 @@ private:
     managed_gl_texture _tiles2_tex;
     managed_gl_texture _tiles3_tex;
     managed_gl_texture _tiles4_tex;
+    pending_resource_requests _other;
 
     std::array<int, 4> tileset_tex_units{1, 2, 3, 4};
     std::size_t tileset_tex_idx{0U};
@@ -55,7 +56,7 @@ private:
     enum class animation_status { zoom_in, zoom_out, relocate };
     animation_status camera_status{animation_status::zoom_in};
 
-    orbiting_camera camera;
+    orbiting_camera _camera;
     oglplus::uniform_location _camera_loc;
     oglplus::uniform_location _tileset_tex_loc;
 };
@@ -95,7 +96,11 @@ example_tiling::example_tiling(execution_context& ec, video_context& vc)
       url{"json:///ThicketTex"},
       _video,
       _video.gl_api().texture_2d_array,
-      _video.gl_api().texture0+4} {
+      _video.gl_api().texture0+4}
+  , _other{ec} {
+    _other.add(
+      ec.loader().request_camera_parameters(url{"json:///Camera"}, _camera));
+    _other.add(ec.loader().request_input_setup(url{"json:///Inputs"}, ec));
 
     _prog.connect_to<&example_tiling::_on_loaded>(this);
     _cube.connect_to<&example_tiling::_on_loaded>(this);
@@ -106,31 +111,16 @@ example_tiling::example_tiling(execution_context& ec, video_context& vc)
     _tiles3_tex.connect_to<&example_tiling::_on_tex_loaded>(this);
     _tiles4_tex.connect_to<&example_tiling::_on_tex_loaded>(this);
 
-    const auto [azimuth, elevation, orbit] =
+    const auto [a, e, o] =
       geo_coord.update(context().state().frame_duration().value()).get();
-    camera.set_near(0.01F)
-      .set_far(50.F)
-      .set_orbit_min(1.02F)
-      .set_orbit_max(2.2F)
-      .set_fov(degrees_(55))
-      .set_azimuth(azimuth)
-      .set_elevation(elevation)
-      .set_orbit_factor(orbit);
+    _camera.set_azimuth(a).set_elevation(e).set_orbit_factor(o);
 
-    camera.connect_inputs(ec).basic_input_mapping(ec);
+    _camera.connect_inputs(ec).basic_input_mapping(ec);
     ec.connect_inputs()
-      .add_ui_button("Change tile-set", {"GUI", "ChngTilset"})
       .connect_input(
         {"Example", "ChngTilset"},
         make_callable_ref<&example_tiling::change_tileset>(this))
-      .map_inputs()
-      .map_input(
-        {"Example", "ChngTilset"}, {"Keyboard", "T"}, input_setup().trigger())
-      .map_input(
-        {"Example", "ChngTilset"},
-        {"GUI", "ChngTilset"},
-        input_setup().trigger())
-      .switch_input_mapping();
+      .map_inputs();
 
     const auto& [gl, GL] = _video.gl_api();
     gl.clear_color(0.1F, 0.1F, 0.1F, 0.0F);
@@ -180,7 +170,7 @@ void example_tiling::update() noexcept {
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
 
-    if(_resources.are_loaded()) {
+    if(_resources.are_loaded() && _other) {
         if(state.user_idle_too_long()) {
             const auto [azimuth, elevation, orbit] =
               geo_coord.update(state.frame_duration().value()).get();
@@ -204,7 +194,7 @@ void example_tiling::update() noexcept {
                         break;
                 }
             }
-            camera.mark_changed()
+            _camera.mark_changed()
               .set_azimuth(azimuth)
               .set_elevation(elevation)
               .set_orbit_factor(orbit);
@@ -213,7 +203,7 @@ void example_tiling::update() noexcept {
         gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
         _prog->set(
           _video, _tileset_tex_loc, tileset_tex_units[tileset_tex_idx]);
-        _prog->set(_video, _camera_loc, camera.matrix(_video));
+        _prog->set(_video, _camera_loc, _camera.matrix(_video));
 
         _cube->draw(glapi);
     } else {

@@ -22,6 +22,8 @@ eagine_embed_target_resources(
 		NodesImg   "nodes.eagitexi"
 		ThicketTex "thicket.eagitex"
 		ThicketImg "thicket.eagitexi"
+		Camera     "camera.json"
+		Inputs     "inputs.json"
 	PACKED
 	ENABLE_SEARCH
 )
