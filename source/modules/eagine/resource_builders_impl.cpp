@@ -273,18 +273,32 @@ public:
                     dest = message_id{
                       identifier{data.front()}, identifier{data.back()}};
                     return true;
+                } else {
+                    log_error("invalid method identifier ${data}")
+                      .arg("data", extract(data));
                 }
+            } else {
+                log_error("invalid class identifier ${data}")
+                  .arg("data", extract(data));
             }
         } else if(data.has_single_value()) {
             if(_str_data_offs == 0) {
                 if(identifier::can_be_encoded(extract(data))) {
                     _temp_id = identifier{extract(data)};
+                } else {
+                    log_error("invalid class identifier ${data}")
+                      .arg("data", extract(data));
                 }
             } else if(_str_data_offs == 1) {
                 if(identifier::can_be_encoded(extract(data))) {
                     dest = message_id{_temp_id, identifier{extract(data)}};
                     return true;
+                } else {
+                    log_error("invalid method identifier ${data}")
+                      .arg("data", extract(data));
                 }
+            } else {
+                log_error("too many values for message id");
             }
         }
         _str_data_offs += data.size();
@@ -305,6 +319,10 @@ public:
             if(_type == "ui_button") {
                 _ctx.add_ui_button(_label, _input_id);
                 _status_l1 = status_type_l1::unknown;
+            } else {
+                log_error("invalid input type '${type}")
+                  .arg("signal", _input_id)
+                  .arg("type", _type);
             }
             return true;
         }
@@ -321,7 +339,7 @@ public:
                     _ctx.map_input(
                       _slot_id, _input_id, input_setup().trigger());
                 } else {
-                    log_error("invalid input type '${type}")
+                    log_error("invalid signal type '${type}")
                       .arg("slot", _slot_id)
                       .arg("signal", _input_id)
                       .arg("type", _type);
@@ -338,6 +356,9 @@ public:
             if(data.has_single_value()) {
                 memory::assign_to(extract(data), _label);
                 _parsed_label = !_label.empty();
+            } else {
+                log_error("too many values for input label")
+                  .arg("count", data.size());
             }
         } else if(path.ends_with("type")) {
             if(data.has_single_value()) {
