@@ -585,6 +585,24 @@ auto execution_context::add_ui_button(
     return *this;
 }
 //------------------------------------------------------------------------------
+auto execution_context::add_ui_toggle(
+  const message_id id,
+  const string_view label,
+  bool initial) -> execution_context& {
+    for(auto& input : _input_providers) {
+        extract(input).add_ui_toggle(id, label, initial);
+    }
+    return *this;
+}
+//------------------------------------------------------------------------------
+auto execution_context::set_ui_toggle(const message_id id, bool value) noexcept
+  -> execution_context& {
+    for(auto& input : _input_providers) {
+        extract(input).set_ui_toggle(id, value);
+    }
+    return *this;
+}
+//------------------------------------------------------------------------------
 auto execution_context::add_ui_slider(
   const message_id id,
   const string_view label,

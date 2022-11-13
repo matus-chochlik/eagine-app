@@ -108,6 +108,10 @@ public:
 
     auto add_ui_button(const message_id, const string_view label) -> bool final;
 
+    auto add_ui_toggle(const message_id, const string_view label, bool initial)
+      -> bool final;
+    auto set_ui_toggle(const message_id, bool value) noexcept -> bool final;
+
     auto add_ui_slider(
       const message_id,
       const string_view label,
@@ -157,6 +161,12 @@ private:
         std::string label;
     };
 
+    struct ui_toggle_state {
+        input_variable<bool> enabled{false};
+        std::string label;
+        bool value{false};
+    };
+
     struct ui_slider_state {
         input_variable<float> position{0.5F};
         std::string label;
@@ -166,7 +176,8 @@ private:
         input_value_kind kind{input_value_kind::absolute_norm};
     };
 
-    using ui_state_variant = std::variant<ui_button_state, ui_slider_state>;
+    using ui_state_variant =
+      std::variant<ui_button_state, ui_toggle_state, ui_slider_state>;
 
     struct ui_input_state {
         message_id input_id;
@@ -177,6 +188,13 @@ private:
                 return std::get<ui_slider_state>(state).kind;
             }
             return input_value_kind::absolute_norm;
+        }
+
+        auto get_toggle() noexcept -> ui_toggle_state* {
+            if(std::holds_alternative<ui_toggle_state>(state)) {
+                return &(std::get<ui_toggle_state>(state));
+            }
+            return nullptr;
         }
 
         auto get_slider() noexcept -> ui_slider_state* {
@@ -460,17 +478,46 @@ auto glfw3_opengl_window::_find_ui_input(message_id input_id) noexcept
 }
 //------------------------------------------------------------------------------
 auto glfw3_opengl_window::add_ui_button(
-  [[maybe_unused]] const message_id id,
+  [[maybe_unused]] const message_id input_id,
   [[maybe_unused]] const string_view label) -> bool {
 #if EAGINE_APP_HAS_IMGUI
-    return _setup_ui_input(id, ui_button_state{.label = label.to_string()});
+    return _setup_ui_input(
+      input_id, ui_button_state{.label = label.to_string()});
 #else
     return false;
 #endif
 }
 //------------------------------------------------------------------------------
+auto glfw3_opengl_window::add_ui_toggle(
+  const message_id input_id,
+  const string_view label,
+  bool initial) -> bool {
+#if EAGINE_APP_HAS_IMGUI
+    return _setup_ui_input(
+      input_id,
+      ui_toggle_state{
+        .enabled = initial, .label = label.to_string(), .value = initial});
+#else
+    return false;
+#endif
+}
+//------------------------------------------------------------------------------
+auto glfw3_opengl_window::set_ui_toggle(
+  const message_id input_id,
+  bool value) noexcept -> bool {
+#if EAGINE_APP_HAS_IMGUI
+    if(auto found{_find_ui_input(input_id)}) {
+        if(auto toggle{extract(found).get_toggle()}) {
+            extract(toggle).enabled = value;
+            return true;
+        }
+    }
+#endif
+    return false;
+}
+//------------------------------------------------------------------------------
 auto glfw3_opengl_window::add_ui_slider(
-  const message_id id,
+  const message_id input_id,
   const string_view label,
   float min,
   float max,
@@ -478,7 +525,7 @@ auto glfw3_opengl_window::add_ui_slider(
   input_value_kind kind) -> bool {
 #if EAGINE_APP_HAS_IMGUI
     return _setup_ui_input(
-      id,
+      input_id,
       ui_slider_state{
         .position = initial,
         .label = label.to_string(),
@@ -805,6 +852,13 @@ void glfw3_opengl_window::update(execution_context& exec_ctx) {
                                ImGui::Button(button.label.c_str()))) {
                               sink.consume(
                                 {entry.input_id, entry.kind()}, button.pressed);
+                          }
+                      },
+                      [&, this](ui_toggle_state& toggle) {
+                          if(toggle.enabled.assign(ImGui::Checkbox(
+                               toggle.label.c_str(), &toggle.value))) {
+                              sink.consume(
+                                {entry.input_id, entry.kind()}, toggle.enabled);
                           }
                       },
                       [&, this](ui_slider_state& slider) {

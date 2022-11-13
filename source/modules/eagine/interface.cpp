@@ -53,6 +53,14 @@ export struct input_provider : interface<input_provider> {
 
     virtual auto add_ui_button(const message_id, const string_view label)
       -> bool = 0;
+
+    virtual auto add_ui_toggle(
+      const message_id,
+      const string_view label,
+      bool initial) -> bool = 0;
+    virtual auto set_ui_toggle(const message_id, bool value) noexcept
+      -> bool = 0;
+
     virtual auto add_ui_slider(
       const message_id,
       const string_view label,

@@ -316,6 +316,12 @@ public:
     auto add_ui_button(const message_id id, const string_view label)
       -> execution_context&;
 
+    /// @brief Add a UI toggle / checkbox with the specified label and id
+    auto add_ui_toggle(const message_id, const string_view label, bool initial)
+      -> execution_context&;
+    auto set_ui_toggle(const message_id, bool value) noexcept
+      -> execution_context&;
+
     /// @brief Add a UI slider with the specified label and id
     auto add_ui_slider(
       const message_id id,
