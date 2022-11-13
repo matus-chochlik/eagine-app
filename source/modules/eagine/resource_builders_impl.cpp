@@ -18,6 +18,7 @@ import eagine.core.string;
 import eagine.core.identifier;
 import eagine.core.value_tree;
 import eagine.core.units;
+import <optional>;
 import <string>;
 
 namespace eagine::app {
@@ -266,7 +267,7 @@ public:
 
     auto parse_msg_id(
       const span<const string_view> data,
-      message_id& dest) noexcept -> bool {
+      std::optional<message_id>& dest) noexcept -> bool {
         if(data.size() == 2) {
             if(identifier::can_be_encoded(data.front())) {
                 if(identifier::can_be_encoded(data.back())) {
@@ -315,14 +316,22 @@ public:
 
     auto add_input() noexcept -> bool {
         assert(is_parsing_input());
-        if(_parsed_input_id && _parsed_type && _parsed_label) {
+        if(_input_id && _type && _label) {
             if(_type == "ui_button") {
-                _ctx.add_ui_button(_input_id, _label);
+                _ctx.add_ui_button(extract(_input_id), extract(_label));
+                _status_l1 = status_type_l1::unknown;
+            } else if(_type == "ui_slider") {
+                _ctx.add_ui_slider(
+                  extract(_input_id),
+                  extract(_label),
+                  extract_or(_min, 0.F),
+                  extract_or(_max, 1.F),
+                  extract_or(_initial, 0.5F));
                 _status_l1 = status_type_l1::unknown;
             } else {
                 log_error("invalid input type '${type}")
-                  .arg("signal", _input_id)
-                  .arg("type", _type);
+                  .arg("signal", extract(_input_id))
+                  .arg("type", extract(_type));
             }
             return true;
         }
@@ -331,22 +340,46 @@ public:
 
     auto add_slot_mapping() noexcept -> bool {
         assert(is_parsing_slot());
-        if(_parsed_slot_id) {
-            if(_parsed_input_id && _parsed_type) {
+        if(_slot_id) {
+            if(_input_id && _type) {
                 if(_type == "trigger") {
-                    _parsed_input_id = false;
-                    _parsed_type = false;
                     _ctx.map_input(
-                      _slot_id, _input_id, input_setup().trigger());
+                      extract(_slot_id),
+                      extract(_input_id),
+                      input_setup().trigger());
+                    _input_id = {};
+                    _type = {};
                 } else {
                     log_error("invalid signal type '${type}")
-                      .arg("slot", _slot_id)
-                      .arg("signal", _input_id)
-                      .arg("type", _type);
+                      .arg("slot", extract(_slot_id))
+                      .arg("signal", extract(_input_id))
+                      .arg("type", extract(_type));
                 }
             }
         }
         return false;
+    }
+
+    template <std::floating_point T>
+    void do_add(
+      const basic_string_path& path,
+      const span<const T> data) noexcept {
+        if(
+          path.ends_with("min") || path.ends_with("max") ||
+          path.ends_with("initial")) {
+            if(data.has_single_value()) {
+                if(path.ends_with("initial")) {
+                    _initial = extract(data);
+                } else if(path.ends_with("min")) {
+                    _min = extract(data);
+                } else if(path.ends_with("max")) {
+                    _max = extract(data);
+                }
+            } else {
+                log_error("too many values for ${what}")
+                  .arg("what", path.back());
+            }
+        }
     }
 
     void do_add(
@@ -354,16 +387,18 @@ public:
       const span<const string_view> data) noexcept {
         if(path.ends_with("label")) {
             if(data.has_single_value()) {
-                memory::assign_to(extract(data), _label);
-                _parsed_label = !_label.empty();
+                if(!extract(data).empty()) {
+                    _label = extract(data).to_string();
+                }
             } else {
                 log_error("too many values for input label")
                   .arg("count", data.size());
             }
         } else if(path.ends_with("type")) {
             if(data.has_single_value()) {
-                memory::assign_to(extract(data), _type);
-                _parsed_type = !_type.empty();
+                if(!extract(data).empty()) {
+                    _type = extract(data).to_string();
+                }
                 if(is_parsing_slot()) {
                     add_slot_mapping();
                 }
@@ -372,7 +407,6 @@ public:
             const auto parent{path.parent()};
             if(parent.ends_with("input")) {
                 if(parse_msg_id(data, _input_id)) {
-                    _parsed_input_id = true;
                     if(parent.size() == 2) {
                         _status_l1 = status_type_l1::parsing_input;
                     } else {
@@ -384,7 +418,6 @@ public:
             } else if(parent.ends_with("slot")) {
                 if(parse_msg_id(data, _slot_id)) {
                     if(parent.size() == 2) {
-                        _parsed_slot_id = true;
                         _status_l1 = status_type_l1::parsing_slot;
                     }
                 }
@@ -396,10 +429,13 @@ public:
         _str_data_offs = 0;
         if(path.is("_")) {
             _status_l1 = status_type_l1::unknown;
-            _parsed_type = false;
-            _parsed_label = false;
-            _parsed_input_id = false;
-            _parsed_slot_id = false;
+            _type = {};
+            _label = {};
+            _min = {};
+            _max = {};
+            _initial = {};
+            _input_id = {};
+            _slot_id = {};
         }
     }
 
@@ -420,18 +456,15 @@ private:
     enum class status_type_l1 { unknown, parsing_input, parsing_slot };
 
     execution_context& _ctx;
-    std::string _type;
-    std::string _label;
-    message_id _input_id;
-    message_id _slot_id;
+    std::optional<std::string> _type;
+    std::optional<std::string> _label;
+    std::optional<float> _min, _max, _initial;
+    std::optional<message_id> _input_id;
+    std::optional<message_id> _slot_id;
     identifier _temp_id;
     span_size_t _str_data_offs{0};
 
     status_type_l1 _status_l1{status_type_l1::unknown};
-    bool _parsed_type;
-    bool _parsed_label;
-    bool _parsed_input_id;
-    bool _parsed_slot_id;
 };
 //------------------------------------------------------------------------------
 auto make_valtree_input_setup_builder(

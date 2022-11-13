@@ -106,8 +106,15 @@ public:
     void mapping_enable(const message_id signal_id) final;
     void mapping_commit(const identifier setup_id) final;
 
-    auto add_ui_button(const message_id, const std::string& label)
-      -> bool final;
+    auto add_ui_button(const message_id, const string_view label) -> bool final;
+
+    auto add_ui_slider(
+      const message_id,
+      const string_view label,
+      float min,
+      float max,
+      float initial,
+      input_value_kind kind) -> bool final;
 
     void on_scroll(const float x, const float y) {
         _wheel_change_x += x;
@@ -145,13 +152,22 @@ private:
 
 #if EAGINE_APP_HAS_IMGUI
     struct ui_button_state {
-        std::string button_label;
         input_variable<bool> pressed{false};
+        std::string label;
+    };
+
+    struct ui_slider_state {
+        input_variable<float> position{0.5F};
+        std::string label;
+        float min{0.F};
+        float max{1.F};
+        float value{0.5F};
+        input_value_kind kind{input_value_kind::absolute_norm};
     };
 
     struct ui_input_state {
         message_id input_id;
-        std::variant<std::monostate, ui_button_state> state;
+        std::variant<ui_button_state, ui_slider_state> state;
 
         auto kind() const noexcept -> input_value_kind {
             if(std::holds_alternative<ui_button_state>(state)) {
@@ -161,9 +177,7 @@ private:
         }
 
         auto apply(const auto& func) noexcept {
-            if(std::holds_alternative<ui_button_state>(state)) {
-                func(std::get<ui_button_state>(state));
-            }
+            std::visit(func, state);
         }
     };
 
@@ -399,17 +413,46 @@ glfw3_opengl_window::glfw3_opengl_window(
 //------------------------------------------------------------------------------
 auto glfw3_opengl_window::add_ui_button(
   [[maybe_unused]] const message_id id,
-  [[maybe_unused]] const std::string& label) -> bool {
+  [[maybe_unused]] const string_view label) -> bool {
 #if EAGINE_APP_HAS_IMGUI
     if(
       std::find_if(
         _ui_input_states.begin(),
         _ui_input_states.end(),
-        [id](const auto& entry) { return entry.input_id == id; }) ==
+        [=](const auto& entry) { return entry.input_id == id; }) ==
       _ui_input_states.end()) {
         _ui_input_states.push_back(
           {.input_id = id,
-           .state = ui_button_state{.button_label = std::move(label)}});
+           .state = ui_button_state{.label = label.to_string()}});
+        return true;
+    }
+#endif
+    return false;
+}
+//------------------------------------------------------------------------------
+auto glfw3_opengl_window::add_ui_slider(
+  const message_id id,
+  const string_view label,
+  float min,
+  float max,
+  float initial,
+  input_value_kind kind) -> bool {
+#if EAGINE_APP_HAS_IMGUI
+    if(
+      std::find_if(
+        _ui_input_states.begin(),
+        _ui_input_states.end(),
+        [=](const auto& entry) { return entry.input_id == id; }) ==
+      _ui_input_states.end()) {
+        _ui_input_states.push_back(
+          {.input_id = id,
+           .state = ui_slider_state{
+             .position = initial,
+             .label = label.to_string(),
+             .min = min,
+             .max = max,
+             .value = initial,
+             .kind = kind}});
         return true;
     }
 #endif
@@ -710,13 +753,28 @@ void glfw3_opengl_window::update(execution_context& exec_ctx) {
             if(_input_sink) {
                 auto& sink = extract(_input_sink);
                 for(auto& entry : _ui_input_states) {
-                    entry.apply(overloaded([&, this](ui_button_state& button) {
-                        if(button.pressed.assign(
-                             ImGui::Button(button.button_label.c_str()))) {
-                            sink.consume(
-                              {entry.input_id, entry.kind()}, button.pressed);
-                        }
-                    }));
+                    entry.apply(overloaded(
+                      [&, this](ui_button_state& button) {
+                          if(button.pressed.assign(
+                               ImGui::Button(button.label.c_str()))) {
+                              sink.consume(
+                                {entry.input_id, entry.kind()}, button.pressed);
+                          }
+                      },
+                      [&, this](ui_slider_state& slider) {
+                          if(ImGui::SliderFloat(
+                               slider.label.c_str(),
+                               &slider.value,
+                               slider.min,
+                               slider.max,
+                               "%0.2f")) {
+                              if(slider.position.assign(slider.value)) {
+                                  sink.consume(
+                                    {entry.input_id, entry.kind()},
+                                    slider.position);
+                              }
+                          }
+                      }));
                 }
             }
 

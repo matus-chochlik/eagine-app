@@ -578,9 +578,31 @@ auto execution_context::connect_inputs() -> execution_context& {
 //------------------------------------------------------------------------------
 auto execution_context::add_ui_button(
   const message_id id,
-  const std::string& label) -> execution_context& {
+  const string_view label) -> execution_context& {
     for(auto& input : _input_providers) {
         extract(input).add_ui_button(id, label);
+    }
+    return *this;
+}
+//------------------------------------------------------------------------------
+auto execution_context::add_ui_slider(
+  const message_id id,
+  const string_view label,
+  float min,
+  float max,
+  float initial) -> execution_context& {
+    if((min <= initial) && (initial <= max)) {
+        const input_value_kind kind = ((min >= 0.F) && (max <= 1.F))
+                                        ? input_value_kind::absolute_norm
+                                        : input_value_kind::absolute_free;
+        for(auto& input : _input_providers) {
+            extract(input).add_ui_slider(id, label, min, max, initial, kind);
+        }
+    } else {
+        log_error("inconsistent min, max and initial values")
+          .arg("min", min)
+          .arg("max", max)
+          .arg("initial", initial);
     }
     return *this;
 }

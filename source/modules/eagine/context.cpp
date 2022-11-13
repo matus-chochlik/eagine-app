@@ -313,8 +313,16 @@ public:
     auto connect_inputs() -> execution_context&;
 
     /// @brief Add a UI button with the specified label and id
-    auto add_ui_button(const message_id id, const std::string& label)
+    auto add_ui_button(const message_id id, const string_view label)
       -> execution_context&;
+
+    /// @brief Add a UI slider with the specified label and id
+    auto add_ui_slider(
+      const message_id id,
+      const string_view label,
+      float min,
+      float max,
+      float initial) -> execution_context&;
 
     /// @brief Map a specified logical input to a physical input signal.
     auto map_input(
