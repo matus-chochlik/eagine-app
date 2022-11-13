@@ -577,10 +577,10 @@ auto execution_context::connect_inputs() -> execution_context& {
 }
 //------------------------------------------------------------------------------
 auto execution_context::add_ui_button(
-  const std::string& label,
-  const message_id id) -> execution_context& {
+  const message_id id,
+  const std::string& label) -> execution_context& {
     for(auto& input : _input_providers) {
-        extract(input).add_ui_button(label, id);
+        extract(input).add_ui_button(id, label);
     }
     return *this;
 }

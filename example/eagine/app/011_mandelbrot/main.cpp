@@ -140,7 +140,7 @@ example_mandelbrot::example_mandelbrot(execution_context& ec, video_context& vc)
     gl.disable(GL.depth_test);
 
     ec.connect_inputs()
-      .add_ui_button("Change gradient", {"GUI", "ChngGrad"})
+      .add_ui_button({"GUI", "ChngGrad"}, "Change gradient")
       .connect_input(
         {"Motion", "Dampening"},
         make_callable_ref<&example_mandelbrot::dampening>(this))

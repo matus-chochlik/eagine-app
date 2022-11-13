@@ -313,7 +313,7 @@ public:
     auto connect_inputs() -> execution_context&;
 
     /// @brief Add a UI button with the specified label and id
-    auto add_ui_button(const std::string& label, const message_id id)
+    auto add_ui_button(const message_id id, const std::string& label)
       -> execution_context&;
 
     /// @brief Map a specified logical input to a physical input signal.

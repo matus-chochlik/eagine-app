@@ -317,7 +317,7 @@ public:
         assert(is_parsing_input());
         if(_parsed_input_id && _parsed_type && _parsed_label) {
             if(_type == "ui_button") {
-                _ctx.add_ui_button(_label, _input_id);
+                _ctx.add_ui_button(_input_id, _label);
                 _status_l1 = status_type_l1::unknown;
             } else {
                 log_error("invalid input type '${type}")

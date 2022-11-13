@@ -106,7 +106,7 @@ public:
     void mapping_enable(const message_id signal_id) final;
     void mapping_commit(const identifier setup_id) final;
 
-    auto add_ui_button(const std::string& label, const message_id)
+    auto add_ui_button(const message_id, const std::string& label)
       -> bool final;
 
     void on_scroll(const float x, const float y) {
@@ -398,8 +398,8 @@ glfw3_opengl_window::glfw3_opengl_window(
 }
 //------------------------------------------------------------------------------
 auto glfw3_opengl_window::add_ui_button(
-  [[maybe_unused]] const std::string& label,
-  [[maybe_unused]] const message_id id) -> bool {
+  [[maybe_unused]] const message_id id,
+  [[maybe_unused]] const std::string& label) -> bool {
 #if EAGINE_APP_HAS_IMGUI
     if(
       std::find_if(

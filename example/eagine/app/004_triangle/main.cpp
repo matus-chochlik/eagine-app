@@ -103,7 +103,7 @@ example_triangle::example_triangle(execution_context& ec, video_context& vc)
 
     ec.connect_inputs()
       .map_inputs()
-      .add_ui_button("Reset", {"GUI", "Reset"})
+      .add_ui_button({"GUI", "Reset"}, "Reset")
       .connect_input({"Example", "Reset"}, reset_timeout_handler())
       .map_input(
         {"Example", "Reset"}, {"GUI", "Reset"}, input_setup().any_value_kind())
