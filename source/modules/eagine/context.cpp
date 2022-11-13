@@ -324,6 +324,10 @@ public:
       float max,
       float initial) -> execution_context&;
 
+    /// @brief Sets the slider position with the specified id to a value.
+    auto set_ui_slider(const message_id, float value) noexcept
+      -> execution_context&;
+
     /// @brief Map a specified logical input to a physical input signal.
     auto map_input(
       const message_id input_id,

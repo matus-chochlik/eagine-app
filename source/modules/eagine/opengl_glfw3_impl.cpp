@@ -115,6 +115,7 @@ public:
       float max,
       float initial,
       input_value_kind kind) -> bool final;
+    auto set_ui_slider(const message_id, float value) noexcept -> bool final;
 
     void on_scroll(const float x, const float y) {
         _wheel_change_x += x;
@@ -165,21 +166,33 @@ private:
         input_value_kind kind{input_value_kind::absolute_norm};
     };
 
+    using ui_state_variant = std::variant<ui_button_state, ui_slider_state>;
+
     struct ui_input_state {
         message_id input_id;
-        std::variant<ui_button_state, ui_slider_state> state;
+        ui_state_variant state;
 
         auto kind() const noexcept -> input_value_kind {
-            if(std::holds_alternative<ui_button_state>(state)) {
-                return input_value_kind::absolute_norm;
+            if(std::holds_alternative<ui_slider_state>(state)) {
+                return std::get<ui_slider_state>(state).kind;
             }
             return input_value_kind::absolute_norm;
+        }
+
+        auto get_slider() noexcept -> ui_slider_state* {
+            if(std::holds_alternative<ui_slider_state>(state)) {
+                return &(std::get<ui_slider_state>(state));
+            }
+            return nullptr;
         }
 
         auto apply(const auto& func) noexcept {
             std::visit(func, state);
         }
     };
+
+    auto _setup_ui_input(message_id input_id, ui_state_variant state) -> bool;
+    auto _find_ui_input(message_id input_id) noexcept -> ui_input_state*;
 
     std::vector<ui_input_state> _ui_input_states;
 #endif
@@ -411,23 +424,49 @@ glfw3_opengl_window::glfw3_opengl_window(
     _mouse_states.emplace_back("Button7", GLFW_MOUSE_BUTTON_8);
 }
 //------------------------------------------------------------------------------
+auto glfw3_opengl_window::_setup_ui_input(
+  message_id input_id,
+  ui_state_variant state) -> bool {
+#if EAGINE_APP_HAS_IMGUI
+    const auto pos{std::find_if(
+      _ui_input_states.begin(), _ui_input_states.end(), [=](const auto& entry) {
+          return entry.input_id == input_id;
+      })};
+    if(pos != _ui_input_states.end()) {
+        pos->state = std::move(state);
+        return true;
+    } else {
+        _ui_input_states.push_back(
+          {.input_id = input_id, .state = std::move(state)});
+        return true;
+    }
+#else
+    return false;
+#endif
+}
+//------------------------------------------------------------------------------
+auto glfw3_opengl_window::_find_ui_input(message_id input_id) noexcept
+  -> ui_input_state* {
+#if EAGINE_APP_HAS_IMGUI
+    const auto pos{std::find_if(
+      _ui_input_states.begin(), _ui_input_states.end(), [=](const auto& entry) {
+          return entry.input_id == input_id;
+      })};
+    if(pos != _ui_input_states.end()) {
+        return &(*pos);
+    }
+#endif
+    return nullptr;
+}
+//------------------------------------------------------------------------------
 auto glfw3_opengl_window::add_ui_button(
   [[maybe_unused]] const message_id id,
   [[maybe_unused]] const string_view label) -> bool {
 #if EAGINE_APP_HAS_IMGUI
-    if(
-      std::find_if(
-        _ui_input_states.begin(),
-        _ui_input_states.end(),
-        [=](const auto& entry) { return entry.input_id == id; }) ==
-      _ui_input_states.end()) {
-        _ui_input_states.push_back(
-          {.input_id = id,
-           .state = ui_button_state{.label = label.to_string()}});
-        return true;
-    }
-#endif
+    return _setup_ui_input(id, ui_button_state{.label = label.to_string()});
+#else
     return false;
+#endif
 }
 //------------------------------------------------------------------------------
 auto glfw3_opengl_window::add_ui_slider(
@@ -438,22 +477,29 @@ auto glfw3_opengl_window::add_ui_slider(
   float initial,
   input_value_kind kind) -> bool {
 #if EAGINE_APP_HAS_IMGUI
-    if(
-      std::find_if(
-        _ui_input_states.begin(),
-        _ui_input_states.end(),
-        [=](const auto& entry) { return entry.input_id == id; }) ==
-      _ui_input_states.end()) {
-        _ui_input_states.push_back(
-          {.input_id = id,
-           .state = ui_slider_state{
-             .position = initial,
-             .label = label.to_string(),
-             .min = min,
-             .max = max,
-             .value = initial,
-             .kind = kind}});
-        return true;
+    return _setup_ui_input(
+      id,
+      ui_slider_state{
+        .position = initial,
+        .label = label.to_string(),
+        .min = min,
+        .max = max,
+        .value = initial,
+        .kind = kind});
+#else
+    return false;
+#endif
+}
+//------------------------------------------------------------------------------
+auto glfw3_opengl_window::set_ui_slider(
+  const message_id input_id,
+  float value) noexcept -> bool {
+#if EAGINE_APP_HAS_IMGUI
+    if(auto found{_find_ui_input(input_id)}) {
+        if(auto slider{extract(found).get_slider()}) {
+            extract(slider).value = value;
+            return true;
+        }
     }
 #endif
     return false;

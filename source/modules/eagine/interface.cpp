@@ -60,6 +60,8 @@ export struct input_provider : interface<input_provider> {
       float max,
       float initial,
       input_value_kind kind) -> bool = 0;
+    virtual auto set_ui_slider(const message_id, float value) noexcept
+      -> bool = 0;
 };
 //------------------------------------------------------------------------------
 export class video_context;

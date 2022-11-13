@@ -607,6 +607,14 @@ auto execution_context::add_ui_slider(
     return *this;
 }
 //------------------------------------------------------------------------------
+auto execution_context::set_ui_slider(const message_id id, float value) noexcept
+  -> execution_context& {
+    for(auto& input : _input_providers) {
+        extract(input).set_ui_slider(id, value);
+    }
+    return *this;
+}
+//------------------------------------------------------------------------------
 auto execution_context::map_input(
   const message_id input_id,
   const identifier mapping_id,
