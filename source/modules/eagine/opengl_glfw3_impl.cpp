@@ -39,6 +39,7 @@ import eagine.core.valid_if;
 import eagine.core.c_api;
 import eagine.core.main_ctx;
 import <string>;
+import <variant>;
 import <vector>;
 import <map>;
 
@@ -137,25 +138,36 @@ private:
           , key_code{code} {}
     };
 
-#if EAGINE_APP_HAS_IMGUI
-    struct ui_button_state {
-        std::string button_label;
-        message_id button_id;
-        input_variable<bool> pressed{false};
-
-        ui_button_state(std::string label, const message_id id) noexcept
-          : button_label{std::move(label)}
-          , button_id{id} {}
-    };
-#endif
-
     flat_set<message_id> _enabled_signals;
 
     std::vector<key_state> _key_states;
     std::vector<key_state> _mouse_states;
 
 #if EAGINE_APP_HAS_IMGUI
-    std::vector<ui_button_state> _ui_button_states;
+    struct ui_button_state {
+        std::string button_label;
+        input_variable<bool> pressed{false};
+    };
+
+    struct ui_input_state {
+        message_id input_id;
+        std::variant<std::monostate, ui_button_state> state;
+
+        auto kind() const noexcept -> input_value_kind {
+            if(std::holds_alternative<ui_button_state>(state)) {
+                return input_value_kind::absolute_norm;
+            }
+            return input_value_kind::absolute_norm;
+        }
+
+        auto apply(const auto& func) noexcept {
+            if(std::holds_alternative<ui_button_state>(state)) {
+                func(std::get<ui_button_state>(state));
+            }
+        }
+    };
+
+    std::vector<ui_input_state> _ui_input_states;
 #endif
 
     input_variable<float> _mouse_x_pix{0};
@@ -391,11 +403,13 @@ auto glfw3_opengl_window::add_ui_button(
 #if EAGINE_APP_HAS_IMGUI
     if(
       std::find_if(
-        _ui_button_states.begin(),
-        _ui_button_states.end(),
-        [id](const auto& state) { return state.button_id == id; }) ==
-      _ui_button_states.end()) {
-        _ui_button_states.emplace_back(label, id);
+        _ui_input_states.begin(),
+        _ui_input_states.end(),
+        [id](const auto& entry) { return entry.input_id == id; }) ==
+      _ui_input_states.end()) {
+        _ui_input_states.push_back(
+          {.input_id = id,
+           .state = ui_button_state{.button_label = std::move(label)}});
         return true;
     }
 #endif
@@ -604,8 +618,8 @@ void glfw3_opengl_window::input_enumerate(
 
 #if EAGINE_APP_HAS_IMGUI
     // ui input
-    for(const auto& bs : _ui_button_states) {
-        callback(bs.button_id, input_value_kind::absolute_norm);
+    for(const auto& entry : _ui_input_states) {
+        callback(entry.input_id, entry.kind());
     }
 #endif
 }
@@ -695,13 +709,14 @@ void glfw3_opengl_window::update(execution_context& exec_ctx) {
 
             if(_input_sink) {
                 auto& sink = extract(_input_sink);
-                for(auto& bs : _ui_button_states) {
-                    if(bs.pressed.assign(
-                         ImGui::Button(bs.button_label.c_str()))) {
-                        sink.consume(
-                          {bs.button_id, input_value_kind::absolute_norm},
-                          bs.pressed);
-                    }
+                for(auto& entry : _ui_input_states) {
+                    entry.apply(overloaded([&, this](ui_button_state& button) {
+                        if(button.pressed.assign(
+                             ImGui::Button(button.button_label.c_str()))) {
+                            sink.consume(
+                              {entry.input_id, entry.kind()}, button.pressed);
+                        }
+                    }));
                 }
             }
 
