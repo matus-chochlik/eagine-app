@@ -320,13 +320,19 @@ public:
             if(_type == "ui_button") {
                 _ctx.add_ui_button(extract(_input_id), extract(_label));
                 _status_l1 = status_type_l1::unknown;
+            } else if(_type == "ui_toggle") {
+                _ctx.add_ui_toggle(
+                  extract(_input_id),
+                  extract(_label),
+                  extract_or(_initial_bool, false));
+                _status_l1 = status_type_l1::unknown;
             } else if(_type == "ui_slider") {
                 _ctx.add_ui_slider(
                   extract(_input_id),
                   extract(_label),
                   extract_or(_min, 0.F),
                   extract_or(_max, 1.F),
-                  extract_or(_initial, 0.5F));
+                  extract_or(_initial_float, 0.5F));
                 _status_l1 = status_type_l1::unknown;
             } else {
                 log_error("invalid input type '${type}")
@@ -360,6 +366,16 @@ public:
         return false;
     }
 
+    void do_add(
+      const basic_string_path& path,
+      const span<const bool> data) noexcept {
+        if(path.ends_with("initial")) {
+            if(data.has_single_value()) {
+                _initial_bool = extract(data);
+            }
+        }
+    }
+
     template <std::floating_point T>
     void do_add(
       const basic_string_path& path,
@@ -369,7 +385,7 @@ public:
           path.ends_with("initial")) {
             if(data.has_single_value()) {
                 if(path.ends_with("initial")) {
-                    _initial = extract(data);
+                    _initial_float = extract(data);
                 } else if(path.ends_with("min")) {
                     _min = extract(data);
                 } else if(path.ends_with("max")) {
@@ -429,13 +445,13 @@ public:
         _str_data_offs = 0;
         if(path.is("_")) {
             _status_l1 = status_type_l1::unknown;
+            _input_id = {};
+            _slot_id = {};
             _type = {};
             _label = {};
             _min = {};
             _max = {};
-            _initial = {};
-            _input_id = {};
-            _slot_id = {};
+            _initial_float = {};
         }
     }
 
@@ -456,11 +472,12 @@ private:
     enum class status_type_l1 { unknown, parsing_input, parsing_slot };
 
     execution_context& _ctx;
-    std::optional<std::string> _type;
-    std::optional<std::string> _label;
-    std::optional<float> _min, _max, _initial;
     std::optional<message_id> _input_id;
     std::optional<message_id> _slot_id;
+    std::optional<std::string> _type;
+    std::optional<std::string> _label;
+    std::optional<float> _min, _max, _initial_float;
+    std::optional<bool> _initial_bool;
     identifier _temp_id;
     span_size_t _str_data_offs{0};
 

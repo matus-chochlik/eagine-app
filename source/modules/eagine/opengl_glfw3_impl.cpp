@@ -829,7 +829,7 @@ void glfw3_opengl_window::update(execution_context& exec_ctx) {
             window_flags = 0;
             // NOLINTNEXTLINE(hicpp-signed-bitwise)
             window_flags |= ImGuiWindowFlags_NoResize;
-            ImGui::Begin("Application", nullptr, window_flags);
+            ImGui::Begin("Application", &_imgui_visible, window_flags);
             // NOLINTNEXTLINE(hicpp-vararg)
             ImGui::Text("Dimensions: %dx%d", _window_width, _window_height);
             // NOLINTNEXTLINE(hicpp-vararg)
@@ -855,8 +855,8 @@ void glfw3_opengl_window::update(execution_context& exec_ctx) {
                           }
                       },
                       [&, this](ui_toggle_state& toggle) {
-                          if(toggle.enabled.assign(ImGui::Checkbox(
-                               toggle.label.c_str(), &toggle.value))) {
+                          ImGui::Checkbox(toggle.label.c_str(), &toggle.value);
+                          if(toggle.enabled.assign(toggle.value)) {
                               sink.consume(
                                 {entry.input_id, entry.kind()}, toggle.enabled);
                           }
