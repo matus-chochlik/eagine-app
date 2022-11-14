@@ -106,6 +106,15 @@ public:
     void mapping_enable(const message_id signal_id) final;
     void mapping_commit(const identifier setup_id) final;
 
+    auto add_ui_feedback(
+      const message_id signal_id,
+      const message_id input_id,
+      input_feedback_trigger,
+      input_feedback_action,
+      std::variant<std::monostate, bool, float> threshold,
+      std::variant<std::monostate, bool, float> multiplier) noexcept
+      -> bool final;
+
     auto add_ui_button(const message_id, const string_view label) -> bool final;
 
     auto add_ui_toggle(const message_id, const string_view label, bool initial)
@@ -183,26 +192,10 @@ private:
         message_id input_id;
         ui_state_variant state;
 
-        auto kind() const noexcept -> input_value_kind {
-            if(std::holds_alternative<ui_slider_state>(state)) {
-                return std::get<ui_slider_state>(state).kind;
-            }
-            return input_value_kind::absolute_norm;
-        }
+        auto kind() const noexcept -> input_value_kind;
 
-        auto get_toggle() noexcept -> ui_toggle_state* {
-            if(std::holds_alternative<ui_toggle_state>(state)) {
-                return &(std::get<ui_toggle_state>(state));
-            }
-            return nullptr;
-        }
-
-        auto get_slider() noexcept -> ui_slider_state* {
-            if(std::holds_alternative<ui_slider_state>(state)) {
-                return &(std::get<ui_slider_state>(state));
-            }
-            return nullptr;
-        }
+        auto get_toggle() noexcept -> ui_toggle_state*;
+        auto get_slider() noexcept -> ui_slider_state*;
 
         auto apply(const auto& func) noexcept {
             std::visit(func, state);
@@ -213,6 +206,45 @@ private:
     auto _find_ui_input(message_id input_id) noexcept -> ui_input_state*;
 
     std::vector<ui_input_state> _ui_input_states;
+
+    struct ui_input_feedback {
+        message_id input_id;
+        std::variant<std::monostate, bool, float> threshold;
+        std::variant<std::monostate, bool, float> multiplier;
+        input_feedback_trigger trigger{input_feedback_trigger::change};
+        input_feedback_action action{input_feedback_action::copy};
+
+        auto is_under_threshold(const input_variable<bool>& inp) const noexcept
+          -> bool;
+        auto is_over_threshold(const input_variable<bool>& inp) const noexcept
+          -> bool;
+
+        auto is_triggered(const input_variable<bool>& inp) const noexcept
+          -> bool;
+
+        void key_press_changed(
+          glfw3_opengl_window& parent,
+          const input_variable<bool>& inp) const noexcept;
+    };
+    friend struct ui_input_feedback;
+
+    struct ui_feedback_targets {
+        std::vector<ui_input_feedback> targets;
+
+        auto key_press_changed(
+          glfw3_opengl_window& parent,
+          const input_variable<bool>&) const noexcept -> bool;
+    };
+
+    void _ui_input_feedback(
+      const ui_input_feedback&,
+      const input_variable<bool>&) noexcept;
+
+    void _feedback_key_press_change(
+      message_id key_id,
+      const input_variable<bool>&) noexcept;
+
+    flat_map<message_id, ui_feedback_targets> _ui_feedbacks;
 #endif
 
     input_variable<float> _mouse_x_pix{0};
@@ -440,6 +472,131 @@ glfw3_opengl_window::glfw3_opengl_window(
     _mouse_states.emplace_back("Button5", GLFW_MOUSE_BUTTON_6);
     _mouse_states.emplace_back("Button6", GLFW_MOUSE_BUTTON_7);
     _mouse_states.emplace_back("Button7", GLFW_MOUSE_BUTTON_8);
+}
+//------------------------------------------------------------------------------
+// ui input handling
+//------------------------------------------------------------------------------
+#if EAGINE_APP_HAS_IMGUI
+auto glfw3_opengl_window::ui_input_state::kind() const noexcept
+  -> input_value_kind {
+    if(std::holds_alternative<ui_slider_state>(state)) {
+        return std::get<ui_slider_state>(state).kind;
+    }
+    return input_value_kind::absolute_norm;
+}
+//------------------------------------------------------------------------------
+auto glfw3_opengl_window::ui_input_state::get_toggle() noexcept
+  -> glfw3_opengl_window::ui_toggle_state* {
+    if(std::holds_alternative<ui_toggle_state>(state)) {
+        return &(std::get<ui_toggle_state>(state));
+    }
+    return nullptr;
+}
+//------------------------------------------------------------------------------
+auto glfw3_opengl_window::ui_input_state::get_slider() noexcept
+  -> glfw3_opengl_window::ui_slider_state* {
+    if(std::holds_alternative<ui_slider_state>(state)) {
+        return &(std::get<ui_slider_state>(state));
+    }
+    return nullptr;
+}
+//------------------------------------------------------------------------------
+auto glfw3_opengl_window::ui_input_feedback::is_under_threshold(
+  const input_variable<bool>& inp) const noexcept -> bool {
+    return std::visit(
+      overloaded(
+        [&](std::monostate) { return !inp; },
+        [&](bool t) { return t || !inp; },
+        [&](float t) { return (t >= 0.5F) || !inp; }),
+      threshold);
+}
+//------------------------------------------------------------------------------
+auto glfw3_opengl_window::ui_input_feedback::is_over_threshold(
+  const input_variable<bool>& inp) const noexcept -> bool {
+    return std::visit(
+      overloaded(
+        [&](std::monostate) { return bool(inp); },
+        [&](bool t) { return !t || inp; },
+        [&](float t) { return (t <= 0.5F) || inp; }),
+      threshold);
+}
+//------------------------------------------------------------------------------
+auto glfw3_opengl_window::ui_input_feedback::is_triggered(
+  const input_variable<bool>& inp) const noexcept -> bool {
+    switch(trigger) {
+        case input_feedback_trigger::change:
+            return true;
+        case input_feedback_trigger::under_threshold:
+            return is_under_threshold(inp);
+        case input_feedback_trigger::over_threshold:
+            return is_over_threshold(inp);
+        case input_feedback_trigger::zero:
+            return !inp;
+        case input_feedback_trigger::one:
+            return bool(inp);
+    }
+}
+//------------------------------------------------------------------------------
+void glfw3_opengl_window::ui_input_feedback::key_press_changed(
+  glfw3_opengl_window& parent,
+  const input_variable<bool>& inp) const noexcept {
+    if(is_triggered(inp)) {
+        parent._ui_input_feedback(*this, inp);
+    }
+}
+//------------------------------------------------------------------------------
+auto glfw3_opengl_window::ui_feedback_targets::key_press_changed(
+  glfw3_opengl_window& parent,
+  const input_variable<bool>& inp) const noexcept -> bool {
+    if(!targets.empty()) [[likely]] {
+        for(auto& target : targets) {
+            target.key_press_changed(parent, inp);
+        }
+        return true;
+    } else {
+        return false;
+    }
+}
+//------------------------------------------------------------------------------
+void glfw3_opengl_window::_ui_input_feedback(
+  const ui_input_feedback&,
+  const input_variable<bool>&) noexcept {}
+//------------------------------------------------------------------------------
+void glfw3_opengl_window::_feedback_key_press_change(
+  message_id key_id,
+  const input_variable<bool>& inp) noexcept {
+    if(const auto pos{_ui_feedbacks.find(key_id)}; pos != _ui_feedbacks.end()) {
+        if(!pos->second.key_press_changed(*this, inp)) [[unlikely]] {
+            _ui_feedbacks.erase(pos);
+        }
+    }
+}
+//------------------------------------------------------------------------------
+#endif
+auto glfw3_opengl_window::add_ui_feedback(
+  const message_id signal_id,
+  const message_id input_id,
+  input_feedback_trigger trigger,
+  input_feedback_action action,
+  std::variant<std::monostate, bool, float> threshold,
+  std::variant<std::monostate, bool, float> multiplier) noexcept -> bool {
+#if EAGINE_APP_HAS_IMGUI
+    auto& info = _ui_feedbacks[signal_id];
+    auto pos{
+      std::find_if(info.targets.begin(), info.targets.end(), [=](auto& entry) {
+          return entry.input_id == input_id;
+      })};
+    if(pos == info.targets.end()) {
+        pos = info.targets.insert(pos, ui_input_feedback{.input_id = input_id});
+    }
+    pos->threshold = threshold;
+    pos->threshold = multiplier;
+    pos->trigger = trigger;
+    pos->action = action;
+    return true;
+#else
+    return false;
+#endif
 }
 //------------------------------------------------------------------------------
 auto glfw3_opengl_window::_setup_ui_input(
@@ -989,10 +1146,11 @@ void glfw3_opengl_window::update(execution_context& exec_ctx) {
                         const auto state = glfwGetKey(_window, ks.key_code);
                         const auto press = state == GLFW_PRESS;
                         if(ks.pressed.assign(press) || press) {
+                            const message_id key_id{"Keyboard", ks.key_id};
                             sink.consume(
-                              {{"Keyboard", ks.key_id},
-                               input_value_kind::absolute_norm},
+                              {key_id, input_value_kind::absolute_norm},
                               ks.pressed);
+                            _feedback_key_press_change(key_id, ks.pressed);
                         }
                     }
                 }

@@ -15,6 +15,7 @@ import eagine.core.main_ctx;
 import :types;
 import :options;
 import :input;
+import <variant>;
 import <string>;
 import <memory>;
 
@@ -50,6 +51,15 @@ export struct input_provider : interface<input_provider> {
     virtual void mapping_begin(const identifier setup_id) = 0;
     virtual void mapping_enable(const message_id signal_id) = 0;
     virtual void mapping_commit(const identifier setup_id) = 0;
+
+    virtual auto add_ui_feedback(
+      const message_id signal_id,
+      const message_id input_id,
+      input_feedback_trigger,
+      input_feedback_action,
+      std::variant<std::monostate, bool, float> threshold,
+      std::variant<std::monostate, bool, float> multiplier) noexcept
+      -> bool = 0;
 
     virtual auto add_ui_button(const message_id, const string_view label)
       -> bool = 0;
