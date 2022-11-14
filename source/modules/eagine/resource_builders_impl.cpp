@@ -16,6 +16,7 @@ import eagine.core.math;
 import eagine.core.memory;
 import eagine.core.string;
 import eagine.core.identifier;
+import eagine.core.reflection;
 import eagine.core.value_tree;
 import eagine.core.units;
 import <optional>;
@@ -306,12 +307,30 @@ public:
         return false;
     }
 
+    auto is_parsing_feedback() const noexcept -> bool {
+        return _status_l1 == status_type_l1::parsing_feedback;
+    }
+
     auto is_parsing_input() const noexcept -> bool {
         return _status_l1 == status_type_l1::parsing_input;
     }
 
     auto is_parsing_slot() const noexcept -> bool {
         return _status_l1 == status_type_l1::parsing_slot;
+    }
+
+    auto add_feedback() noexcept -> bool {
+        assert(is_parsing_feedback());
+        if(_feedback_id && _input_id) {
+            _ctx.add_ui_feedback(
+              extract(_feedback_id),
+              extract(_input_id),
+              extract_or(_trigger, input_feedback_trigger::change),
+              extract_or(_action, input_feedback_action::copy),
+              _threshold,
+              _multiplier);
+        }
+        return false;
     }
 
     auto add_input() noexcept -> bool {
@@ -369,9 +388,13 @@ public:
     void do_add(
       const basic_string_path& path,
       const span<const bool> data) noexcept {
-        if(path.ends_with("initial")) {
-            if(data.has_single_value()) {
+        if(data.has_single_value()) {
+            if(path.ends_with("initial")) {
                 _initial_bool = extract(data);
+            } else if(path.ends_with("threshold")) {
+                _threshold = extract(data);
+            } else if(path.ends_with("multiplier")) {
+                _multiplier = extract(data);
             }
         }
     }
@@ -390,6 +413,10 @@ public:
                     _min = extract(data);
                 } else if(path.ends_with("max")) {
                     _max = extract(data);
+                } else if(path.ends_with("threshold")) {
+                    _threshold = float(extract(data));
+                } else if(path.ends_with("multiplier")) {
+                    _multiplier = float(extract(data));
                 }
             } else {
                 log_error("too many values for ${what}")
@@ -419,12 +446,28 @@ public:
                     add_slot_mapping();
                 }
             }
+        } else if(path.ends_with("trigger")) {
+            if(data.has_single_value()) {
+                if(const auto trigger{
+                     from_string<input_feedback_trigger>(extract(data))}) {
+                    _trigger = extract(trigger);
+                }
+            }
+        } else if(path.ends_with("action")) {
+            if(data.has_single_value()) {
+                if(const auto action{
+                     from_string<input_feedback_action>(extract(data))}) {
+                    _action = extract(action);
+                }
+            }
         } else if(path.ends_with("_")) {
             const auto parent{path.parent()};
             if(parent.ends_with("input")) {
                 if(parse_msg_id(data, _input_id)) {
                     if(parent.size() == 2) {
-                        _status_l1 = status_type_l1::parsing_input;
+                        if(!is_parsing_feedback()) {
+                            _status_l1 = status_type_l1::parsing_input;
+                        }
                     } else {
                         if(is_parsing_slot()) {
                             add_slot_mapping();
@@ -437,6 +480,12 @@ public:
                         _status_l1 = status_type_l1::parsing_slot;
                     }
                 }
+            } else if(parent.ends_with("feedback")) {
+                if(parse_msg_id(data, _feedback_id)) {
+                    if(parent.size() == 2) {
+                        _status_l1 = status_type_l1::parsing_feedback;
+                    }
+                }
             }
         }
     }
@@ -444,14 +493,7 @@ public:
     void add_object(const basic_string_path& path) noexcept final {
         _str_data_offs = 0;
         if(path.is("_")) {
-            _status_l1 = status_type_l1::unknown;
-            _input_id = {};
-            _slot_id = {};
-            _type = {};
-            _label = {};
-            _min = {};
-            _max = {};
-            _initial_float = {};
+            reset();
         }
     }
 
@@ -459,6 +501,8 @@ public:
         if(path.is("_")) {
             if(is_parsing_input()) {
                 add_input();
+            } else if(is_parsing_feedback()) {
+                add_feedback();
             }
         }
     }
@@ -468,16 +512,43 @@ public:
         base::finish();
     }
 
+    void reset() noexcept {
+        _status_l1 = status_type_l1::unknown;
+        _feedback_id = {};
+        _input_id = {};
+        _slot_id = {};
+        _type = {};
+        _label = {};
+        _threshold = {};
+        _multiplier = {};
+        _min = {};
+        _max = {};
+        _initial_float = {};
+        _initial_bool = {};
+        _trigger = {};
+        _action = {};
+    }
+
 private:
-    enum class status_type_l1 { unknown, parsing_input, parsing_slot };
+    enum class status_type_l1 {
+        unknown,
+        parsing_input,
+        parsing_slot,
+        parsing_feedback
+    };
 
     execution_context& _ctx;
+    std::optional<message_id> _feedback_id;
     std::optional<message_id> _input_id;
     std::optional<message_id> _slot_id;
     std::optional<std::string> _type;
     std::optional<std::string> _label;
+    std::variant<std::monostate, bool, float> _threshold;
+    std::variant<std::monostate, bool, float> _multiplier;
     std::optional<float> _min, _max, _initial_float;
     std::optional<bool> _initial_bool;
+    std::optional<input_feedback_trigger> _trigger;
+    std::optional<input_feedback_action> _action;
     identifier _temp_id;
     span_size_t _str_data_offs{0};
 

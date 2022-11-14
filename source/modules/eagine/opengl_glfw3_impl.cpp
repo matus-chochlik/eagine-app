@@ -43,6 +43,7 @@ import <variant>;
 import <vector>;
 import <map>;
 
+import <iostream>;
 namespace eagine::app {
 //------------------------------------------------------------------------------
 #if EAGINE_APP_HAS_GLFW3
@@ -165,48 +166,6 @@ private:
     std::vector<key_state> _mouse_states;
 
 #if EAGINE_APP_HAS_IMGUI
-    struct ui_button_state {
-        input_variable<bool> pressed{false};
-        std::string label;
-    };
-
-    struct ui_toggle_state {
-        input_variable<bool> enabled{false};
-        std::string label;
-        bool value{false};
-    };
-
-    struct ui_slider_state {
-        input_variable<float> position{0.5F};
-        std::string label;
-        float min{0.F};
-        float max{1.F};
-        float value{0.5F};
-        input_value_kind kind{input_value_kind::absolute_norm};
-    };
-
-    using ui_state_variant =
-      std::variant<ui_button_state, ui_toggle_state, ui_slider_state>;
-
-    struct ui_input_state {
-        message_id input_id;
-        ui_state_variant state;
-
-        auto kind() const noexcept -> input_value_kind;
-
-        auto get_toggle() noexcept -> ui_toggle_state*;
-        auto get_slider() noexcept -> ui_slider_state*;
-
-        auto apply(const auto& func) noexcept {
-            std::visit(func, state);
-        }
-    };
-
-    auto _setup_ui_input(message_id input_id, ui_state_variant state) -> bool;
-    auto _find_ui_input(message_id input_id) noexcept -> ui_input_state*;
-
-    std::vector<ui_input_state> _ui_input_states;
-
     struct ui_input_feedback {
         message_id input_id;
         std::variant<std::monostate, bool, float> threshold;
@@ -230,7 +189,57 @@ private:
           glfw3_opengl_window& parent,
           const input_variable<bool>& inp) const noexcept;
     };
+
     friend struct ui_input_feedback;
+    struct ui_button_state {
+        input_variable<bool> pressed{false};
+        std::string label;
+        template <typename T>
+        void apply_feedback(const ui_input_feedback&, const input_value<T>&);
+    };
+
+    struct ui_toggle_state {
+        input_variable<bool> toggled_on{false};
+        std::string label;
+        bool value{false};
+
+        void apply_feedback(const ui_input_feedback&, const input_value<bool>&);
+        void apply_feedback(const ui_input_feedback&, const input_value<float>&);
+    };
+
+    struct ui_slider_state {
+        input_variable<float> position{0.5F};
+        std::string label;
+        float min{0.F};
+        float max{1.F};
+        float value{0.5F};
+        input_value_kind kind{input_value_kind::absolute_norm};
+
+        void apply_feedback(const ui_input_feedback&, const input_value<bool>&);
+        void apply_feedback(const ui_input_feedback&, const input_value<float>&);
+    };
+
+    using ui_state_variant =
+      std::variant<ui_button_state, ui_toggle_state, ui_slider_state>;
+
+    struct ui_input_state {
+        message_id input_id;
+        ui_state_variant state;
+
+        auto kind() const noexcept -> input_value_kind;
+
+        auto get_toggle() noexcept -> ui_toggle_state*;
+        auto get_slider() noexcept -> ui_slider_state*;
+
+        auto apply(const auto& func) noexcept {
+            std::visit(func, state);
+        }
+    };
+
+    auto _setup_ui_input(message_id input_id, ui_state_variant state) -> bool;
+    auto _find_ui_input(message_id input_id) noexcept -> ui_input_state*;
+
+    std::vector<ui_input_state> _ui_input_states;
 
     struct ui_feedback_targets {
         std::vector<ui_input_feedback> targets;
@@ -481,6 +490,56 @@ glfw3_opengl_window::glfw3_opengl_window(
 // ui input handling
 //------------------------------------------------------------------------------
 #if EAGINE_APP_HAS_IMGUI
+//------------------------------------------------------------------------------
+template <typename T>
+void glfw3_opengl_window::ui_button_state::apply_feedback(
+  const ui_input_feedback&,
+  const input_value<T>&) {}
+//------------------------------------------------------------------------------
+void glfw3_opengl_window::ui_toggle_state::apply_feedback(
+  const ui_input_feedback& fbk,
+  const input_value<bool>& inp) {
+    switch(fbk.action) {
+        case input_feedback_action::copy:
+            value = inp.get();
+            break;
+        case input_feedback_action::flip:
+            value = !value;
+            break;
+        case input_feedback_action::set_zero:
+            value = false;
+            break;
+        case input_feedback_action::set_one:
+            value = true;
+            break;
+        case input_feedback_action::multiply_add:
+            // TODO
+            break;
+    }
+}
+//------------------------------------------------------------------------------
+void glfw3_opengl_window::ui_slider_state::apply_feedback(
+  const ui_input_feedback& fbk,
+  const input_value<bool>& inp) {
+    switch(fbk.action) {
+        case input_feedback_action::copy:
+            value = inp.get() ? 1.F : 0.F;
+            break;
+        case input_feedback_action::flip:
+            // TODO?
+            break;
+        case input_feedback_action::set_zero:
+            value = 0.F;
+            break;
+        case input_feedback_action::set_one:
+            value = 1.F;
+            break;
+        case input_feedback_action::multiply_add:
+            // TODO
+            break;
+    }
+}
+//------------------------------------------------------------------------------
 auto glfw3_opengl_window::ui_input_state::kind() const noexcept
   -> input_value_kind {
     if(std::holds_alternative<ui_slider_state>(state)) {
@@ -584,8 +643,13 @@ auto glfw3_opengl_window::ui_feedback_targets::key_press_changed(
 }
 //------------------------------------------------------------------------------
 void glfw3_opengl_window::_ui_input_feedback(
-  const ui_input_feedback&,
-  const input_variable<bool>&) noexcept {}
+  const ui_input_feedback& fbk,
+  const input_variable<bool>& inp) noexcept {
+    if(const auto target{_find_ui_input(fbk.input_id)}) {
+        extract(target).apply(
+          [&](auto& ui_input) { ui_input.apply_feedback(fbk, inp); });
+    }
+}
 //------------------------------------------------------------------------------
 void glfw3_opengl_window::_feedback_key_press_change(
   message_id key_id,
@@ -678,7 +742,7 @@ auto glfw3_opengl_window::add_ui_toggle(
     return _setup_ui_input(
       input_id,
       ui_toggle_state{
-        .enabled = initial, .label = label.to_string(), .value = initial});
+        .toggled_on = initial, .label = label.to_string(), .value = initial});
 #else
     return false;
 #endif
@@ -690,7 +754,7 @@ auto glfw3_opengl_window::set_ui_toggle(
 #if EAGINE_APP_HAS_IMGUI
     if(auto found{_find_ui_input(input_id)}) {
         if(auto toggle{extract(found).get_toggle()}) {
-            extract(toggle).enabled = value;
+            extract(toggle).toggled_on = value;
             return true;
         }
     }
@@ -752,7 +816,6 @@ auto glfw3_opengl_window::initialize(
   const launch_options& options,
   const video_options& video_opts,
   const span<GLFWmonitor* const> monitors) -> bool {
-
     if(const auto ver_maj{video_opts.gl_version_major()}) {
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, extract(ver_maj));
     }
@@ -882,7 +945,6 @@ void glfw3_opengl_window::parent_context_changed(const video_context& vctx) {
 }
 //------------------------------------------------------------------------------
 void glfw3_opengl_window::video_begin(execution_context&) {
-
     assert(_window);
     glfwMakeContextCurrent(_window);
 }
@@ -961,7 +1023,6 @@ void glfw3_opengl_window::mapping_enable(const message_id signal_id) {
 //------------------------------------------------------------------------------
 void glfw3_opengl_window::mapping_commit(
   [[maybe_unused]] const identifier setup_id) {
-
     for(auto& ks : _key_states) {
         ks.enabled = _enabled_signals.contains({"Keyboard", ks.key_id});
     }
@@ -978,7 +1039,6 @@ void glfw3_opengl_window::mapping_commit(
 }
 //------------------------------------------------------------------------------
 void glfw3_opengl_window::update(execution_context& exec_ctx) {
-
     if(_imgui_enabled) {
         assert(_parent_context);
 #if EAGINE_APP_HAS_IMGUI
@@ -1038,9 +1098,10 @@ void glfw3_opengl_window::update(execution_context& exec_ctx) {
                       },
                       [&, this](ui_toggle_state& toggle) {
                           ImGui::Checkbox(toggle.label.c_str(), &toggle.value);
-                          if(toggle.enabled.assign(toggle.value)) {
+                          if(toggle.toggled_on.assign(toggle.value)) {
                               sink.consume(
-                                {entry.input_id, entry.kind()}, toggle.enabled);
+                                {entry.input_id, entry.kind()},
+                                toggle.toggled_on);
                           }
                       },
                       [&, this](ui_slider_state& slider) {

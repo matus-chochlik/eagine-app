@@ -14,6 +14,7 @@ import eagine.core.reflection;
 import eagine.core.valid_if;
 import eagine.core.utility;
 import eagine.core.runtime;
+import <cstdint>;
 import <chrono>;
 import <utility>;
 
@@ -22,7 +23,7 @@ namespace eagine::app {
 /// @brief Enumeration of what triggers input feedback action.
 /// @ingroup application
 /// @see input_feedback_action
-export enum class input_feedback_trigger {
+export enum class input_feedback_trigger : std::uint8_t {
     /// @brief Any change in the triggering signal value.
     change,
     /// @brief The triggering signal value is under the specified threshold.
@@ -50,7 +51,7 @@ constexpr auto enumerator_mapping(
 /// @brief Enumeration of how a input feedback trigger should be applied.
 /// @ingroup application
 /// @see input_feedback_trigger
-export enum class input_feedback_action {
+export enum class input_feedback_action : std::uint8_t {
     /// @brief Copy the triggering signal value to the target input state.
     copy,
     /// @brief Changes the target input state to opposite value (depending on context).
