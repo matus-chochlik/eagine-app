@@ -38,6 +38,7 @@ import eagine.core.utility;
 import eagine.core.valid_if;
 import eagine.core.c_api;
 import eagine.core.main_ctx;
+import <cmath>;
 import <string>;
 import <variant>;
 import <vector>;
@@ -188,12 +189,68 @@ private:
         void key_press_changed(
           glfw3_opengl_window& parent,
           const input_variable<bool>& inp) const noexcept;
+
+        auto multiply(bool value) const noexcept -> bool;
+        auto multiply(float value) const noexcept -> float;
+
+        void copy_to(bool& dst, const input_value<bool>& inp) const noexcept {
+            dst = inp.get();
+        }
+        void copy_to(bool& dst, const input_value<float>& inp) const noexcept {
+            dst = std::abs(inp.get()) > 0.F;
+        }
+        void copy_to(float& dst, const input_value<bool>& inp) const noexcept {
+            dst = (inp.get() ? 1.F : 0.F);
+        }
+        void copy_to(float& dst, const input_value<float>& inp) const noexcept {
+            dst = inp.get();
+        }
+
+        void set_zero(bool& dst) const noexcept {
+            dst = false;
+        }
+        void set_zero(float& dst) const noexcept {
+            dst = 0.F;
+        }
+        void set_one(bool& dst) const noexcept {
+            dst = true;
+        }
+        void set_one(float& dst) const noexcept {
+            dst = 1.F;
+        }
+        void flip(bool& dst) const noexcept {
+            dst = !dst;
+        }
+        void flip(float&) const noexcept {
+            // TODO: what does this mean?
+        }
+
+        void multiply_add_to(bool& dst, const input_value<bool>& inp)
+          const noexcept {
+            dst = dst || multiply(inp.get());
+        }
+        void multiply_add_to(bool& dst, const input_value<float>& inp)
+          const noexcept {
+            dst = dst || (std::abs(multiply(inp.get())) > 0.F);
+        }
+        void multiply_add_to(float& dst, const input_value<bool>& inp)
+          const noexcept {
+            dst = dst + (multiply(inp.get()) ? 1.F : 0.F);
+        }
+        void multiply_add_to(float& dst, const input_value<float>& inp)
+          const noexcept {
+            dst = dst + multiply(inp.get());
+        }
+
+        template <typename T, typename S>
+        void apply_to(T& dst, const input_value<S>& src) const noexcept;
     };
 
     friend struct ui_input_feedback;
     struct ui_button_state {
         input_variable<bool> pressed{false};
         std::string label;
+
         template <typename T>
         void apply_feedback(const ui_input_feedback&, const input_value<T>&);
     };
@@ -203,8 +260,8 @@ private:
         std::string label;
         bool value{false};
 
-        void apply_feedback(const ui_input_feedback&, const input_value<bool>&);
-        void apply_feedback(const ui_input_feedback&, const input_value<float>&);
+        template <typename T>
+        void apply_feedback(const ui_input_feedback&, const input_value<T>&);
     };
 
     struct ui_slider_state {
@@ -215,8 +272,8 @@ private:
         float value{0.5F};
         input_value_kind kind{input_value_kind::absolute_norm};
 
-        void apply_feedback(const ui_input_feedback&, const input_value<bool>&);
-        void apply_feedback(const ui_input_feedback&, const input_value<float>&);
+        template <typename T>
+        void apply_feedback(const ui_input_feedback&, const input_value<T>&);
     };
 
     using ui_state_variant =
@@ -491,53 +548,66 @@ glfw3_opengl_window::glfw3_opengl_window(
 //------------------------------------------------------------------------------
 #if EAGINE_APP_HAS_IMGUI
 //------------------------------------------------------------------------------
+auto glfw3_opengl_window::ui_input_feedback::multiply(bool value) const noexcept
+  -> bool {
+    return std::visit(
+      overloaded(
+        [=](std::monostate) { return value; },
+        [=](bool mult) { return mult && value; },
+        [=](float mult) { return (mult > 0.F) && value; }),
+      multiplier);
+}
+//------------------------------------------------------------------------------
+auto glfw3_opengl_window::ui_input_feedback::multiply(float value) const noexcept
+  -> float {
+    return std::visit(
+      overloaded(
+        [=](std::monostate) { return value; },
+        [=](bool mult) { return mult ? value : 0.F; },
+        [=](float mult) { return mult * value; }),
+      multiplier);
+}
+//------------------------------------------------------------------------------
+template <typename T, typename S>
+void glfw3_opengl_window::ui_input_feedback::apply_to(
+  T& dst,
+  const input_value<S>& inp) const noexcept {
+    switch(action) {
+        case input_feedback_action::copy:
+            copy_to(dst, inp);
+            break;
+        case input_feedback_action::flip:
+            flip(dst);
+            break;
+        case input_feedback_action::set_zero:
+            set_zero(dst);
+            break;
+        case input_feedback_action::set_one:
+            set_one(dst);
+            break;
+        case input_feedback_action::multiply_add:
+            multiply_add_to(dst, inp);
+            break;
+    }
+}
+//------------------------------------------------------------------------------
 template <typename T>
 void glfw3_opengl_window::ui_button_state::apply_feedback(
   const ui_input_feedback&,
   const input_value<T>&) {}
 //------------------------------------------------------------------------------
+template <typename T>
 void glfw3_opengl_window::ui_toggle_state::apply_feedback(
   const ui_input_feedback& fbk,
-  const input_value<bool>& inp) {
-    switch(fbk.action) {
-        case input_feedback_action::copy:
-            value = inp.get();
-            break;
-        case input_feedback_action::flip:
-            value = !value;
-            break;
-        case input_feedback_action::set_zero:
-            value = false;
-            break;
-        case input_feedback_action::set_one:
-            value = true;
-            break;
-        case input_feedback_action::multiply_add:
-            // TODO
-            break;
-    }
+  const input_value<T>& inp) {
+    fbk.apply_to(value, inp);
 }
 //------------------------------------------------------------------------------
+template <typename T>
 void glfw3_opengl_window::ui_slider_state::apply_feedback(
   const ui_input_feedback& fbk,
-  const input_value<bool>& inp) {
-    switch(fbk.action) {
-        case input_feedback_action::copy:
-            value = inp.get() ? 1.F : 0.F;
-            break;
-        case input_feedback_action::flip:
-            // TODO?
-            break;
-        case input_feedback_action::set_zero:
-            value = 0.F;
-            break;
-        case input_feedback_action::set_one:
-            value = 1.F;
-            break;
-        case input_feedback_action::multiply_add:
-            // TODO
-            break;
-    }
+  const input_value<T>& inp) {
+    fbk.apply_to(value, inp);
 }
 //------------------------------------------------------------------------------
 auto glfw3_opengl_window::ui_input_state::kind() const noexcept
