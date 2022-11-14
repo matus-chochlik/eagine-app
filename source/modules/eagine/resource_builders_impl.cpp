@@ -274,6 +274,7 @@ public:
                 if(identifier::can_be_encoded(data.back())) {
                     dest = message_id{
                       identifier{data.front()}, identifier{data.back()}};
+                    _str_data_offs = 0;
                     return true;
                 } else {
                     log_error("invalid method identifier ${data}")
@@ -294,6 +295,7 @@ public:
             } else if(_str_data_offs == 1) {
                 if(identifier::can_be_encoded(extract(data))) {
                     dest = message_id{_temp_id, identifier{extract(data)}};
+                    _str_data_offs = 0;
                     return true;
                 } else {
                     log_error("invalid method identifier ${data}")
