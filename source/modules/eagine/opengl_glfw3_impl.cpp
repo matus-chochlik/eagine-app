@@ -44,7 +44,6 @@ import <variant>;
 import <vector>;
 import <map>;
 
-import <iostream>;
 namespace eagine::app {
 //------------------------------------------------------------------------------
 #if EAGINE_APP_HAS_GLFW3
@@ -114,7 +113,7 @@ public:
       input_feedback_trigger,
       input_feedback_action,
       std::variant<std::monostate, bool, float> threshold,
-      std::variant<std::monostate, bool, float> multiplier) noexcept
+      std::variant<std::monostate, bool, float> constant) noexcept
       -> bool final;
 
     auto add_ui_button(const message_id, const string_view label) -> bool final;
@@ -170,7 +169,7 @@ private:
     struct ui_input_feedback {
         message_id input_id;
         std::variant<std::monostate, bool, float> threshold;
-        std::variant<std::monostate, bool, float> multiplier;
+        std::variant<std::monostate, bool, float> constant;
         input_feedback_trigger trigger{input_feedback_trigger::change};
         input_feedback_action action{input_feedback_action::copy};
 
@@ -223,6 +222,13 @@ private:
         }
         void flip(float&) const noexcept {
             // TODO: what does this mean?
+        }
+
+        void add_to(bool& dst) const noexcept {
+            dst = dst || multiply(true);
+        }
+        void add_to(float& dst) const noexcept {
+            dst = dst + multiply(1.F);
         }
 
         void multiply_add_to(bool& dst, const input_value<bool>& inp)
@@ -555,7 +561,7 @@ auto glfw3_opengl_window::ui_input_feedback::multiply(bool value) const noexcept
         [=](std::monostate) { return value; },
         [=](bool mult) { return mult && value; },
         [=](float mult) { return (mult > 0.F) && value; }),
-      multiplier);
+      constant);
 }
 //------------------------------------------------------------------------------
 auto glfw3_opengl_window::ui_input_feedback::multiply(float value) const noexcept
@@ -565,7 +571,7 @@ auto glfw3_opengl_window::ui_input_feedback::multiply(float value) const noexcep
         [=](std::monostate) { return value; },
         [=](bool mult) { return mult ? value : 0.F; },
         [=](float mult) { return mult * value; }),
-      multiplier);
+      constant);
 }
 //------------------------------------------------------------------------------
 template <typename T, typename S>
@@ -584,6 +590,9 @@ void glfw3_opengl_window::ui_input_feedback::apply_to(
             break;
         case input_feedback_action::set_one:
             set_one(dst);
+            break;
+        case input_feedback_action::add:
+            add_to(dst);
             break;
         case input_feedback_action::multiply_add:
             multiply_add_to(dst, inp);
@@ -738,7 +747,7 @@ auto glfw3_opengl_window::add_ui_feedback(
   input_feedback_trigger trigger,
   input_feedback_action action,
   std::variant<std::monostate, bool, float> threshold,
-  std::variant<std::monostate, bool, float> multiplier) noexcept -> bool {
+  std::variant<std::monostate, bool, float> constant) noexcept -> bool {
 #if EAGINE_APP_HAS_IMGUI
     auto& info = _ui_feedbacks[signal_id];
     auto pos{
@@ -749,7 +758,7 @@ auto glfw3_opengl_window::add_ui_feedback(
         pos = info.targets.insert(pos, ui_input_feedback{.input_id = input_id});
     }
     pos->threshold = threshold;
-    pos->threshold = multiplier;
+    pos->constant = constant;
     pos->trigger = trigger;
     pos->action = action;
     return true;

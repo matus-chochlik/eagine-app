@@ -319,7 +319,7 @@ public:
       input_feedback_trigger,
       input_feedback_action,
       std::variant<std::monostate, bool, float> threshold,
-      std::variant<std::monostate, bool, float> multiplier) noexcept
+      std::variant<std::monostate, bool, float> constant) noexcept
       -> execution_context&;
 
     /// @brief Add a UI button with the specified label and id

@@ -330,7 +330,7 @@ public:
               extract_or(_trigger, input_feedback_trigger::change),
               extract_or(_action, input_feedback_action::copy),
               _threshold,
-              _multiplier);
+              _constant);
         }
         return false;
     }
@@ -395,8 +395,8 @@ public:
                 _initial_bool = extract(data);
             } else if(path.ends_with("threshold")) {
                 _threshold = extract(data);
-            } else if(path.ends_with("multiplier")) {
-                _multiplier = extract(data);
+            } else if(path.ends_with("constant")) {
+                _constant = extract(data);
             }
         }
     }
@@ -405,25 +405,20 @@ public:
     void do_add(
       const basic_string_path& path,
       const span<const T> data) noexcept {
-        if(
-          path.ends_with("min") || path.ends_with("max") ||
-          path.ends_with("initial")) {
-            if(data.has_single_value()) {
-                if(path.ends_with("initial")) {
-                    _initial_float = extract(data);
-                } else if(path.ends_with("min")) {
-                    _min = extract(data);
-                } else if(path.ends_with("max")) {
-                    _max = extract(data);
-                } else if(path.ends_with("threshold")) {
-                    _threshold = float(extract(data));
-                } else if(path.ends_with("multiplier")) {
-                    _multiplier = float(extract(data));
-                }
-            } else {
-                log_error("too many values for ${what}")
-                  .arg("what", path.back());
+        if(data.has_single_value()) {
+            if(path.ends_with("initial")) {
+                _initial_float = extract(data);
+            } else if(path.ends_with("min")) {
+                _min = extract(data);
+            } else if(path.ends_with("max")) {
+                _max = extract(data);
+            } else if(path.ends_with("threshold")) {
+                _threshold = float(extract(data));
+            } else if(path.ends_with("constant")) {
+                _constant = float(extract(data));
             }
+        } else {
+            log_error("too many values for ${what}").arg("what", path.back());
         }
     }
 
@@ -522,7 +517,7 @@ public:
         _type = {};
         _label = {};
         _threshold = {};
-        _multiplier = {};
+        _constant = {};
         _min = {};
         _max = {};
         _initial_float = {};
@@ -546,7 +541,7 @@ private:
     std::optional<std::string> _type;
     std::optional<std::string> _label;
     std::variant<std::monostate, bool, float> _threshold;
-    std::variant<std::monostate, bool, float> _multiplier;
+    std::variant<std::monostate, bool, float> _constant;
     std::optional<float> _min, _max, _initial_float;
     std::optional<bool> _initial_bool;
     std::optional<input_feedback_trigger> _trigger;

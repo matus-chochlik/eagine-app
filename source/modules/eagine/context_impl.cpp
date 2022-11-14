@@ -582,11 +582,11 @@ auto execution_context::add_ui_feedback(
   input_feedback_trigger trigger,
   input_feedback_action action,
   std::variant<std::monostate, bool, float> threshold,
-  std::variant<std::monostate, bool, float> multiplier) noexcept
+  std::variant<std::monostate, bool, float> constant) noexcept
   -> execution_context& {
     for(auto& input : _input_providers) {
         extract(input).add_ui_feedback(
-          signal_id, input_id, trigger, action, threshold, multiplier);
+          signal_id, input_id, trigger, action, threshold, constant);
     }
     return *this;
 }

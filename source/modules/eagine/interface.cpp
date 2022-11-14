@@ -58,8 +58,7 @@ export struct input_provider : interface<input_provider> {
       input_feedback_trigger,
       input_feedback_action,
       std::variant<std::monostate, bool, float> threshold,
-      std::variant<std::monostate, bool, float> multiplier) noexcept
-      -> bool = 0;
+      std::variant<std::monostate, bool, float> constant) noexcept -> bool = 0;
 
     virtual auto add_ui_button(const message_id, const string_view label)
       -> bool = 0;

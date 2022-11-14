@@ -60,7 +60,9 @@ export enum class input_feedback_action : std::uint8_t {
     set_zero,
     /// @brief Sets the target input state to value of one (or true).
     set_one,
-    /// @brief Multiply the triggering signal value and add it to target input.
+    /// @brief Add the constant to target input state.
+    add,
+    /// @brief Multiply the triggering signal by constant and add it to target input.
     multiply_add
 };
 
@@ -68,11 +70,12 @@ export template <typename Selector>
 constexpr auto enumerator_mapping(
   const std::type_identity<input_feedback_action>,
   const Selector) noexcept {
-    return enumerator_map_type<input_feedback_action, 5>{
+    return enumerator_map_type<input_feedback_action, 6>{
       {{"copy", input_feedback_action::copy},
        {"flip", input_feedback_action::flip},
        {"set_zero", input_feedback_action::set_zero},
        {"set_one", input_feedback_action::set_one},
+       {"add", input_feedback_action::add},
        {"multiply_add", input_feedback_action::multiply_add}}};
 }
 //------------------------------------------------------------------------------
