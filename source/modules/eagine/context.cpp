@@ -312,6 +312,16 @@ public:
     /// @brief Connect generic, reusable application logical input slots.
     auto connect_inputs() -> execution_context&;
 
+    /// @brief Add a mapping of one input signal to an action on another UI input.
+    auto add_ui_feedback(
+      const message_id signal_id,
+      const message_id input_id,
+      input_feedback_trigger,
+      input_feedback_action,
+      std::variant<std::monostate, bool, float> threshold,
+      std::variant<std::monostate, bool, float> multiplier) noexcept
+      -> execution_context&;
+
     /// @brief Add a UI button with the specified label and id
     auto add_ui_button(const message_id id, const string_view label)
       -> execution_context&;

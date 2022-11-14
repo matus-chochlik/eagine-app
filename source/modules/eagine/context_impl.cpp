@@ -576,35 +576,51 @@ auto execution_context::connect_inputs() -> execution_context& {
     return *this;
 }
 //------------------------------------------------------------------------------
+auto execution_context::add_ui_feedback(
+  const message_id signal_id,
+  const message_id input_id,
+  input_feedback_trigger trigger,
+  input_feedback_action action,
+  std::variant<std::monostate, bool, float> threshold,
+  std::variant<std::monostate, bool, float> multiplier) noexcept
+  -> execution_context& {
+    for(auto& input : _input_providers) {
+        extract(input).add_ui_feedback(
+          signal_id, input_id, trigger, action, threshold, multiplier);
+    }
+    return *this;
+}
+//------------------------------------------------------------------------------
 auto execution_context::add_ui_button(
-  const message_id id,
+  const message_id input_id,
   const string_view label) -> execution_context& {
     for(auto& input : _input_providers) {
-        extract(input).add_ui_button(id, label);
+        extract(input).add_ui_button(input_id, label);
     }
     return *this;
 }
 //------------------------------------------------------------------------------
 auto execution_context::add_ui_toggle(
-  const message_id id,
+  const message_id input_id,
   const string_view label,
   bool initial) -> execution_context& {
     for(auto& input : _input_providers) {
-        extract(input).add_ui_toggle(id, label, initial);
+        extract(input).add_ui_toggle(input_id, label, initial);
     }
     return *this;
 }
 //------------------------------------------------------------------------------
-auto execution_context::set_ui_toggle(const message_id id, bool value) noexcept
-  -> execution_context& {
+auto execution_context::set_ui_toggle(
+  const message_id input_id,
+  bool value) noexcept -> execution_context& {
     for(auto& input : _input_providers) {
-        extract(input).set_ui_toggle(id, value);
+        extract(input).set_ui_toggle(input_id, value);
     }
     return *this;
 }
 //------------------------------------------------------------------------------
 auto execution_context::add_ui_slider(
-  const message_id id,
+  const message_id input_id,
   const string_view label,
   float min,
   float max,
@@ -614,7 +630,8 @@ auto execution_context::add_ui_slider(
                                         ? input_value_kind::absolute_norm
                                         : input_value_kind::absolute_free;
         for(auto& input : _input_providers) {
-            extract(input).add_ui_slider(id, label, min, max, initial, kind);
+            extract(input).add_ui_slider(
+              input_id, label, min, max, initial, kind);
         }
     } else {
         log_error("inconsistent min, max and initial values")
@@ -625,10 +642,11 @@ auto execution_context::add_ui_slider(
     return *this;
 }
 //------------------------------------------------------------------------------
-auto execution_context::set_ui_slider(const message_id id, float value) noexcept
-  -> execution_context& {
+auto execution_context::set_ui_slider(
+  const message_id input_id,
+  float value) noexcept -> execution_context& {
     for(auto& input : _input_providers) {
-        extract(input).set_ui_slider(id, value);
+        extract(input).set_ui_slider(input_id, value);
     }
     return *this;
 }

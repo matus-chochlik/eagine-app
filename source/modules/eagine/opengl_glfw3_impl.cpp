@@ -218,9 +218,13 @@ private:
           -> bool;
         auto is_over_threshold(const input_variable<bool>& inp) const noexcept
           -> bool;
-
-        auto is_triggered(const input_variable<bool>& inp) const noexcept
+        auto is_under_threshold(const input_variable<float>& inp) const noexcept
           -> bool;
+        auto is_over_threshold(const input_variable<float>& inp) const noexcept
+          -> bool;
+
+        template <typename T>
+        auto is_triggered(const input_variable<T>& inp) const noexcept -> bool;
 
         void key_press_changed(
           glfw3_opengl_window& parent,
@@ -521,8 +525,29 @@ auto glfw3_opengl_window::ui_input_feedback::is_over_threshold(
       threshold);
 }
 //------------------------------------------------------------------------------
+auto glfw3_opengl_window::ui_input_feedback::is_under_threshold(
+  const input_variable<float>& inp) const noexcept -> bool {
+    return std::visit(
+      overloaded(
+        [&](std::monostate) { return inp.get() < 0.F; },
+        [&](bool t) { return t ? inp.get() <= 1.F : inp.get() <= 0.F; },
+        [&](float t) { return (inp.get() <= t); }),
+      threshold);
+}
+//------------------------------------------------------------------------------
+auto glfw3_opengl_window::ui_input_feedback::is_over_threshold(
+  const input_variable<float>& inp) const noexcept -> bool {
+    return std::visit(
+      overloaded(
+        [&](std::monostate) { return inp.get() > 0.F; },
+        [&](bool t) { return t ? inp.get() >= 1.F : inp.get() >= 0.F; },
+        [&](float t) { return (inp.get() >= t); }),
+      threshold);
+}
+//------------------------------------------------------------------------------
+template <typename T>
 auto glfw3_opengl_window::ui_input_feedback::is_triggered(
-  const input_variable<bool>& inp) const noexcept -> bool {
+  const input_variable<T>& inp) const noexcept -> bool {
     switch(trigger) {
         case input_feedback_trigger::change:
             return true;
