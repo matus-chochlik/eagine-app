@@ -8,29 +8,21 @@
 
 #include "resources.hpp"
 
-#if !EAGINE_APP_MODULE
-#include <eagine/app/camera.hpp>
-#include <eagine/app/context.hpp>
-#include <eagine/embed.hpp>
-#include <eagine/oglplus/glsl/string_ref.hpp>
-#include <eagine/oglplus/math/matrix_ctrs.hpp>
-#include <eagine/oglplus/shapes/generator.hpp>
-#include <eagine/shapes/adjacency.hpp>
-#include <eagine/shapes/twisted_torus.hpp>
-#endif
-
 namespace eagine::app {
 //------------------------------------------------------------------------------
 // sketch program
 //------------------------------------------------------------------------------
-void sketch_program::init(video_context& vc) {
-    create(vc)
-      .build(vc, embed<"SketchProg">("sketch.oglpprog"))
-      .use(vc)
-      .query(vc, "Model", _model_loc)
-      .query(vc, "View", _view_loc)
-      .query(vc, "Projection", _projection_loc)
-      .query(vc, "viewportDimensions", _vp_dim_loc);
+sketch_program::sketch_program(execution_context& ctx)
+  : gl_program_resource{url{"json:///Program"}, ctx} {
+    loaded.connect(make_callable_ref<&sketch_program::_on_loaded>(this));
+}
+//------------------------------------------------------------------------------
+void sketch_program::_on_loaded(
+  const gl_program_resource::load_info& info) noexcept {
+    info.get_uniform_location("Model") >> _model_loc;
+    info.get_uniform_location("View") >> _view_loc;
+    info.get_uniform_location("Projection") >> _projection_loc;
+    info.get_uniform_location("viewportDimensions") >> _vp_dim_loc;
 }
 //------------------------------------------------------------------------------
 void sketch_program::prepare_frame(
@@ -46,39 +38,21 @@ void sketch_program::prepare_frame(
       .set(vc, _vp_dim_loc, oglplus::vec2(width, height));
 }
 //------------------------------------------------------------------------------
-void sketch_program::bind_position_location(
-  video_context& vc,
-  oglplus::vertex_attrib_location loc) {
-    bind(vc, loc, "Position");
-}
-//------------------------------------------------------------------------------
-void sketch_program::bind_normal_location(
-  video_context& vc,
-  oglplus::vertex_attrib_location loc) {
-    bind(vc, loc, "Normal");
-}
-//------------------------------------------------------------------------------
-void sketch_program::bind_coord_location(
-  video_context& vc,
-  oglplus::vertex_attrib_location loc) {
-    bind(vc, loc, "Coord");
-}
-//------------------------------------------------------------------------------
 // geometry
 //------------------------------------------------------------------------------
 void shape_geometry::init(video_context& vc) {
-    geometry_and_bindings::init(
-      shapes::add_triangle_adjacency(
-        shapes::unit_twisted_torus(
-          shapes::vertex_attrib_kind::position |
-            shapes::vertex_attrib_kind::normal |
-            shapes::vertex_attrib_kind::wrap_coord,
-          9,
-          13,
-          9,
-          0.5F),
-        vc.parent()),
-      vc);
+    gl_geometry_and_bindings::init(
+      {shapes::add_triangle_adjacency(
+         shapes::unit_twisted_torus(
+           shapes::vertex_attrib_kind::position |
+             shapes::vertex_attrib_kind::normal |
+             shapes::vertex_attrib_kind::wrap_coord,
+           9,
+           13,
+           9,
+           0.5F),
+         vc.parent()),
+       vc});
 }
 //------------------------------------------------------------------------------
 // sketch texture

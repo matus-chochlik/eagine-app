@@ -6,254 +6,155 @@
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
 
-#if EAGINE_APP_MODULE
 import eagine.core;
 import eagine.shapes;
 import eagine.oglplus;
 import eagine.app;
-#else
-#include <eagine/oglplus/gl.hpp>
-#include <eagine/oglplus/gl_api.hpp>
-
-#include <eagine/app/camera.hpp>
-#include <eagine/app/main.hpp>
-#include <eagine/app_config.hpp>
-#include <eagine/embed.hpp>
-#include <eagine/oglplus/glsl/string_ref.hpp>
-#include <eagine/oglplus/math/matrix.hpp>
-#include <eagine/oglplus/math/primitives.hpp>
-#include <eagine/oglplus/math/vector.hpp>
-#include <eagine/oglplus/shapes/generator.hpp>
-#include <eagine/shapes/value_tree.hpp>
-#include <eagine/timeout.hpp>
-#include <eagine/value_tree/json.hpp>
-#endif
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-class example_uv_map : public application {
+class example_uv_map : public timeouting_application {
 public:
     example_uv_map(execution_context&, video_context&);
 
-    auto is_done() noexcept -> bool final {
-        return _is_done.is_expired();
-    }
-
-    void on_video_resize() noexcept final;
     void update() noexcept final;
     void clean_up() noexcept final;
 
 private:
-    execution_context& _ctx;
+    void _on_loaded(const loaded_resource_base&) noexcept;
+    auto _load_handler() noexcept {
+        return make_callable_ref<&example_uv_map::_on_loaded>(this);
+    }
+
+    void _on_shp_loaded(
+      const gl_geometry_and_bindings_resource::load_info&) noexcept;
+    auto _load_shp_handler() noexcept {
+        return make_callable_ref<&example_uv_map::_on_shp_loaded>(this);
+    }
+
+    void _on_prg_loaded(const gl_program_resource::load_info&) noexcept;
+    auto _load_prg_handler() noexcept {
+        return make_callable_ref<&example_uv_map::_on_prg_loaded>(this);
+    }
+
+    void _on_tex_loaded(const gl_texture_resource::load_info&) noexcept;
+    auto _load_tex_handler() noexcept {
+        return make_callable_ref<&example_uv_map::_on_tex_loaded>(this);
+    }
+
     video_context& _video;
-    timeout _is_done{std::chrono::seconds{30}};
-
-    std::vector<oglplus::shape_draw_operation> _ops;
-    oglplus::owned_vertex_array_name vao;
-
-    oglplus::owned_buffer_name positions;
-    oglplus::owned_buffer_name normals;
-    oglplus::owned_buffer_name tangents;
-    oglplus::owned_buffer_name bitangents;
-    oglplus::owned_buffer_name wrap_coords;
-    oglplus::owned_buffer_name indices;
-
-    oglplus::owned_texture_name tex{};
-
-    oglplus::owned_program_name prog;
+    gl_geometry_and_bindings_resource _shape;
+    gl_program_resource _prog;
+    gl_texture_resource _tex;
+    oglplus::program_input_bindings _prog_inputs;
+    oglplus::uniform_location _camera_loc;
+    oglplus::uniform_location _light_dir_loc;
 
     orbiting_camera camera;
-    oglplus::uniform_location camera_loc;
-    oglplus::uniform_location light_dir_loc;
 };
 //------------------------------------------------------------------------------
 example_uv_map::example_uv_map(execution_context& ec, video_context& vc)
-  : _ctx{ec}
-  , _video{vc} {
-    const auto& glapi = _video.gl_api();
-    const auto& [gl, GL] = glapi;
+  : timeouting_application{ec, std::chrono::seconds{30}}
+  , _video{vc}
+  , _shape{url{"json:///HydrntShpe"}, ec}
+  , _prog{url{"json:///HydrntProg"}, ec}
+  , _tex{url{"json:///HydrantTex"}, ec} {
+    _shape.base_loaded.connect(_load_handler());
+    _shape.loaded.connect(_load_shp_handler());
+    _prog.base_loaded.connect(_load_handler());
+    _prog.loaded.connect(_load_prg_handler());
+    _tex.base_loaded.connect(_load_handler());
+    _tex.loaded.connect(_load_tex_handler());
 
-    // program
-    gl.create_program() >> prog;
-    glapi.add_shader(
-      prog,
-      GL.vertex_shader,
-      oglplus::glsl_string_ref(embed<"VertShader">("vertex.glsl").unpack(ec)));
-    glapi.add_shader(
-      prog,
-      GL.fragment_shader,
-      oglplus::glsl_string_ref(
-        embed<"FragShader">("fragment.glsl").unpack(ec)));
-    gl.link_program(prog);
-    gl.use_program(prog);
-
-    // geometry
-    auto json_text = as_chars(embed<"ShapeJson">("hydrant_1.json").unpack(ec));
-    oglplus::shape_generator shape(
-      glapi,
-      shapes::from_value_tree(
-        valtree::from_json_text(json_text, ec.main_context()), ec.as_parent()));
-
-    _ops.resize(std_size(shape.operation_count()));
-    shape.instructions(glapi, cover(_ops));
-
-    // vao
-    gl.gen_vertex_arrays() >> vao;
-    gl.bind_vertex_array(vao);
-
-    // positions
-    oglplus::vertex_attrib_location position_loc{0};
-    gl.gen_buffers() >> positions;
-    shape.attrib_setup(
-      glapi,
-      vao,
-      positions,
-      position_loc,
-      eagine::shapes::vertex_attrib_kind::position,
-      _ctx.buffer());
-    gl.bind_attrib_location(prog, position_loc, "Position");
-
-    // normals
-    oglplus::vertex_attrib_location normal_loc{1};
-    gl.gen_buffers() >> normals;
-    shape.attrib_setup(
-      glapi,
-      vao,
-      normals,
-      normal_loc,
-      eagine::shapes::vertex_attrib_kind::normal,
-      _ctx.buffer());
-    gl.bind_attrib_location(prog, normal_loc, "Normal");
-
-    // tangents
-    oglplus::vertex_attrib_location tangent_loc{2};
-    gl.gen_buffers() >> tangents;
-    shape.attrib_setup(
-      glapi,
-      vao,
-      tangents,
-      tangent_loc,
-      eagine::shapes::vertex_attrib_kind::tangent,
-      _ctx.buffer());
-    gl.bind_attrib_location(prog, tangent_loc, "Tangent");
-
-    // bitangents
-    oglplus::vertex_attrib_location bitangent_loc{3};
-    gl.gen_buffers() >> bitangents;
-    shape.attrib_setup(
-      glapi,
-      vao,
-      bitangents,
-      bitangent_loc,
-      eagine::shapes::vertex_attrib_kind::bitangent,
-      _ctx.buffer());
-    gl.bind_attrib_location(prog, bitangent_loc, "Bitangent");
-
-    // wrap_coords
-    oglplus::vertex_attrib_location wrap_coord_loc{4};
-    gl.gen_buffers() >> wrap_coords;
-    shape.attrib_setup(
-      glapi,
-      vao,
-      wrap_coords,
-      wrap_coord_loc,
-      eagine::shapes::vertex_attrib_kind::wrap_coord,
-      _ctx.buffer());
-    gl.bind_attrib_location(prog, wrap_coord_loc, "WrapCoord");
-
-    // indices
-    gl.gen_buffers() >> indices;
-    shape.index_setup(glapi, indices, _ctx.buffer());
-
-    // textures
-    const auto tex_src{embed<"HydrantTex">("hydrant")};
-
-    gl.gen_textures() >> tex;
-    gl.active_texture(GL.texture0);
-    gl.bind_texture(GL.texture_2d_array, tex);
-    gl.tex_parameter_i(GL.texture_2d_array, GL.texture_min_filter, GL.linear);
-    gl.tex_parameter_i(GL.texture_2d_array, GL.texture_mag_filter, GL.linear);
-    gl.tex_parameter_i(
-      GL.texture_2d_array, GL.texture_wrap_s, GL.clamp_to_border);
-    gl.tex_parameter_i(
-      GL.texture_2d_array, GL.texture_wrap_t, GL.clamp_to_border);
-    glapi.spec_tex_image3d(
-      GL.texture_2d_array,
-      0,
-      0,
-      oglplus::texture_image_block(tex_src.unpack(ec)));
-    oglplus::uniform_location tex_loc;
-    gl.get_uniform_location(prog, "Tex") >> tex_loc;
-    glapi.set_uniform(prog, tex_loc, 0);
-
-    // camera
-    const auto bs = shape.bounding_sphere();
-    const auto sr = bs.radius();
     camera.set_pitch_max(degrees_(89.F))
       .set_pitch_min(degrees_(-1.F))
-      .set_target(bs.center())
-      .set_near(sr * 0.01F)
-      .set_far(sr * 5.0F)
-      .set_orbit_min(sr * 1.2F)
-      .set_orbit_max(sr * 2.9F)
       .set_fov(degrees_(70));
-
-    gl.get_uniform_location(prog, "Camera") >> camera_loc;
-    gl.get_uniform_location(prog, "LightDir") >> light_dir_loc;
-
-    gl.clear_color(0.35F, 0.35F, 0.35F, 1.0F);
-    gl.enable(GL.depth_test);
 
     camera.connect_inputs(ec).basic_input_mapping(ec);
     ec.setup_inputs().switch_input_mapping();
+
+    const auto& glapi = _video.gl_api();
+    const auto& [gl, GL] = glapi;
+
+    gl.clear_color(0.35F, 0.35F, 0.35F, 1.0F);
+    gl.enable(GL.depth_test);
 }
 //------------------------------------------------------------------------------
-void example_uv_map::on_video_resize() noexcept {
-    const auto& gl = _video.gl_api();
-    gl.viewport[_video.surface_size()];
+void example_uv_map::_on_loaded(const loaded_resource_base& loaded) noexcept {
+    if(loaded.is_one_of(_shape, _prog)) {
+        if(_shape && _prog) {
+            _prog_inputs.apply(_video.gl_api(), _prog, _shape);
+        }
+    }
+}
+//------------------------------------------------------------------------------
+void example_uv_map::_on_shp_loaded(
+  const gl_geometry_and_bindings_resource::load_info& loaded) noexcept {
+    const auto bs = loaded.base.shape.bounding_sphere();
+    const auto sr = bs.radius();
+
+    camera.set_target(bs.center())
+      .set_near(sr * 0.01F)
+      .set_far(sr * 10.0F)
+      .set_orbit_min(sr * 1.4F)
+      .set_orbit_max(sr * 2.8F);
+}
+//------------------------------------------------------------------------------
+void example_uv_map::_on_prg_loaded(
+  const gl_program_resource::load_info& loaded) noexcept {
+    _prog_inputs = loaded.base.input_bindings;
+    loaded.set_uniform("Tex", 0);
+    loaded.get_uniform_location("Camera") >> _camera_loc;
+    loaded.get_uniform_location("LightDir") >> _light_dir_loc;
+}
+//------------------------------------------------------------------------------
+void example_uv_map::_on_tex_loaded(
+  const gl_texture_resource::load_info& loaded) noexcept {
+    const auto& GL = _video.gl_api().constants();
+    loaded.parameter_i(GL.texture_min_filter, GL.linear);
+    loaded.parameter_i(GL.texture_mag_filter, GL.linear);
+    loaded.parameter_i(GL.texture_wrap_s, GL.clamp_to_border);
+    loaded.parameter_i(GL.texture_wrap_t, GL.clamp_to_border);
 }
 //------------------------------------------------------------------------------
 void example_uv_map::update() noexcept {
-    auto& state = _ctx.state();
+    auto& state = context().state();
     if(state.is_active()) {
-        _is_done.reset();
+        reset_timeout();
     }
     if(state.user_idle_too_long()) {
         camera.idle_update(state, 5.F);
     }
 
-    const auto rad = radians_(state.frame_time().value());
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
+    if(_shape && _prog && _tex) {
+        const auto rad = radians_(state.frame_time().value());
 
-    gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
-    if(camera.has_changed()) {
-        glapi.set_uniform(prog, camera_loc, camera.matrix(_video));
+        gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
+        if(camera.has_changed()) {
+            glapi.set_uniform(_prog, _camera_loc, camera.matrix(_video));
+        }
+        glapi.set_uniform(
+          _prog,
+          _light_dir_loc,
+          math::normalized(
+            oglplus::vec3(cos(rad) * 6, sin(rad) * 7, sin(rad * 0.618F) * 8)));
+
+        _shape.draw(_video);
+    } else {
+        _shape.load_if_needed(context());
+        _prog.load_if_needed(context());
+        _tex.load_if_needed(context(), GL.texture_2d_array, GL.texture0);
     }
-    glapi.set_uniform(
-      prog,
-      light_dir_loc,
-      math::normalized(
-        oglplus::vec3(cos(rad) * 6, sin(rad) * 7, sin(rad * 0.618F) * 8)));
-
-    oglplus::draw_using_instructions(glapi, view(_ops));
 
     _video.commit();
 }
 //------------------------------------------------------------------------------
 void example_uv_map::clean_up() noexcept {
-    const auto& gl = _video.gl_api();
-
-    gl.clean_up(std::move(tex));
-    gl.clean_up(std::move(prog));
-    gl.clean_up(std::move(indices));
-    gl.clean_up(std::move(wrap_coords));
-    gl.clean_up(std::move(bitangents));
-    gl.clean_up(std::move(tangents));
-    gl.clean_up(std::move(normals));
-    gl.clean_up(std::move(positions));
-    gl.clean_up(std::move(vao));
-
+    _tex.clean_up(context());
+    _prog.clean_up(context());
+    _shape.clean_up(context());
     _video.end();
 }
 //------------------------------------------------------------------------------
@@ -301,8 +202,6 @@ auto example_main(main_ctx& ctx) -> int {
 }
 } // namespace eagine::app
 
-#if EAGINE_APP_MODULE
 auto main(int argc, const char** argv) -> int {
     return eagine::default_main(argc, argv, eagine::app::example_main);
 }
-#endif

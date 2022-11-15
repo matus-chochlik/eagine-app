@@ -9,43 +9,30 @@
 #ifndef OGLPLUS_EXAMPLE_RESOURCES_HPP // NOLINT(llvm-header-guard)
 #define OGLPLUS_EXAMPLE_RESOURCES_HPP
 
-#if EAGINE_APP_MODULE
 import eagine.core;
 import eagine.shapes;
 import eagine.oglplus;
 import eagine.app;
-#else
-#include <eagine/oglplus/gl.hpp>
-#include <eagine/oglplus/gl_api.hpp>
-
-#include <eagine/app/fwd.hpp>
-#include <eagine/app/geometry.hpp>
-#endif
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
 // program
 //------------------------------------------------------------------------------
-class torus_program {
+class torus_program : public gl_program_resource {
 public:
-    void init(execution_context&, video_context&);
-    void clean_up(video_context&);
+    torus_program(execution_context&);
     void set_projection(video_context&, orbiting_camera& camera);
 
-    void bind_position_location(video_context&, oglplus::vertex_attrib_location);
-    void bind_normal_location(video_context&, oglplus::vertex_attrib_location);
-    void bind_texcoord_location(video_context&, oglplus::vertex_attrib_location);
-
 private:
-    oglplus::owned_program_name prog;
+    void _on_loaded(const gl_program_resource::load_info&) noexcept;
     oglplus::uniform_location camera_loc;
 };
 //------------------------------------------------------------------------------
 // geometry
 //------------------------------------------------------------------------------
-class torus_geometry : public geometry_and_bindings {
+class torus_geometry : public gl_geometry_and_bindings_resource {
 public:
-    void init(execution_context&, video_context&);
+    torus_geometry(execution_context&);
 };
 //------------------------------------------------------------------------------
 } // namespace eagine::app

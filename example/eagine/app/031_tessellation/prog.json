@@ -1,0 +1,8 @@
+{"inputs":{"Position": {"attrib":"position"}}
+,"shaders":
+[{"url":"glsl:///VertShader","type":"vertex"}
+,{"url":"glsl:///TCtlShader","type":"tess_control"}
+,{"url":"glsl:///TEvlShader","type":"tess_evaluation"}
+,{"url":"glsl:///GeomShader","type":"geometry"}
+,{"url":"glsl:///FragShader","type":"fragment"}]
+}

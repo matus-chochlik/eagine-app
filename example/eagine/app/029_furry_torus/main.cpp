@@ -6,165 +6,155 @@
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
 
-#if EAGINE_APP_MODULE
 import eagine.core;
 import eagine.shapes;
 import eagine.oglplus;
 import eagine.app;
-#else
-#include <eagine/oglplus/gl.hpp>
-#include <eagine/oglplus/gl_api.hpp>
-
-#include <eagine/app/background/icosahedron.hpp>
-#include <eagine/app/camera.hpp>
-#include <eagine/app/main.hpp>
-#include <eagine/embed.hpp>
-#include <eagine/oglplus/math/matrix.hpp>
-#include <eagine/oglplus/math/vector.hpp>
-#include <eagine/shapes/scaled_wrap_coords.hpp>
-#include <eagine/shapes/torus.hpp>
-#include <eagine/shapes/value_tree.hpp>
-#include <eagine/timeout.hpp>
-#include <eagine/value_tree/json.hpp>
-#endif
 
 #include "resources.hpp"
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-class example_fur : public application {
+class example_fur : public timeouting_application {
 public:
     example_fur(execution_context&, video_context&);
 
-    auto is_done() noexcept -> bool final {
-        return _is_done.is_expired();
-    }
-
-    void on_video_resize() noexcept final;
     void update() noexcept final;
+    void clean_up() noexcept final;
 
 private:
-    execution_context& _ctx;
+    auto _gen_url() noexcept -> url;
+    auto _tex_url() noexcept -> url;
+
+    void _on_loaded(const loaded_resource_base&) noexcept;
+
+    puzzle_progress<4> _load_progress;
     video_context& _video;
     background_icosahedron _bg;
-    timeout _is_done{std::chrono::seconds{120}};
 
     oglplus::tmat<float, 4, 4, true> prev_model;
 
-    orbiting_camera camera;
-    shape_textures shape_tex;
-    surface_program surf_prog;
-    hair_program hair_prog;
-    shape_surface surf;
-    shape_hair hair;
+    hair_program _hair_prog;
+    surface_program _surf_prog;
+    shape_texture _shape_tex;
+    shape_generator_resource _shape_gen;
+    shape_surface _surf;
+    shape_hair _hair;
+
+    orbiting_camera _camera;
 };
 //------------------------------------------------------------------------------
+auto example_fur::_tex_url() noexcept -> url {
+    return url{"json:///ZebraTex"};
+}
+//------------------------------------------------------------------------------
+auto example_fur::_gen_url() noexcept -> url {
+    return url{
+      "shapes:///unit_torus?"
+      "position=true+normal=true+wrap_coord=true+occlusion=true+"
+      "radius_ratio=0.6"};
+}
+//------------------------------------------------------------------------------
 example_fur::example_fur(execution_context& ec, video_context& vc)
-  : _ctx{ec}
+  : timeouting_application{ec, std::chrono::seconds{120}}
+  , _load_progress{ec.progress(), "Loading resources"}
   , _video{vc}
-  , _bg{_video, {0.1F, 0.1F, 0.1F, 1.F}, {0.35F, 0.40F, 0.30F, 0.0F}, 1.F} {
-
-    const bool use_monkey_shape = ec.main_context().args().find("--monkey");
-
-    const auto gen = [&]() -> std::shared_ptr<shapes::generator> {
-        if(use_monkey_shape) {
-            const auto json_text =
-              as_chars(embed<"MonkeyJson">("monkey.json").unpack(ec));
-            return shapes::from_value_tree(
-              valtree::from_json_text(json_text, ec.main_context()),
-              ec.as_parent());
-        }
-        return shapes::scale_wrap_coords(
-          shapes::unit_torus(
-            shapes::vertex_attrib_kind::position |
-              shapes::vertex_attrib_kind::normal |
-              shapes::vertex_attrib_kind::wrap_coord |
-              shapes::vertex_attrib_kind::occlusion,
-            18,
-            36,
-            0.6F),
-          4.F,
-          2.F,
-          1.F);
-    }();
-
-    shape_tex.init(vc);
-    surf_prog.init(vc);
-    hair_prog.init(vc);
-    surf.init(vc, gen);
-    hair.init(vc, gen);
-
-    surf_prog.use(vc);
-    surf_prog.bind_position_location(vc, surf.position_loc());
-    surf_prog.bind_texcoord_location(vc, surf.wrap_coord_loc());
-    surf_prog.bind_occlusion_location(vc, surf.occlusion_loc());
-    if(use_monkey_shape) {
-        surf_prog.set_texture(vc, shape_tex.map_unit_monkey());
-    } else {
-        surf_prog.set_texture(vc, shape_tex.map_unit_zebra());
-    }
-
-    hair_prog.use(vc);
-    hair_prog.bind_position_location(vc, hair.position_loc());
-    hair_prog.bind_normal_location(vc, hair.normal_loc());
-    hair_prog.bind_texcoord_location(vc, hair.wrap_coord_loc());
-    hair_prog.bind_occlusion_location(vc, hair.occlusion_loc());
-    if(use_monkey_shape) {
-        hair_prog.set_texture(vc, shape_tex.map_unit_monkey());
-    } else {
-        hair_prog.set_texture(vc, shape_tex.map_unit_zebra());
-    }
+  , _bg{_video, {0.1F, 0.1F, 0.1F, 1.F}, {0.35F, 0.40F, 0.30F, 0.0F}, 1.F}
+  , _hair_prog{context()}
+  , _surf_prog{context()}
+  , _shape_tex{_tex_url(), context()}
+  , _shape_gen{_gen_url(), context()} {
+    _hair_prog.base_loaded.connect(
+      make_callable_ref<&example_fur::_on_loaded>(this));
+    _surf_prog.base_loaded.connect(
+      make_callable_ref<&example_fur::_on_loaded>(this));
+    _shape_tex.base_loaded.connect(
+      make_callable_ref<&example_fur::_on_loaded>(this));
+    _shape_gen.base_loaded.connect(
+      make_callable_ref<&example_fur::_on_loaded>(this));
 
     prev_model = oglplus::matrix_rotation_y(radians_(0.F)) *
                  oglplus::matrix_rotation_x(radians_(0.F));
 
-    // camera
-    const auto bs = gen->bounding_sphere();
-    const auto sr = bs.radius();
-    camera.set_target(bs.center())
-      .set_near(0.1F * sr)
-      .set_far(50.F * sr)
-      .set_orbit_min(1.2F * sr)
-      .set_orbit_max(2.2F * sr)
-      .set_fov(degrees_(45));
-
-    camera.connect_inputs(ec).basic_input_mapping(ec);
+    _camera.connect_inputs(ec).basic_input_mapping(ec);
     ec.setup_inputs().switch_input_mapping();
 }
 //------------------------------------------------------------------------------
-void example_fur::on_video_resize() noexcept {
-    const auto& gl = _video.gl_api();
-    gl.viewport[_video.surface_size()];
+void example_fur::_on_loaded(const loaded_resource_base& loaded) noexcept {
+    if(loaded.is(_shape_gen)) {
+        auto gen{[&loaded, this]() -> std::shared_ptr<shapes::generator> {
+            if(loaded.locator().has_path("/unit_torus")) {
+                return shapes::scale_wrap_coords(_shape_gen, 4.F, 2.F, 1.F);
+            }
+            return _shape_gen;
+        }()};
+
+        _surf.init(_video, gen);
+        _hair.init(_video, gen);
+
+        const auto bs = gen->bounding_sphere();
+        const auto sr = bs.radius();
+        _camera.set_target(bs.center())
+          .set_near(0.1F * sr)
+          .set_far(50.F * sr)
+          .set_orbit_min(1.3F * sr)
+          .set_orbit_max(2.6F * sr)
+          .set_fov(degrees_(45));
+    }
+    if(_shape_gen && _surf_prog) {
+        _surf_prog.apply_input_bindings(_video, _surf);
+        _surf_prog.set_uniform(_video, "Tex", 0);
+    }
+    if(_shape_gen && _hair_prog) {
+        _hair_prog.apply_input_bindings(_video, _hair);
+        _hair_prog.set_uniform(_video, "Tex", 0);
+    }
+    _load_progress.update_progress(
+      _surf_prog && _hair_prog && _shape_gen && _shape_tex);
 }
 //------------------------------------------------------------------------------
 void example_fur::update() noexcept {
-    auto& state = _ctx.state();
+    auto& state = context().state();
     if(state.is_active()) {
-        _is_done.reset();
+        reset_timeout();
     }
     if(state.user_idle_too_long()) {
-        camera.idle_update(state, 11.F);
+        _camera.idle_update(state, 11.F);
     }
 
     const auto t = state.frame_time().value();
     const auto model = oglplus::matrix_rotation_y(degrees_(-t * 23.F)) *
                        oglplus::matrix_rotation_x(degrees_(t * 41.F));
 
-    _bg.clear(_video, camera);
+    _bg.clear(_video, _camera);
 
-    surf_prog.use(_video);
-    surf_prog.set_projection(_video, camera);
-    surf_prog.set_model(_video, model);
-    surf.use_and_draw(_video);
+    if(_load_progress.done()) {
+        _surf_prog.use(_video);
+        _surf_prog.set_projection(_video, _camera);
+        _surf_prog.set_model(_video, model);
+        _surf.use_and_draw(_video);
 
-    hair_prog.use(_video);
-    hair_prog.set_projection(_video, camera);
-    hair_prog.set_model(_video, prev_model, model);
-    hair.use_and_draw(_video);
+        _hair_prog.use(_video);
+        _hair_prog.set_projection(_video, _camera);
+        _hair_prog.set_model(_video, prev_model, model);
+        _hair.use_and_draw(_video);
+    } else {
+        const auto& GL = _video.gl_api().constants();
+        _surf_prog.load_if_needed(context());
+        _hair_prog.load_if_needed(context());
+        _shape_gen.load_if_needed(context());
+        _shape_tex.load_if_needed(context(), GL.texture_2d, GL.texture0);
+    }
 
     prev_model = model;
 
     _video.commit();
+}
+//------------------------------------------------------------------------------
+void example_fur::clean_up() noexcept {
+    _shape_tex.clean_up(context());
+    _surf_prog.clean_up(context());
+    _hair_prog.clean_up(context());
 }
 //------------------------------------------------------------------------------
 class example_launchpad : public launchpad {
@@ -211,8 +201,6 @@ auto example_main(main_ctx& ctx) -> int {
 }
 } // namespace eagine::app
 
-#if EAGINE_APP_MODULE
 auto main(int argc, const char** argv) -> int {
     return eagine::default_main(argc, argv, eagine::app::example_main);
 }
-#endif

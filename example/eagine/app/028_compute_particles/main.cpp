@@ -6,48 +6,27 @@
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
 
-#if EAGINE_APP_MODULE
 import eagine.core;
 import eagine.oglplus;
 import eagine.app;
-#else
-#include <eagine/oglplus/gl.hpp>
-#include <eagine/oglplus/gl_api.hpp>
-
-#include <eagine/app/camera.hpp>
-#include <eagine/app/main.hpp>
-#include <eagine/oglplus/math/matrix.hpp>
-#endif
 
 #include "main.hpp"
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
 example::example(execution_context& ec, video_context& vc)
-  : _ctx{ec}
+  : timeouting_application{ec, std::chrono::seconds{60}}
   , _video{vc}
   , _bg{_video, {0.45F, 0.40F, 0.35F, 1.0F}, {0.25F, 0.25F, 0.25F, 0.0F}, 1.F}
-  , _path{view(std::array<oglplus::vec3, 4>{
-      {{-20.F, -10.F, -10.F},
-       {20.F, -10.F, -10.F},
-       {0.F, 10.F, 0.F},
-       {0.F, -10.F, 10.F}}})} {
-
-    const auto& glapi = _video.gl_api();
-    const auto& [gl, GL] = glapi;
+  , _emit_prog{*this}
+  , _draw_prog{*this}
+  , _path{*this} {
+    _emit_prog.base_loaded.connect(
+      make_callable_ref<&example::_on_resource_loaded>(this));
+    _draw_prog.base_loaded.connect(
+      make_callable_ref<&example::_on_resource_loaded>(this));
 
     _particles.init(*this);
-
-    _emit_prog.init(*this);
-    _emit_prog.bind_random(*this, _particles.random_binding());
-    _emit_prog.bind_offsets(*this, _particles.offsets_binding());
-    _emit_prog.bind_velocities(*this, _particles.velocities_binding());
-    _emit_prog.bind_ages(*this, _particles.ages_binding());
-
-    _draw_prog.init(*this);
-    _draw_prog.bind_origin_location(*this, _particles.origin_loc());
-    _draw_prog.bind_offsets(*this, _particles.offsets_binding());
-    _draw_prog.bind_ages(*this, _particles.ages_binding());
 
     _camera.set_near(0.1F)
       .set_far(200.F)
@@ -55,22 +34,34 @@ example::example(execution_context& ec, video_context& vc)
       .set_orbit_max(40.0F)
       .set_fov(right_angle_());
 
-    gl.enable(GL.depth_test);
-    gl.disable(GL.cull_face);
-
     _camera.connect_inputs(ec).basic_input_mapping(ec);
     ec.setup_inputs().switch_input_mapping();
+
+    const auto& glapi = _video.gl_api();
+    const auto& [gl, GL] = glapi;
+
+    gl.enable(GL.depth_test);
+    gl.disable(GL.cull_face);
 }
 //------------------------------------------------------------------------------
-void example::on_video_resize() noexcept {
-    const auto& gl = _video.gl_api();
-    gl.viewport[_video.surface_size()];
+void example::_on_resource_loaded(const loaded_resource_base& loaded) noexcept {
+    if(loaded.is(_emit_prog)) {
+        _emit_prog.bind_random(*this, _particles.random_binding());
+        _emit_prog.bind_offsets(*this, _particles.offsets_binding());
+        _emit_prog.bind_velocities(*this, _particles.velocities_binding());
+        _emit_prog.bind_ages(*this, _particles.ages_binding());
+    }
+    if(loaded.is(_draw_prog)) {
+        _draw_prog.bind_origin_location(*this, _particles.origin_loc());
+        _draw_prog.bind_offsets(*this, _particles.offsets_binding());
+        _draw_prog.bind_ages(*this, _particles.ages_binding());
+    }
 }
 //------------------------------------------------------------------------------
 void example::update() noexcept {
-    auto& state = _ctx.state();
+    auto& state = context().state();
     if(state.is_active()) {
-        _is_done.reset();
+        reset_timeout();
     }
     if(state.user_idle_too_long()) {
         _camera.idle_update(state, 7.F);
@@ -78,20 +69,26 @@ void example::update() noexcept {
 
     _bg.clear(_video, _camera);
 
-    _emit_prog.use(*this);
-    _emit_prog.prepare_frame(*this);
-    _particles.emit(*this);
+    if(_path && _emit_prog && _draw_prog) {
+        _emit_prog.prepare_frame(*this);
+        _particles.emit(*this);
 
-    _draw_prog.use(*this);
-    _draw_prog.prepare_frame(*this);
-    _particles.draw(*this);
+        _draw_prog.prepare_frame(*this);
+        _particles.draw(*this);
+    } else {
+        _path.load_if_needed(context());
+        _emit_prog.load_if_needed(context());
+        _draw_prog.load_if_needed(context());
+    }
 
     _video.commit();
 }
 //------------------------------------------------------------------------------
 void example::clean_up() noexcept {
     _bg.clean_up(_video);
-    _cleanup.clear();
+    _particles.clean_up(*this);
+    _draw_prog.clean_up(context());
+    _emit_prog.clean_up(context());
     _video.end();
 }
 //------------------------------------------------------------------------------
@@ -141,8 +138,6 @@ auto example_main(main_ctx& ctx) -> int {
 }
 } // namespace eagine::app
 
-#if EAGINE_APP_MODULE
 auto main(int argc, const char** argv) -> int {
     return eagine::default_main(argc, argv, eagine::app::example_main);
 }
-#endif

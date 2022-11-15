@@ -550,6 +550,9 @@ void execution_context::clean_up() noexcept {
 }
 //------------------------------------------------------------------------------
 void execution_context::update() noexcept {
+    const auto exec_time{measure_time_interval("appUpdate")};
+    _registry.update_all();
+    _loader.update();
     extract(_state).update_activity();
     for(auto& provider : _hmi_providers) {
         extract(provider).update(*this);
@@ -562,6 +565,9 @@ auto execution_context::connect_input(
   const message_id input_id,
   const input_handler handler) -> execution_context& {
     _connected_inputs.emplace(input_id, handler);
+    log_info("added input slot ${input}")
+      .tag("connInput")
+      .arg("input", input_id);
     return *this;
 }
 //------------------------------------------------------------------------------
@@ -570,11 +576,77 @@ auto execution_context::connect_inputs() -> execution_context& {
     return *this;
 }
 //------------------------------------------------------------------------------
-auto execution_context::add_ui_button(
-  const std::string& label,
-  const message_id id) -> execution_context& {
+auto execution_context::add_ui_feedback(
+  const message_id signal_id,
+  const message_id input_id,
+  input_feedback_trigger trigger,
+  input_feedback_action action,
+  std::variant<std::monostate, bool, float> threshold,
+  std::variant<std::monostate, bool, float> constant) noexcept
+  -> execution_context& {
     for(auto& input : _input_providers) {
-        extract(input).add_ui_button(label, id);
+        extract(input).add_ui_feedback(
+          signal_id, input_id, trigger, action, threshold, constant);
+    }
+    return *this;
+}
+//------------------------------------------------------------------------------
+auto execution_context::add_ui_button(
+  const message_id input_id,
+  const string_view label) -> execution_context& {
+    for(auto& input : _input_providers) {
+        extract(input).add_ui_button(input_id, label);
+    }
+    return *this;
+}
+//------------------------------------------------------------------------------
+auto execution_context::add_ui_toggle(
+  const message_id input_id,
+  const string_view label,
+  bool initial) -> execution_context& {
+    for(auto& input : _input_providers) {
+        extract(input).add_ui_toggle(input_id, label, initial);
+    }
+    return *this;
+}
+//------------------------------------------------------------------------------
+auto execution_context::set_ui_toggle(
+  const message_id input_id,
+  bool value) noexcept -> execution_context& {
+    for(auto& input : _input_providers) {
+        extract(input).set_ui_toggle(input_id, value);
+    }
+    return *this;
+}
+//------------------------------------------------------------------------------
+auto execution_context::add_ui_slider(
+  const message_id input_id,
+  const string_view label,
+  float min,
+  float max,
+  float initial) -> execution_context& {
+    if((min <= initial) && (initial <= max)) {
+        const input_value_kind kind = ((min >= 0.F) && (max <= 1.F))
+                                        ? input_value_kind::absolute_norm
+                                        : input_value_kind::absolute_free;
+        for(auto& input : _input_providers) {
+            extract(input).add_ui_slider(
+              input_id, label, min, max, initial, kind);
+        }
+    } else {
+        log_error("inconsistent min, max and initial values")
+          .arg("min", min)
+          .arg("max", max)
+          .arg("initial", initial);
+    }
+    return *this;
+}
+//------------------------------------------------------------------------------
+auto execution_context::set_ui_slider(
+  const message_id input_id,
+  float value) noexcept -> execution_context& {
+    for(auto& input : _input_providers) {
+        extract(input).set_ui_slider(input_id, value);
     }
     return *this;
 }
@@ -585,6 +657,11 @@ auto execution_context::map_input(
   const message_id signal_id,
   const input_setup setup) -> execution_context& {
     _input_mappings[mapping_id].emplace(signal_id, input_id, setup);
+    log_info("mapped input signal ${signal} to input slot ${input}")
+      .tag("mapInput")
+      .arg("signal", signal_id)
+      .arg("input", input_id)
+      .arg("mapping", mapping_id);
     return *this;
 }
 //------------------------------------------------------------------------------

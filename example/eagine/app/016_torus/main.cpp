@@ -6,61 +6,43 @@
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
 
-#if EAGINE_APP_MODULE
 import eagine.core;
 import eagine.oglplus;
 import eagine.app;
-#else
-#include <eagine/oglplus/gl.hpp>
-#include <eagine/oglplus/gl_api.hpp>
-
-#include <eagine/app/camera.hpp>
-#include <eagine/app/main.hpp>
-#include <eagine/oglplus/math/matrix.hpp>
-#include <eagine/oglplus/math/vector.hpp>
-#include <eagine/timeout.hpp>
-#endif
 
 #include "resources.hpp"
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-class example_torus : public application {
+class example_torus : public timeouting_application {
 public:
     example_torus(execution_context&, video_context&);
 
-    auto is_done() noexcept -> bool final {
-        return _is_done.is_expired();
-    }
-
-    void on_video_resize() noexcept final;
     void update() noexcept final;
     void clean_up() noexcept final;
 
 private:
-    execution_context& _ctx;
+    void _on_resource_loaded(const loaded_resource_base&) noexcept;
+
+    auto _load_handler() noexcept {
+        return make_callable_ref<&example_torus::_on_resource_loaded>(this);
+    }
+
     video_context& _video;
-    timeout _is_done{std::chrono::seconds{30}};
 
     orbiting_camera camera;
-    torus_program prog;
     torus_geometry torus;
+    torus_program prog;
 };
 //------------------------------------------------------------------------------
 example_torus::example_torus(execution_context& ec, video_context& vc)
-  : _ctx{ec}
-  , _video{vc} {
-    const auto& glapi = _video.gl_api();
-    auto& [gl, GL] = glapi;
+  : timeouting_application{ec, std::chrono::seconds{30}}
+  , _video{vc}
+  , torus{context()}
+  , prog{context()} {
+    torus.base_loaded.connect(_load_handler());
+    prog.base_loaded.connect(_load_handler());
 
-    prog.init(ec, vc);
-    torus.init(ec, vc);
-
-    prog.bind_position_location(vc, torus.position_loc());
-    prog.bind_normal_location(vc, torus.normal_loc());
-    prog.bind_texcoord_location(vc, torus.wrap_coord_loc());
-
-    // camera
     camera.set_near(0.1F)
       .set_far(50.F)
       .set_orbit_min(0.6F)
@@ -68,43 +50,52 @@ example_torus::example_torus(execution_context& ec, video_context& vc)
       .set_fov(right_angle_());
     prog.set_projection(vc, camera);
 
+    camera.connect_inputs(ec).basic_input_mapping(ec);
+    ec.setup_inputs().switch_input_mapping();
+
+    const auto& glapi = _video.gl_api();
+    auto& [gl, GL] = glapi;
+
     gl.clear_color(0.45F, 0.45F, 0.45F, 0.0F);
     gl.enable(GL.depth_test);
     gl.enable(GL.cull_face);
     gl.cull_face(GL.back);
-
-    camera.connect_inputs(ec).basic_input_mapping(ec);
-    ec.setup_inputs().switch_input_mapping();
 }
 //------------------------------------------------------------------------------
-void example_torus::on_video_resize() noexcept {
-    const auto& gl = _video.gl_api();
-    gl.viewport[_video.surface_size()];
+void example_torus::_on_resource_loaded(const loaded_resource_base&) noexcept {
+    if(torus && prog) {
+        prog.apply_input_bindings(_video, torus);
+        reset_timeout();
+    }
 }
 //------------------------------------------------------------------------------
 void example_torus::update() noexcept {
-    auto& state = _ctx.state();
+    auto& state = context().state();
     if(state.is_active()) {
-        _is_done.reset();
+        reset_timeout();
     }
     if(state.user_idle_too_long()) {
         camera.idle_update(state);
     }
 
-    const auto& glapi = _video.gl_api();
-    const auto& [gl, GL] = glapi;
+    if(torus && prog) {
+        const auto& glapi = _video.gl_api();
+        const auto& [gl, GL] = glapi;
 
-    gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
-    prog.set_projection(_video, camera);
-    torus.use_and_draw(_video);
+        gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
+        prog.set_projection(_video, camera);
+        torus.use_and_draw(_video);
+    } else {
+        torus.load_if_needed(context());
+        prog.load_if_needed(context());
+    }
 
     _video.commit();
 }
 //------------------------------------------------------------------------------
 void example_torus::clean_up() noexcept {
-
-    prog.clean_up(_video);
-    torus.clean_up(_video);
+    prog.clean_up(context());
+    torus.clean_up(context());
 
     _video.end();
 }
@@ -153,8 +144,6 @@ auto example_main(main_ctx& ctx) -> int {
 }
 } // namespace eagine::app
 
-#if EAGINE_APP_MODULE
 auto main(int argc, const char** argv) -> int {
     return eagine::default_main(argc, argv, eagine::app::example_main);
 }
-#endif

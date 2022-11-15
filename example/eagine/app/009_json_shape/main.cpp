@@ -6,53 +6,29 @@
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
 
-#if EAGINE_APP_MODULE
 import eagine.core;
 import eagine.shapes;
 import eagine.oglplus;
 import eagine.app;
-#else
-#include <eagine/oglplus/gl.hpp>
-#include <eagine/oglplus/gl_api.hpp>
-
-#include <eagine/app/camera.hpp>
-#include <eagine/app/main.hpp>
-#include <eagine/app_config.hpp>
-#include <eagine/embed.hpp>
-#include <eagine/oglplus/glsl/string_ref.hpp>
-#include <eagine/oglplus/math/matrix.hpp>
-#include <eagine/oglplus/math/primitives.hpp>
-#include <eagine/oglplus/math/vector.hpp>
-#include <eagine/oglplus/shapes/generator.hpp>
-#include <eagine/shapes/value_tree.hpp>
-#include <eagine/timeout.hpp>
-#include <eagine/value_tree/json.hpp>
-#endif
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-class example_shape : public application {
+class example_shape : public timeouting_application {
 public:
     example_shape(execution_context&, video_context&);
 
-    auto is_done() noexcept -> bool final {
-        return _is_done.is_expired();
-    }
-
-    void on_video_resize() noexcept final;
     void update() noexcept final;
     void clean_up() noexcept final;
 
 private:
-    execution_context& _ctx;
     video_context& _video;
-    timeout _is_done{std::chrono::seconds{30}};
 
     std::vector<oglplus::shape_draw_operation> _ops;
     oglplus::owned_vertex_array_name vao;
 
     oglplus::owned_buffer_name positions;
     oglplus::owned_buffer_name colors;
+    oglplus::owned_buffer_name occlusion;
     oglplus::owned_buffer_name indices;
 
     oglplus::owned_program_name prog;
@@ -62,7 +38,7 @@ private:
 };
 //------------------------------------------------------------------------------
 example_shape::example_shape(execution_context& ec, video_context& vc)
-  : _ctx{ec}
+  : timeouting_application{ec, std::chrono::seconds{30}}
   , _video{vc} {
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
@@ -72,7 +48,8 @@ example_shape::example_shape(execution_context& ec, video_context& vc)
     oglplus::owned_shader_name vs;
     gl.create_shader(GL.vertex_shader) >> vs;
     auto cleanup_vs = gl.delete_shader.raii(vs);
-    gl.shader_source(vs, oglplus::glsl_string_ref(vs_source));
+    gl.shader_source(
+      vs, oglplus::glsl_string_ref(vs_source.unpack(vc.parent())));
     gl.compile_shader(vs);
 
     // fragment shader
@@ -80,7 +57,8 @@ example_shape::example_shape(execution_context& ec, video_context& vc)
     oglplus::owned_shader_name fs;
     gl.create_shader(GL.fragment_shader) >> fs;
     auto cleanup_fs = gl.delete_shader.raii(fs);
-    gl.shader_source(fs, oglplus::glsl_string_ref(fs_source));
+    gl.shader_source(
+      fs, oglplus::glsl_string_ref(fs_source.unpack(vc.parent())));
     gl.compile_shader(fs);
 
     // program
@@ -91,11 +69,25 @@ example_shape::example_shape(execution_context& ec, video_context& vc)
     gl.use_program(prog);
 
     // geometry
-    auto json_text = as_chars(embed<"ShapeJson">("shape.json"));
+    auto get_json_source = [&]() -> embedded_resource {
+        const auto& args{ec.main_context().args()};
+        if(args.find("--stool")) {
+            return embed<"Stool">("stool.json");
+        }
+        if(args.find("--crate")) {
+            return embed<"Crate">("crate.json");
+        }
+        if(args.find("--guitar")) {
+            return embed<"Guitar">("guitar.json");
+        }
+        return embed<"ShapeJson">("shape.json");
+    };
     oglplus::shape_generator shape(
       glapi,
       shapes::from_value_tree(
-        valtree::from_json_text(json_text, ec.main_context()), ec.as_parent()));
+        valtree::from_json_text(
+          as_chars(get_json_source().unpack(vc.parent())), ec.main_context()),
+        ec.as_parent()));
 
     _ops.resize(std_size(shape.operation_count()));
     shape.instructions(glapi, cover(_ops));
@@ -113,7 +105,7 @@ example_shape::example_shape(execution_context& ec, video_context& vc)
       positions,
       position_loc,
       eagine::shapes::vertex_attrib_kind::position,
-      _ctx.buffer());
+      context().buffer());
     gl.bind_attrib_location(prog, position_loc, "Position");
 
     // colors
@@ -125,12 +117,24 @@ example_shape::example_shape(execution_context& ec, video_context& vc)
       colors,
       color_loc,
       eagine::shapes::vertex_attrib_kind::color,
-      _ctx.buffer());
+      context().buffer());
     gl.bind_attrib_location(prog, color_loc, "Color");
+
+    // occlusion
+    oglplus::vertex_attrib_location occl_loc{2};
+    gl.gen_buffers() >> occlusion;
+    shape.attrib_setup(
+      glapi,
+      vao,
+      occlusion,
+      occl_loc,
+      eagine::shapes::vertex_attrib_kind::occlusion,
+      context().buffer());
+    gl.bind_attrib_location(prog, occl_loc, "Occl");
 
     // indices
     gl.gen_buffers() >> indices;
-    shape.index_setup(glapi, indices, _ctx.buffer());
+    shape.index_setup(glapi, indices, context().buffer());
 
     // uniform
     gl.get_uniform_location(prog, "Camera") >> camera_loc;
@@ -140,9 +144,9 @@ example_shape::example_shape(execution_context& ec, video_context& vc)
     gl.get_uniform_location(prog, "Camera") >> camera_loc;
     camera.set_target(bs.center())
       .set_near(sr * 0.1F)
-      .set_far(sr * 5.0F)
-      .set_orbit_min(sr * 1.2F)
-      .set_orbit_max(sr * 2.4F)
+      .set_far(sr * 10.0F)
+      .set_orbit_min(sr * 2.0F)
+      .set_orbit_max(sr * 4.0F)
       .set_fov(right_angle_());
 
     gl.clear_color(0.45F, 0.45F, 0.45F, 0.0F);
@@ -154,15 +158,10 @@ example_shape::example_shape(execution_context& ec, video_context& vc)
     ec.setup_inputs().switch_input_mapping();
 }
 //------------------------------------------------------------------------------
-void example_shape::on_video_resize() noexcept {
-    const auto& gl = _video.gl_api();
-    gl.viewport[_video.surface_size()];
-}
-//------------------------------------------------------------------------------
 void example_shape::update() noexcept {
-    auto& state = _ctx.state();
+    auto& state = context().state();
     if(state.is_active()) {
-        _is_done.reset();
+        reset_timeout();
     }
     if(state.user_idle_too_long()) {
         camera.idle_update(state);
@@ -236,8 +235,6 @@ auto example_main(main_ctx& ctx) -> int {
 }
 } // namespace eagine::app
 
-#if EAGINE_APP_MODULE
 auto main(int argc, const char** argv) -> int {
     return eagine::default_main(argc, argv, eagine::app::example_main);
 }
-#endif

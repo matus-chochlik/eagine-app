@@ -3,33 +3,32 @@
 # See accompanying file LICENSE_1_0.txt or copy at
 #  http://www.boost.org/LICENSE_1_0.txt
 #
-oglplus_add_glsl_program(halo_surface)
-oglplus_add_glsl_program(halo_halo)
-
 add_executable(app-026_halo main.cpp resources.cpp)
 add_dependencies(app-026_halo eagine-app-examples)
 
 eagine_embed_target_resources(
 	TARGET app-026_halo
-	INPUT_TARGETS halo_surface halo_halo
+	RESOURCES
+		SurfVert "vertex_surface.glsl"
+		SurfFrag "fragment_surface.glsl"
+		SurfProg "prog_surface.json"
+		HaloVert "vertex_halo.glsl"
+		HaloGeom "geometry_halo.glsl"
+		HaloFrag "fragment_halo.glsl"
+		HaloProg "prog_halo.json"
+		TwstdSphre "twisted_sphere.json"
 	PACKED
+	ENABLE_SEARCH
 )
 eagine_add_exe_analysis(app-026_halo)
 
-if(${WITH_MODULES})
-	eagine_target_modules(
-		app-026_halo
-		eagine.core
-		eagine.shapes
-		eagine.oglplus
-		eagine.app
-	)
-else()
-	target_link_libraries(
-		app-026_halo
-		PUBLIC EAGine::App
-	)
-endif()
+eagine_target_modules(
+	app-026_halo
+	eagine.core
+	eagine.shapes
+	eagine.oglplus
+	eagine.app
+)
 
 set_target_properties(
 	app-026_halo

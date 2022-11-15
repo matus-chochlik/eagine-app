@@ -1,0 +1,11 @@
+{"levels":1
+,"width":2048
+,"height":2048
+,"channels":3
+,"data_type":"unsigned_byte"
+,"format":"rgb"
+,"iformat":"rgb8"
+,"label":"crate color"
+,"images":
+[{"url":"eagitexi:///BarelClImg"}]
+}

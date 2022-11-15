@@ -1,0 +1,3 @@
+{"inputs":{"Position": {"attrib":"position"}}
+,"shaders":[{"url":"glsl:///DepthVert","type":"vertex"}}
+}

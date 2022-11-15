@@ -1,0 +1,13 @@
+{"inputs":
+{"PPivot": {"attrib":"pivot_pivot"}
+,"VPivot": {"attrib":"vertex_pivot"}
+,"Position": {"attrib":"position"}
+,"EdgeLen": {"attrib":"opposite_length"}
+,"FaceArea": {"attrib":"face_area"}}
+,"shaders":
+[{"url":"glsl:///VertShader","type":"vertex"}
+,{"url":"glsl:///TCtlShader","type":"tess_control"}
+,{"url":"glsl:///TEvlShader","type":"tess_evaluation"}
+,{"url":"glsl:///GeomShader","type":"geometry"}
+,{"url":"glsl:///FragShader","type":"fragment"}]
+}

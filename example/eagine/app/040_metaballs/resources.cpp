@@ -9,17 +9,6 @@
 #include "resources.hpp"
 #include "main.hpp"
 
-#if !EAGINE_APP_MODULE
-#include <eagine/app/camera.hpp>
-#include <eagine/app/context.hpp>
-#include <eagine/embed.hpp>
-#include <eagine/integer_range.hpp>
-#include <eagine/oglplus/math/coordinates.hpp>
-#include <eagine/oglplus/shapes/generator.hpp>
-#include <eagine/shapes/cube.hpp>
-#include <eagine/shapes/screen.hpp>
-#endif
-
 namespace eagine::app {
 //------------------------------------------------------------------------------
 // volume domain
@@ -137,145 +126,39 @@ void volume_domain::draw(example& e) {
 //------------------------------------------------------------------------------
 // metaball program
 //------------------------------------------------------------------------------
-void metaball_program::init(example& e) {
-    const auto& gl = e.video().gl_api();
-
-    gl.delete_program.later_by(e, _prog);
-    gl.create_program() >> _prog;
-    gl.object_label(_prog, "metaball program");
-
-    const auto prog_src{embed<"MBallProg">("metaballs_metaball.oglpprog")};
-    gl.build_program(_prog, prog_src.unpack(e.ctx()));
-    gl.use_program(_prog);
-}
-//------------------------------------------------------------------------------
-void metaball_program::bind_metaballs(
-  example& e,
-  oglplus::gl_types::uint_type binding) {
-    const auto& gl = e.video().gl_api();
-    oglplus::shader_storage_block_index blk_idx;
-    gl.get_shader_storage_block_index(_prog, "MetaballBlock") >> blk_idx;
-    gl.shader_storage_block_binding(_prog, blk_idx, binding);
-}
-//------------------------------------------------------------------------------
-void metaball_program::prepare_frame(example&) {}
-//------------------------------------------------------------------------------
-void metaball_program::use(example& e) {
-    e.video().gl_api().use_program(_prog);
-}
+metaball_program::metaball_program(example& e)
+  : gl_program_resource{url{"json:///MBallProg"}, e.context()} {}
 //------------------------------------------------------------------------------
 // field program
 //------------------------------------------------------------------------------
-void field_program::init(example& e) {
-    const auto& gl = e.video().gl_api();
-
-    gl.delete_program.later_by(e, _prog);
-    gl.create_program() >> _prog;
-    gl.object_label(_prog, "field program");
-
-    const auto prog_src{embed<"FieldProg">("metaballs_field.oglpprog")};
-    gl.build_program(_prog, prog_src.unpack(e.ctx()));
-    gl.use_program(_prog);
-
-    gl.get_uniform_location(_prog, "PlaneCount") >> _plane_count_loc;
-}
-//------------------------------------------------------------------------------
-void field_program::bind_field(
-  example& e,
-  oglplus::gl_types::uint_type binding) {
-    const auto& gl = e.video().gl_api();
-    oglplus::shader_storage_block_index blk_idx;
-    gl.get_shader_storage_block_index(_prog, "FieldBlock") >> blk_idx;
-    gl.shader_storage_block_binding(_prog, blk_idx, binding);
-}
-//------------------------------------------------------------------------------
-void field_program::bind_metaballs(
-  example& e,
-  oglplus::gl_types::uint_type binding) {
-    const auto& gl = e.video().gl_api();
-    oglplus::shader_storage_block_index blk_idx;
-    gl.get_shader_storage_block_index(_prog, "MetaballBlock") >> blk_idx;
-    gl.shader_storage_block_binding(_prog, blk_idx, binding);
-}
-//------------------------------------------------------------------------------
-void field_program::set_plane_count(
-  example& e,
-  oglplus::gl_types::int_type count) {
-    e.video().gl_api().set_uniform(_prog, _plane_count_loc, count);
-}
-//------------------------------------------------------------------------------
-void field_program::prepare_frame(example&) {}
-//------------------------------------------------------------------------------
-void field_program::use(example& e) {
-    e.video().gl_api().use_program(_prog);
-}
+field_program::field_program(example& e)
+  : gl_program_resource{url{"json:///FieldProg"}, e.context()} {}
 //------------------------------------------------------------------------------
 // surface program
 //------------------------------------------------------------------------------
-void surface_program::init(example& e) {
-    const auto& gl = e.video().gl_api();
-
-    gl.delete_program.later_by(e, _prog);
-    gl.create_program() >> _prog;
-    gl.object_label(_prog, "surface program");
-
-    const auto prog_src{embed<"SurfProg">("metaballs_surface.oglpprog")};
-    gl.build_program(_prog, prog_src.unpack(e.ctx()));
-    gl.use_program(_prog);
-
-    gl.get_uniform_location(_prog, "CameraMatrix") >> _camera_mat_loc;
-    gl.get_uniform_location(_prog, "PerspectiveMatrix") >> _perspective_mat_loc;
-    gl.get_uniform_location(_prog, "PlaneCount") >> _plane_count_loc;
-    gl.get_uniform_location(_prog, "DivCount") >> _div_count_loc;
+surface_program::surface_program(example& e)
+  : gl_program_resource{url{"json:///SrfceProg"}, e.context()} {
+    loaded.connect(make_callable_ref<&surface_program::_on_loaded>(this));
+}
+//------------------------------------------------------------------------------
+void surface_program::_on_loaded(
+  const gl_program_resource::load_info& info) noexcept {
+    info.get_uniform_location("CameraMatrix") >> _camera_mat_loc;
+    info.get_uniform_location("PerspectiveMatrix") >> _perspective_mat_loc;
 }
 //------------------------------------------------------------------------------
 void surface_program::prepare_frame(example& e) {
-    e.video().gl_api().set_uniform(
-      _prog, _camera_mat_loc, e.camera().transform_matrix());
-    e.video().gl_api().set_uniform(
-      _prog,
+    set(e.video(), _camera_mat_loc, e.camera().transform_matrix());
+    set(
+      e.video(),
       _perspective_mat_loc,
       e.camera().perspective_matrix(e.video().surface_aspect()));
-}
-//------------------------------------------------------------------------------
-void surface_program::bind_field(
-  example& e,
-  oglplus::gl_types::uint_type binding) {
-    const auto& gl = e.video().gl_api();
-    oglplus::shader_storage_block_index blk_idx;
-    gl.get_shader_storage_block_index(_prog, "FieldBlock") >> blk_idx;
-    gl.shader_storage_block_binding(_prog, blk_idx, binding);
-}
-//------------------------------------------------------------------------------
-void surface_program::bind_configs(
-  example& e,
-  oglplus::gl_types::uint_type binding) {
-    const auto& gl = e.video().gl_api();
-    oglplus::shader_storage_block_index blk_idx;
-    gl.get_shader_storage_block_index(_prog, "ConfigsBlock") >> blk_idx;
-    gl.shader_storage_block_binding(_prog, blk_idx, binding);
-}
-//------------------------------------------------------------------------------
-void surface_program::set_plane_count(
-  example& e,
-  oglplus::gl_types::int_type count) {
-    e.video().gl_api().set_uniform(_prog, _plane_count_loc, count);
-}
-//------------------------------------------------------------------------------
-void surface_program::set_div_count(
-  example& e,
-  oglplus::gl_types::int_type count) {
-    e.video().gl_api().set_uniform(_prog, _div_count_loc, count);
 }
 //------------------------------------------------------------------------------
 void surface_program::bind_corner_location(
   example& e,
   oglplus::vertex_attrib_location loc) {
-    e.video().gl_api().bind_attrib_location(_prog, loc, "Corner");
-}
-//------------------------------------------------------------------------------
-void surface_program::use(example& e) {
-    e.video().gl_api().use_program(_prog);
+    bind(e.video(), loc, "Corner");
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

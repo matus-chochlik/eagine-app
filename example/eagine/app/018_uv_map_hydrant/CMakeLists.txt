@@ -3,35 +3,32 @@
 # See accompanying file LICENSE_1_0.txt or copy at
 #  http://www.boost.org/LICENSE_1_0.txt
 #
-configure_file(
-	"${PROJECT_SOURCE_DIR}/assets/models/hydrant_1.json"
-	"${CMAKE_CURRENT_BINARY_DIR}/hydrant_1.json"
-)
-
 add_executable(app-018_uv_map_hydrant main.cpp)
 add_dependencies(app-018_uv_map_hydrant eagine-app-examples)
 
 eagine_embed_target_resources(
 	TARGET app-018_uv_map_hydrant
-	INPUT_TARGETS hydrant
+	RESOURCES
+		VertShdr "vertex.glsl"
+		FragShdr "fragment.glsl"
+		HydrntProg "prog.json"
+		HydrntShpe "hydrant.json"
+		HydrntColr "hydrant_color.eagitexi"
+		HydrntNorm "hydrant_normal.eagitexi"
+		HydrntLght "hydrant_light.eagitexi"
+		HydrantTex "hydrant.eagitex"
 	PACKED
+	ENABLE_SEARCH
 )
 eagine_add_exe_analysis(app-018_uv_map_hydrant)
 
-if(${WITH_MODULES})
-	eagine_target_modules(
-		app-018_uv_map_hydrant
-		eagine.core
-		eagine.shapes
-		eagine.oglplus
-		eagine.app
-	)
-else()
-	target_link_libraries(
-		app-018_uv_map_hydrant
-		PUBLIC EAGine::App
-	)
-endif()
+eagine_target_modules(
+	app-018_uv_map_hydrant
+	eagine.core
+	eagine.shapes
+	eagine.oglplus
+	eagine.app
+)
 
 set_target_properties(
 	app-018_uv_map_hydrant

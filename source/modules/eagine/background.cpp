@@ -146,8 +146,7 @@ export class background_skybox {
 public:
     background_skybox(
       video_context&,
-      const oglplus::texture_image_block&) noexcept;
-    background_skybox(video_context&, memory::const_block) noexcept;
+      oglplus::gl_types::enum_type tex_unit) noexcept;
 
     auto clean_up(video_context& vc) noexcept -> background_skybox&;
 
@@ -155,8 +154,7 @@ public:
       -> background_skybox&;
 
 private:
-    oglplus::gl_types::int_type _tex_unit{0};
-    oglplus::owned_texture_name _cube_tex;
+    oglplus::gl_types::enum_type _tex_unit{0};
 
     oglplus::owned_program_name _prog;
     oglplus::uniform_location _camera_loc;

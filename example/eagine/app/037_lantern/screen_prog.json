@@ -1,0 +1,8 @@
+{"inputs":
+{"Position": {"attrib":"position"}
+,"Coord": {"attrib":"wrap_coord"}}
+,"label":"screen rays program"
+,"shaders":
+[{"url":"glsl:///ScreenVert","type":"vertex"}
+,{"url":"glsl:///ScreenFrag","type":"fragment"}]
+}

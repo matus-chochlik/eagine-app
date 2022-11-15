@@ -6,91 +6,96 @@
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
 
-#if !EAGINE_APP_MODULE
-#include <eagine/oglplus/gl.hpp>
-#include <eagine/oglplus/gl_api.hpp>
-
-#include <eagine/app/camera.hpp>
-#include <eagine/app/main.hpp>
-#include <eagine/oglplus/math/matrix.hpp>
-#endif
-
 #include "main.hpp"
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
 example::example(execution_context& ec, video_context& vc)
-  : _ctx{ec}
+  : timeouting_application{ec, std::chrono::seconds{60}}
+  , _load_progress{ec.progress(), "Loading resources"}
   , _video{vc}
-  , _bg{_video, {0.5F, 0.5F, 0.5F, 1.F}, {0.25F, 0.25F, 0.25F, 0.0F}, 1.F} {
+  , _bg{_video, {0.5F, 0.5F, 0.5F, 1.F}, {0.25F, 0.25F, 0.25F, 0.0F}, 1.F}
+  , _mball_prog{*this}
+  , _field_prog{*this}
+  , _srfce_prog{*this}
+  , _other{context()} {
+    _other.add(
+      ec.loader().request_camera_parameters(url{"json:///Camera"}, _camera));
+
+    _mball_prog.loaded.connect(_load_handler());
+    _field_prog.loaded.connect(_load_handler());
+    _srfce_prog.loaded.connect(_load_handler());
 
     _volume.init(*this);
-
-    _mball_prog.init(*this);
-    _mball_prog.bind_metaballs(*this, _volume.metaballs_binding());
-
-    _field_prog.init(*this);
-    _field_prog.bind_field(*this, _volume.field_binding());
-    _field_prog.bind_metaballs(*this, _volume.metaballs_binding());
-    _field_prog.set_plane_count(*this, _volume.plane_count());
-
-    _srfce_prog.init(*this);
-    _srfce_prog.bind_corner_location(*this, _volume.corner_loc());
-    _srfce_prog.bind_field(*this, _volume.field_binding());
-    _srfce_prog.bind_configs(*this, _volume.configs_binding());
-    _srfce_prog.set_plane_count(*this, _volume.plane_count());
-    _srfce_prog.set_div_count(*this, _volume.div_count());
-
-    _camera.set_near(0.1F)
-      .set_far(50.F)
-      .set_orbit_min(7.0F)
-      .set_orbit_max(8.0F)
-      .set_fov(degrees_(75.F));
 
     _camera.connect_inputs(ec).basic_input_mapping(ec);
     ec.setup_inputs().switch_input_mapping();
 }
 //------------------------------------------------------------------------------
-void example::on_video_resize() noexcept {
-    const auto& gl = _video.gl_api();
-    gl.viewport[_video.surface_size()];
+void example::_on_loaded(const gl_program_resource::load_info& loaded) noexcept {
+    if(loaded.resource.is(_mball_prog)) {
+        loaded.shader_storage_block_binding(
+          "MetaballBlock", _volume.metaballs_binding());
+    } else if(loaded.resource.is(_field_prog)) {
+        loaded.set_uniform("PlaneCount", _volume.plane_count());
+        loaded.shader_storage_block_binding(
+          "FieldBlock", _volume.field_binding());
+        loaded.shader_storage_block_binding(
+          "MetaballBlock", _volume.metaballs_binding());
+    } else if(loaded.resource.is(_srfce_prog)) {
+        loaded.set_uniform("PlaneCount", _volume.plane_count());
+        loaded.set_uniform("DivCount", _volume.div_count());
+        loaded.shader_storage_block_binding(
+          "FieldBlock", _volume.field_binding());
+        loaded.shader_storage_block_binding(
+          "ConfigsBlock", _volume.configs_binding());
+        _srfce_prog.bind_corner_location(*this, _volume.corner_loc());
+    }
+    _load_progress.update_progress(
+      _mball_prog && _field_prog && _srfce_prog && _other);
 }
 //------------------------------------------------------------------------------
 void example::update() noexcept {
-    auto& state = _ctx.state();
+    auto& state = context().state();
     if(state.is_active()) {
-        _is_done.reset();
+        reset_timeout();
     }
     if(state.user_idle_too_long()) {
         _camera.idle_update(state, 7.F);
     }
 
-    const auto& glapi = _video.gl_api();
-    const auto& [gl, GL] = glapi;
+    if(_load_progress.done()) {
+        const auto& glapi = _video.gl_api();
+        const auto& [gl, GL] = glapi;
 
-    _mball_prog.use(*this);
-    _mball_prog.prepare_frame(*this);
-    gl.dispatch_compute(1, 1, 1);
+        _mball_prog.use(context());
+        gl.dispatch_compute(1, 1, 1);
 
-    _field_prog.use(*this);
-    _field_prog.prepare_frame(*this);
-    _volume.compute(*this);
+        _field_prog.use(context());
+        _volume.compute(*this);
 
-    _bg.clear(_video, _camera);
+        _bg.clear(_video, _camera);
 
-    gl.enable(GL.depth_test);
-    gl.enable(GL.cull_face);
+        gl.enable(GL.depth_test);
+        gl.enable(GL.cull_face);
 
-    _srfce_prog.use(*this);
-    _srfce_prog.prepare_frame(*this);
-    _volume.draw(*this);
+        _srfce_prog.use(context());
+        _srfce_prog.prepare_frame(*this);
+        _volume.draw(*this);
+    } else {
+        _mball_prog.load_if_needed(context());
+        _field_prog.load_if_needed(context());
+        _srfce_prog.load_if_needed(context());
+    }
 
     _video.commit();
 }
 //------------------------------------------------------------------------------
 void example::clean_up() noexcept {
     _bg.clean_up(_video);
-    _cleanup.clear();
+    _mball_prog.clean_up(context());
+    _field_prog.clean_up(context());
+    _srfce_prog.clean_up(context());
     _video.end();
 }
 //------------------------------------------------------------------------------
@@ -140,8 +145,6 @@ auto example_main(main_ctx& ctx) -> int {
 }
 } // namespace eagine::app
 
-#if EAGINE_APP_MODULE
 auto main(int argc, const char** argv) -> int {
     return eagine::default_main(argc, argv, eagine::app::example_main);
 }
-#endif

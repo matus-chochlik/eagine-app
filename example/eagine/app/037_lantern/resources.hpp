@@ -9,84 +9,81 @@
 #ifndef OGLPLUS_EXAMPLE_RESOURCES_HPP // NOLINT(llvm-header-guard)
 #define OGLPLUS_EXAMPLE_RESOURCES_HPP
 
-#if EAGINE_APP_MODULE
 import eagine.core;
 import eagine.shapes;
 import eagine.oglplus;
 import eagine.app;
-#else
-#include <eagine/oglplus/gl.hpp>
-#include <eagine/oglplus/gl_api.hpp>
-
-#include <eagine/app/framebuffer.hpp>
-#include <eagine/app/fwd.hpp>
-#include <eagine/app/geometry.hpp>
-#include <eagine/app/gpu_program.hpp>
-#include <eagine/oglplus/math/primitives.hpp>
-#endif
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
 // programs
 //------------------------------------------------------------------------------
-class draw_program : public glsl_program {
+class draw_program : public gl_program_resource {
 public:
-    void init(video_context&);
+    draw_program(execution_context&);
+
     void set_camera(video_context&, const orbiting_camera& camera);
     void set_candle_light(video_context&, oglplus::gl_types::float_type);
     void set_ambient_light(video_context&, oglplus::gl_types::float_type);
-    void set_texture_unit(video_context&, oglplus::gl_types::int_type);
-
-    void bind_position_location(video_context&, oglplus::vertex_attrib_location);
-    void bind_normal_location(video_context&, oglplus::vertex_attrib_location);
-    void bind_wrap_coord_location(
-      video_context&,
-      oglplus::vertex_attrib_location);
+    void set_texture_unit(video_context&, oglplus::texture_unit::value_type);
 
 private:
+    void _on_loaded(const gl_program_resource::load_info&) noexcept;
+
     oglplus::uniform_location _camera_loc;
     oglplus::uniform_location _candle_light_loc;
     oglplus::uniform_location _ambient_light_loc;
     oglplus::uniform_location _tex_loc;
 };
 //------------------------------------------------------------------------------
-class screen_program : public glsl_program {
+class screen_program : public gl_program_resource {
 public:
-    void init(video_context&);
-    void set_screen_size(video_context& vc);
-    void set_texture_unit(video_context&, oglplus::gl_types::int_type);
+    screen_program(execution_context&);
 
-    void bind_position_location(video_context&, oglplus::vertex_attrib_location);
-    void bind_coord_location(video_context&, oglplus::vertex_attrib_location);
+    void set_screen_size(video_context& vc);
+    void set_texture_unit(video_context&, oglplus::texture_unit::value_type);
 
 private:
+    void _on_loaded(const gl_program_resource::load_info&) noexcept;
+
     oglplus::uniform_location _screen_size_loc;
     oglplus::uniform_location _tex_loc;
 };
 //------------------------------------------------------------------------------
 // geometry
 //------------------------------------------------------------------------------
-class pumpkin_geometry : public geometry_and_bindings {
+class pumpkin_geometry : public gl_geometry_and_bindings_resource {
 public:
-    void init(video_context&);
-    void clean_up(video_context&);
-
-    auto tex_unit() const noexcept -> oglplus::gl_types::int_type {
-        return 0;
-    }
+    pumpkin_geometry(execution_context&);
 
     auto bounding_sphere() const noexcept {
         return _bounding_sphere;
     }
 
 private:
+    void _on_loaded(
+      const gl_geometry_and_bindings_resource::load_info&) noexcept;
     oglplus::sphere _bounding_sphere;
-    oglplus::owned_texture_name _tex{};
 };
 //------------------------------------------------------------------------------
-class screen_geometry : public geometry_and_bindings {
+class pumpkin_texture : public gl_texture_resource {
+
 public:
-    void init(video_context&);
+    pumpkin_texture(execution_context&);
+
+    auto load_if_needed(execution_context&) noexcept -> work_done;
+
+    static auto tex_unit() noexcept -> oglplus::texture_unit::value_type {
+        return 0U;
+    }
+
+private:
+    void _on_loaded(const gl_texture_resource::load_info&) noexcept;
+};
+//------------------------------------------------------------------------------
+class screen_geometry : public gl_geometry_and_bindings_resource {
+public:
+    screen_geometry(execution_context&);
 };
 //------------------------------------------------------------------------------
 // draw buffers
@@ -101,8 +98,8 @@ public:
     void draw_off_screen(video_context&);
     void draw_on_screen(video_context&);
 
-    auto tex_unit() const noexcept -> oglplus::gl_types::int_type {
-        return 1;
+    auto tex_unit() const noexcept -> oglplus::texture_unit::value_type {
+        return 1U;
     }
 };
 //------------------------------------------------------------------------------

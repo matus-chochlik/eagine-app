@@ -8,54 +8,44 @@
 
 #include "resources.hpp"
 
-#if !EAGINE_APP_MODULE
-#include <eagine/app/camera.hpp>
-#include <eagine/app/context.hpp>
-#include <eagine/embed.hpp>
-#include <eagine/oglplus/shapes/generator.hpp>
-#include <eagine/shapes/icosahedron.hpp>
-#endif
-
 namespace eagine::app {
 //------------------------------------------------------------------------------
 // program
 //------------------------------------------------------------------------------
-void cel_program::init(video_context& vc) {
-    create(vc)
-      .build(vc, embed<"prog">("cel_shading.oglpprog"))
-      .use(vc)
-      .query(vc, "Projection", projection_loc)
-      .query(vc, "Modelview", modelview_loc);
+cel_program::cel_program(execution_context& ctx)
+  : gl_program_resource{url{"json:///CelProg"}, ctx} {
+    loaded.connect(make_callable_ref<&cel_program::_on_loaded>(this));
 }
 //------------------------------------------------------------------------------
-void cel_program::set_projection(video_context& vc, orbiting_camera& camera) {
+void cel_program::_on_loaded(
+  const gl_program_resource::load_info& info) noexcept {
+    info.use_program();
+    info.get_uniform_location("Modelview") >> modelview_loc;
+    info.get_uniform_location("Projection") >> projection_loc;
+}
+//------------------------------------------------------------------------------
+void cel_program::set_projection(video_context& video, orbiting_camera& camera) {
     if(camera.has_changed()) {
-        set(vc, projection_loc, camera.matrix(vc));
+        set(video, projection_loc, camera.matrix(video));
     }
 }
 //------------------------------------------------------------------------------
-void cel_program::set_modelview(execution_context& ec, video_context& vc) {
+void cel_program::set_modelview(execution_context& ec, video_context& video) {
     shp_turns += 0.1F * ec.state().frame_duration().value();
 
     set(
-      vc,
+      video,
       modelview_loc,
       oglplus::matrix_rotation_x(turns_(shp_turns) / 1) *
         oglplus::matrix_rotation_y(turns_(shp_turns) / 2) *
         oglplus::matrix_rotation_z(turns_(shp_turns) / 3));
 }
 //------------------------------------------------------------------------------
-void cel_program::bind_position_location(
-  video_context& vc,
-  oglplus::vertex_attrib_location loc) {
-    bind(vc, loc, "Position");
-}
-//------------------------------------------------------------------------------
 // geometry
 //------------------------------------------------------------------------------
-void icosahedron_geometry::init(video_context& vc) {
-    geometry_and_bindings::init(
-      shapes::unit_icosahedron(shapes::vertex_attrib_kind::position), vc);
-}
+icosahedron_geometry::icosahedron_geometry(execution_context& ctx)
+  : gl_geometry_and_bindings_resource{
+      url{"shape:///unit_icosahedron?position=true"},
+      ctx} {}
 //------------------------------------------------------------------------------
 } // namespace eagine::app

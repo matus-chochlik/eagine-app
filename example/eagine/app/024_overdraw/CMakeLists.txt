@@ -3,33 +3,30 @@
 # See accompanying file LICENSE_1_0.txt or copy at
 #  http://www.boost.org/LICENSE_1_0.txt
 #
-oglplus_add_glsl_program(overdraw_draw)
-oglplus_add_glsl_program(overdraw_screen)
-
 add_executable(app-024_overdraw main.cpp resources.cpp)
 add_dependencies(app-024_overdraw eagine-app-examples)
 
 eagine_embed_target_resources(
 	TARGET app-024_overdraw
-	INPUT_TARGETS overdraw_draw overdraw_screen
+	RESOURCES
+		DrawVert   "vs_draw.glsl"
+		DrawFrag   "fs_draw.glsl"
+		DrawProg   "draw_prog.json"
+		ScreenVert "vs_screen.glsl"
+		ScreenFrag "fs_screen.glsl"
+		ScreenProg "screen_prog.json"
 	PACKED
+	ENABLE_SEARCH
 )
 eagine_add_exe_analysis(app-024_overdraw)
 
-if(${WITH_MODULES})
-	eagine_target_modules(
-		app-024_overdraw
-		eagine.core
-		eagine.shapes
-		eagine.oglplus
-		eagine.app
-	)
-else()
-	target_link_libraries(
-		app-024_overdraw
-		PUBLIC EAGine::App
-	)
-endif()
+eagine_target_modules(
+	app-024_overdraw
+	eagine.core
+	eagine.shapes
+	eagine.oglplus
+	eagine.app
+)
 
 set_target_properties(
 	app-024_overdraw

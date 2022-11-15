@@ -1,0 +1,13 @@
+{"levels":1
+,"width":1024
+,"height":1024
+,"depth":2
+,"channels":4
+,"data_type":"unsigned_byte"
+,"format":"rgba"
+,"iformat":"rgba8"
+,"label":"bricks"
+,"images":
+[{"url":"eagires:///BricksColr","z_offs":0}
+,{"url":"eagires:///BricksNMap","z_offs":1}]
+}

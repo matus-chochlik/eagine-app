@@ -6,103 +6,52 @@
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
 
-#if EAGINE_APP_MODULE
 import eagine.core;
 import eagine.shapes;
 import eagine.oglplus;
 import eagine.app;
-#else
-#include <eagine/oglplus/gl.hpp>
-#include <eagine/oglplus/gl_api.hpp>
-
-#include <eagine/app/background/plain.hpp>
-#include <eagine/app/camera.hpp>
-#include <eagine/app/main.hpp>
-#include <eagine/app_config.hpp>
-#include <eagine/embed.hpp>
-#include <eagine/oglplus/glsl/string_ref.hpp>
-#include <eagine/oglplus/math/matrix.hpp>
-#include <eagine/oglplus/math/primitives.hpp>
-#include <eagine/oglplus/math/vector.hpp>
-#include <eagine/oglplus/shapes/geometry.hpp>
-#include <eagine/shapes/cube.hpp>
-#include <eagine/timeout.hpp>
-#endif
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-class example_cube : public application {
+class example_cube : public timeouting_application {
 public:
     example_cube(execution_context&, video_context&);
 
-    auto is_done() noexcept -> bool final {
-        return _is_done.is_expired();
-    }
-
-    void on_video_resize() noexcept final;
     void update() noexcept final;
     void clean_up() noexcept final;
 
 private:
-    execution_context& _ctx;
+    void _on_prog_loaded(const gl_program_resource::load_info& info) noexcept {
+        info.apply_input_bindings(_cube);
+        info.get_uniform_location("Camera") >> _camera_loc;
+        info.use_program();
+        reset_timeout();
+    }
+
     video_context& _video;
     background_color_depth _bg;
-    timeout _is_done{std::chrono::seconds{30}};
 
-    oglplus::geometry_and_bindings cube;
+    oglplus::vertex_attrib_bindings _attrib_bindings;
+    loaded_resource<gl_geometry_and_bindings> _cube;
+    loaded_resource<oglplus::owned_program_name> _prog;
 
-    oglplus::owned_program_name prog;
-
-    orbiting_camera camera;
-    oglplus::uniform_location camera_loc;
+    orbiting_camera _camera;
+    oglplus::uniform_location _camera_loc;
 };
 //------------------------------------------------------------------------------
 example_cube::example_cube(execution_context& ec, video_context& vc)
-  : _ctx{ec}
+  : timeouting_application{ec, std::chrono::seconds{30}}
   , _video{vc}
-  , _bg{0.4F, 0.F, 1.F} {
+  , _bg{0.4F, 0.F, 1.F}
+  , _cube{url{"shape:///unit_cube?position=true+normal=true"}, ec}
+  , _prog{url{"json:///GLProgram"}, ec} {
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
 
-    // geometry
-    memory::buffer temp;
-    oglplus::shape_generator shape(
-      glapi,
-      shapes::unit_cube(
-        shapes::vertex_attrib_kind::position |
-        shapes::vertex_attrib_kind::normal));
-    cube = oglplus::geometry_and_bindings{glapi, shape, temp};
-    cube.use(glapi);
+    _prog.loaded.connect(
+      make_callable_ref<&example_cube::_on_prog_loaded>(this));
 
-    // vertex shader
-    auto vs_source = embed<"VertShader">("vertex.glsl");
-    oglplus::owned_shader_name vs;
-    gl.create_shader(GL.vertex_shader) >> vs;
-    auto cleanup_vs = gl.delete_shader.raii(vs);
-    gl.shader_source(vs, oglplus::glsl_string_ref(vs_source));
-    gl.compile_shader(vs);
-
-    // fragment shader
-    auto fs_source = embed<"FragShader">("fragment.glsl");
-    oglplus::owned_shader_name fs;
-    gl.create_shader(GL.fragment_shader) >> fs;
-    auto cleanup_fs = gl.delete_shader.raii(fs);
-    gl.shader_source(fs, oglplus::glsl_string_ref(fs_source));
-    gl.compile_shader(fs);
-
-    // program
-    gl.create_program() >> prog;
-    gl.attach_shader(prog, vs);
-    gl.attach_shader(prog, fs);
-    gl.link_program(prog);
-    gl.use_program(prog);
-
-    gl.bind_attrib_location(prog, cube.position_loc(), "Position");
-    gl.bind_attrib_location(prog, cube.normal_loc(), "Normal");
-
-    // uniform
-    gl.get_uniform_location(prog, "Camera") >> camera_loc;
-    camera.set_near(0.1F)
+    _camera.set_near(0.1F)
       .set_far(50.F)
       .set_orbit_min(1.1F)
       .set_orbit_max(3.5F)
@@ -110,41 +59,42 @@ example_cube::example_cube(execution_context& ec, video_context& vc)
 
     gl.enable(GL.depth_test);
 
-    camera.connect_inputs(ec).basic_input_mapping(ec);
+    _camera.connect_inputs(ec).basic_input_mapping(ec);
     ec.setup_inputs().switch_input_mapping();
 }
 //------------------------------------------------------------------------------
-void example_cube::on_video_resize() noexcept {
-    const auto& gl = _video.gl_api();
-    gl.viewport[_video.surface_size()];
-}
-//------------------------------------------------------------------------------
 void example_cube::update() noexcept {
-    auto& state = _ctx.state();
+    if(!_cube) {
+        _cube.load_if_needed(context());
+    } else {
+        if(!_prog) {
+            _prog.load_if_needed(context());
+        }
+    }
+
+    auto& state = context().state();
     if(state.is_active()) {
-        _is_done.reset();
+        reset_timeout();
     }
     if(state.user_idle_too_long()) {
-        camera.idle_update(state);
+        _camera.idle_update(state);
     }
 
     const auto& glapi = _video.gl_api();
 
     _bg.clear(_video);
 
-    if(camera.has_changed()) {
-        glapi.set_uniform(prog, camera_loc, camera.matrix(_video));
+    if(_cube && _prog) {
+        glapi.set_uniform(_prog, _camera_loc, _camera.matrix(_video));
+        _cube.draw(glapi);
     }
-    cube.draw(glapi);
 
     _video.commit();
 }
 //------------------------------------------------------------------------------
 void example_cube::clean_up() noexcept {
-    const auto& gl = _video.gl_api();
-
-    gl.delete_program(std::move(prog));
-    cube.clean_up(gl);
+    _prog.clean_up(context());
+    _cube.clean_up(context());
 
     _video.end();
 }
@@ -193,8 +143,6 @@ auto example_main(main_ctx& ctx) -> int {
 }
 } // namespace eagine::app
 
-#if EAGINE_APP_MODULE
 auto main(int argc, const char** argv) -> int {
     return eagine::default_main(argc, argv, eagine::app::example_main);
 }
-#endif

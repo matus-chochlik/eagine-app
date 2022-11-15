@@ -5,42 +5,21 @@
 /// See accompanying file LICENSE_1_0.txt or copy at
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
-#if EAGINE_APP_MODULE
 import eagine.core;
 import eagine.oglplus;
 import eagine.app;
-#else
-#include <eagine/app/main.hpp>
-#include <eagine/app_config.hpp>
-#include <eagine/embed.hpp>
-#include <eagine/math/functions.hpp>
-#include <eagine/timeout.hpp>
-
-#include <eagine/oglplus/gl.hpp>
-#include <eagine/oglplus/gl_api.hpp>
-
-#include <eagine/oglplus/glsl/string_ref.hpp>
-#include <eagine/oglplus/math/vector.hpp>
-#endif
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-class example_atomics : public application {
+class example_atomics : public timeouting_application {
 public:
     example_atomics(execution_context& ctx, video_context&);
 
-    auto is_done() noexcept -> bool final {
-        return _is_done.is_expired();
-    }
-
-    void on_video_resize() noexcept final;
     void update() noexcept final;
     void clean_up() noexcept final;
 
 private:
-    execution_context& _ctx;
     video_context& _video;
-    timeout _is_done{std::chrono::seconds(20)};
 
     oglplus::owned_vertex_array_name vao;
 
@@ -51,7 +30,7 @@ private:
 };
 //------------------------------------------------------------------------------
 example_atomics::example_atomics(execution_context& ec, video_context& vc)
-  : _ctx{ec}
+  : timeouting_application{ec, std::chrono::seconds{20}}
   , _video{vc} {
     const auto& [gl, GL] = _video.gl_api();
 
@@ -118,17 +97,12 @@ example_atomics::example_atomics(execution_context& ec, video_context& vc)
     ec.connect_inputs().map_inputs().switch_input_mapping();
 }
 //------------------------------------------------------------------------------
-void example_atomics::on_video_resize() noexcept {
-    const auto& gl = _video.gl_api();
-    gl.viewport[_video.surface_size()];
-}
-//------------------------------------------------------------------------------
 void example_atomics::update() noexcept {
-    auto& state = _ctx.state();
+    auto& state = context().state();
     const auto& [gl, GL] = _video.gl_api();
 
     if(state.is_active()) {
-        _is_done.reset();
+        reset_timeout();
     }
 
     gl.clear(GL.color_buffer_bit);
@@ -196,8 +170,6 @@ auto example_main(main_ctx& ctx) -> int {
 }
 } // namespace eagine::app
 
-#if EAGINE_APP_MODULE
 auto main(int argc, const char** argv) -> int {
     return eagine::default_main(argc, argv, eagine::app::example_main);
 }
-#endif

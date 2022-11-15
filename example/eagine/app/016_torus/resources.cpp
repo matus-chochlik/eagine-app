@@ -8,88 +8,33 @@
 
 #include "resources.hpp"
 
-#if !EAGINE_APP_MODULE
-#include <eagine/app/camera.hpp>
-#include <eagine/app/context.hpp>
-#include <eagine/embed.hpp>
-#include <eagine/oglplus/glsl/string_ref.hpp>
-#include <eagine/oglplus/shapes/generator.hpp>
-#include <eagine/shapes/scaled_wrap_coords.hpp>
-#include <eagine/shapes/torus.hpp>
-#endif
-
 namespace eagine::app {
 //------------------------------------------------------------------------------
 // program
 //------------------------------------------------------------------------------
-void torus_program::init(execution_context& ec, video_context& vc) {
-    const auto& gl = vc.gl_api();
-
-    gl.create_program() >> prog;
-
-    const auto prog_src{embed<"prog">("checker_torus.oglpprog")};
-    gl.build_program(prog, prog_src.unpack(ec));
-    gl.use_program(prog);
-
-    gl.get_uniform_location(prog, "Camera") >> camera_loc;
-}
-//------------------------------------------------------------------------------
-void torus_program::clean_up(video_context& vc) {
-    const auto& gl = vc.gl_api();
-    gl.delete_program(std::move(prog));
+torus_program::torus_program(execution_context& ctx)
+  : gl_program_resource{url{"json:///GLProgram"}, ctx} {
+    loaded.connect(make_callable_ref<&torus_program::_on_loaded>(this));
 }
 //------------------------------------------------------------------------------
 void torus_program::set_projection(video_context& vc, orbiting_camera& camera) {
     if(camera.has_changed()) {
-        const auto& gl = vc.gl_api();
-        gl.set_uniform(prog, camera_loc, camera.matrix(vc.surface_aspect()));
+        vc.gl_api().set_uniform(
+          *this, camera_loc, camera.matrix(vc.surface_aspect()));
     }
 }
 //------------------------------------------------------------------------------
-void torus_program::bind_position_location(
-  video_context& vc,
-  oglplus::vertex_attrib_location loc) {
-    const auto& gl = vc.gl_api();
-    gl.bind_attrib_location(prog, loc, "Position");
-}
-//------------------------------------------------------------------------------
-void torus_program::bind_normal_location(
-  video_context& vc,
-  oglplus::vertex_attrib_location loc) {
-    const auto& gl = vc.gl_api();
-    gl.bind_attrib_location(prog, loc, "Normal");
-}
-//------------------------------------------------------------------------------
-void torus_program::bind_texcoord_location(
-  video_context& vc,
-  oglplus::vertex_attrib_location loc) {
-    const auto& gl = vc.gl_api();
-    gl.bind_attrib_location(prog, loc, "TexCoord");
+void torus_program::_on_loaded(
+  const gl_program_resource::load_info& info) noexcept {
+    info.use_program();
+    info.get_uniform_location("Camera") >> camera_loc;
 }
 //------------------------------------------------------------------------------
 // geometry
 //------------------------------------------------------------------------------
-void torus_geometry::init(execution_context& ec, video_context& vc) {
-    const auto& glapi = vc.gl_api();
-
-    oglplus::shape_generator shape(
-      glapi,
-      shapes::scale_wrap_coords(
-        shapes::unit_torus(
-          shapes::vertex_attrib_kind::position |
-          shapes::vertex_attrib_kind::normal |
-          shapes::vertex_attrib_kind::wrap_coord),
-        36.F,
-        12.F,
-        1.F));
-    geometry::init(
-      glapi,
-      shape,
-      vertex_attrib_bindings(
-        {(shapes::vertex_attrib_kind::position / 3),
-         (shapes::vertex_attrib_kind::normal / 3),
-         (shapes::vertex_attrib_kind::wrap_coord / 0)}),
-      ec.buffer());
-}
+torus_geometry::torus_geometry(execution_context& ctx)
+  : gl_geometry_and_bindings_resource{
+      url{"shape:///unit_torus?position=true+normal=true+wrap_coord=true"},
+      ctx} {}
 //------------------------------------------------------------------------------
 } // namespace eagine::app

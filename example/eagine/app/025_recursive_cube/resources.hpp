@@ -9,41 +9,25 @@
 #ifndef OGLPLUS_EXAMPLE_RESOURCES_HPP // NOLINT(llvm-header-guard)
 #define OGLPLUS_EXAMPLE_RESOURCES_HPP
 
-#if EAGINE_APP_MODULE
 import eagine.core;
 import eagine.shapes;
 import eagine.oglplus;
 import eagine.app;
-#else
-#include <eagine/oglplus/gl.hpp>
-#include <eagine/oglplus/gl_api.hpp>
-
-#include <eagine/app/fwd.hpp>
-#include <eagine/app/geometry.hpp>
-#include <eagine/double_buffer.hpp>
-#include <eagine/quantities.hpp>
-#endif
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
 // program
 //------------------------------------------------------------------------------
-class cube_program {
+class cube_program : public gl_program_resource {
 public:
-    void init(execution_context&, video_context&);
-    void clean_up(video_context&);
-    void set_texture(video_context&, oglplus::gl_types::int_type);
-    void set_projection(video_context&, const oglplus::trfmat<4>&);
-    void update(execution_context&, video_context&);
-
-    void bind_position_location(video_context&, oglplus::vertex_attrib_location);
-    void bind_normal_location(video_context&, oglplus::vertex_attrib_location);
-    void bind_tex_coord_location(
-      video_context&,
-      oglplus::vertex_attrib_location);
+    cube_program(execution_context&);
+    void set_texture(execution_context&, oglplus::gl_types::int_type);
+    void set_projection(execution_context&, const oglplus::trfmat<4>&);
+    void prepare_frame(execution_context&);
 
 private:
-    oglplus::owned_program_name prog;
+    void _on_loaded(const gl_program_resource::load_info&) noexcept;
+
     oglplus::uniform_location projection_loc;
     oglplus::uniform_location modelview_loc;
     oglplus::uniform_location light_pos_loc;
@@ -54,17 +38,17 @@ private:
 //------------------------------------------------------------------------------
 // geometry
 //------------------------------------------------------------------------------
-class cube_geometry : public geometry_and_bindings {
+class cube_geometry : public gl_geometry_and_bindings_resource {
 public:
-    void init(video_context&);
+    cube_geometry(execution_context&);
 };
 //------------------------------------------------------------------------------
 // draw buffers
 //------------------------------------------------------------------------------
 class cube_draw_buffers {
 public:
-    void init(execution_context&, video_context&);
-    void clean_up(video_context&);
+    void init(execution_context&);
+    void clean_up(execution_context&);
 
     auto back_fbo() const noexcept {
         return oglplus::framebuffer_name{objs.back().fbo};

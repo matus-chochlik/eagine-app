@@ -6,49 +6,24 @@
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
 
-#if EAGINE_APP_MODULE
 import eagine.core;
 import eagine.shapes;
 import eagine.oglplus;
 import eagine.app;
-#else
-#include <eagine/oglplus/gl.hpp>
-#include <eagine/oglplus/gl_api.hpp>
-
-#include <eagine/app/camera.hpp>
-#include <eagine/app/geometry.hpp>
-#include <eagine/app/main.hpp>
-#include <eagine/app_config.hpp>
-#include <eagine/embed.hpp>
-#include <eagine/oglplus/glsl/string_ref.hpp>
-#include <eagine/oglplus/math/matrix.hpp>
-#include <eagine/oglplus/math/primitives.hpp>
-#include <eagine/oglplus/math/vector.hpp>
-#include <eagine/shapes/value_tree.hpp>
-#include <eagine/timeout.hpp>
-#include <eagine/value_tree/yaml.hpp>
-#endif
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-class example_shape : public application {
+class example_shape : public timeouting_application {
 public:
     example_shape(execution_context&, video_context&);
 
-    auto is_done() noexcept -> bool final {
-        return _is_done.is_expired();
-    }
-
-    void on_video_resize() noexcept final;
     void update() noexcept final;
     void clean_up() noexcept final;
 
 private:
-    execution_context& _ctx;
     video_context& _video;
-    timeout _is_done{std::chrono::seconds{30}};
 
-    geometry_and_bindings geom;
+    gl_geometry_and_bindings geom;
 
     oglplus::owned_program_name prog;
 
@@ -57,17 +32,19 @@ private:
 };
 //------------------------------------------------------------------------------
 example_shape::example_shape(execution_context& ec, video_context& vc)
-  : _ctx{ec}
+  : timeouting_application{ec, std::chrono::seconds{30}}
   , _video{vc} {
     auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
 
     auto yaml_text = as_chars(embed<"ShapeYaml">("shape.yaml"));
-    oglplus::shape_generator shape(
-      glapi,
-      shapes::from_value_tree(
-        valtree::from_yaml_text(yaml_text, ec.main_context()), ec.as_parent()));
-    geom.init(glapi, shape, _ctx.buffer());
+    geom.init(
+      {oglplus::shape_generator(
+         glapi,
+         shapes::from_value_tree(
+           valtree::from_yaml_text(yaml_text, ec.main_context()),
+           ec.as_parent())),
+       vc});
 
     // vertex shader
     auto vs_source = embed<"VertShader">("vertex.glsl");
@@ -112,15 +89,10 @@ example_shape::example_shape(execution_context& ec, video_context& vc)
     ec.setup_inputs().switch_input_mapping();
 }
 //------------------------------------------------------------------------------
-void example_shape::on_video_resize() noexcept {
-    const auto& gl = _video.gl_api();
-    gl.viewport[_video.surface_size()];
-}
-//------------------------------------------------------------------------------
 void example_shape::update() noexcept {
-    auto& state = _ctx.state();
+    auto& state = context().state();
     if(state.is_active()) {
-        _is_done.reset();
+        reset_timeout();
     }
     if(state.user_idle_too_long()) {
         camera.idle_update(state);
@@ -191,8 +163,6 @@ auto example_main(main_ctx& ctx) -> int {
 }
 } // namespace eagine::app
 
-#if EAGINE_APP_MODULE
 auto main(int argc, const char** argv) -> int {
     return eagine::default_main(argc, argv, eagine::app::example_main);
 }
-#endif

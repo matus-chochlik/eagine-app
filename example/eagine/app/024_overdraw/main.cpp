@@ -9,32 +9,24 @@
 #include "main.hpp"
 #include "resources.hpp"
 
-#if !EAGINE_APP_MODULE
-#include <eagine/app/main.hpp>
-#endif
-
 namespace eagine::app {
 //------------------------------------------------------------------------------
 // example
 //------------------------------------------------------------------------------
 example::example(execution_context& ec, video_context& vc)
-  : _ctx{ec}
-  , _video{vc} {
-    const auto& glapi = _video.gl_api();
-    const auto& [gl, GL] = glapi;
+  : timeouting_application{ec, std::chrono::seconds{30}}
+  , _video{vc}
+  , _draw_prog{*this}
+  , _screen_prog{*this} {
+    _draw_prog.base_loaded.connect(
+      make_callable_ref<&example::_on_resource_loaded>(this));
+    _screen_prog.base_loaded.connect(
+      make_callable_ref<&example::_on_resource_loaded>(this));
 
-    _draw_prog.init(*this);
     _shape.init(*this);
-    _draw_prog.bind_position_location(*this, _shape.position_loc());
-
-    _screen_prog.init(*this);
     _screen.init(*this);
-    _screen_prog.bind_position_location(*this, _screen.position_loc());
-    _screen_prog.bind_tex_coord_location(*this, _screen.tex_coord_loc());
-
     _draw_bufs.init(*this);
 
-    // camera
     _camera.set_near(0.1F)
       .set_far(50.F)
       .set_orbit_min(11.0F)
@@ -42,13 +34,26 @@ example::example(execution_context& ec, video_context& vc)
       .set_fov(right_angle_());
     _draw_prog.set_projection(*this);
 
+    _camera.connect_inputs(ec).basic_input_mapping(ec);
+    ec.setup_inputs().switch_input_mapping();
+
+    const auto& glapi = _video.gl_api();
+    const auto& [gl, GL] = glapi;
+
     gl.enable(GL.cull_face);
     gl.cull_face(GL.back);
     gl.blend_func(GL.one, GL.one);
     gl.clear_color(0.F, 0.F, 0.F, 0.F);
-
-    _camera.connect_inputs(ec).basic_input_mapping(ec);
-    ec.setup_inputs().switch_input_mapping();
+}
+//------------------------------------------------------------------------------
+void example::_on_resource_loaded(const loaded_resource_base& loaded) noexcept {
+    if(loaded.is(_draw_prog)) {
+        _draw_prog.bind_position_location(*this, _shape.position_loc());
+    }
+    if(loaded.is(_screen_prog)) {
+        _screen_prog.bind_position_location(*this, _screen.position_loc());
+        _screen_prog.bind_tex_coord_location(*this, _screen.tex_coord_loc());
+    }
 }
 //------------------------------------------------------------------------------
 void example::on_video_resize() noexcept {
@@ -58,37 +63,42 @@ void example::on_video_resize() noexcept {
 }
 //------------------------------------------------------------------------------
 void example::update() noexcept {
-    auto& state = _ctx.state();
+    auto& state = context().state();
     if(state.is_active()) {
-        _is_done.reset();
+        reset_timeout();
     }
     if(state.user_idle_too_long()) {
         _camera.idle_update(state);
     }
 
-    const auto& glapi = _video.gl_api();
-    const auto& [gl, GL] = glapi;
+    if(_draw_prog && _screen_prog) {
+        const auto& glapi = _video.gl_api();
+        const auto& [gl, GL] = glapi;
 
-    // draw offscreen
-    _draw_bufs.draw_offscreen(*this);
+        // draw offscreen
+        _draw_bufs.draw_offscreen(*this);
 
-    gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
-    gl.enable(GL.depth_test);
-    gl.enable(GL.blend);
+        gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
+        gl.enable(GL.depth_test);
+        gl.enable(GL.blend);
 
-    _draw_prog.use(*this);
-    _draw_prog.set_projection(*this);
-    _shape.draw(*this);
+        _draw_prog.use(context());
+        _draw_prog.set_projection(*this);
+        _shape.draw(*this);
 
-    gl.disable(GL.blend);
-    gl.disable(GL.depth_test);
+        gl.disable(GL.blend);
+        gl.disable(GL.depth_test);
 
-    // draw onscreen
-    _draw_bufs.draw_onscreen(*this);
+        // draw onscreen
+        _draw_bufs.draw_onscreen(*this);
 
-    _screen_prog.use(*this);
-    _screen_prog.set_screen_size(*this);
-    _screen.draw(*this);
+        _screen_prog.use(context());
+        _screen_prog.set_screen_size(*this);
+        _screen.draw(*this);
+    } else {
+        _draw_prog.load_if_needed(context());
+        _screen_prog.load_if_needed(context());
+    }
 
     _video.commit();
 }
@@ -149,8 +159,6 @@ auto example_main(main_ctx& ctx) -> int {
 }
 } // namespace eagine::app
 
-#if EAGINE_APP_MODULE
 auto main(int argc, const char** argv) -> int {
     return eagine::default_main(argc, argv, eagine::app::example_main);
 }
-#endif

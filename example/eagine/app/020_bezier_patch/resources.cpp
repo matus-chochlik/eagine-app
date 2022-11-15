@@ -8,66 +8,50 @@
 
 #include "resources.hpp"
 
-#if !EAGINE_APP_MODULE
-#include <eagine/app/camera.hpp>
-#include <eagine/app/context.hpp>
-#include <eagine/embed.hpp>
-#endif
-
 namespace eagine::app {
 //------------------------------------------------------------------------------
 // program
 //------------------------------------------------------------------------------
-void patch_program::init(execution_context& ec, video_context& vc) {
-    const auto& glapi = vc.gl_api();
-    const auto& gl = glapi;
-
-    gl.create_program() >> prog;
-
-    const auto prog_src{embed<"BPatchProg">("bezier_patch.oglpprog")};
-    gl.build_program(prog, prog_src.unpack(ec));
-    gl.use_program(prog);
-
-    gl.get_uniform_location(prog, "Color") >> color_loc;
-    gl.get_uniform_location(prog, "CameraMatrix") >> camera_matrix_loc;
-    gl.get_uniform_location(prog, "PerspectiveMatrix") >>
-      perspective_matrix_loc;
+patch_program::patch_program(execution_context& ctx)
+  : gl_program_resource{url{"json:///Program"}, ctx} {
+    loaded.connect(make_callable_ref<&patch_program::_on_loaded>(this));
 }
 //------------------------------------------------------------------------------
-void patch_program::clean_up(video_context& vc) {
-    vc.gl_api().delete_program(std::move(prog));
+void patch_program::_on_loaded(
+  const gl_program_resource::load_info& info) noexcept {
+    info.get_uniform_location("CameraMatrix") >> camera_matrix_loc;
+    info.get_uniform_location("PerspectiveMatrix") >> perspective_matrix_loc;
+    info.get_uniform_location("Color") >> color_loc;
 }
 //------------------------------------------------------------------------------
-void patch_program::set_projection(video_context& vc, orbiting_camera& camera) {
-    const auto& gl = vc.gl_api();
-    gl.set_uniform(prog, camera_matrix_loc, camera.transform_matrix());
-    gl.set_uniform(
-      prog,
+void patch_program::set_projection(
+  video_context& video,
+  orbiting_camera& camera) {
+    set(video, camera_matrix_loc, camera.transform_matrix());
+    set(
+      video,
       perspective_matrix_loc,
-      camera.perspective_matrix(vc.surface_aspect()));
+      camera.perspective_matrix(video.surface_aspect()));
 }
 //------------------------------------------------------------------------------
-void patch_program::set_wireframe_color(video_context& vc) {
-    vc.gl_api().set_uniform(
-      prog, color_loc, oglplus::vec4(0.1F, 0.1F, 0.1F, 1.0F));
+void patch_program::set_wireframe_color(video_context& video) {
+    set(video, color_loc, oglplus::vec4(0.1F, 0.1F, 0.1F, 1.0F));
 }
 //------------------------------------------------------------------------------
-void patch_program::set_surface_color(video_context& vc) {
-    vc.gl_api().set_uniform(
-      prog, color_loc, oglplus::vec4(1.0F, 1.0F, 1.0F, 0.4F));
+void patch_program::set_surface_color(video_context& video) {
+    set(video, color_loc, oglplus::vec4(1.0F, 1.0F, 1.0F, 0.4F));
 }
 //------------------------------------------------------------------------------
 void patch_program::bind_position_location(
-  video_context& vc,
+  video_context& video,
   oglplus::vertex_attrib_location loc) {
-    vc.gl_api().bind_attrib_location(prog, loc, "Position");
+    bind(video, loc, "Position");
 }
 //------------------------------------------------------------------------------
 // geometry
 //------------------------------------------------------------------------------
-void patch_geometry::init(execution_context&, video_context& vc) {
-    const auto& glapi = vc.gl_api();
-    const auto& [gl, GL] = glapi;
+void patch_geometry::init(execution_context& ec) {
+    const auto& [gl, GL] = ec.main_video().gl_api();
 
     // vao
     gl.gen_vertex_arrays() >> _vao;
@@ -101,14 +85,14 @@ void patch_geometry::init(execution_context&, video_context& vc) {
     gl.enable_vertex_attrib_array(position_loc());
 }
 //------------------------------------------------------------------------------
-void patch_geometry::clean_up(video_context& vc) {
-    const auto& gl = vc.gl_api();
+void patch_geometry::clean_up(execution_context& ec) {
+    const auto& gl = ec.main_video().gl_api();
     gl.delete_buffers(std::move(_positions));
     gl.delete_vertex_arrays(std::move(_vao));
 }
 //------------------------------------------------------------------------------
-void patch_geometry::draw(video_context& vc) {
-    const auto& [gl, GL] = vc.gl_api();
+void patch_geometry::draw(execution_context& ec) {
+    const auto& [gl, GL] = ec.main_video().gl_api();
     gl.draw_arrays(GL.patches, 0, 16);
 }
 //------------------------------------------------------------------------------

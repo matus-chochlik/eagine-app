@@ -6,197 +6,153 @@
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
 
-#if EAGINE_APP_MODULE
 import eagine.core;
 import eagine.shapes;
 import eagine.oglplus;
 import eagine.app;
-#else
-#include <eagine/oglplus/gl.hpp>
-#include <eagine/oglplus/gl_api.hpp>
-
-#include <eagine/animated_value.hpp>
-#include <eagine/app/camera.hpp>
-#include <eagine/app/main.hpp>
-#include <eagine/app_config.hpp>
-#include <eagine/embed.hpp>
-#include <eagine/oglplus/glsl/string_ref.hpp>
-#include <eagine/oglplus/math/matrix.hpp>
-#include <eagine/oglplus/math/primitives.hpp>
-#include <eagine/oglplus/math/vector.hpp>
-#include <eagine/oglplus/shapes/geometry.hpp>
-#include <eagine/shapes/round_cube.hpp>
-#include <eagine/timeout.hpp>
-#endif
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-class example_tiling : public application {
+class example_tiling : public timeouting_application {
 public:
     example_tiling(execution_context&, video_context&);
 
-    auto is_done() noexcept -> bool final {
-        return _is_done.is_expired();
-    }
-
-    void on_video_resize() noexcept final;
     void update() noexcept final;
     void clean_up() noexcept final;
     void change_tileset(const input&) noexcept;
 
 private:
-    execution_context& _ctx;
+    static auto _prog_url() {
+        return url{"json:///Program"};
+    }
+    static auto _cube_url() {
+        return url{
+          "shape:///unit_round_cube?"
+          "position=true+normal=true+face_coord=true+divisions=32"};
+    }
+    static auto _tiling_tex_url() {
+        return url{"json:///TilingTex"};
+    }
+
+    void _on_loaded(const loaded_resource_base&) noexcept;
+    void _on_tex_loaded(const gl_texture_resource::load_info&) noexcept;
+
     video_context& _video;
-    timeout _is_done{std::chrono::seconds{60}};
+    resource_manager _resources;
+    managed_gl_program _prog;
+    managed_gl_geometry_and_bindings _cube;
+    managed_gl_texture _tiling_tex;
+    managed_gl_texture _tiles1_tex;
+    managed_gl_texture _tiles2_tex;
+    managed_gl_texture _tiles3_tex;
+    managed_gl_texture _tiles4_tex;
+    pending_resource_requests _other;
 
-    oglplus::geometry cube;
-
-    oglplus::owned_texture_name tiling_tex;
-    oglplus::texture_name_array<4> tileset_texs;
     std::array<int, 4> tileset_tex_units{1, 2, 3, 4};
     std::size_t tileset_tex_idx{0U};
-
-    oglplus::owned_program_name prog;
 
     animated_value<std::tuple<radians_t<float>, radians_t<float>, float>, float>
       geo_coord;
     enum class animation_status { zoom_in, zoom_out, relocate };
     animation_status camera_status{animation_status::zoom_in};
 
-    orbiting_camera camera;
-    oglplus::uniform_location camera_loc;
-    oglplus::uniform_location tileset_tex_loc;
+    orbiting_camera _camera;
+    oglplus::uniform_location _camera_loc;
+    oglplus::uniform_location _tileset_tex_loc;
 };
 //------------------------------------------------------------------------------
 example_tiling::example_tiling(execution_context& ec, video_context& vc)
-  : _ctx{ec}
-  , _video{vc} {
-    const auto& glapi = _video.gl_api();
-    const auto& [gl, GL] = glapi;
+  : timeouting_application{ec, std::chrono::seconds{60}}
+  , _video{vc}
+  , _resources{ec}
+  , _prog{_resources, _prog_url(), _video}
+  , _cube{_resources, _cube_url(), _video, 0}
+  , _tiling_tex{
+      _resources,
+      _tiling_tex_url(),
+      _video,
+      _video.gl_api().texture_2d_array,
+      _video.gl_api().texture0}
+  , _tiles1_tex{
+      _resources,
+      url{"json:///NodesTex"},
+      _video,
+      _video.gl_api().texture_2d_array,
+      _video.gl_api().texture0+1}
+  , _tiles2_tex{
+      _resources,
+      url{"json:///CnnctsTex"},
+      _video,
+      _video.gl_api().texture_2d_array,
+      _video.gl_api().texture0+2}
+  , _tiles3_tex{
+      _resources,
+      url{"json:///BlocksTex"},
+      _video,
+      _video.gl_api().texture_2d_array,
+      _video.gl_api().texture0+3}
+  , _tiles4_tex{
+      _resources,
+      url{"json:///ThicketTex"},
+      _video,
+      _video.gl_api().texture_2d_array,
+      _video.gl_api().texture0+4}
+  , _other{ec} {
+    _other.add(
+      ec.loader().request_camera_parameters(url{"json:///Camera"}, _camera));
+    _other.add(ec.loader().request_input_setup(url{"json:///Inputs"}, ec));
 
-    // geometry
-    memory::buffer temp;
-    oglplus::shape_generator shape(
-      glapi,
-      shapes::unit_round_cube(
-        shapes::vertex_attrib_kind::position |
-          shapes::vertex_attrib_kind::normal |
-          shapes::vertex_attrib_kind::face_coord,
-        32));
-    oglplus::vertex_attrib_bindings bindings{shape};
-    cube = oglplus::geometry{glapi, shape, bindings, _ctx.buffer()};
-    cube.use(glapi);
+    _prog.connect_to<&example_tiling::_on_loaded>(this);
+    _cube.connect_to<&example_tiling::_on_loaded>(this);
 
-    // vertex shader
-    auto vs_source = search_resource("VertShader");
-    oglplus::owned_shader_name vs;
-    gl.create_shader(GL.vertex_shader) >> vs;
-    auto cleanup_vs = gl.delete_shader.raii(vs);
-    gl.shader_source(vs, oglplus::glsl_string_ref(vs_source.unpack(ec)));
-    gl.compile_shader(vs);
+    _tiling_tex.connect_to<&example_tiling::_on_tex_loaded>(this);
+    _tiles1_tex.connect_to<&example_tiling::_on_tex_loaded>(this);
+    _tiles2_tex.connect_to<&example_tiling::_on_tex_loaded>(this);
+    _tiles3_tex.connect_to<&example_tiling::_on_tex_loaded>(this);
+    _tiles4_tex.connect_to<&example_tiling::_on_tex_loaded>(this);
 
-    // fragment shader
-    auto fs_source = search_resource("FragShader");
-    oglplus::owned_shader_name fs;
-    gl.create_shader(GL.fragment_shader) >> fs;
-    auto cleanup_fs = gl.delete_shader.raii(fs);
-    gl.shader_source(fs, oglplus::glsl_string_ref(fs_source.unpack(ec)));
-    gl.compile_shader(fs);
+    const auto [a, e, o] =
+      geo_coord.update(context().state().frame_duration().value()).get();
+    _camera.set_azimuth(a).set_elevation(e).set_orbit_factor(o);
 
-    // program
-    gl.create_program() >> prog;
-    gl.attach_shader(prog, vs);
-    gl.attach_shader(prog, fs);
-    gl.link_program(prog);
-    gl.use_program(prog);
-
-    gl.bind_attrib_location(
-      prog,
-      bindings.location(shapes::vertex_attrib_kind::position),
-      "Position");
-    gl.bind_attrib_location(
-      prog, bindings.location(shapes::vertex_attrib_kind::normal), "Normal");
-    gl.bind_attrib_location(
-      prog,
-      bindings.location(shapes::vertex_attrib_kind::face_coord),
-      "TexCoord");
-
-    // tiling texture
-    const auto tiling_tex_src{search_resource("TilingTex")};
-    const auto tiling_img{
-      oglplus::texture_image_block(tiling_tex_src.unpack(ec))};
-
-    gl.gen_textures() >> tiling_tex;
-    gl.active_texture(GL.texture0 + 0);
-    gl.bind_texture(GL.texture_2d_array, tiling_tex);
-    gl.tex_parameter_i(GL.texture_2d_array, GL.texture_min_filter, GL.nearest);
-    gl.tex_parameter_i(GL.texture_2d_array, GL.texture_mag_filter, GL.nearest);
-    gl.tex_parameter_i(GL.texture_2d_array, GL.texture_wrap_s, GL.repeat);
-    gl.tex_parameter_i(GL.texture_2d_array, GL.texture_wrap_t, GL.repeat);
-    glapi.spec_tex_image3d(GL.texture_2d_array, 0, 0, tiling_img);
-    oglplus::uniform_location tiling_tex_loc;
-    gl.get_uniform_location(prog, "TilingTex") >> tiling_tex_loc;
-    glapi.set_uniform(prog, tiling_tex_loc, 0);
-
-    // tile-set textures
-    const std::array<embedded_resource, 4> tileset_srcs{
-      search_resource("Nodes512"),
-      search_resource("Blocks512"),
-      search_resource("Conncts512"),
-      search_resource("Thicket512")};
-
-    gl.gen_textures(tileset_texs.raw_handles());
-    for(const auto idx : integer_range(tileset_srcs.size())) {
-        oglplus::texture_image_block tileset_img{tileset_srcs[idx].unpack(ec)};
-        gl.active_texture(GL.texture0 + tileset_tex_units[idx]);
-        gl.bind_texture(GL.texture_2d_array, tileset_texs[span_size(idx)]);
-        gl.tex_parameter_i(
-          GL.texture_2d_array, GL.texture_min_filter, GL.linear_mipmap_linear);
-        gl.tex_parameter_i(
-          GL.texture_2d_array, GL.texture_mag_filter, GL.linear);
-        gl.tex_parameter_i(GL.texture_2d_array, GL.texture_wrap_s, GL.repeat);
-        gl.tex_parameter_i(GL.texture_2d_array, GL.texture_wrap_t, GL.repeat);
-        glapi.spec_tex_image3d(GL.texture_2d_array, 0, 0, tileset_img);
-        gl.generate_mipmap(GL.texture_2d_array);
-    }
-    gl.get_uniform_location(prog, "TilesetTex") >> tileset_tex_loc;
-
-    // uniform
-    gl.get_uniform_location(prog, "Camera") >> camera_loc;
-
-    const auto [azimuth, elevation, orbit] =
-      geo_coord.update(_ctx.state().frame_duration().value()).get();
-    camera.set_near(0.01F)
-      .set_far(50.F)
-      .set_orbit_min(1.02F)
-      .set_orbit_max(2.2F)
-      .set_fov(degrees_(55))
-      .set_azimuth(azimuth)
-      .set_elevation(elevation)
-      .set_orbit_factor(orbit);
-
-    gl.clear_color(0.1F, 0.1F, 0.1F, 0.0F);
-    gl.enable(GL.depth_test);
-
-    camera.connect_inputs(ec).basic_input_mapping(ec);
+    _camera.connect_inputs(ec).basic_input_mapping(ec);
     ec.connect_inputs()
-      .add_ui_button("Change tile-set", {"GUI", "ChngTilset"})
       .connect_input(
         {"Example", "ChngTilset"},
         make_callable_ref<&example_tiling::change_tileset>(this))
-      .map_inputs()
-      .map_input(
-        {"Example", "ChngTilset"}, {"Keyboard", "T"}, input_setup().trigger())
-      .map_input(
-        {"Example", "ChngTilset"},
-        {"GUI", "ChngTilset"},
-        input_setup().trigger())
-      .switch_input_mapping();
+      .map_inputs();
+
+    const auto& [gl, GL] = _video.gl_api();
+    gl.clear_color(0.1F, 0.1F, 0.1F, 0.0F);
+    gl.enable(GL.depth_test);
 }
 //------------------------------------------------------------------------------
-void example_tiling::on_video_resize() noexcept {
-    const auto& gl = _video.gl_api();
-    gl.viewport[_video.surface_size()];
+void example_tiling::_on_loaded(const loaded_resource_base&) noexcept {
+    if(_prog && _cube) {
+        _prog->apply_input_bindings(_video, _cube);
+        _prog->get_uniform_location(_video, "Camera") >> _camera_loc;
+        _prog->get_uniform_location(_video, "TilesetTex") >> _tileset_tex_loc;
+        _prog->set_uniform(_video, "TilingTex", 0);
+    }
+    reset_timeout();
+}
+//------------------------------------------------------------------------------
+void example_tiling::_on_tex_loaded(
+  const gl_texture_resource::load_info& loaded) noexcept {
+    const auto& GL = _video.gl_api().constants();
+    if(loaded.resource.is(_tiling_tex)) {
+        loaded.parameter_i(GL.texture_min_filter, GL.nearest);
+        loaded.parameter_i(GL.texture_mag_filter, GL.nearest);
+        loaded.parameter_i(GL.texture_wrap_s, GL.repeat);
+        loaded.parameter_i(GL.texture_wrap_t, GL.repeat);
+    } else {
+        loaded.parameter_i(GL.texture_min_filter, GL.linear_mipmap_linear);
+        loaded.parameter_i(GL.texture_mag_filter, GL.linear);
+        loaded.parameter_i(GL.texture_wrap_s, GL.repeat);
+        loaded.parameter_i(GL.texture_wrap_t, GL.repeat);
+        loaded.generate_mipmap();
+    }
+    reset_timeout();
 }
 //------------------------------------------------------------------------------
 void example_tiling::change_tileset(const input& i) noexcept {
@@ -206,60 +162,59 @@ void example_tiling::change_tileset(const input& i) noexcept {
 }
 //------------------------------------------------------------------------------
 void example_tiling::update() noexcept {
-    auto& state = _ctx.state();
+    auto& state = context().state();
     if(state.is_active()) {
-        _is_done.reset();
-    }
-    if(state.user_idle_too_long()) {
-        const auto [azimuth, elevation, orbit] =
-          geo_coord.update(state.frame_duration().value()).get();
-        if(geo_coord.is_done()) {
-            switch(camera_status) {
-                case animation_status::relocate:
-                    geo_coord.set({azimuth, elevation, 0.F}, 2.F);
-                    camera_status = animation_status::zoom_in;
-                    break;
-                case animation_status::zoom_in:
-                    geo_coord.set({azimuth, elevation, 1.F}, 2.F);
-                    camera_status = animation_status::zoom_out;
-                    break;
-                case animation_status::zoom_out:
-                    geo_coord.set(
-                      {turns_(_ctx.random_uniform_01()),
-                       right_angles_(_ctx.random_uniform_11()),
-                       1.F},
-                      3.F);
-                    camera_status = animation_status::relocate;
-                    break;
-            }
-        }
-        camera.mark_changed()
-          .set_azimuth(azimuth)
-          .set_elevation(elevation)
-          .set_orbit_factor(orbit);
+        reset_timeout();
     }
 
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
 
-    gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
-    glapi.set_uniform(
-      prog, tileset_tex_loc, tileset_tex_units[tileset_tex_idx]);
-    glapi.set_uniform(prog, camera_loc, camera.matrix(_video));
+    if(_resources.are_loaded() && _other) {
+        if(state.user_idle_too_long()) {
+            const auto [azimuth, elevation, orbit] =
+              geo_coord.update(state.frame_duration().value()).get();
+            if(geo_coord.is_done()) {
+                switch(camera_status) {
+                    case animation_status::relocate:
+                        geo_coord.set({azimuth, elevation, 0.F}, 2.F);
+                        camera_status = animation_status::zoom_in;
+                        break;
+                    case animation_status::zoom_in:
+                        geo_coord.set({azimuth, elevation, 1.F}, 2.F);
+                        camera_status = animation_status::zoom_out;
+                        break;
+                    case animation_status::zoom_out:
+                        geo_coord.set(
+                          {turns_(context().random_uniform_01()),
+                           right_angles_(context().random_uniform_11()),
+                           1.F},
+                          3.F);
+                        camera_status = animation_status::relocate;
+                        break;
+                }
+            }
+            _camera.mark_changed()
+              .set_azimuth(azimuth)
+              .set_elevation(elevation)
+              .set_orbit_factor(orbit);
+        }
 
-    cube.draw(glapi);
+        gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
+        _prog->set(
+          _video, _tileset_tex_loc, tileset_tex_units[tileset_tex_idx]);
+        _prog->set(_video, _camera_loc, _camera.matrix(_video));
+
+        _cube->draw(glapi);
+    } else {
+        _resources.load();
+    }
 
     _video.commit();
 }
 //------------------------------------------------------------------------------
 void example_tiling::clean_up() noexcept {
-    const auto& gl = _video.gl_api();
-
-    gl.clean_up(tileset_texs);
-    gl.clean_up(std::move(tiling_tex));
-    gl.clean_up(std::move(prog));
-    cube.clean_up(gl);
-
+    _resources.clean_up();
     _video.end();
 }
 //------------------------------------------------------------------------------
@@ -307,8 +262,6 @@ auto example_main(main_ctx& ctx) -> int {
 }
 } // namespace eagine::app
 
-#if EAGINE_APP_MODULE
 auto main(int argc, const char** argv) -> int {
     return eagine::default_main(argc, argv, eagine::app::example_main);
 }
-#endif

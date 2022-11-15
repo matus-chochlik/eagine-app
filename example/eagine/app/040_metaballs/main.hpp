@@ -11,39 +11,25 @@
 
 #include "resources.hpp"
 
-#if EAGINE_APP_MODULE
 import eagine.core;
 import eagine.oglplus;
 import eagine.app;
-#else
-#include <eagine/app/background/icosahedron.hpp>
-#include <eagine/app/camera.hpp>
-#include <eagine/app/interface.hpp>
-#include <eagine/cleanup_group.hpp>
-#include <eagine/oglplus/math/vector.hpp>
-#include <eagine/timeout.hpp>
-#endif
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-class example : public application {
+class example : public timeouting_application {
 public:
     example(execution_context&, video_context&);
 
-    auto is_done() noexcept -> bool final {
-        return _is_done.is_expired();
-    }
-
-    void on_video_resize() noexcept final;
     void update() noexcept final;
     void clean_up() noexcept final;
 
-    auto ctx() noexcept -> auto& {
-        return _ctx;
-    }
-
     auto video() noexcept -> auto& {
         return _video;
+    }
+
+    auto loader() noexcept -> auto& {
+        return context().loader();
     }
 
     auto camera() noexcept -> auto& {
@@ -51,7 +37,7 @@ public:
     }
 
     auto frame_duration() noexcept {
-        return ctx().state().frame_duration().value();
+        return context().state().frame_duration().value();
     }
 
     operator cleanup_group&() noexcept {
@@ -59,17 +45,24 @@ public:
     }
 
 private:
+    void _on_loaded(const gl_program_resource::load_info&) noexcept;
+
+    auto _load_handler() noexcept {
+        return make_callable_ref<&example::_on_loaded>(this);
+    }
+
     cleanup_group _cleanup;
-    execution_context& _ctx;
+    puzzle_progress<4> _load_progress;
     video_context& _video;
     background_icosahedron _bg;
-    timeout _is_done{std::chrono::seconds{60}};
+    volume_domain _volume;
 
-    orbiting_camera _camera;
     metaball_program _mball_prog;
     field_program _field_prog;
     surface_program _srfce_prog;
-    volume_domain _volume;
+    pending_resource_requests _other;
+
+    orbiting_camera _camera;
 };
 
 } // namespace eagine::app

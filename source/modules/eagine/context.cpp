@@ -19,10 +19,12 @@ import eagine.core.utility;
 import eagine.core.main_ctx;
 import eagine.oglplus;
 import eagine.oalplus;
+import eagine.msgbus;
 import :interface;
 import :options;
 import :state;
 import :input;
+import :resource_loader;
 import <map>;
 
 namespace eagine::app {
@@ -198,7 +200,9 @@ export class execution_context
 public:
     execution_context(main_ctx_parent parent) noexcept
       : main_ctx_object("AppExecCtx", parent)
-      , _options{*this} {}
+      , _options{*this}
+      , _registry{*this}
+      , _loader{_registry.emplace<resource_loader>("RsrsLoadr")} {}
 
     /// @brief Returns the application execution result.
     auto result() const noexcept -> int {
@@ -208,6 +212,11 @@ public:
     /// @brief Returns a reference to the launch options.
     auto options() const noexcept -> const launch_options& {
         return _options;
+    }
+
+    /// @brief Returns a reference to the resource loader.
+    auto loader() const noexcept -> resource_loader& {
+        return _loader;
     }
 
     /// @brief Returns a references to a multi-purpose memory buffer.
@@ -262,6 +271,13 @@ public:
         return nullptr;
     }
 
+    /// @brief Returns the main video context.
+    auto main_video() const noexcept -> video_context& {
+        assert(!_video_contexts.empty());
+        assert(_video_contexts.front());
+        return *_video_contexts.front();
+    }
+
     /// @brief Returns the count of created audio contexts.
     auto audio_ctx_count() const noexcept {
         return span_size(_audio_contexts.size());
@@ -274,6 +290,13 @@ public:
             return _audio_contexts[integer(index)].get();
         }
         return nullptr;
+    }
+
+    /// @brief Returns the main audio context.
+    auto main_audio() const noexcept -> audio_context& {
+        assert(!_audio_contexts.empty());
+        assert(_audio_contexts.front());
+        return *_audio_contexts.front();
     }
 
     /// @brief Connect the specified logical input to a callable handler reference.
@@ -289,8 +312,36 @@ public:
     /// @brief Connect generic, reusable application logical input slots.
     auto connect_inputs() -> execution_context&;
 
+    /// @brief Add a mapping of one input signal to an action on another UI input.
+    auto add_ui_feedback(
+      const message_id signal_id,
+      const message_id input_id,
+      input_feedback_trigger,
+      input_feedback_action,
+      std::variant<std::monostate, bool, float> threshold,
+      std::variant<std::monostate, bool, float> constant) noexcept
+      -> execution_context&;
+
     /// @brief Add a UI button with the specified label and id
-    auto add_ui_button(const std::string& label, const message_id id)
+    auto add_ui_button(const message_id id, const string_view label)
+      -> execution_context&;
+
+    /// @brief Add a UI toggle / checkbox with the specified label and id
+    auto add_ui_toggle(const message_id, const string_view label, bool initial)
+      -> execution_context&;
+    auto set_ui_toggle(const message_id, bool value) noexcept
+      -> execution_context&;
+
+    /// @brief Add a UI slider with the specified label and id
+    auto add_ui_slider(
+      const message_id id,
+      const string_view label,
+      float min,
+      float max,
+      float initial) -> execution_context&;
+
+    /// @brief Sets the slider position with the specified id to a value.
+    auto set_ui_slider(const message_id, float value) noexcept
       -> execution_context&;
 
     /// @brief Map a specified logical input to a physical input signal.
@@ -359,14 +410,17 @@ public:
 private:
     int _exec_result{0};
     launch_options _options;
+    msgbus::registry _registry;
     std::shared_ptr<context_state> _state;
     std::unique_ptr<application> _app;
-    bool _keep_running{true};
 
+    resource_loader& _loader;
     std::vector<std::shared_ptr<hmi_provider>> _hmi_providers;
     std::vector<std::shared_ptr<input_provider>> _input_providers;
     std::vector<std::unique_ptr<video_context>> _video_contexts;
     std::vector<std::unique_ptr<audio_context>> _audio_contexts;
+
+    bool _keep_running{true};
 
     auto _setup_providers() noexcept -> bool;
 
@@ -423,6 +477,63 @@ private:
       const input_value<double>& value) noexcept final {
         _forward_input(info, value);
     }
+};
+//------------------------------------------------------------------------------
+/// @brief Common implementation of the application interface.
+export class common_application : public application {
+public:
+    /// @brief Construction specifying the application execution context.
+    common_application(execution_context& ec) noexcept
+      : _ctx{ec} {}
+
+    /// @brief Returns the associated execution context.
+    auto context() const noexcept -> execution_context& {
+        return _ctx;
+    }
+
+    /// @brief Default implementation of the rendering surface resize handler.
+    void on_video_resize() noexcept override {
+        auto video = _ctx.main_video();
+        video.gl_api().viewport[video.surface_size()];
+    }
+
+private:
+    execution_context& _ctx;
+};
+//------------------------------------------------------------------------------
+/// @brief Implementation of the application interface with execution timeout.
+export class timeouting_application : public common_application {
+public:
+    /// @brief Construction specifying the execution context and timeout interval.
+    timeouting_application(
+      execution_context& ec,
+      const timeout::duration_type is_done_time) noexcept
+      : common_application{ec}
+      , _is_done{is_done_time} {}
+
+    /// @brief Resets the is-done timeout.
+    auto reset_timeout() noexcept -> auto& {
+        _is_done.reset();
+        return *this;
+    }
+
+    /// @brief Returns a callable reference to reset_timeout on this object.
+    auto reset_timeout_handler() noexcept {
+        return make_callable_ref<&timeouting_application::_do_reset_timeout>(
+          this);
+    }
+
+    /// @brief Indicates if the timeout specified in the constructor expired.
+    auto is_done() noexcept -> bool final {
+        return _is_done.is_expired();
+    }
+
+private:
+    void _do_reset_timeout(const input&) noexcept {
+        _is_done.reset();
+    }
+
+    timeout _is_done{std::chrono::seconds{30}};
 };
 //------------------------------------------------------------------------------
 

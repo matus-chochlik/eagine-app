@@ -30,7 +30,7 @@ public:
     auto init(
       video_context& vc,
       const oglplus::framebuffer_configuration& config,
-      const span<const oglplus::gl_types::sizei_type> tex_units)
+      const span<const oglplus::texture_unit::value_type> tex_units)
       -> offscreen_framebuffer& {
         const auto [width, height] = vc.surface_size();
         base::init(vc.gl_api(), width, height, config, tex_units);
@@ -40,7 +40,7 @@ public:
     auto resize(
       video_context& vc,
       const oglplus::framebuffer_configuration& config,
-      const span<const oglplus::gl_types::sizei_type> tex_units)
+      const span<const oglplus::gl_types::enum_type> tex_units)
       -> offscreen_framebuffer& {
         const auto [width, height] = vc.surface_size();
         base::resize(vc.gl_api(), width, height, config, tex_units);

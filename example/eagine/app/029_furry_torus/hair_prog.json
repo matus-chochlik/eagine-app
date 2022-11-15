@@ -1,0 +1,10 @@
+{"inputs":
+{"Position": {"attrib":"position"}
+,"Normal": {"attrib":"normal"}
+,"TexCoord": {"attrib":"wrap_coord"}
+,"Occlusion": {"attrib":"occlusion"}}
+,"shaders":
+[{"url":"glsl:///HairVert","type":"vertex"}
+,{"url":"glsl:///HairGeom","type":"geometry"}
+,{"url":"glsl:///HairFrag","type":"fragment"}]
+}

@@ -1,0 +1,11 @@
+{"levels":1
+,"width":2048
+,"height":2048
+,"channels":1
+,"data_type":"unsigned_byte"
+,"format":"red"
+,"iformat":"r8"
+,"label":"wheelcart ambient occlusion"
+,"images":
+[{"url":"eagitexi:///CartAOImg"}]
+}

@@ -50,6 +50,9 @@ class ExportMeshArgParser(argparse.ArgumentParser):
                 "pivot",
                 "pivot_pivot",
                 "vertex_pivot",
+                "opposite_length",
+                "edge_length",
+                "face_area",
                 "face_coord",
                 "wrap_coord",
                 "color",
@@ -114,6 +117,20 @@ class ExportMeshArgParser(argparse.ArgumentParser):
         )
 
         self.add_argument(
+            '--vertex-pivot-mesh', '-mvp',
+            dest="vertex_pivot_meshes",
+            action="append",
+            default=[]
+        )
+
+        self.add_argument(
+            '--pivot-pivot-mesh', '-mpp',
+            dest="pivot_pivot_meshes",
+            action="append",
+            default=[]
+        )
+
+        self.add_argument(
             '--precision', '-P',
             dest="precision",
             type=self._positive_int,
@@ -170,6 +187,20 @@ class ExportMeshArgParser(argparse.ArgumentParser):
         )
 
         self.add_argument(
+            '--patches', '-p',
+            dest="patches",
+            action="store_true",
+            default=False
+        )
+
+        self.add_argument(
+            '--keep-degenerate', '-D',
+            dest="keep_degenerate",
+            action="store_true",
+            default=False
+        )
+
+        self.add_argument(
             '--no-alpha', '-A',
             dest="export_alpha",
             action="store_false",
@@ -178,6 +209,16 @@ class ExportMeshArgParser(argparse.ArgumentParser):
 
     # --------------------------------------------------------------------------
     def process_parsed_options(self, options):
+        options.all_meshes = []
+        for i in range(len(options.meshes)):
+            def _lget(l, i):
+                return l[i] if i < len(l) else None
+            options.all_meshes.append((
+                options.meshes[i],
+                _lget(options.vertex_pivot_meshes, i),
+                _lget(options.pivot_pivot_meshes, i)))
+
+
         if options.output_path:
             options.prefix = os.path.dirname(options.output_path)
             if not os.path.isdir(options.prefix):
@@ -253,16 +294,24 @@ def fix_color(options, c):
         return (f(c[0]), f(c[1]), f(c[2]))
     return (f(c[0]), f(c[1]), f(c[2]), f(c[3]))
 # ------------------------------------------------------------------------------
+def vdiff(u, v):
+    return tuple(uc-vc for uc, vc in zip(u, v))
+# ------------------------------------------------------------------------------
+def dotp(u, v):
+    return sum(tuple(uc*vc for uc, vc in zip(u, v)))
+# ------------------------------------------------------------------------------
+def crossp(u, v):
+    return (u[1]*v[2]-u[2]*v[1], u[2]*v[0]-u[0]*v[2], u[0]*v[1]-u[1]*v[0])
+# ------------------------------------------------------------------------------
+def vlen(v):
+    return math.sqrt(dotp(v, v))
+# ------------------------------------------------------------------------------
+def triangle_arms(a, b, c):
+    return (vdiff(b, a), vdiff(c, a))
+# ------------------------------------------------------------------------------
 def degenerate_triangle(a, b, c):
-    _diff = lambda u, v: tuple(uc-vc for uc, vc in zip(u, v))
-    _dot = lambda u, v: sum(tuple(uc*vc for uc, vc in zip(u, v)))
-    _len = lambda u: math.sqrt(_dot(u, u))
-    _cross = lambda u, v: (u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0])
-
-    ab = _diff(b, a)
-    ac = _diff(c, a)
-
-    return _len(_cross(ab, ac)) <= max(_len(ab), _len(ac))*0.000001
+    ab, ac = triangle_arms(a, b, c)
+    return vlen(crossp(ab, ac)) <= max(vlen(ab), vlen(ac))*0.000001
 # ------------------------------------------------------------------------------
 def get_diffuse_color(mat):
     # TODO Material.use_nodes / Material.node_tree
@@ -272,9 +321,25 @@ def get_specular_color(mat):
     # TODO Material.use_nodes / Material.node_tree
     return mat.specular_color
 # ------------------------------------------------------------------------------
-def has_same_values(options, obj, mesh, lil, fl, ll, vl, lir, fr, lr, vr):
+def get_edge_length(v1, v2, tri):
+    v = (tri[v2][i]-tri[v1][i] for i in range(3))
+    return math.sqrt(sum(e*e for e in v))
+# ------------------------------------------------------------------------------
+def get_face_area(a, b, c):
+    ab, ac = triangle_arms(a, b, c)
+    return vlen(crossp(ab, ac)) * 0.5
+# ------------------------------------------------------------------------------
+def has_same_values(options, objs, meshes, linfo, lil, fl, ll, vl, rinfo, lir, fr, lr, vr):
+    obj = objs[0]
+    mesh = meshes[0]
     if vl.co != vr.co:
         return False
+    if options.exp_vertex_pivot:
+        if meshes[1].vertices[ll.vertex_index].co != meshes[1].vertices[lr.vertex_index].co:
+            return False
+    if options.exp_pivot_pivot:
+        if meshes[2].vertices[ll.vertex_index].co != meshes[2].vertices[lr.vertex_index].co:
+            return False
     if options.exp_vert_normal:
         if vl.normal != vr.normal:
             return False
@@ -294,6 +359,17 @@ def has_same_values(options, obj, mesh, lil, fl, ll, vl, lir, fr, lr, vr):
         for vcs in mesh.vertex_colors:
             if vcs.data[lil].color != vcs.data[lir].color:
                 return False
+
+    if options.exp_opposite_length:
+        if linfo.get("oppo_length", -1) != rinfo.get("oppo_length", -2):
+            return False
+    if options.exp_edge_length:
+        if linfo.get("edge_length", -1) != rinfo.get("edge_length", -2):
+            return False
+    if options.exp_face_area:
+        if linfo.get("face_area", -1) != rinfo.get("face_area", -2):
+            return False
+
     if options.exp_polygon_id:
         if fl.index != fr.index:
             return False
@@ -314,17 +390,11 @@ def has_same_values(options, obj, mesh, lil, fl, ll, vl, lir, fr, lr, vr):
         for uvs in mesh.uv_layers:
             if uvs.data[lil].uv != uvs.data[lir].uv:
                 return False
-    if options.exp_weight or options.exp_occlusion:
-        for grp in obj.vertex_groups:
-            try:
-                wl = grp.weight(vl.index)
-            except RuntimeError:
-                wl = 0.0
-            try:
-                wr = grp.weight(vr.index)
-            except RuntimeError:
-                wr = 0.0
-            if wl != wr:
+    if options.exp_weight:
+        if linfo.get("groups", {"left":False}) != rinfo.get("groups", {"right":True}):
+                return False
+    if options.exp_occlusion:
+        if linfo.get("occls", {"left":False}) != rinfo.get("occls", {"right":True}):
                 return False
 
     return True
@@ -353,16 +423,24 @@ def data_type_from(l):
     return "float"
 
 # ------------------------------------------------------------------------------
-def export_single(options, bdata, name, obj, mesh):
+def export_single(options, bdata, names, objs, meshes):
+    obj = objs[0]
+    mesh = meshes[0]
     if options.exp_normal or options.exp_tangential or options.exp_bitangential:
         mesh.calc_tangents() # TODO for each uv-map?
 
     result = {}
-    result["name"] = name
+    result["name"] = names[0]
     result["position"] = []
 
     if options.exp_pivot:
         result["pivot"] = []
+
+    if options.exp_vertex_pivot:
+        result["vertex_pivot"] = []
+
+    if options.exp_pivot_pivot:
+        result["pivot_pivot"] = []
 
     if options.exp_normal or options.exp_vert_normal or options.exp_face_normal:
         result["normal"] = []
@@ -381,6 +459,15 @@ def export_single(options, bdata, name, obj, mesh):
     if options.exp_wrap_coord:
         result["wrap_coord"] = []
 
+    if options.exp_opposite_length:
+        result["opposite_length"] = []
+
+    if options.exp_edge_length:
+        result["edge_length"] = []
+
+    if options.exp_face_area:
+        result["face_area"] = []
+
     if options.exp_weight:
         result["weight"] = []
 
@@ -394,6 +481,7 @@ def export_single(options, bdata, name, obj, mesh):
         result["material_id"] = []
 
     emitted = {}
+    emitted_info = {}
     for meshvert in mesh.vertices:
         emitted[meshvert.index] = set()
 
@@ -401,11 +489,16 @@ def export_single(options, bdata, name, obj, mesh):
     indices = []
     positions = []
     pivots = []
+    vertex_pivots = []
+    pivot_pivots = []
     vert_normals = []
     face_normals = []
     normals = []
     tangentials = []
     bitangentials = []
+    oppo_lengths = []
+    edge_lengths = []
+    face_areas = []
     polygon_ids = []
     material_ids = []
 
@@ -444,30 +537,121 @@ def export_single(options, bdata, name, obj, mesh):
     op = options.occlude_precision
 
     for meshface in mesh.polygons:
-        s = meshface.loop_start
+        start_index = meshface.loop_start
         assert meshface.loop_total == 3
 
-        tri_pos = (mesh.vertices[mesh.loops[s+i].vertex_index].co for i in range(3))
+        tri_pos = tuple(
+            mesh.vertices[mesh.loops[start_index+i].vertex_index].co for i in range(3))
     
-        if degenerate_triangle(*tri_pos):
-            continue
+        if not options.keep_degenerate:
+            if degenerate_triangle(*tri_pos):
+                continue
 
         fn = [fixnum(x, p) for x in fixvec(meshface.normal)]
-        for loop_index in range(s, s + 3):
+        for vert_index in range(3):
+            loop_index = start_index + vert_index
             meshloop = mesh.loops[loop_index]
             meshvert = mesh.vertices[meshloop.vertex_index]
+
+            new_vert_key = (meshface.index, meshloop.index, vertex_index)
+
+            def _vert_info():
+                try:
+                    return emitted_info[new_vert_key]
+                except KeyError:
+                    emitted_info[new_vert_key] = {}
+                    return emitted_info[new_vert_key]
+
+            def _vert_subinfo(name):
+                vert_info = _vert_info()
+                try:
+                    return vert_info[name]
+                except KeyError:
+                    vert_info[name] = {}
+                    return vert_info[name]
+
+            def _vert_groups():
+                return _vert_subinfo("groups")
+
+            def _set_vert_group(name, value):
+                _vert_groups()[name] = value
+
+            def _vert_occls():
+                return vert_subinfo("occls")
+
+            def _set_vert_occls(name, value):
+                _vert_occls()[name] = value
+
+            if options.exp_opposite_length:
+                _vert_info()["oppo_length"] =\
+                    fixnum(get_edge_length(
+                        (vert_index + 1) % 3,
+                        (vert_index + 2) % 3,
+                        tri_pos),
+                        p)
+            if options.exp_edge_length:
+                _vert_info()["edge_length"] = (
+                    fixnum(get_edge_length(
+                        (vert_index + 2) % 3,
+                        (vert_index + 0) % 3,
+                        tri_pos),
+                        p),
+                    fixnum(get_edge_length(
+                        (vert_index + 0) % 3,
+                        (vert_index + 1) % 3,
+                        tri_pos),
+                        p),
+                    fixnum(get_edge_length(
+                        (vert_index + 1) % 3,
+                        (vert_index + 2) % 3,
+                        tri_pos),
+                        p))
+            if options.exp_face_area:
+                _vert_info()["face_area"] =\
+                    fixnum(get_face_area(*tri_pos), p)
+            if options.exp_weight:
+                for grp in obj.vertex_groups:
+                    try:
+                        try:
+                            w = grp.weight(meshvert.index)
+                            _set_vert_group(
+                                grp.name,
+                                fixcomp(options.weight_type, w, wp))
+                        except RuntimeError:
+                            _set_vert_group(
+                                grp.name,
+                                fixcomp(options.weight_type, 0, wp))
+                    except KeyError:
+                        pass
+            if options.exp_occlusion:
+                for grp in obj.vertex_groups:
+                    try:
+                        try:
+                            w = grp.weight(meshvert.index)
+                            _set_vert_occls(
+                                grp.name,
+                                fixcomp(options.occlude_type, w, wp))
+                        except RuntimeError:
+                            _set_vert_occls(
+                                grp.name,
+                                fixcomp(options.occlude_type, 0, wp))
+                    except KeyError:
+                        pass
 
             emitted_vert = emitted[meshvert.index]
             reused_vertex = False
             for old_face_index, old_loop_index, emit_index in emitted_vert:
+                old_vert_key = (old_face_index, old_loop_index, emit_index)
                 if has_same_values(
                     options,
-                    obj,
-                    mesh,
+                    objs,
+                    meshes,
+                    emitted_info.get(old_vert_key, {}),
                     old_loop_index,
                     mesh.polygons[old_face_index],
                     mesh.loops[old_loop_index],
                     meshvert,
+                    emitted_info.get(new_vert_key, {}),
                     loop_index,
                     meshface,
                     meshloop,
@@ -480,6 +664,12 @@ def export_single(options, bdata, name, obj, mesh):
                 positions += [fixnum(x, p) for x in fixvec(meshvert.co)]
                 if options.exp_pivot:
                     pivots += [fixnum(x, p) for x in fixvec(obj.location)]
+                if options.exp_vertex_pivot:
+                    vpvert = meshes[1].vertices[meshloop.vertex_index]
+                    vertex_pivots += [fixnum(x, p) for x in fixvec(vpvert.co)]
+                if options.exp_pivot_pivot:
+                    ppvert = meshes[2].vertices[meshloop.vertex_index]
+                    pivot_pivots += [fixnum(x, p) for x in fixvec(ppvert.co)]
                 if options.exp_vert_normal:
                     vert_normals += [fixnum(x, p) for x in fixvec(meshvert.normal)]
                 if options.exp_face_normal:
@@ -519,36 +709,23 @@ def export_single(options, bdata, name, obj, mesh):
                             coords[uvs.name] += [fixnum(c, p) for c in uv]
                         except KeyError:
                             pass
+                if options.exp_opposite_length:
+                    oppo_lengths.append(_vert_info()["oppo_length"])
+                if options.exp_edge_length:
+                    l0, l1, l2 = _vert_info()["edge_length"]
+                    oppo_lengths.append(fixnum(l0, p))
+                    edge_lengths.append(fixnum(l1, p))
+                    edge_lengths.append(fixnum(l2, p))
+                if options.exp_face_area:
+                    face_areas.append(_vert_info()["face_area"])
                 if options.exp_weight:
-                    for grp in obj.vertex_groups:
-                        try:
-                            try:
-                                w = grp.weight(meshvert.index)
-                                groups[grp.name].append(
-                                    fixcomp(options.weight_type, w, wp)
-                                )
-                            except RuntimeError:
-                                groups[grp.name].append(
-                                    fixcomp(options.weight_type, 0, wp)
-                                )
-                        except KeyError:
-                            pass
+                    for name, value in _vert_groups().items():
+                        groups[name].append(value)
                 if options.exp_occlusion:
-                    for grp in obj.vertex_groups:
-                        try:
-                            try:
-                                w = grp.weight(meshvert.index)
-                                occls[grp.name].append(
-                                    fixcomp(options.occlude_type, w, op)
-                                )
-                            except RuntimeError:
-                                occls[grp.name].append(
-                                    fixcomp(options.occlude_type, 0, op)
-                                )
-                        except KeyError:
-                            pass
+                    for name, value in _vert_occls().items():
+                        occls[name].append(value)
 
-                emitted_vert.add((meshface.index, meshloop.index, vertex_index))
+                emitted_vert.add(new_vert_key)
                 indices.append(vertex_index)
 
                 vertex_index += 1
@@ -560,6 +737,16 @@ def export_single(options, bdata, name, obj, mesh):
     if options.exp_pivot:
         result["pivot"].append({
             "data": pivots
+        })
+
+    if options.exp_vertex_pivot:
+        result["vertex_pivot"].append({
+            "data": vertex_pivots
+        })
+
+    if options.exp_pivot_pivot:
+        result["pivot_pivot"].append({
+            "data": pivot_pivots
         })
 
     if options.exp_normal:
@@ -587,6 +774,24 @@ def export_single(options, bdata, name, obj, mesh):
     if options.exp_bitangential:
         result["bitangential"].append({
             "data": bitangentials
+        })
+
+    if options.exp_opposite_length:
+        result["opposite_length"].append({
+            "values_per_vertex":1,
+            "data":oppo_lengths
+        })
+
+    if options.exp_edge_length:
+        result["edge_length"].append({
+            "values_per_vertex":3,
+            "data":edge_lengths
+        })
+
+    if options.exp_face_area:
+        result["face_area"].append({
+            "values_per_vertex":1,
+            "data":face_areas 
         })
 
     if options.exp_color or\
@@ -642,10 +847,11 @@ def export_single(options, bdata, name, obj, mesh):
 
     index_type = "unsigned_16" if vertex_index < 2**16 else "unsigned_32"
     result["vertex_count"] = vertex_index
+    result["index_count"] = len(indices)
     result["index_type"] = index_type
     result["indices"] = indices
     result["instructions"] = [{
-        "mode": "triangles",
+        "mode": "patches" if options.patches else "triangles",
         "first": 0,
         "count": len(indices),
         "index_type": index_type,
@@ -653,19 +859,95 @@ def export_single(options, bdata, name, obj, mesh):
     }]
     return result
 # ------------------------------------------------------------------------------
+def do_export_one(options, result):
+    def _dump(item):
+        json.dump(item, options.output, separators=(',', ':'))
+
+    options.output.write('{')
+    options.output.write('"name":')
+    _dump(result["name"]);
+    result.pop("name")
+    for name in [
+        "vertex_count",
+        "index_count",
+        "index_type",
+        "indices",
+        "instructions"]:
+        options.output.write('\n,')
+        options.output.write('"%s":' % name)
+        _dump(result[name]);
+        result.pop(name)
+
+    for name, item in result.items():
+        options.output.write('\n,')
+        options.output.write('"%s":' % name)
+        _dump(item);
+
+    options.output.write('\n}')
+# ------------------------------------------------------------------------------
+def fetch_obj_mesh(options, bpy_data, name):
+    obj = bpy_data.objects[name]
+    return obj, triangulate(options, obj)
+# ------------------------------------------------------------------------------
+def fetch_meshes(options, bpy_data):
+    def _are_meshes_consistent(m1, m2):
+        if len(m1.vertices) != len(m2.vertices):
+            return False
+        if len(m1.polygons) != len(m2.polygons):
+            return False
+        # TODO more checks  
+        return True
+
+    for name_po, name_vp, name_pp in options.all_meshes:
+        # positions
+        obj_po, msh_po = fetch_obj_mesh(options, bpy_data, name_po)
+
+        # vertex pivots
+        if name_vp == name_po:
+            obj_vp, msh_vp = obj_po, msh_po
+        else:
+            if name_vp is None:
+                name_vp = name_po
+            obj_vp, msh_vp = fetch_obj_mesh(options, bpy_data, name_vp)
+            assert _are_meshes_consistent(msh_po, msh_vp)
+
+        # pivot pivots
+        if name_pp == name_vp:
+            obj_pp, msh_pp = obj_vp, msh_vp
+        else:
+            if name_pp is None:
+                name_pp = name_vp
+            obj_pp, msh_pp = fetch_obj_mesh(options, bpy_data, name_pp)
+            assert _are_meshes_consistent(msh_vp, msh_pp)
+
+        yield (
+            (name_po, name_vp, name_pp),
+            (obj_po, obj_vp, obj_pp),
+            (msh_po, msh_vp, msh_pp))
+
+# ------------------------------------------------------------------------------
 def do_export(options):
     try:
         import bpy
         result = []
 
-        for name, obj in [(n, bpy.data.objects[n]) for n in options.meshes]:
-            mesh = triangulate(options, obj)
-            result.append(export_single(options, bpy.data, name, obj, mesh))
-            del mesh
+        for names, objs, meshes in fetch_meshes(options, bpy.data):
+            result.append(export_single(options, bpy.data, names, objs, meshes))
+            for mesh in meshes:
+                del mesh
 
         if len(result) == 1:
-            result = result[0]
-        json.dump(result, options.output, separators=(',', ':'))
+            do_export_one(options, result[0])
+        else:
+            options.output.write("[\n")
+            first = True
+            for part in result:
+                if first:
+                    First = false
+                else:
+                    options.output.write(",\n")
+                do_export_one(options, part)
+            options.output.write("]")
     except ModuleNotFoundError:
         sys.stderr.write("must be run from blender!\n")
 # ------------------------------------------------------------------------------

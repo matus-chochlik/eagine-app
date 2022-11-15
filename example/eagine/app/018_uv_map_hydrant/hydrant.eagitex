@@ -1,0 +1,14 @@
+{"levels":1
+,"width":2048
+,"height":2048
+,"depth":3
+,"channels":3
+,"data_type":"unsigned_byte"
+,"format":"rgb"
+,"iformat":"rgb8"
+,"label":"hydrant"
+,"images":
+[{"url":"eagires:///HydrntColr","z_offs":0}
+,{"url":"eagires:///HydrntNorm","z_offs":1}
+,{"url":"eagires:///HydrntLght","z_offs":2}]
+}

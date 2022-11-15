@@ -6,32 +6,14 @@
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
 
-#if EAGINE_APP_MODULE
 import eagine.core;
 import eagine.shapes;
 import eagine.oglplus;
 import eagine.app;
-#else
-#include <eagine/oglplus/gl.hpp>
-#include <eagine/oglplus/gl_api.hpp>
-
-#include <eagine/app/camera.hpp>
-#include <eagine/app/main.hpp>
-#include <eagine/app_config.hpp>
-#include <eagine/embed.hpp>
-#include <eagine/oglplus/glsl/string_ref.hpp>
-#include <eagine/oglplus/math/matrix.hpp>
-#include <eagine/oglplus/math/primitives.hpp>
-#include <eagine/oglplus/math/vector.hpp>
-#include <eagine/oglplus/shapes/generator.hpp>
-#include <eagine/shapes/value_tree.hpp>
-#include <eagine/timeout.hpp>
-#include <eagine/value_tree/json.hpp>
-#endif
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-class example_occlusion : public application {
+class example_occlusion : public timeouting_application {
 public:
     example_occlusion(
       execution_context&,
@@ -39,18 +21,11 @@ public:
       string_view shape_file_path,
       string_view color_variant_name);
 
-    auto is_done() noexcept -> bool final {
-        return _is_done.is_expired();
-    }
-
-    void on_video_resize() noexcept final;
     void update() noexcept final;
     void clean_up() noexcept final;
 
 private:
-    execution_context& _ctx;
     video_context& _video;
-    timeout _is_done{std::chrono::seconds{30}};
 
     std::vector<oglplus::shape_draw_operation> _ops;
     oglplus::owned_vertex_array_name vao;
@@ -73,7 +48,7 @@ example_occlusion::example_occlusion(
   video_context& vc,
   string_view shape_file_path,
   string_view color_variant_name)
-  : _ctx{ec}
+  : timeouting_application{ec, std::chrono::seconds{30}}
   , _video{vc} {
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
@@ -126,7 +101,7 @@ example_occlusion::example_occlusion(
       positions,
       position_loc,
       eagine::shapes::vertex_attrib_kind::position,
-      _ctx.buffer());
+      context().buffer());
     gl.bind_attrib_location(prog, position_loc, "Position");
 
     // colors
@@ -139,7 +114,7 @@ example_occlusion::example_occlusion(
       color_loc,
       shape.find_variant_or(
         eagine::shapes::vertex_attrib_kind::color, color_variant_name, 0),
-      _ctx.buffer());
+      context().buffer());
     gl.bind_attrib_location(prog, color_loc, "Color");
 
     // normals
@@ -151,7 +126,7 @@ example_occlusion::example_occlusion(
       normals,
       normal_loc,
       eagine::shapes::vertex_attrib_kind::normal,
-      _ctx.buffer());
+      context().buffer());
     gl.bind_attrib_location(prog, normal_loc, "Normal");
 
     // occlusion
@@ -164,7 +139,7 @@ example_occlusion::example_occlusion(
       occlusion_loc,
       shape.find_variant_or(
         eagine::shapes::vertex_attrib_kind::occlusion, "AO", 0),
-      _ctx.buffer());
+      context().buffer());
     gl.bind_attrib_location(prog, occlusion_loc, "Occlusion");
 
     // roughness
@@ -177,12 +152,12 @@ example_occlusion::example_occlusion(
       roughness_loc,
       shape.find_variant_or(
         eagine::shapes::vertex_attrib_kind::weight, "Roughness", 0),
-      _ctx.buffer());
+      context().buffer());
     gl.bind_attrib_location(prog, roughness_loc, "Roughness");
 
     // indices
     gl.gen_buffers() >> indices;
-    shape.index_setup(glapi, indices, _ctx.buffer());
+    shape.index_setup(glapi, indices, context().buffer());
 
     // camera
     const auto bs = shape.bounding_sphere();
@@ -190,9 +165,9 @@ example_occlusion::example_occlusion(
     gl.get_uniform_location(prog, "Camera") >> camera_loc;
     camera.set_target(bs.center())
       .set_near(sr * 0.1F)
-      .set_far(sr * 5.0F)
-      .set_orbit_min(sr * 1.2F)
-      .set_orbit_max(sr * 2.4F)
+      .set_far(sr * 10.0F)
+      .set_orbit_min(sr * 2.0F)
+      .set_orbit_max(sr * 4.0F)
       .set_fov(degrees_(75.F));
 
     gl.clear_color(0.45F, 0.45F, 0.45F, 1.0F);
@@ -204,15 +179,10 @@ example_occlusion::example_occlusion(
     ec.setup_inputs().switch_input_mapping();
 }
 //------------------------------------------------------------------------------
-void example_occlusion::on_video_resize() noexcept {
-    const auto& gl = _video.gl_api();
-    gl.viewport[_video.surface_size()];
-}
-//------------------------------------------------------------------------------
 void example_occlusion::update() noexcept {
-    auto& state = _ctx.state();
+    auto& state = context().state();
     if(state.is_active()) {
-        _is_done.reset();
+        reset_timeout();
     }
     if(state.user_idle_too_long()) {
         camera.idle_update(state);
@@ -296,8 +266,6 @@ auto example_main(main_ctx& ctx) -> int {
 }
 } // namespace eagine::app
 
-#if EAGINE_APP_MODULE
 auto main(int argc, const char** argv) -> int {
     return eagine::default_main(argc, argv, eagine::app::example_main);
 }
-#endif

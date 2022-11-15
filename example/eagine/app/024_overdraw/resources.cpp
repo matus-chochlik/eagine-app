@@ -9,85 +9,60 @@
 #include "resources.hpp"
 #include "main.hpp"
 
-#if !EAGINE_APP_MODULE
-#include <eagine/app/camera.hpp>
-#include <eagine/app/context.hpp>
-#include <eagine/embed.hpp>
-#include <eagine/oglplus/math/coordinates.hpp>
-#include <eagine/oglplus/shapes/generator.hpp>
-#include <eagine/shapes/cube.hpp>
-#include <eagine/shapes/screen.hpp>
-#endif
-
 namespace eagine::app {
 //------------------------------------------------------------------------------
 // draw program
 //------------------------------------------------------------------------------
-void draw_program::init(example& e) {
-    const auto& gl = e.video().gl_api();
-
-    gl.create_program() >> _prog;
-    gl.delete_program.later_by(e.cleanup(), _prog);
-
-    const auto prog_src{embed<"DrawProg">("overdraw_draw.oglpprog")};
-    gl.build_program(_prog, prog_src.unpack(e.ctx()));
-    gl.use_program(_prog);
-
-    gl.get_uniform_location(_prog, "Camera") >> _camera_loc;
+draw_program::draw_program(example& e)
+  : gl_program_resource{url{"json:///DrawProg"}, e.context()} {
+    loaded.connect(make_callable_ref<&draw_program::_on_loaded>(this));
+}
+//------------------------------------------------------------------------------
+void draw_program::_on_loaded(
+  const gl_program_resource::load_info& info) noexcept {
+    info.get_uniform_location("Camera") >> _camera_loc;
 }
 //------------------------------------------------------------------------------
 void draw_program::set_projection(example& e) {
     e.video().gl_api().set_uniform(
-      _prog, _camera_loc, e.camera().matrix(e.video()));
+      *this, _camera_loc, e.camera().matrix(e.video()));
 }
 //------------------------------------------------------------------------------
 void draw_program::bind_position_location(
   example& e,
   oglplus::vertex_attrib_location loc) {
-    e.video().gl_api().bind_attrib_location(_prog, loc, "Position");
-}
-//------------------------------------------------------------------------------
-void draw_program::use(example& e) {
-    e.video().gl_api().use_program(_prog);
+    e.video().gl_api().bind_attrib_location(*this, loc, "Position");
 }
 //------------------------------------------------------------------------------
 // screen program
 //------------------------------------------------------------------------------
-void screen_program::init(example& e) {
-    const auto& gl = e.video().gl_api();
-
-    gl.create_program() >> _prog;
-    gl.delete_program.later_by(e.cleanup(), _prog);
-
-    const auto prog_src{embed<"ScreenProg">("overdraw_screen.oglpprog")};
-    gl.build_program(_prog, prog_src.unpack(e.ctx()));
-    gl.use_program(_prog);
-
-    gl.get_uniform_location(_prog, "ScreenSize") >> _screen_size_loc;
-    gl.get_uniform_location(_prog, "DrawTex") >> _draw_tex_loc;
-    gl.set_uniform(_prog, _draw_tex_loc, 0);
+screen_program::screen_program(example& e)
+  : gl_program_resource{url{"json:///ScreenProg"}, e.context()} {
+    loaded.connect(make_callable_ref<&screen_program::_on_loaded>(this));
+}
+//------------------------------------------------------------------------------
+void screen_program::_on_loaded(
+  const gl_program_resource::load_info& info) noexcept {
+    info.get_uniform_location("ScreenSize") >> _screen_size_loc;
+    info.set_uniform("DrawTex", 0);
 }
 //------------------------------------------------------------------------------
 void screen_program::bind_position_location(
   example& e,
   oglplus::vertex_attrib_location loc) {
-    e.video().gl_api().bind_attrib_location(_prog, loc, "Position");
+    e.video().gl_api().bind_attrib_location(*this, loc, "Position");
 }
 //------------------------------------------------------------------------------
 void screen_program::bind_tex_coord_location(
   example& e,
   oglplus::vertex_attrib_location loc) {
-    e.video().gl_api().bind_attrib_location(_prog, loc, "TexCoord");
+    e.video().gl_api().bind_attrib_location(*this, loc, "TexCoord");
 }
 //------------------------------------------------------------------------------
 void screen_program::set_screen_size(example& e) {
     const auto [w, h] = e.video().surface_size();
     e.video().gl_api().set_uniform(
-      _prog, _screen_size_loc, oglplus::vec2(w, h));
-}
-//------------------------------------------------------------------------------
-void screen_program::use(example& e) {
-    e.video().gl_api().use_program(_prog);
+      *this, _screen_size_loc, oglplus::vec2(w, h));
 }
 //------------------------------------------------------------------------------
 // shape geometry
@@ -116,12 +91,12 @@ void shape_geometry::init(example& e) {
       _positions,
       position_loc(),
       eagine::shapes::vertex_attrib_kind::position,
-      e.ctx().buffer());
+      e.context().buffer());
 
     // indices
     gl.gen_buffers() >> _indices;
     gl.delete_buffers.later_by(e.cleanup(), _indices);
-    shape.index_setup(glapi, _indices, e.ctx().buffer());
+    shape.index_setup(glapi, _indices, e.context().buffer());
 
     // offsets
     const float d = 1.414F;
@@ -189,7 +164,7 @@ void screen_geometry::init(example& e) {
       _positions,
       position_loc(),
       eagine::shapes::vertex_attrib_kind::position,
-      e.ctx().buffer());
+      e.context().buffer());
 
     // coords
     gl.gen_buffers() >> _tex_coords;
@@ -200,7 +175,7 @@ void screen_geometry::init(example& e) {
       _tex_coords,
       tex_coord_loc(),
       eagine::shapes::vertex_attrib_kind::wrap_coord,
-      e.ctx().buffer());
+      e.context().buffer());
 }
 //------------------------------------------------------------------------------
 void screen_geometry::draw(example& e) {

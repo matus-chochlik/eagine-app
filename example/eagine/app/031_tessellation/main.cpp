@@ -6,98 +6,91 @@
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
 
-#if EAGINE_APP_MODULE
 import eagine.core;
 import eagine.oglplus;
 import eagine.app;
-#else
-#include <eagine/oglplus/gl.hpp>
-#include <eagine/oglplus/gl_api.hpp>
-
-#include <eagine/app/background/icosahedron.hpp>
-#include <eagine/app/camera.hpp>
-#include <eagine/app/main.hpp>
-#include <eagine/oglplus/math/matrix.hpp>
-#include <eagine/oglplus/math/vector.hpp>
-#include <eagine/timeout.hpp>
-#endif
 
 #include "resources.hpp"
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-class example_sphere : public application {
+class example_sphere : public timeouting_application {
 public:
     example_sphere(execution_context&, video_context&);
 
-    auto is_done() noexcept -> bool final {
-        return _is_done.is_expired();
-    }
-
-    void on_video_resize() noexcept final;
     void update() noexcept final;
+    void clean_up() noexcept final;
 
 private:
-    execution_context& _ctx;
+    void _on_prog_loaded(const gl_program_resource::load_info&) noexcept;
+
     video_context& _video;
     background_icosahedron _bg;
-    timeout _is_done{std::chrono::seconds{30}};
 
-    orbiting_camera camera;
-    sphere_program prog;
-    icosahedron_geometry shape;
+    sphere_program _prog;
+    icosahedron_geometry _shape;
+
+    orbiting_camera _camera;
 };
 //------------------------------------------------------------------------------
 example_sphere::example_sphere(execution_context& ec, video_context& vc)
-  : _ctx{ec}
+  : timeouting_application{ec, std::chrono::seconds{30}}
   , _video{vc}
-  , _bg{_video, {0.0F, 0.0F, 0.0F, 1.F}, {0.25F, 0.25F, 0.25F, 0.0F}, 1.F} {
+  , _bg{_video, {0.0F, 0.0F, 0.0F, 1.F}, {0.25F, 0.25F, 0.25F, 0.0F}, 1.F}
+  , _prog{ec} {
+    _prog.loaded.connect(
+      make_callable_ref<&example_sphere::_on_prog_loaded>(this));
 
-    prog.init(vc);
-    shape.init(vc);
+    _shape.init(vc);
 
-    prog.bind_position_location(vc, shape.position_loc());
-    prog.bind_offsets_block(vc, shape.offsets_binding());
-
-    camera.set_near(0.1F)
+    _camera.set_near(0.1F)
       .set_far(100.F)
       .set_orbit_min(13.0F)
       .set_orbit_max(24.0F)
       .set_fov(degrees_(70.F));
-    prog.set_projection(vc, camera);
 
-    camera.connect_inputs(ec).basic_input_mapping(ec);
+    _camera.connect_inputs(ec).basic_input_mapping(ec);
     ec.setup_inputs().switch_input_mapping();
 }
 //------------------------------------------------------------------------------
-void example_sphere::on_video_resize() noexcept {
-    const auto& gl = _video.gl_api();
-    gl.viewport[_video.surface_size()];
+void example_sphere::_on_prog_loaded(
+  const gl_program_resource::load_info& loaded) noexcept {
+    _prog.apply_input_bindings(_video, _shape.attrib_bindings());
+    loaded.shader_storage_block_binding(
+      "OffsetBlock", _shape.offsets_binding());
 }
 //------------------------------------------------------------------------------
 void example_sphere::update() noexcept {
-    auto& state = _ctx.state();
+    auto& state = context().state();
     if(state.is_active()) {
-        _is_done.reset();
+        reset_timeout();
     }
     if(state.user_idle_too_long()) {
-        camera.idle_update(state, 7.F);
+        _camera.idle_update(state, 7.F);
     }
 
-    _bg.clear(_video, camera);
+    _bg.clear(_video, _camera);
+    if(_prog) {
 
-    const auto& glapi = _video.gl_api();
-    const auto& [gl, GL] = glapi;
+        const auto& glapi = _video.gl_api();
+        const auto& [gl, GL] = glapi;
 
-    gl.enable(GL.depth_test);
-    gl.enable(GL.cull_face);
-    gl.cull_face(GL.back);
+        gl.enable(GL.depth_test);
+        gl.enable(GL.cull_face);
+        gl.cull_face(GL.back);
 
-    prog.use(_video);
-    prog.set_projection(_video, camera);
-    shape.draw(_video);
+        _prog.use(_video);
+        _prog.set_projection(_video, _camera);
+        _shape.draw(_video);
+    } else {
+        _prog.load_if_needed(context());
+    }
 
     _video.commit();
+}
+//------------------------------------------------------------------------------
+void example_sphere::clean_up() noexcept {
+    _prog.clean_up(context());
 }
 //------------------------------------------------------------------------------
 class example_launchpad : public launchpad {
@@ -146,8 +139,6 @@ auto example_main(main_ctx& ctx) -> int {
 }
 } // namespace eagine::app
 
-#if EAGINE_APP_MODULE
 auto main(int argc, const char** argv) -> int {
     return eagine::default_main(argc, argv, eagine::app::example_main);
 }
-#endif

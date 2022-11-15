@@ -11,33 +11,14 @@
 
 #include "resources.hpp"
 
-#if !EAGINE_APP_MODULE
-#include <eagine/app/background/icosahedron.hpp>
-#include <eagine/app/camera.hpp>
-#include <eagine/app/interface.hpp>
-#include <eagine/cleanup_group.hpp>
-#include <eagine/math/curve.hpp>
-#include <eagine/oglplus/math/vector.hpp>
-#include <eagine/timeout.hpp>
-#endif
-
 namespace eagine::app {
 //------------------------------------------------------------------------------
-class example : public application {
+class example : public timeouting_application {
 public:
     example(execution_context&, video_context&);
 
-    auto is_done() noexcept -> bool final {
-        return _is_done.is_expired();
-    }
-
-    void on_video_resize() noexcept final;
     void update() noexcept final;
     void clean_up() noexcept final;
-
-    auto ctx() noexcept -> auto& {
-        return _ctx;
-    }
 
     auto video() noexcept -> auto& {
         return _video;
@@ -48,30 +29,25 @@ public:
     }
 
     auto emit_position() noexcept {
-        return _path.position(ctx().state().frame_time().value() * 0.1F);
+        return _path.position(context().state().frame_time().value() * 0.1F);
     }
 
     auto frame_duration() noexcept {
-        return ctx().state().frame_duration().value();
-    }
-
-    operator cleanup_group&() noexcept {
-        return _cleanup;
+        return context().state().frame_duration().value();
     }
 
 private:
-    cleanup_group _cleanup;
-    execution_context& _ctx;
+    void _on_resource_loaded(const loaded_resource_base&) noexcept;
+
     video_context& _video;
     background_icosahedron _bg;
-    timeout _is_done{std::chrono::seconds{60}};
 
-    math::cubic_bezier_loop<oglplus::vec3, float> _path;
-
-    orbiting_camera _camera;
     emit_program _emit_prog;
     draw_program _draw_prog;
     particles _particles;
+    particle_path _path;
+
+    orbiting_camera _camera;
 };
 
 } // namespace eagine::app

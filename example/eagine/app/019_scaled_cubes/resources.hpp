@@ -9,41 +9,27 @@
 #ifndef OGLPLUS_EXAMPLE_RESOURCES_HPP // NOLINT(llvm-header-guard)
 #define OGLPLUS_EXAMPLE_RESOURCES_HPP
 
-#if EAGINE_APP_MODULE
 import eagine.core;
 import eagine.shapes;
 import eagine.oglplus;
 import eagine.app;
 import <array>;
-#else
-#include <eagine/oglplus/gl.hpp>
-#include <eagine/oglplus/gl_api.hpp>
-
-#include <eagine/app/fwd.hpp>
-#include <eagine/oglplus/shapes/drawing.hpp>
-#include <array>
-#endif
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
 // program
 //------------------------------------------------------------------------------
-class cubes_program {
+class cubes_program : public gl_program_resource {
 public:
-    void init(execution_context&, video_context&);
-    void clean_up(video_context&);
+    cubes_program(execution_context&);
     void set_projection(video_context&, orbiting_camera& camera);
     void update(execution_context&, video_context&);
-
-    void bind_position_location(video_context&, oglplus::vertex_attrib_location);
-    void bind_pivot_location(video_context&, oglplus::vertex_attrib_location);
-    void bind_coord_location(video_context&, oglplus::vertex_attrib_location);
 
     void drawing_surface(video_context&);
     void drawing_edges(video_context&);
 
 private:
-    oglplus::owned_program_name prog;
+    void _on_loaded(const gl_program_resource::load_info&) noexcept;
     oglplus::uniform_location camera_loc;
     oglplus::uniform_location center_loc;
     oglplus::uniform_location time_loc;
@@ -55,7 +41,7 @@ private:
 class cubes_geometry {
 public:
     void init(execution_context&, video_context&);
-    void clean_up(video_context&);
+    void clean_up(execution_context&);
     void draw_surface(video_context&);
     void draw_edges(video_context&);
 
@@ -69,6 +55,13 @@ public:
 
     static auto coord_loc() noexcept {
         return oglplus::vertex_attrib_location{2};
+    }
+
+    static auto attrib_bindings() noexcept {
+        return oglplus::vertex_attrib_bindings{
+          shapes::vertex_attrib_kind::position,
+          shapes::vertex_attrib_kind::pivot,
+          shapes::vertex_attrib_kind::box_coord};
     }
 
 private:

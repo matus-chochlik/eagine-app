@@ -3,39 +3,34 @@
 # See accompanying file LICENSE_1_0.txt or copy at
 #  http://www.boost.org/LICENSE_1_0.txt
 #
-configure_file(
-	"${PROJECT_SOURCE_DIR}/assets/models/barrel_1.json"
-	"${CMAKE_CURRENT_BINARY_DIR}/barrel_1.json"
-)
-
 add_executable(app-018_uv_map_barrel main.cpp)
 add_dependencies(app-018_uv_map_barrel eagine-app-examples)
 
 eagine_embed_target_resources(
 	TARGET app-018_uv_map_barrel
-	INPUT_TARGETS
-	barrel_1_color
-	barrel_1_aoccl
-	barrel_1_rough
+	RESOURCES
+		VertShdr   "vertex.glsl"
+		FragShdr   "fragment.glsl"
+		Program    "prog.json"
+		Barrel     "barrel.eagimesh"
+		BarelClImg "barrel_color.eagitexi"
+		BarelColor "barrel_color.eagitex"
+		BarelAOImg "barrel_aoccl.eagitexi"
+		BarelAOccl "barrel_aoccl.eagitex"
+		BarelRgImg "barrel_rough.eagitexi"
+		BarelRough "barrel_rough.eagitex"
 	PACKED
+	ENABLE_SEARCH
 )
 eagine_add_exe_analysis(app-018_uv_map_barrel)
 
-
-if(${WITH_MODULES})
-	eagine_target_modules(
-		app-018_uv_map_barrel
-		eagine.core
-		eagine.shapes
-		eagine.oglplus
-		eagine.app
-	)
-else()
-	target_link_libraries(
-		app-018_uv_map_barrel
-		PUBLIC EAGine::App
-	)
-endif()
+eagine_target_modules(
+	app-018_uv_map_barrel
+	eagine.core
+	eagine.shapes
+	eagine.oglplus
+	eagine.app
+)
 
 set_target_properties(
 	app-018_uv_map_barrel

@@ -9,19 +9,12 @@ add_dependencies(app-002_spectrum eagine-app-examples)
 
 eagine_add_exe_analysis(app-002_spectrum)
 
-if(${WITH_MODULES})
-	eagine_target_modules(
-		app-002_spectrum
-		eagine.core
-		eagine.oglplus
-		eagine.app
-	)
-else()
-	target_link_libraries(
-		app-002_spectrum
-		PUBLIC EAGine::App
-	)
-endif()
+eagine_target_modules(
+	app-002_spectrum
+	eagine.core
+	eagine.oglplus
+	eagine.app
+)
 
 set_target_properties(
 	app-002_spectrum

@@ -1,0 +1,10 @@
+{"inputs":
+{"Position": {"attrib":"position"}
+,"Normal": {"attrib":"normal"}
+,"Tangent": {"attrib":"tangent"}
+,"TexCoord": {"attrib":"wrap_coord"}}
+,"shaders":
+[{"url":"glsl:///VertShader","type":"vertex"}
+,{"url":"glsl:///GeomShader","type":"geometry"}
+,{"url":"glsl:///FragShader","type":"fragment"}]
+}

@@ -11,33 +11,22 @@
 
 #include "resources.hpp"
 
-#if !EAGINE_APP_MODULE
-#include <eagine/app/camera.hpp>
-#include <eagine/app/interface.hpp>
-#include <eagine/cleanup_group.hpp>
-#include <eagine/timeout.hpp>
-#endif
-
 namespace eagine::app {
 //------------------------------------------------------------------------------
-class example : public application {
+class example : public timeouting_application {
 public:
     example(execution_context&, video_context&);
-
-    auto is_done() noexcept -> bool final {
-        return _is_done.is_expired();
-    }
 
     void on_video_resize() noexcept final;
     void update() noexcept final;
     void clean_up() noexcept final;
 
-    auto ctx() noexcept -> auto& {
-        return _ctx;
-    }
-
     auto video() noexcept -> auto& {
         return _video;
+    }
+
+    auto loader() noexcept -> auto& {
+        return context().loader();
     }
 
     auto cleanup() noexcept -> auto& {
@@ -49,17 +38,18 @@ public:
     }
 
 private:
-    cleanup_group _cleanup;
-    execution_context& _ctx;
-    video_context& _video;
-    timeout _is_done{std::chrono::seconds{30}};
+    void _on_resource_loaded(const loaded_resource_base&) noexcept;
 
-    orbiting_camera _camera;
+    cleanup_group _cleanup;
+    video_context& _video;
+
     draw_program _draw_prog;
     screen_program _screen_prog;
     shape_geometry _shape;
     screen_geometry _screen;
     draw_buffers _draw_bufs;
+
+    orbiting_camera _camera;
 };
 //------------------------------------------------------------------------------
 } // namespace eagine::app

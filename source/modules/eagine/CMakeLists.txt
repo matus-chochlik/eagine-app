@@ -28,6 +28,7 @@ eagine_add_module(
 		eagine.core.types
 		eagine.core.memory
 		eagine.core.identifier
+		eagine.core.reflection
 		eagine.core.valid_if
 		eagine.core.utility
 		eagine.core.runtime
@@ -75,13 +76,17 @@ eagine_add_module(
 )
 
 eagine_add_module(
-	eagine.app PARTITION resource_transfer
+	eagine.app PARTITION resource_loader
 	IMPORTS
 		eagine.core.types
+		eagine.core.math
 		eagine.core.memory
+		eagine.core.string
 		eagine.core.reflection
+		eagine.core.serialization
 		eagine.core.utility
 		eagine.core.runtime
+		eagine.core.logging
 		eagine.shapes
 		eagine.oglplus
 		eagine.msgbus
@@ -92,7 +97,7 @@ eagine_add_module(
 	IMPORTS
 		interface options
 		state input
-		resource_transfer
+		resource_loader
 		eagine.core.types
 		eagine.core.memory
 		eagine.core.identifier
@@ -101,6 +106,7 @@ eagine_add_module(
 		eagine.core.main_ctx
 		eagine.oglplus
 		eagine.oalplus
+		eagine.msgbus
 )
 
 eagine_add_module(
@@ -108,16 +114,6 @@ eagine_add_module(
 	IMPORTS
 		interface context
 		eagine.core.main_ctx
-)
-
-eagine_add_module(
-	eagine.app PARTITION gpu_program
-	IMPORTS
-		context
-		eagine.core.types
-		eagine.core.memory
-		eagine.core.resource
-		eagine.oglplus
 )
 
 eagine_add_module(
@@ -165,6 +161,36 @@ eagine_add_module(
 )
 
 eagine_add_module(
+	eagine.app PARTITION loaded_resource
+	IMPORTS
+		context geometry
+		resource_loader
+		eagine.core.types
+		eagine.core.math
+		eagine.core.memory
+		eagine.core.string
+		eagine.core.utility
+		eagine.core.runtime
+		eagine.core.reflection
+		eagine.core.value_tree
+		eagine.shapes
+		eagine.oglplus
+)
+
+eagine_add_module(
+	eagine.app PARTITION resource_manager
+	IMPORTS
+		loaded_resource geometry
+		context resource_loader
+		eagine.core.types
+		eagine.core.math
+		eagine.core.utility
+		eagine.core.runtime
+		eagine.core.value_tree
+		eagine.oglplus
+)
+
+eagine_add_module(
 	eagine.app
 	PP_NAME APP
 	INTERFACES app
@@ -176,14 +202,15 @@ eagine_add_module(
 		interface
 		implementation
 		framedump_raw
-		resource_transfer
+		resource_loader
 		context
 		main
-		gpu_program
 		framebuffer
 		geometry
 		camera
 		background
+		loaded_resource
+		resource_manager
 	SOURCES
 		options_impl
 		state_impl
@@ -191,12 +218,16 @@ eagine_add_module(
 		openal_oalplus_impl
 		opengl_eglplus_impl
 		opengl_glfw3_impl
-		resource_transfer_impl
+		resource_loader_impl
+		resource_builders_impl
+		resource_gl_builders_impl
 		context_impl
 		camera_impl
 		background_impl
 	IMPORTS
+		eagine.core.math
 		eagine.core.string
+		eagine.core.identifier
 		eagine.core.container
 		eagine.core.utility
 		eagine.core.valid_if
@@ -207,10 +238,7 @@ eagine_add_module(
 		eagine.eglplus
 		eagine.oglplus
 		eagine.oalplus
-)
-target_link_libraries(
-	eagine.app
-	PUBLIC
-	eagine-app-imgui
-	EAGine::Deps::GLFW3
+	PRIVATE_LINK_LIBRARIES
+		eagine-app-imgui
+		EAGine::Deps::GLFW3
 )

@@ -1,0 +1,10 @@
+{"levels":7
+,"width":64
+,"height":64
+,"depth":16
+,"channels":1
+,"data_type":"unsigned_byte"
+,"format":"red"
+,"iformat":"r8"
+,"images":[{"url":"eagitexi:///NodesImg"}]
+}

@@ -1,0 +1,10 @@
+{"levels":1
+,"width":1024
+,"height":1024
+,"depth":6
+,"channels":1
+,"data_type":"unsigned_byte"
+,"format":"red_integer"
+,"iformat":"r8ui"
+,"images":[{"url":"eagitexi:///TilingImg"}]
+}

@@ -9,37 +9,28 @@
 #ifndef OGLPLUS_EXAMPLE_RESOURCES_HPP // NOLINT(llvm-header-guard)
 #define OGLPLUS_EXAMPLE_RESOURCES_HPP
 
-#if EAGINE_APP_MODULE
 import eagine.core;
 import eagine.shapes;
 import eagine.oglplus;
 import eagine.app;
-#else
-#include <eagine/oglplus/gl.hpp>
-#include <eagine/oglplus/gl_api.hpp>
-
-#include <eagine/app/fwd.hpp>
-#include <eagine/app/gpu_program.hpp>
-#include <eagine/oglplus/shapes/drawing.hpp>
-#endif
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
 // program
 //------------------------------------------------------------------------------
-class sphere_program : public glsl_program {
+class sphere_program : public gl_program_resource {
 public:
-    void init(video_context&);
+    sphere_program(execution_context&);
     void set_projection(video_context&, orbiting_camera&);
 
-    void bind_position_location(video_context&, oglplus::vertex_attrib_location);
     void bind_offsets_block(video_context&, oglplus::gl_types::uint_type);
 
 private:
+    void _on_loaded(const gl_program_resource::load_info&) noexcept;
+
     oglplus::uniform_location camera_matrix_loc;
     oglplus::uniform_location camera_position_loc;
     oglplus::uniform_location viewport_dim_loc;
-    oglplus::uniform_block_index offset_blk_idx{0U};
 };
 //------------------------------------------------------------------------------
 // geometry
@@ -50,8 +41,9 @@ public:
     void clean_up(video_context&);
     void draw(video_context&);
 
-    static auto position_loc() noexcept {
-        return oglplus::vertex_attrib_location{0};
+    static auto attrib_bindings() noexcept {
+        return oglplus::vertex_attrib_bindings{
+          shapes::vertex_attrib_kind::position};
     }
 
     static auto offsets_binding() noexcept {

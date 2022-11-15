@@ -8,52 +8,41 @@
 
 #include "resources.hpp"
 
-#if !EAGINE_APP_MODULE
-#include <eagine/app/camera.hpp>
-#include <eagine/app/context.hpp>
-#include <eagine/embed.hpp>
-#include <eagine/oglplus/shapes/generator.hpp>
-#include <eagine/shapes/array.hpp>
-#include <eagine/shapes/centered.hpp>
-#include <eagine/shapes/icosahedron.hpp>
-#include <eagine/shapes/scaled.hpp>
-#endif
-
 namespace eagine::app {
 //------------------------------------------------------------------------------
 // program
 //------------------------------------------------------------------------------
-void edges_program::init(video_context& vc) {
-    create(vc)
-      .build(vc, embed<"prog">("single_pass_edges.oglpprog"))
-      .use(vc)
-      .query(vc, "Projection", camera_loc)
-      .query(vc, "ViewportDimensions", vp_dim_loc);
+edges_program::edges_program(execution_context& ctx)
+  : gl_program_resource{url{"json:///Program"}, ctx} {
+    loaded.connect(make_callable_ref<&edges_program::_on_loaded>(this));
 }
 //------------------------------------------------------------------------------
-void edges_program::set_projection(video_context& vc, orbiting_camera& camera) {
+void edges_program::_on_loaded(
+  const gl_program_resource::load_info& info) noexcept {
+    info.get_uniform_location("Projection") >> camera_loc;
+    info.get_uniform_location("ViewportDimensions") >> vp_dim_loc;
+}
+//------------------------------------------------------------------------------
+void edges_program::set_projection(
+  execution_context& ec,
+  orbiting_camera& camera) {
+    auto& vc = ec.main_video();
     const auto [width, height] = vc.surface_size();
     set(vc, camera_loc, camera.matrix(vc));
     set(vc, vp_dim_loc, oglplus::vec2(width, height));
 }
 //------------------------------------------------------------------------------
-void edges_program::bind_position_location(
-  video_context& vc,
-  oglplus::vertex_attrib_location loc) {
-    bind(vc, loc, "Position");
-}
-//------------------------------------------------------------------------------
 // geometry
 //------------------------------------------------------------------------------
-void icosahedron_geometry::init(video_context& vc) {
-    geometry_and_bindings::init(
-      shapes::center(eagine::shapes::ortho_array_xyz(
-        shapes::scale(
-          shapes::unit_icosahedron(shapes::vertex_attrib_kind::position),
-          {0.5F, 0.5F, 0.5F}),
-        {1.F, 1.F, 1.F},
-        {3, 3, 3})),
-      vc);
+void icosahedron_geometry::init(execution_context& ec) {
+    gl_geometry_and_bindings::init(
+      {shapes::center(eagine::shapes::ortho_array_xyz(
+         shapes::scale(
+           shapes::unit_icosahedron(shapes::vertex_attrib_kind::position),
+           {0.5F, 0.5F, 0.5F}),
+         {1.F, 1.F, 1.F},
+         {3, 3, 3})),
+       ec.main_video()});
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

@@ -5,47 +5,22 @@
 /// See accompanying file LICENSE_1_0.txt or copy at
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
-#if EAGINE_APP_MODULE
 import eagine.core;
 import eagine.oglplus;
 import eagine.app;
-#else
-#include <eagine/app/main.hpp>
-#include <eagine/app_config.hpp>
-#include <eagine/embed.hpp>
-#include <eagine/timeout.hpp>
-
-#include <eagine/oglplus/gl.hpp>
-#include <eagine/oglplus/gl_api.hpp>
-
-#include <eagine/app/background/plain.hpp>
-#include <eagine/oglplus/glsl/string_ref.hpp>
-#include <eagine/oglplus/math/primitives.hpp>
-#include <eagine/oglplus/math/vector.hpp>
-#endif
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-class example_triangle : public application {
+class example_triangle : public timeouting_application {
 public:
     example_triangle(execution_context&, video_context&);
 
-    void reset_timeout(const input&) noexcept {
-        _is_done.reset();
-    }
-
-    auto is_done() noexcept -> bool final {
-        return _is_done.is_expired();
-    }
-
-    void on_video_resize() noexcept final;
     void update() noexcept final;
     void clean_up() noexcept final;
 
 private:
     video_context& _video;
     background_color _bg;
-    timeout _is_done{std::chrono::seconds{10}};
 
     oglplus::triangle tri{
       oglplus::vec3{-0.2F, 0.5F, 0.0F},
@@ -61,7 +36,8 @@ private:
 };
 //------------------------------------------------------------------------------
 example_triangle::example_triangle(execution_context& ec, video_context& vc)
-  : _video{vc}
+  : timeouting_application{ec, std::chrono::seconds{10}}
+  , _video{vc}
   , _bg{0.4F} {
     const auto& [gl, GL] = _video.gl_api();
 
@@ -127,18 +103,11 @@ example_triangle::example_triangle(execution_context& ec, video_context& vc)
 
     ec.connect_inputs()
       .map_inputs()
-      .add_ui_button("Reset", {"GUI", "Reset"})
-      .connect_input(
-        {"Example", "Reset"},
-        make_callable_ref<&example_triangle::reset_timeout>(this))
+      .add_ui_button({"GUI", "Reset"}, "Reset")
+      .connect_input({"Example", "Reset"}, reset_timeout_handler())
       .map_input(
         {"Example", "Reset"}, {"GUI", "Reset"}, input_setup().any_value_kind())
       .switch_input_mapping();
-}
-//------------------------------------------------------------------------------
-void example_triangle::on_video_resize() noexcept {
-    const auto& gl = _video.gl_api();
-    gl.viewport[_video.surface_size()];
 }
 //------------------------------------------------------------------------------
 void example_triangle::update() noexcept {
@@ -206,8 +175,6 @@ auto example_main(main_ctx& ctx) -> int {
 }
 } // namespace eagine::app
 
-#if EAGINE_APP_MODULE
 auto main(int argc, const char** argv) -> int {
     return eagine::default_main(argc, argv, eagine::app::example_main);
 }
-#endif

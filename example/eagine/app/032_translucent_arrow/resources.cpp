@@ -8,66 +8,34 @@
 
 #include "resources.hpp"
 
-#if !EAGINE_APP_MODULE
-#include <eagine/app/camera.hpp>
-#include <eagine/app/context.hpp>
-#include <eagine/embed.hpp>
-#include <eagine/oglplus/glsl/string_ref.hpp>
-#include <eagine/oglplus/shapes/generator.hpp>
-#endif
-
 namespace eagine::app {
 //------------------------------------------------------------------------------
 // programs
 //------------------------------------------------------------------------------
-void depth_program::init(video_context& vc) {
-    const auto& GL = vc.gl_api();
-
-    create(vc)
-      .label(vc, "depth program")
-      .add_shader(
-        vc,
-        GL.vertex_shader,
-        oglplus::glsl_string_ref(
-          embed<"VSDepth">("vertex_depth.glsl").unpack(vc.parent())),
-        "depth vertex shader")
-      .link(vc)
-      .use(vc)
-      .query(vc, "Camera", camera_loc);
+depth_program::depth_program(execution_context& ctx)
+  : gl_program_resource{url{"json:///DepthProg"}, ctx} {
+    loaded.connect(make_callable_ref<&depth_program::_on_loaded>(this));
+}
+//------------------------------------------------------------------------------
+void depth_program::_on_loaded(
+  const gl_program_resource::load_info& info) noexcept {
+    info.get_uniform_location("Camera") >> camera_loc;
 }
 //------------------------------------------------------------------------------
 void depth_program::set_camera(video_context& vc, orbiting_camera& camera) {
     use(vc).set(vc, camera_loc, camera.matrix(vc));
 }
 //------------------------------------------------------------------------------
-void depth_program::bind_position_location(
-  video_context& vc,
-  oglplus::vertex_attrib_location loc) {
-    bind(vc, loc, "Position");
+draw_program::draw_program(execution_context& ctx)
+  : gl_program_resource{url{"json:///DrawProg"}, ctx} {
+    loaded.connect(make_callable_ref<&draw_program::_on_loaded>(this));
 }
 //------------------------------------------------------------------------------
-void draw_program::init(video_context& vc) {
-    const auto& GL = vc.gl_api();
-
-    create(vc)
-      .label(vc, "draw program")
-      .add_shader(
-        vc,
-        GL.vertex_shader,
-        oglplus::glsl_string_ref(
-          embed<"VSDraw">("vertex_draw.glsl").unpack(vc.parent())),
-        "draw vertex shader")
-      .add_shader(
-        vc,
-        GL.fragment_shader,
-        oglplus::glsl_string_ref(
-          embed<"FSDraw">("fragment_draw.glsl").unpack(vc.parent())),
-        "draw fragment shader")
-      .link(vc)
-      .use(vc)
-      .query(vc, "Camera", camera_loc)
-      .query(vc, "LightPosition", light_pos_loc)
-      .query(vc, "DepthTexture", depth_tex_loc);
+void draw_program::_on_loaded(
+  const gl_program_resource::load_info& info) noexcept {
+    info.get_uniform_location("Camera") >> camera_loc;
+    info.get_uniform_location("LightPosition") >> light_pos_loc;
+    info.get_uniform_location("DepthTexture") >> depth_tex_loc;
 }
 //------------------------------------------------------------------------------
 void draw_program::set_depth_texture(
@@ -89,18 +57,6 @@ void draw_program::update(execution_context& ec, video_context& vc) {
       oglplus::vec3(cos(rad) * 5, sin(rad) * 7, sin(rad * 0.618F) * 8));
 }
 //------------------------------------------------------------------------------
-void draw_program::bind_position_location(
-  video_context& vc,
-  oglplus::vertex_attrib_location loc) {
-    bind(vc, loc, "Position");
-}
-//------------------------------------------------------------------------------
-void draw_program::bind_normal_location(
-  video_context& vc,
-  oglplus::vertex_attrib_location loc) {
-    bind(vc, loc, "Normal");
-}
-//------------------------------------------------------------------------------
 // geometry
 //------------------------------------------------------------------------------
 void shape_geometry::init(
@@ -111,7 +67,7 @@ void shape_geometry::init(
     oglplus::shape_generator shape(glapi, gen);
     bound_sphere = shape.bounding_sphere();
 
-    geometry_and_bindings::init(glapi, shape, vc.parent().buffer());
+    gl_geometry_and_bindings::init({shape, vc});
 }
 //------------------------------------------------------------------------------
 // texture

@@ -10,13 +10,74 @@ export module eagine.app:input;
 import eagine.core.types;
 import eagine.core.memory;
 import eagine.core.identifier;
+import eagine.core.reflection;
 import eagine.core.valid_if;
 import eagine.core.utility;
 import eagine.core.runtime;
+import <cstdint>;
 import <chrono>;
 import <utility>;
 
 namespace eagine::app {
+//------------------------------------------------------------------------------
+/// @brief Enumeration of what triggers input feedback action.
+/// @ingroup application
+/// @see input_feedback_action
+export enum class input_feedback_trigger : std::uint8_t {
+    /// @brief Any change in the triggering signal value.
+    change,
+    /// @brief The triggering signal value is under the specified threshold.
+    under_threshold,
+    /// @brief The triggering signal value is over the specified threshold.
+    over_threshold,
+    /// @brief The triggering signal has value of zero (or false).
+    zero,
+    /// @brief The triggering signal has value of one (or true).
+    one
+};
+
+export template <typename Selector>
+constexpr auto enumerator_mapping(
+  const std::type_identity<input_feedback_trigger>,
+  const Selector) noexcept {
+    return enumerator_map_type<input_feedback_trigger, 5>{
+      {{"change", input_feedback_trigger::change},
+       {"under_threshold", input_feedback_trigger::under_threshold},
+       {"over_threshold", input_feedback_trigger::over_threshold},
+       {"zero", input_feedback_trigger::zero},
+       {"one", input_feedback_trigger::one}}};
+}
+//------------------------------------------------------------------------------
+/// @brief Enumeration of how a input feedback trigger should be applied.
+/// @ingroup application
+/// @see input_feedback_trigger
+export enum class input_feedback_action : std::uint8_t {
+    /// @brief Copy the triggering signal value to the target input state.
+    copy,
+    /// @brief Changes the target input state to opposite value (depending on context).
+    flip,
+    /// @brief Sets the target input state to value of zero (or false).
+    set_zero,
+    /// @brief Sets the target input state to value of one (or true).
+    set_one,
+    /// @brief Add the constant to target input state.
+    add,
+    /// @brief Multiply the triggering signal by constant and add it to target input.
+    multiply_add
+};
+
+export template <typename Selector>
+constexpr auto enumerator_mapping(
+  const std::type_identity<input_feedback_action>,
+  const Selector) noexcept {
+    return enumerator_map_type<input_feedback_action, 6>{
+      {{"copy", input_feedback_action::copy},
+       {"flip", input_feedback_action::flip},
+       {"set_zero", input_feedback_action::set_zero},
+       {"set_one", input_feedback_action::set_one},
+       {"add", input_feedback_action::add},
+       {"multiply_add", input_feedback_action::multiply_add}}};
+}
 //------------------------------------------------------------------------------
 /// @brief Application input value kind bits enumeration.
 /// @ingroup application

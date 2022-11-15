@@ -5,36 +5,16 @@
 /// See accompanying file LICENSE_1_0.txt or copy at
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
-#if EAGINE_APP_MODULE
 import eagine.core;
 import eagine.oglplus;
 import eagine.app;
-#else
-#include <eagine/app/main.hpp>
-#include <eagine/app_config.hpp>
-#include <eagine/embed.hpp>
-#include <eagine/timeout.hpp>
-
-#include <eagine/oglplus/gl.hpp>
-#include <eagine/oglplus/gl_api.hpp>
-
-#include <eagine/math/intersection.hpp>
-#include <eagine/oglplus/glsl/string_ref.hpp>
-#include <eagine/oglplus/math/primitives.hpp>
-#include <eagine/oglplus/math/vector.hpp>
-#endif
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-class example_picking : public application {
+class example_picking : public timeouting_application {
 public:
     example_picking(execution_context&, video_context&);
 
-    auto is_done() noexcept -> bool final {
-        return _is_done.is_expired();
-    }
-
-    void on_video_resize() noexcept final;
     void update() noexcept final;
     void clean_up() noexcept final;
 
@@ -42,9 +22,7 @@ public:
     void motion_y(const input&) noexcept;
 
 private:
-    execution_context& _ctx;
     video_context& _video;
-    timeout _is_done{std::chrono::seconds(10)};
 
     oglplus::triangle tri{
       oglplus::vec3{-0.2F, 0.5F, 0.0F},
@@ -67,7 +45,7 @@ private:
 };
 //------------------------------------------------------------------------------
 example_picking::example_picking(execution_context& ec, video_context& vc)
-  : _ctx{ec}
+  : timeouting_application{ec, std::chrono::seconds{15}}
   , _video{vc} {
 
     const auto& glapi = _video.gl_api();
@@ -145,11 +123,6 @@ example_picking::example_picking(execution_context& ec, video_context& vc)
       .switch_input_mapping();
 }
 //------------------------------------------------------------------------------
-void example_picking::on_video_resize() noexcept {
-    const auto& gl = _video.gl_api();
-    gl.viewport[_video.surface_size()];
-}
-//------------------------------------------------------------------------------
 void example_picking::update() noexcept {
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
@@ -160,10 +133,10 @@ void example_picking::update() noexcept {
 
         is_inside = bool(math::line_triangle_intersection(ray, tri));
         has_moved = false;
-        _is_done.reset();
+        reset_timeout();
     }
 
-    const auto dt = _ctx.state().frame_duration().value();
+    const auto dt = context().state().frame_duration().value();
     if(is_inside) {
         hl_value = math::minimum(hl_value + dt * 3.0F, 1.F);
     } else {
@@ -241,8 +214,6 @@ auto example_main(main_ctx& ctx) -> int {
 }
 } // namespace eagine::app
 
-#if EAGINE_APP_MODULE
 auto main(int argc, const char** argv) -> int {
     return eagine::default_main(argc, argv, eagine::app::example_main);
 }
-#endif

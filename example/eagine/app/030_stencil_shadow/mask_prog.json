@@ -1,0 +1,7 @@
+{"inputs":
+{"Position": {"attrib":"position"}}
+,"shaders":
+[{"url":"glsl:///MaskVert","type":"vertex"}
+,{"url":"glsl:///MaskGeom","type":"geometry"}
+,{"url":"glsl:///MaskFrag","type":"fragment"}]
+}

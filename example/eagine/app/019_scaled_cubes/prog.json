@@ -1,0 +1,8 @@
+{"inputs":
+{"Position": {"attrib":"position"}
+,"Pivot": {"attrib":"pivot"}
+,"Coord": {"attrib":"box_coord"}}
+,"shaders":
+[{"url":"glsl:///VertShader","type":"vertex"}
+,{"url":"glsl:///FragShader","type":"fragment"}]
+}

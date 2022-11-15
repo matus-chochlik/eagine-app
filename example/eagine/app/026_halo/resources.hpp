@@ -9,51 +9,36 @@
 #ifndef OGLPLUS_EXAMPLE_RESOURCES_HPP // NOLINT(llvm-header-guard)
 #define OGLPLUS_EXAMPLE_RESOURCES_HPP
 
-#if EAGINE_APP_MODULE
 import eagine.core;
 import eagine.shapes;
 import eagine.oglplus;
 import eagine.app;
-#else
-#include <eagine/oglplus/gl.hpp>
-#include <eagine/oglplus/gl_api.hpp>
-
-#include <eagine/app/fwd.hpp>
-#include <eagine/oglplus/shapes/drawing.hpp>
-#include <eagine/oglplus/shapes/geometry.hpp>
-#endif
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
 // program
 //------------------------------------------------------------------------------
-class surface_program {
+class surface_program : public gl_program_resource {
 public:
-    void init(execution_context&, video_context&);
-    void clean_up(video_context&);
+    surface_program(execution_context&);
     void prepare_frame(video_context&, orbiting_camera& camera, float t);
 
-    void bind_position_location(video_context&, oglplus::vertex_attrib_location);
-    void bind_normal_location(video_context&, oglplus::vertex_attrib_location);
-
 private:
-    oglplus::owned_program_name _prog;
+    void _on_loaded(const gl_program_resource::load_info&) noexcept;
+
     oglplus::uniform_location _model_loc;
     oglplus::uniform_location _view_loc;
     oglplus::uniform_location _projection_loc;
 };
 //------------------------------------------------------------------------------
-class halo_program {
+class halo_program : public gl_program_resource {
 public:
-    void init(execution_context&, video_context&);
-    void clean_up(video_context&);
+    halo_program(execution_context&);
     void prepare_frame(video_context&, orbiting_camera& camera, float t);
 
-    void bind_position_location(video_context&, oglplus::vertex_attrib_location);
-    void bind_normal_location(video_context&, oglplus::vertex_attrib_location);
-
 private:
-    oglplus::owned_program_name _prog;
+    void _on_loaded(const gl_program_resource::load_info&) noexcept;
+
     oglplus::uniform_location _model_loc;
     oglplus::uniform_location _view_loc;
     oglplus::uniform_location _projection_loc;
@@ -62,13 +47,9 @@ private:
 //------------------------------------------------------------------------------
 // geometry
 //------------------------------------------------------------------------------
-class shape_geometry
-  : public oglplus::vertex_attrib_bindings
-  , public oglplus::geometry {
+class shape_geometry : public gl_geometry_and_bindings_resource {
 public:
-    void init(execution_context&, video_context&);
-    void clean_up(video_context&);
-    void draw(video_context&);
+    shape_geometry(execution_context&);
 };
 //------------------------------------------------------------------------------
 } // namespace eagine::app

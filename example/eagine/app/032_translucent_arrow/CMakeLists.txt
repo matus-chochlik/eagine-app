@@ -10,23 +10,26 @@ configure_file(
 add_executable(app-032_translucent_arrow main.cpp resources.cpp)
 add_dependencies(app-032_translucent_arrow eagine-app-examples)
 
-eagine_embed_target_resources(TARGET app-032_translucent_arrow PACKED)
+eagine_embed_target_resources(
+	TARGET app-032_translucent_arrow
+	RESOURCES
+		DrawVert   "vertex_draw.glsl"
+		DrawFrag   "fragment_draw.glsl"
+		DrawProg   "draw_prog.json"
+		DepthVert  "vertex_depth.glsl"
+		DepthProg  "depth_prog.json"
+	PACKED
+	ENABLE_SEARCH
+)
 eagine_add_exe_analysis(app-032_translucent_arrow)
 
-if(${WITH_MODULES})
-	eagine_target_modules(
-		app-032_translucent_arrow
-		eagine.core
-		eagine.shapes
-		eagine.oglplus
-		eagine.app
-	)
-else()
-	target_link_libraries(
-		app-032_translucent_arrow
-		PUBLIC EAGine::App
-	)
-endif()
+eagine_target_modules(
+	app-032_translucent_arrow
+	eagine.core
+	eagine.shapes
+	eagine.oglplus
+	eagine.app
+)
 
 set_target_properties(
 	app-032_translucent_arrow

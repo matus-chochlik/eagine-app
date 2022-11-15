@@ -6,100 +6,86 @@
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
 
-#if EAGINE_APP_MODULE
 import eagine.core;
 import eagine.oglplus;
 import eagine.app;
-#else
-#include <eagine/oglplus/gl.hpp>
-#include <eagine/oglplus/gl_api.hpp>
-
-#include <eagine/app/background/icosahedron.hpp>
-#include <eagine/app/camera.hpp>
-#include <eagine/app/main.hpp>
-#include <eagine/oglplus/math/matrix.hpp>
-#include <eagine/oglplus/math/vector.hpp>
-#include <eagine/timeout.hpp>
-#endif
 
 #include "resources.hpp"
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-class example_sketch : public application {
+class example_sketch : public timeouting_application {
 public:
     example_sketch(execution_context&, video_context&);
 
-    auto is_done() noexcept -> bool final {
-        return _is_done.is_expired();
-    }
-
-    void on_video_resize() noexcept final;
     void update() noexcept final;
     void clean_up() noexcept final;
 
 private:
-    execution_context& _ctx;
+    void _on_loaded(const loaded_resource_base&) noexcept;
+
     video_context& _video;
     background_icosahedron _bg;
-    timeout _is_done{std::chrono::seconds{30}};
 
-    orbiting_camera _camera;
     sketch_program _sketch_prog;
     shape_geometry _shape;
     sketch_texture _tex;
+
+    orbiting_camera _camera;
 };
 //------------------------------------------------------------------------------
 example_sketch::example_sketch(execution_context& ec, video_context& vc)
-  : _ctx{ec}
+  : timeouting_application{ec, std::chrono::seconds{30}}
   , _video{vc}
-  , _bg{_video, {0.50F, 0.50F, 0.45F, 1.0F}, {0.85F, 0.85F, 0.85F, 0.0F}, 1.F} {
-    const auto& glapi = _video.gl_api();
-    const auto& [gl, GL] = glapi;
+  , _bg{_video, {0.50F, 0.50F, 0.45F, 1.0F}, {0.85F, 0.85F, 0.85F, 0.0F}, 1.F}
+  , _sketch_prog{ec} {
+    _sketch_prog.base_loaded.connect(
+      make_callable_ref<&example_sketch::_on_loaded>(this));
 
     _shape.init(vc);
     _tex.init(vc);
 
-    _sketch_prog.init(vc);
-    _sketch_prog.bind_position_location(vc, _shape.position_loc());
-    _sketch_prog.bind_normal_location(vc, _shape.normal_loc());
-    _sketch_prog.bind_coord_location(vc, _shape.wrap_coord_loc());
-
-    // camera
     _camera.set_near(0.1F)
       .set_far(50.F)
       .set_orbit_min(0.53F)
       .set_orbit_max(1.75F)
       .set_fov(degrees_(50.F));
 
+    _camera.connect_inputs(ec).basic_input_mapping(ec);
+    ec.setup_inputs().switch_input_mapping();
+
+    const auto& glapi = _video.gl_api();
+    const auto& [gl, GL] = glapi;
+
     gl.clear_color(0.85F, 0.85F, 0.85F, 0.0F);
     gl.enable(GL.depth_test);
     gl.enable(GL.cull_face);
     gl.cull_face(GL.back);
-
-    _camera.connect_inputs(ec).basic_input_mapping(ec);
-    ec.setup_inputs().switch_input_mapping();
 }
 //------------------------------------------------------------------------------
-void example_sketch::on_video_resize() noexcept {
-    const auto& gl = _video.gl_api();
-    gl.viewport[_video.surface_size()];
+void example_sketch::_on_loaded(const loaded_resource_base& loaded) noexcept {
+    if(loaded.is(_sketch_prog)) {
+        _sketch_prog.apply_input_bindings(_video, _shape);
+    }
 }
 //------------------------------------------------------------------------------
 void example_sketch::update() noexcept {
-    auto& state = _ctx.state();
+    auto& state = context().state();
     if(state.is_active()) {
-        _is_done.reset();
+        reset_timeout();
     }
     if(state.user_idle_too_long()) {
         _camera.idle_update(state, 9.F);
     }
 
     _bg.clear(_video, _camera);
-
-    _sketch_prog.prepare_frame(
-      _video, _camera, _ctx.state().frame_time().value());
-    _shape.use_and_draw(_video);
+    if(_sketch_prog) {
+        _sketch_prog.prepare_frame(
+          _video, _camera, context().state().frame_time().value());
+        _shape.use_and_draw(_video);
+    } else {
+        _sketch_prog.load_if_needed(context());
+    }
 
     _video.commit();
 }
@@ -107,7 +93,7 @@ void example_sketch::update() noexcept {
 void example_sketch::clean_up() noexcept {
 
     _bg.clean_up(_video);
-    _sketch_prog.clean_up(_video);
+    _sketch_prog.clean_up(context());
     _shape.clean_up(_video);
     _tex.clean_up(_video);
 
@@ -158,8 +144,6 @@ auto example_main(main_ctx& ctx) -> int {
 }
 } // namespace eagine::app
 
-#if EAGINE_APP_MODULE
 auto main(int argc, const char** argv) -> int {
     return eagine::default_main(argc, argv, eagine::app::example_main);
 }
-#endif

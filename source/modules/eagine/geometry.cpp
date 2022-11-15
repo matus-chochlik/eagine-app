@@ -15,60 +15,123 @@ import :context;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-export class geometry_and_bindings : public oglplus::geometry_and_bindings {
+export class gl_geometry_and_bindings : public oglplus::geometry_and_bindings {
     using base = oglplus::geometry_and_bindings;
 
 public:
-    using base::init;
+    gl_geometry_and_bindings() noexcept = default;
+    gl_geometry_and_bindings(gl_geometry_and_bindings&&) noexcept = default;
+    gl_geometry_and_bindings(const gl_geometry_and_bindings&) = delete;
+    auto operator=(gl_geometry_and_bindings&&) noexcept
+      -> gl_geometry_and_bindings& = default;
+    auto operator=(const gl_geometry_and_bindings&) = delete;
+    ~gl_geometry_and_bindings() noexcept = default;
 
-    auto init(
+    gl_geometry_and_bindings(
+      const oglplus::shape_generator& shape,
+      const oglplus::vertex_attrib_bindings& bindings,
+      const shapes::drawing_variant var,
+      video_context& vc,
+      memory::buffer& temp) noexcept
+      : base{vc.gl_api(), shape, bindings, var, temp} {}
+
+    gl_geometry_and_bindings(
+      const std::shared_ptr<shapes::generator>& gen,
+      const oglplus::vertex_attrib_bindings& bindings,
+      const shapes::drawing_variant var,
+      video_context& vc,
+      memory::buffer& temp) noexcept
+      : gl_geometry_and_bindings{
+          oglplus::shape_generator{vc.gl_api(), gen},
+          bindings,
+          var,
+          vc,
+          temp} {}
+
+    gl_geometry_and_bindings(
+      const oglplus::shape_generator& shape,
+      const oglplus::vertex_attrib_bindings& bindings,
+      video_context& vc,
+      memory::buffer& temp) noexcept
+      : base{vc.gl_api(), shape, bindings, temp} {}
+
+    gl_geometry_and_bindings(
+      const oglplus::shape_generator& shape,
+      const oglplus::vertex_attrib_bindings& bindings,
+      video_context& vc) noexcept
+      : gl_geometry_and_bindings{shape, bindings, vc, vc.parent().buffer()} {}
+
+    gl_geometry_and_bindings(
+      const std::shared_ptr<shapes::generator>& gen,
+      const oglplus::vertex_attrib_bindings& bindings,
+      video_context& vc,
+      memory::buffer& temp) noexcept
+      : gl_geometry_and_bindings{
+          oglplus::shape_generator{vc.gl_api(), gen},
+          bindings,
+          vc,
+          temp} {}
+
+    gl_geometry_and_bindings(
       const oglplus::shape_generator& shape,
       video_context& vc,
-      memory::buffer& temp) -> auto& {
-        const auto& glapi = vc.gl_api();
-        oglplus::geometry_and_bindings::init(glapi, shape, temp);
+      memory::buffer& temp) noexcept
+      : base{vc.gl_api(), shape, temp} {}
+
+    gl_geometry_and_bindings(
+      const oglplus::shape_generator& shape,
+      video_context& vc) noexcept
+      : gl_geometry_and_bindings{shape, vc, vc.parent().buffer()} {}
+
+    gl_geometry_and_bindings(
+      const std::shared_ptr<shapes::generator>& gen,
+      video_context& vc,
+      memory::buffer& temp) noexcept
+      : gl_geometry_and_bindings{
+          oglplus::shape_generator{vc.gl_api(), gen},
+          vc,
+          temp} {}
+
+    gl_geometry_and_bindings(
+      const std::shared_ptr<shapes::generator>& gen,
+      video_context& vc) noexcept
+      : gl_geometry_and_bindings{gen, vc, vc.parent().buffer()} {}
+
+    auto init(gl_geometry_and_bindings&& temp) noexcept -> auto& {
+        *this = std::move(temp);
         return *this;
     }
 
-    auto init(const oglplus::shape_generator& shape, video_context& vc)
-      -> auto& {
-        return init(shape, vc, vc.parent().buffer());
+    auto reinit(video_context& vc, gl_geometry_and_bindings&& temp) noexcept
+      -> gl_geometry_and_bindings& {
+        clean_up(vc);
+        *this = std::move(temp);
+        return *this;
     }
 
-    auto init(
-      const std::shared_ptr<shapes::generator>& gen,
-      video_context& vc,
-      memory::buffer& temp) -> auto& {
-        const auto& glapi = vc.gl_api();
-        oglplus::shape_generator shape(glapi, gen);
-        return init(shape, vc, temp);
-    }
+    using base::clean_up;
 
-    auto init(const std::shared_ptr<shapes::generator>& gen, video_context& vc)
-      -> auto& {
-        return init(gen, vc, vc.parent().buffer());
-    }
-
-    auto clean_up(video_context& vc) -> auto& {
+    auto clean_up(video_context& vc) noexcept -> gl_geometry_and_bindings& {
         base::clean_up(vc.gl_api());
         return *this;
     }
 
     using base::use;
 
-    auto use(video_context& vc) -> auto& {
+    auto use(video_context& vc) const -> const gl_geometry_and_bindings& {
         base::use(vc.gl_api());
         return *this;
     }
 
     using base::draw;
 
-    auto draw(video_context& vc) -> auto& {
+    auto draw(video_context& vc) const -> const gl_geometry_and_bindings& {
         base::draw(vc.gl_api());
         return *this;
     }
 
-    auto use_and_draw(video_context& vc) -> auto& {
+    auto use_and_draw(video_context& vc) const
+      -> const gl_geometry_and_bindings& {
         return use(vc).draw(vc);
     }
 };

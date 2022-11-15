@@ -6,104 +6,97 @@
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
 
-#if EAGINE_APP_MODULE
 import eagine.core;
 import eagine.oglplus;
 import eagine.app;
-#else
-#include <eagine/oglplus/gl.hpp>
-#include <eagine/oglplus/gl_api.hpp>
-
-#include <eagine/app/background/icosahedron.hpp>
-#include <eagine/app/camera.hpp>
-#include <eagine/app/main.hpp>
-#include <eagine/oglplus/math/matrix.hpp>
-#include <eagine/oglplus/math/vector.hpp>
-#include <eagine/timeout.hpp>
-#endif
 
 #include "resources.hpp"
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-class example_cel : public application {
+class example_cel : public timeouting_application {
 public:
     example_cel(execution_context&, video_context&);
 
-    auto is_done() noexcept -> bool final {
-        return _is_done.is_expired();
-    }
-
-    void on_video_resize() noexcept final;
     void update() noexcept final;
     void clean_up() noexcept final;
 
 private:
-    execution_context& _ctx;
-    video_context& _video;
-    background_icosahedron _bg;
-    timeout _is_done{std::chrono::seconds{30}};
+    void _on_resource_loaded(const loaded_resource_base&) noexcept;
 
-    orbiting_camera camera;
-    cel_program prog;
-    icosahedron_geometry shape;
+    auto _load_handler() noexcept {
+        return make_callable_ref<&example_cel::_on_resource_loaded>(this);
+    }
+
+    video_context& _video;
+
+    orbiting_camera _camera;
+    icosahedron_geometry _shape;
+    cel_program _prog;
+    background_icosahedron _bg;
 };
 //------------------------------------------------------------------------------
 example_cel::example_cel(execution_context& ec, video_context& vc)
-  : _ctx{ec}
+  : timeouting_application{ec, std::chrono::seconds{30}}
   , _video{vc}
+  , _shape{context()}
+  , _prog{context()}
   , _bg{_video, {0.1F, 0.1F, 0.1F, 1.0F}, {0.4F, 0.4F, 0.4F, 0.0F}, 1.F} {
-    const auto& glapi = _video.gl_api();
-    const auto& [gl, GL] = glapi;
+    _shape.base_loaded.connect(_load_handler());
+    _prog.base_loaded.connect(_load_handler());
 
-    prog.init(vc);
-    shape.init(vc);
-
-    prog.bind_position_location(vc, shape.position_loc());
-
-    camera.set_near(0.1F)
+    _camera.set_near(0.1F)
       .set_far(50.F)
       .set_orbit_min(1.3F)
       .set_orbit_max(6.0F)
       .set_fov(right_angle_());
-    prog.set_projection(vc, camera);
 
+    _camera.connect_inputs(context()).basic_input_mapping(context());
+    context().setup_inputs().switch_input_mapping();
+
+    const auto& glapi = _video.gl_api();
+    const auto& [gl, GL] = glapi;
     gl.enable(GL.depth_test);
     gl.enable(GL.cull_face);
     gl.cull_face(GL.back);
-
-    camera.connect_inputs(ec).basic_input_mapping(ec);
-    ec.setup_inputs().switch_input_mapping();
 }
 //------------------------------------------------------------------------------
-void example_cel::on_video_resize() noexcept {
-    const auto& gl = _video.gl_api();
-    gl.viewport[_video.surface_size()];
+void example_cel::_on_resource_loaded(const loaded_resource_base&) noexcept {
+    if(_shape && _prog) {
+        _prog.apply_input_bindings(_video, _shape);
+        _prog.set_projection(_video, _camera);
+        reset_timeout();
+    }
 }
 //------------------------------------------------------------------------------
 void example_cel::update() noexcept {
-    auto& state = _ctx.state();
+    auto& state = context().state();
     if(state.is_active()) {
-        _is_done.reset();
+        reset_timeout();
     }
     if(state.user_idle_too_long()) {
-        camera.idle_update(state);
+        _camera.idle_update(state);
     }
 
-    _bg.clear(_video, camera);
+    _bg.clear(_video, _camera);
 
-    prog.use(_video);
-    prog.set_projection(_video, camera);
-    prog.set_modelview(_ctx, _video);
-    shape.use_and_draw(_video);
+    if(_shape && _prog) {
+        _prog.use(_video);
+        _prog.set_projection(_video, _camera);
+        _prog.set_modelview(context(), _video);
+        _shape.use_and_draw(_video);
+    } else {
+        _shape.load_if_needed(context());
+        _prog.load_if_needed(context());
+    }
 
     _video.commit();
 }
 //------------------------------------------------------------------------------
 void example_cel::clean_up() noexcept {
 
-    prog.clean_up(_video);
-    shape.clean_up(_video);
+    _prog.clean_up(context());
+    _shape.clean_up(context());
     _bg.clean_up(_video);
 
     _video.end();
@@ -153,8 +146,6 @@ auto example_main(main_ctx& ctx) -> int {
 }
 } // namespace eagine::app
 
-#if EAGINE_APP_MODULE
 auto main(int argc, const char** argv) -> int {
     return eagine::default_main(argc, argv, eagine::app::example_main);
 }
-#endif

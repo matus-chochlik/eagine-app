@@ -1,0 +1,3 @@
+{"label":"metaball parameters"
+,"shaders": [{"url":"glsl:///MBallComp","type":"compute"}]
+}

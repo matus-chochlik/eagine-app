@@ -8,28 +8,19 @@
 
 #include "resources.hpp"
 
-#if !EAGINE_APP_MODULE
-#include <eagine/app/camera.hpp>
-#include <eagine/app/context.hpp>
-#include <eagine/embed.hpp>
-#include <eagine/oglplus/glsl/string_ref.hpp>
-#include <eagine/shapes/surface_points.hpp>
-#endif
-
 namespace eagine::app {
 //------------------------------------------------------------------------------
 // surface program
 //------------------------------------------------------------------------------
-void surface_program::init(video_context& vc) {
-    const auto prog_src{embed<"SurfProg">("furry_torus_surface.oglpprog")};
-    create(vc)
-      .label(vc, "surface program")
-      .build(vc, prog_src.unpack(vc.parent()))
-      .use(vc)
-      .query(vc, "Model", model_loc)
-      .query(vc, "Camera", camera_loc)
-      .query(vc, "Tex", texture_loc)
-      .clean_up_later(vc);
+surface_program::surface_program(execution_context& ctx)
+  : gl_program_resource{url{"json:///SurfProg"}, ctx} {
+    loaded.connect(make_callable_ref<&surface_program::_on_loaded>(this));
+}
+//------------------------------------------------------------------------------
+void surface_program::_on_loaded(
+  const gl_program_resource::load_info& info) noexcept {
+    info.get_uniform_location("Model") >> model_loc;
+    info.get_uniform_location("Camera") >> camera_loc;
 }
 //------------------------------------------------------------------------------
 void surface_program::set_projection(
@@ -44,43 +35,18 @@ void surface_program::set_model(
     set(vc, model_loc, mat);
 }
 //------------------------------------------------------------------------------
-void surface_program::set_texture(
-  video_context& vc,
-  oglplus::gl_types::int_type unit) {
-    set(vc, texture_loc, unit);
-}
-//------------------------------------------------------------------------------
-void surface_program::bind_position_location(
-  video_context& vc,
-  oglplus::vertex_attrib_location loc) {
-    bind(vc, loc, "Position");
-}
-//------------------------------------------------------------------------------
-void surface_program::bind_texcoord_location(
-  video_context& vc,
-  oglplus::vertex_attrib_location loc) {
-    bind(vc, loc, "TexCoord");
-}
-//------------------------------------------------------------------------------
-void surface_program::bind_occlusion_location(
-  video_context& vc,
-  oglplus::vertex_attrib_location loc) {
-    bind(vc, loc, "Occlusion");
-}
-//------------------------------------------------------------------------------
 // hair program
 //------------------------------------------------------------------------------
-void hair_program::init(video_context& vc) {
-    const auto prog_src{embed<"HairProg">("furry_torus_hair.oglpprog")};
-    create(vc)
-      .label(vc, "hair program")
-      .build(vc, prog_src.unpack(vc.parent()))
-      .use(vc)
-      .query(vc, "PrevModel", prev_model_loc)
-      .query(vc, "CurrModel", curr_model_loc)
-      .query(vc, "Camera", camera_loc)
-      .query(vc, "Tex", texture_loc)
-      .clean_up_later(vc);
+hair_program::hair_program(execution_context& ctx)
+  : gl_program_resource{url{"json:///HairProg"}, ctx} {
+    loaded.connect(make_callable_ref<&hair_program::_on_loaded>(this));
+}
+//------------------------------------------------------------------------------
+void hair_program::_on_loaded(
+  const gl_program_resource::load_info& info) noexcept {
+    info.get_uniform_location("PrevModel") >> prev_model_loc;
+    info.get_uniform_location("CurrModel") >> curr_model_loc;
+    info.get_uniform_location("Camera") >> camera_loc;
 }
 //------------------------------------------------------------------------------
 void hair_program::set_projection(video_context& vc, orbiting_camera& camera) {
@@ -95,42 +61,12 @@ void hair_program::set_model(
     set(vc, curr_model_loc, curr);
 }
 //------------------------------------------------------------------------------
-void hair_program::set_texture(
-  video_context& vc,
-  oglplus::gl_types::int_type unit) {
-    set(vc, texture_loc, unit);
-}
-//------------------------------------------------------------------------------
-void hair_program::bind_position_location(
-  video_context& vc,
-  oglplus::vertex_attrib_location loc) {
-    bind(vc, loc, "Position");
-}
-//------------------------------------------------------------------------------
-void hair_program::bind_normal_location(
-  video_context& vc,
-  oglplus::vertex_attrib_location loc) {
-    bind(vc, loc, "Normal");
-}
-//------------------------------------------------------------------------------
-void hair_program::bind_texcoord_location(
-  video_context& vc,
-  oglplus::vertex_attrib_location loc) {
-    bind(vc, loc, "TexCoord");
-}
-//------------------------------------------------------------------------------
-void hair_program::bind_occlusion_location(
-  video_context& vc,
-  oglplus::vertex_attrib_location loc) {
-    bind(vc, loc, "Occlusion");
-}
-//------------------------------------------------------------------------------
 // surface geometry
 //------------------------------------------------------------------------------
 void shape_surface::init(
   video_context& vc,
   const std::shared_ptr<shapes::generator>& gen) {
-    geometry_and_bindings::init(gen, vc);
+    gl_geometry_and_bindings::init({gen, vc});
 
     vc.clean_up_later(*this);
 }
@@ -147,62 +83,26 @@ void shape_hair::init(
       glapi,
       shapes::surface_points(
         gen, 256 * 1024, shapes::vertex_attrib_kind::occlusion, vc.parent()));
-    geometry_and_bindings::init(shape, vc);
+    gl_geometry_and_bindings::init({shape, vc});
 
     vc.clean_up_later(*this);
 }
 //------------------------------------------------------------------------------
 // textures
 //------------------------------------------------------------------------------
-void shape_textures::init(video_context& vc) {
-    const auto& glapi = vc.gl_api();
-    const auto& [gl, GL] = glapi;
-
-    // zebra texture
-    const auto zebra_tex_src{embed<"ZebraTex">("zebra_fur")};
-
-    gl.gen_textures() >> zebra;
-    gl.active_texture(GL.texture0 + map_unit_zebra());
-    gl.bind_texture(GL.texture_2d, zebra);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_mag_filter, GL.linear);
-    gl.tex_parameter_i(
-      GL.texture_2d, GL.texture_min_filter, GL.linear_mipmap_linear);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_wrap_s, GL.repeat);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_wrap_t, GL.repeat);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_swizzle_g, GL.red);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_swizzle_b, GL.red);
-    glapi.spec_tex_image2d(
-      GL.texture_2d,
-      0,
-      0,
-      oglplus::texture_image_block(zebra_tex_src.unpack(vc.parent())));
-    gl.generate_mipmap(GL.texture_2d);
-
-    // monkey texture
-    const auto monkey_tex_src{embed<"MonkeyTex">("monkey")};
-
-    gl.gen_textures() >> monkey;
-    gl.active_texture(GL.texture0 + map_unit_monkey());
-    gl.bind_texture(GL.texture_2d, monkey);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_mag_filter, GL.linear);
-    gl.tex_parameter_i(
-      GL.texture_2d, GL.texture_min_filter, GL.linear_mipmap_linear);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_wrap_s, GL.clamp_to_edge);
-    gl.tex_parameter_i(GL.texture_2d, GL.texture_wrap_t, GL.clamp_to_edge);
-    glapi.spec_tex_image2d(
-      GL.texture_2d,
-      0,
-      0,
-      oglplus::texture_image_block(monkey_tex_src.unpack(vc.parent())));
-    gl.generate_mipmap(GL.texture_2d);
-
-    vc.clean_up_later(*this);
+shape_texture::shape_texture(url locator, execution_context& ctx)
+  : gl_texture_resource{std::move(locator), ctx} {
+    loaded.connect(make_callable_ref<&shape_texture::_on_loaded>(this));
 }
 //------------------------------------------------------------------------------
-void shape_textures::clean_up(video_context& vc) {
-    const auto& gl = vc.gl_api();
-    gl.clean_up(std::move(monkey));
-    gl.clean_up(std::move(zebra));
+void shape_texture::_on_loaded(
+  const gl_texture_resource::load_info& info) noexcept {
+    const auto& GL = info.base.gl_api().constants();
+    info.parameter_i(GL.texture_min_filter, GL.linear_mipmap_linear);
+    info.parameter_i(GL.texture_mag_filter, GL.linear);
+    info.parameter_i(GL.texture_wrap_s, GL.repeat);
+    info.parameter_i(GL.texture_wrap_t, GL.repeat);
+    info.generate_mipmap();
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

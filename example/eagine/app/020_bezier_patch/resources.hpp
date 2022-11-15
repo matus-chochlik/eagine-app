@@ -9,26 +9,18 @@
 #ifndef OGLPLUS_EXAMPLE_RESOURCES_HPP // NOLINT(llvm-header-guard)
 #define OGLPLUS_EXAMPLE_RESOURCES_HPP
 
-#if EAGINE_APP_MODULE
 import eagine.core;
 import eagine.shapes;
 import eagine.oglplus;
 import eagine.app;
-#else
-#include <eagine/oglplus/gl.hpp>
-#include <eagine/oglplus/gl_api.hpp>
-
-#include <eagine/app/fwd.hpp>
-#endif
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
 // program
 //------------------------------------------------------------------------------
-class patch_program {
+class patch_program : public gl_program_resource {
 public:
-    void init(execution_context&, video_context&);
-    void clean_up(video_context&);
+    patch_program(execution_context&);
     void set_projection(video_context&, orbiting_camera&);
     void set_wireframe_color(video_context&);
     void set_surface_color(video_context&);
@@ -36,7 +28,8 @@ public:
     void bind_position_location(video_context&, oglplus::vertex_attrib_location);
 
 private:
-    oglplus::owned_program_name prog;
+    void _on_loaded(const gl_program_resource::load_info&) noexcept;
+
     oglplus::uniform_location camera_matrix_loc;
     oglplus::uniform_location perspective_matrix_loc;
     oglplus::uniform_location color_loc;
@@ -46,9 +39,9 @@ private:
 //------------------------------------------------------------------------------
 class patch_geometry {
 public:
-    void init(execution_context&, video_context&);
-    void clean_up(video_context&);
-    void draw(video_context&);
+    void init(execution_context&);
+    void clean_up(execution_context&);
+    void draw(execution_context&);
 
     static auto position_loc() noexcept {
         return oglplus::vertex_attrib_location{0};

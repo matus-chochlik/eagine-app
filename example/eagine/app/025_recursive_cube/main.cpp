@@ -6,60 +6,41 @@
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
 
-#if EAGINE_APP_MODULE
 import eagine.core;
 import eagine.oglplus;
 import eagine.app;
-#else
-#include <eagine/oglplus/gl.hpp>
-#include <eagine/oglplus/gl_api.hpp>
-
-#include <eagine/app/camera.hpp>
-#include <eagine/app/main.hpp>
-#include <eagine/oglplus/math/matrix.hpp>
-#include <eagine/oglplus/math/vector.hpp>
-#include <eagine/timeout.hpp>
-#endif
 
 #include "resources.hpp"
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-class example_cube : public application {
+class example_cube : public timeouting_application {
 public:
     example_cube(execution_context&, video_context&);
 
-    auto is_done() noexcept -> bool final {
-        return _is_done.is_expired();
-    }
-
-    void on_video_resize() noexcept final;
     void update() noexcept final;
     void clean_up() noexcept final;
 
 private:
-    execution_context& _ctx;
-    video_context& _video;
-    timeout _is_done{std::chrono::seconds{30}};
+    void _on_resource_loaded(const loaded_resource_base&) noexcept;
 
-    cube_program prog;
-    cube_geometry cube;
-    cube_draw_buffers bufs;
+    video_context& _video;
+
+    cube_program _prog;
+    cube_geometry _cube;
+    cube_draw_buffers _bufs;
 };
 //------------------------------------------------------------------------------
 example_cube::example_cube(execution_context& ec, video_context& vc)
-  : _ctx{ec}
-  , _video{vc} {
+  : timeouting_application{ec, std::chrono::seconds{30}}
+  , _video{vc}
+  , _prog{context()}
+  , _cube{context()} {
+
+    _bufs.init(context());
+
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
-
-    prog.init(ec, vc);
-    cube.init(vc);
-    bufs.init(ec, vc);
-
-    prog.bind_position_location(vc, cube.position_loc());
-    prog.bind_normal_location(vc, cube.normal_loc());
-    prog.bind_tex_coord_location(vc, cube.wrap_coord_loc());
 
     gl.clear_color(0.8F, 0.8F, 0.8F, 0.0F);
     gl.enable(GL.depth_test);
@@ -69,57 +50,64 @@ example_cube::example_cube(execution_context& ec, video_context& vc)
     ec.setup_inputs().switch_input_mapping();
 }
 //------------------------------------------------------------------------------
-void example_cube::on_video_resize() noexcept {
-    _video.gl_api().viewport[_video.surface_size()];
+void example_cube::_on_resource_loaded(const loaded_resource_base&) noexcept {
+    if(_prog && _cube) {
+        _prog.apply_input_bindings(_video, _cube);
+    }
 }
 //------------------------------------------------------------------------------
 void example_cube::update() noexcept {
-    if(_ctx.state().is_active()) {
-        _is_done.reset();
+    if(context().state().is_active()) {
+        reset_timeout();
     }
 
-    const auto& glapi = _video.gl_api();
-    const auto& [gl, GL] = glapi;
+    if(_prog && _cube) {
+        const auto& glapi = _video.gl_api();
+        const auto& [gl, GL] = glapi;
 
-    prog.update(_ctx, _video);
-    prog.set_texture(_video, bufs.front_tex_unit());
+        _prog.prepare_frame(context());
+        _prog.set_texture(context(), _bufs.front_tex_unit());
 
-    // draw into texture
-    gl.bind_framebuffer(GL.draw_framebuffer, bufs.back_fbo());
-    gl.viewport(bufs.side(), bufs.side());
+        // draw into texture
+        gl.bind_framebuffer(GL.draw_framebuffer, _bufs.back_fbo());
+        gl.viewport(_bufs.side(), _bufs.side());
 
-    prog.set_projection(
-      _video,
-      oglplus::matrix_perspective(-0.5F, 0.5F, -0.5F, 0.5F, 1.0F, 5.F) *
-        oglplus::matrix_translation(0.F, 0.F, -2.F));
+        _prog.set_projection(
+          context(),
+          oglplus::matrix_perspective(-0.5F, 0.5F, -0.5F, 0.5F, 1.0F, 5.F) *
+            oglplus::matrix_translation(0.F, 0.F, -2.F));
 
-    gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
-    cube.use_and_draw(_video);
+        gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
+        _cube.use_and_draw(_video);
 
-    // draw on screen
-    gl.bind_framebuffer(GL.draw_framebuffer, oglplus::default_framebuffer);
-    gl.viewport[_video.surface_size()];
+        // draw on screen
+        gl.bind_framebuffer(GL.draw_framebuffer, oglplus::default_framebuffer);
+        gl.viewport[_video.surface_size()];
 
-    const float h = 0.55F;
-    const float w = h * _video.surface_aspect();
-    prog.set_projection(
-      _video,
-      oglplus::matrix_perspective(-w, +w, -h, +h, 1.F, 3.F) *
-        oglplus::matrix_translation(0.F, 0.F, -2.F));
+        const float h = 0.55F;
+        const float w = h * _video.surface_aspect();
+        _prog.set_projection(
+          context(),
+          oglplus::matrix_perspective(-w, +w, -h, +h, 1.F, 3.F) *
+            oglplus::matrix_translation(0.F, 0.F, -2.F));
 
-    gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
-    cube.use_and_draw(_video);
-    // swap texture draw buffers
-    bufs.swap();
+        gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
+        _cube.use_and_draw(_video);
+        // swap texture draw buffers
+        _bufs.swap();
+    } else {
+        _prog.load_if_needed(context());
+        _cube.load_if_needed(context());
+    }
 
     _video.commit();
 }
 //------------------------------------------------------------------------------
 void example_cube::clean_up() noexcept {
 
-    bufs.clean_up(_video);
-    cube.clean_up(_video);
-    prog.clean_up(_video);
+    _bufs.clean_up(context());
+    _cube.clean_up(context());
+    _prog.clean_up(context());
 
     _video.end();
 }
@@ -168,8 +156,6 @@ auto example_main(main_ctx& ctx) -> int {
 }
 } // namespace eagine::app
 
-#if EAGINE_APP_MODULE
 auto main(int argc, const char** argv) -> int {
     return eagine::default_main(argc, argv, eagine::app::example_main);
 }
-#endif

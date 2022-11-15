@@ -4,5 +4,3 @@
 #  http://www.boost.org/LICENSE_1_0.txt
 
 add_subdirectory(textures)
-add_subdirectory(tilesets)
-add_subdirectory(tilings)
