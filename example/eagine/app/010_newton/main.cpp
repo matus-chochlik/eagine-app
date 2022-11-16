@@ -159,44 +159,62 @@ example_newton::example_newton(execution_context& ec, video_context& vc)
       .map_inputs()
       .map_input(
         {"Motion", "Dampening"},
-        {"Keyboard", "LeftCtrl"},
+        {"Keyboard"},
+        {"Key", "LeftCtrl"},
         input_setup().trigger())
       .map_input(
-        {"Cursor", "Dragging"}, {"Cursor", "Button0"}, input_setup().trigger())
-      .map_input(
-        {"View", "Zoom"}, {"Wheel", "ScrollY"}, input_setup().relative())
+        {"Cursor", "Dragging"},
+        {"Mouse"},
+        {"Cursor", "Button0"},
+        input_setup().trigger())
       .map_input(
         {"View", "Zoom"},
-        {"Keyboard", "KpPlus"},
+        {"Mouse"},
+        {"Wheel", "ScrollY"},
+        input_setup().relative())
+      .map_input(
+        {"View", "Zoom"},
+        {"Keyboard"},
+        {"Key", "KpPlus"},
         input_setup().trigger().multiply(0.25))
       .map_input(
         {"View", "Zoom"},
-        {"Keyboard", "KpMinus"},
+        {"Keyboard"},
+        {"Key", "KpMinus"},
         input_setup().trigger().multiply(0.25).invert())
       .map_input(
         {"View", "PanX"},
-        {"Keyboard", "Left"},
+        {"Keyboard"},
+        {"Key", "Left"},
         input_setup().trigger().multiply(0.25))
       .map_input(
         {"View", "PanX"},
-        {"Keyboard", "Right"},
+        {"Keyboard"},
+        {"Key", "Right"},
         input_setup().trigger().multiply(0.25).invert())
       .map_input(
         {"View", "PanY"},
-        {"Keyboard", "Down"},
+        {"Keyboard"},
+        {"Key", "Down"},
         input_setup().trigger().multiply(0.25))
       .map_input(
         {"View", "PanY"},
-        {"Keyboard", "Up"},
+        {"Keyboard"},
+        {"Key", "Up"},
         input_setup().trigger().multiply(0.25).invert())
       .map_input(
-        {"Example", "ChngGrad"}, {"Keyboard", "G"}, input_setup().trigger())
+        {"Example", "ChngGrad"},
+        {"Keyboard"},
+        {"Key", "G"},
+        input_setup().trigger())
       .map_input(
         {"View", "PanX"},
+        {"Mouse"},
         {"Cursor", "MotionX"},
         input_setup().relative().multiply(2).only_if(is_dragging))
       .map_input(
         {"View", "PanY"},
+        {"Mouse"},
         {"Cursor", "MotionY"},
         input_setup().relative().multiply(2).only_if(is_dragging))
       .switch_input_mapping();

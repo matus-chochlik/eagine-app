@@ -368,10 +368,11 @@ public:
     auto add_slot_mapping() noexcept -> bool {
         assert(is_parsing_slot());
         if(_slot_id) {
-            if(_input_id && _type) {
+            if(_device_id && _input_id && _type) {
                 if(_type == "trigger") {
                     _ctx.map_input(
                       extract(_slot_id),
+                      extract(_device_id),
                       extract(_input_id),
                       input_setup().trigger());
                     _input_id = {};
@@ -425,7 +426,18 @@ public:
     void do_add(
       const basic_string_path& path,
       const span<const string_view> data) noexcept {
-        if(path.ends_with("label")) {
+        if(path.ends_with("device")) {
+            if(data.has_single_value()) {
+                if(
+                  !extract(data).empty() &&
+                  identifier::can_be_encoded(extract(data))) {
+                    _device_id = identifier{extract(data)};
+                }
+            } else {
+                log_error("too many values for device id")
+                  .arg("count", data.size());
+            }
+        } else if(path.ends_with("label")) {
             if(data.has_single_value()) {
                 if(!extract(data).empty()) {
                     _label = extract(data).to_string();
@@ -538,6 +550,7 @@ private:
     std::optional<message_id> _feedback_id;
     std::optional<message_id> _input_id;
     std::optional<message_id> _slot_id;
+    std::optional<identifier> _device_id;
     std::optional<std::string> _type;
     std::optional<std::string> _label;
     std::variant<std::monostate, bool, float> _threshold;

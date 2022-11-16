@@ -109,17 +109,13 @@ example_picking::example_picking(execution_context& ec, video_context& vc)
       .connect_input(
         {"Example", "MotionX"},
         make_callable_ref<&example_picking::motion_x>(this))
-      .map_input(
-        {"Example", "MotionX"},
-        {"Cursor", "PositionX"},
-        input_setup().multiply(2).absolute_norm())
+      .map_cursor_motion_x(
+        {"Example", "MotionX"}, input_setup().multiply(2).absolute_norm())
       .connect_input(
         {"Example", "MotionY"},
         make_callable_ref<&example_picking::motion_y>(this))
-      .map_input(
-        {"Example", "MotionY"},
-        {"Cursor", "PositionY"},
-        input_setup().multiply(2).absolute_norm())
+      .map_cursor_motion_y(
+        {"Example", "MotionY"}, input_setup().multiply(2).absolute_norm())
       .switch_input_mapping();
 }
 //------------------------------------------------------------------------------

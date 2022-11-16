@@ -125,12 +125,15 @@ using input_variable = variable_with_history<T, 3>;
 //------------------------------------------------------------------------------
 export struct input_info {
     message_id signal_id{};
+    identifier device_id{};
     input_value_kind value_kind{};
 
     constexpr input_info(
+      const identifier dev_id,
       const message_id sig_id,
       const input_value_kind kind) noexcept
       : signal_id{sig_id}
+      , device_id{dev_id}
       , value_kind{kind} {}
 };
 //------------------------------------------------------------------------------

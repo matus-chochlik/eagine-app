@@ -117,90 +117,79 @@ auto orbiting_camera::connect_inputs(execution_context& ec)
 auto orbiting_camera::basic_input_mapping(
   execution_context& ec,
   const identifier mapping_id) -> orbiting_camera& {
-    ec.map_input(
-        pressure_input_id(),
+    ec.map_cursor_pressure(mapping_id, pressure_input_id())
+      .map_key(mapping_id, dampening_input_id(), {"LeftCtrl"})
+      .map_key(
         mapping_id,
-        {"Cursor", "Pressed"},
-        input_setup().trigger())
-      .map_input(
-        dampening_input_id(),
-        mapping_id,
-        {"Keyboard", "LeftCtrl"},
-        input_setup().trigger())
-      .map_input(
         altitude_change_input_id(),
-        mapping_id,
-        {"Keyboard", "KpPlus"},
+        {"KpPlus"},
         input_setup().trigger().multiply(0.10F))
-      .map_input(
-        altitude_change_input_id(),
+      .map_key(
         mapping_id,
-        {"Keyboard", "RtBracket"},
+        altitude_change_input_id(),
+        {"RtBracket"},
         input_setup().trigger().multiply(0.05F))
-      .map_input(
-        altitude_change_input_id(),
+      .map_key(
         mapping_id,
-        {"Keyboard", "KpMinus"},
+        altitude_change_input_id(),
+        {"KpMinus"},
         input_setup().trigger().multiply(0.10F).invert())
-      .map_input(
-        altitude_change_input_id(),
+      .map_key(
         mapping_id,
-        {"Keyboard", "LtBracket"},
+        altitude_change_input_id(),
+        {"LtBracket"},
         input_setup().trigger().multiply(0.05F).invert())
-      .map_input(
-        altitude_change_input_id(),
+      .map_wheel_scroll_y(
         mapping_id,
-        {"Wheel", "ScrollY"},
+        altitude_change_input_id(),
         input_setup().relative().multiply(0.2F))
-      .map_input(
-        longitude_change_input_id(),
+      .map_key(
         mapping_id,
-        {"Keyboard", "Left"},
+        longitude_change_input_id(),
+        {"Left"},
         input_setup().trigger().multiply(0.10F))
-      .map_input(
-        longitude_change_input_id(),
+      .map_key(
         mapping_id,
-        {"Keyboard", "A"},
+        longitude_change_input_id(),
+        {"A"},
         input_setup().trigger().multiply(0.05F))
-      .map_input(
-        longitude_change_input_id(),
+      .map_key(
         mapping_id,
-        {"Keyboard", "Right"},
+        longitude_change_input_id(),
+        {"Right"},
         input_setup().trigger().multiply(0.10F).invert())
-      .map_input(
-        longitude_change_input_id(),
+      .map_key(
         mapping_id,
-        {"Keyboard", "D"},
+        longitude_change_input_id(),
+        {"D"},
         input_setup().trigger().multiply(0.05F).invert())
-      .map_input(
-        longitude_change_input_id(),
+      .map_cursor_motion_x(
         mapping_id,
-        {"Cursor", "MotionX"},
+        longitude_change_input_id(),
         input_setup().relative().multiply(2.F).only_if(_is_dragging))
-      .map_input(
-        latitude_change_input_id(),
+      .map_key(
         mapping_id,
-        {"Keyboard", "Down"},
+        latitude_change_input_id(),
+        {"Down"},
         input_setup().trigger().multiply(0.10F))
-      .map_input(
-        latitude_change_input_id(),
+      .map_key(
         mapping_id,
-        {"Keyboard", "S"},
+        latitude_change_input_id(),
+        {"S"},
         input_setup().trigger().multiply(0.05F))
-      .map_input(
-        latitude_change_input_id(),
+      .map_key(
         mapping_id,
-        {"Keyboard", "Up"},
+        latitude_change_input_id(),
+        {"Up"},
         input_setup().trigger().multiply(0.10F).invert())
-      .map_input(
-        latitude_change_input_id(),
+      .map_key(
         mapping_id,
-        {"Keyboard", "W"},
+        latitude_change_input_id(),
+        {"W"},
         input_setup().trigger().multiply(0.05F).invert())
-      .map_input(
-        latitude_change_input_id(),
+      .map_cursor_motion_y(
         mapping_id,
-        {"Cursor", "MotionY"},
+        latitude_change_input_id(),
         input_setup().relative().multiply(2.F).only_if(_is_dragging));
     return *this;
 }

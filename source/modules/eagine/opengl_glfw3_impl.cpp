@@ -97,6 +97,7 @@ public:
     void video_commit(execution_context&) final;
 
     void input_enumerate(const callable_ref<void(
+                           const identifier,
                            const message_id,
                            const input_value_kinds) noexcept>) noexcept final;
 
@@ -104,7 +105,8 @@ public:
     void input_disconnect() final;
 
     void mapping_begin(const identifier setup_id) final;
-    void mapping_enable(const message_id signal_id) final;
+    void mapping_enable(const identifier device_id, const message_id signal_id)
+      final;
     void mapping_commit(const identifier setup_id) final;
 
     auto add_ui_feedback(
@@ -160,7 +162,7 @@ private:
           , key_code{code} {}
     };
 
-    flat_set<message_id> _enabled_signals;
+    flat_set<std::tuple<identifier, message_id>> _enabled_signals;
 
     std::vector<key_state> _key_states;
     std::vector<key_state> _mouse_states;
@@ -539,7 +541,7 @@ glfw3_opengl_window::glfw3_opengl_window(
     _key_states.emplace_back("F12", GLFW_KEY_F12);
 
     // mouse buttons
-    _mouse_states.emplace_back("Pressed", GLFW_MOUSE_BUTTON_1);
+    _mouse_states.emplace_back("Pressure", GLFW_MOUSE_BUTTON_1);
     _mouse_states.emplace_back("Button0", GLFW_MOUSE_BUTTON_1);
     _mouse_states.emplace_back("Button1", GLFW_MOUSE_BUTTON_2);
     _mouse_states.emplace_back("Button2", GLFW_MOUSE_BUTTON_3);
@@ -1047,38 +1049,50 @@ void glfw3_opengl_window::video_commit(execution_context&) {
 }
 //------------------------------------------------------------------------------
 void glfw3_opengl_window::input_enumerate(
-  const callable_ref<void(const message_id, const input_value_kinds) noexcept>
+  const callable_ref<
+    void(const identifier, const message_id, const input_value_kinds) noexcept>
     callback) noexcept {
+    const identifier kb_id{"Keyboard"};
+    const identifier mouse_id{"Mouse"};
     // keyboard inputs
     for(const auto& ks : _key_states) {
         callback(
-          message_id{"Keyboard", ks.key_id}, input_value_kind::absolute_norm);
+          kb_id, message_id{"Key", ks.key_id}, input_value_kind::absolute_norm);
     }
 
     // cursor device inputs
     for(const auto& ks : _mouse_states) {
         callback(
-          message_id{"Cursor", ks.key_id}, input_value_kind::absolute_norm);
+          mouse_id,
+          message_id{"Cursor", ks.key_id},
+          input_value_kind::absolute_norm);
     }
 
     callback(
+      mouse_id,
       message_id{"Cursor", "PositionX"},
       input_value_kind::absolute_free | input_value_kind::absolute_norm);
     callback(
+      mouse_id,
       message_id{"Cursor", "PositionY"},
       input_value_kind::absolute_free | input_value_kind::absolute_norm);
 
-    callback(message_id{"Cursor", "MotionX"}, input_value_kind::relative);
-    callback(message_id{"Cursor", "MotionY"}, input_value_kind::relative);
+    callback(
+      mouse_id, message_id{"Cursor", "MotionX"}, input_value_kind::relative);
+    callback(
+      mouse_id, message_id{"Cursor", "MotionY"}, input_value_kind::relative);
 
     // wheel inputs
-    callback(message_id{"Wheel", "ScrollX"}, input_value_kind::relative);
-    callback(message_id{"Wheel", "ScrollY"}, input_value_kind::relative);
+    callback(
+      mouse_id, message_id{"Wheel", "ScrollX"}, input_value_kind::relative);
+    callback(
+      mouse_id, message_id{"Wheel", "ScrollY"}, input_value_kind::relative);
 
 #if EAGINE_APP_HAS_IMGUI
     // ui input
+    const identifier gui_id{"AppGUI"};
     for(const auto& entry : _ui_input_states) {
-        callback(entry.input_id, entry.kind());
+        callback(gui_id, entry.input_id, entry.kind());
     }
 #endif
 }
@@ -1096,25 +1110,30 @@ void glfw3_opengl_window::mapping_begin(
     _enabled_signals.clear();
 }
 //------------------------------------------------------------------------------
-void glfw3_opengl_window::mapping_enable(const message_id signal_id) {
-    _enabled_signals.insert(signal_id);
+void glfw3_opengl_window::mapping_enable(
+  const identifier device_id,
+  const message_id signal_id) {
+    _enabled_signals.insert(std::make_tuple(device_id, signal_id));
 }
 //------------------------------------------------------------------------------
 void glfw3_opengl_window::mapping_commit(
   [[maybe_unused]] const identifier setup_id) {
+    const identifier kb_id{"Keyboard"};
+    const identifier mouse_id{"Mouse"};
     for(auto& ks : _key_states) {
-        ks.enabled = _enabled_signals.contains({"Keyboard", ks.key_id});
+        ks.enabled = _enabled_signals.contains({kb_id, {"Key", ks.key_id}});
     }
 
     for(auto& ks : _mouse_states) {
-        ks.enabled = _enabled_signals.contains({"Cursor", ks.key_id});
+        ks.enabled =
+          _enabled_signals.contains({mouse_id, {"Cursor", ks.key_id}});
     }
 
     _mouse_enabled =
-      _enabled_signals.contains(message_id{"Cursor", "PositionX"}) ||
-      _enabled_signals.contains(message_id{"Cursor", "PositionY"}) ||
-      _enabled_signals.contains(message_id{"Cursor", "MotionX"}) ||
-      _enabled_signals.contains(message_id{"Cursor", "MotionY"});
+      _enabled_signals.contains({mouse_id, {"Cursor", "PositionX"}}) ||
+      _enabled_signals.contains({mouse_id, {"Cursor", "PositionY"}}) ||
+      _enabled_signals.contains({mouse_id, {"Cursor", "MotionX"}}) ||
+      _enabled_signals.contains({mouse_id, {"Cursor", "MotionY"}});
 }
 //------------------------------------------------------------------------------
 void glfw3_opengl_window::update(execution_context& exec_ctx) {
@@ -1166,20 +1185,22 @@ void glfw3_opengl_window::update(execution_context& exec_ctx) {
 
             if(_input_sink) {
                 auto& sink = extract(_input_sink);
+                const identifier gui_id{"AppGUI"};
                 for(auto& entry : _ui_input_states) {
                     entry.apply(overloaded(
                       [&, this](ui_button_state& button) {
                           if(button.pressed.assign(
                                ImGui::Button(button.label.c_str()))) {
                               sink.consume(
-                                {entry.input_id, entry.kind()}, button.pressed);
+                                {gui_id, entry.input_id, entry.kind()},
+                                button.pressed);
                           }
                       },
                       [&, this](ui_toggle_state& toggle) {
                           ImGui::Checkbox(toggle.label.c_str(), &toggle.value);
                           if(toggle.toggled_on.assign(toggle.value)) {
                               sink.consume(
-                                {entry.input_id, entry.kind()},
+                                {gui_id, entry.input_id, entry.kind()},
                                 toggle.toggled_on);
                           }
                       },
@@ -1192,7 +1213,7 @@ void glfw3_opengl_window::update(execution_context& exec_ctx) {
                                "%0.2f")) {
                               if(slider.position.assign(slider.value)) {
                                   sink.consume(
-                                    {entry.input_id, entry.kind()},
+                                    {gui_id, entry.input_id, entry.kind()},
                                     slider.position);
                               }
                           }
@@ -1227,18 +1248,19 @@ void glfw3_opengl_window::update(execution_context& exec_ctx) {
         glfwGetWindowSize(_window, &_window_width, &_window_height);
 
         if(_input_sink) {
+            const identifier mouse_id{"Mouse"};
             auto& sink = extract(_input_sink);
 
             if(_wheel_scroll_x.assign(_wheel_change_x)) {
                 sink.consume(
-                  {message_id{"Wheel", "ScrollX"}, input_value_kind::relative},
+                  {mouse_id, {"Wheel", "ScrollX"}, input_value_kind::relative},
                   _wheel_scroll_x);
             }
             _wheel_change_x = 0;
 
             if(_wheel_scroll_y.assign(_wheel_change_y)) {
                 sink.consume(
-                  {message_id{"Wheel", "ScrollY"}, input_value_kind::relative},
+                  {mouse_id, {"Wheel", "ScrollY"}, input_value_kind::relative},
                   _wheel_scroll_y);
             }
             _wheel_change_y = 0;
@@ -1251,19 +1273,22 @@ void glfw3_opengl_window::update(execution_context& exec_ctx) {
 
                 if(_mouse_x_pix.assign(float(mouse_x_pix))) {
                     sink.consume(
-                      {message_id{"Cursor", "PositionX"},
+                      {mouse_id,
+                       {"Cursor", "PositionX"},
                        input_value_kind::absolute_free},
                       _mouse_x_pix);
                     if(_mouse_x_ndc.assign(
                          float(mouse_x_pix * _norm_x_ndc) - 0.5F)) {
                         sink.consume(
-                          {message_id{"Cursor", "PositionX"},
+                          {mouse_id,
+                           {"Cursor", "PositionX"},
                            input_value_kind::absolute_norm},
                           _mouse_x_ndc);
                         if(_mouse_x_delta.assign(float(
                              _mouse_x_ndc.delta() * motion_adjust * _aspect))) {
                             sink.consume(
-                              {message_id{"Cursor", "MotionX"},
+                              {mouse_id,
+                               {"Cursor", "MotionX"},
                                input_value_kind::relative},
                               _mouse_x_delta);
                         }
@@ -1271,19 +1296,22 @@ void glfw3_opengl_window::update(execution_context& exec_ctx) {
                 }
                 if(_mouse_y_pix.assign(float(mouse_y_pix))) {
                     sink.consume(
-                      {message_id{"Cursor", "PositionY"},
+                      {mouse_id,
+                       {"Cursor", "PositionY"},
                        input_value_kind::absolute_free},
                       _mouse_y_pix);
                     if(_mouse_y_ndc.assign(
                          float(mouse_y_pix * _norm_y_ndc) - 0.5F)) {
                         sink.consume(
-                          {message_id{"Cursor", "PositionY"},
+                          {mouse_id,
+                           {"Cursor", "PositionY"},
                            input_value_kind::absolute_norm},
                           _mouse_y_ndc);
                         if(_mouse_y_delta.assign(
                              float(_mouse_y_ndc.delta() * motion_adjust))) {
                             sink.consume(
-                              {message_id{"Cursor", "MotionY"},
+                              {mouse_id,
+                               {"Cursor", "MotionY"},
                                input_value_kind::relative},
                               _mouse_y_delta);
                         }
@@ -1297,7 +1325,8 @@ void glfw3_opengl_window::update(execution_context& exec_ctx) {
                                  glfwGetMouseButton(_window, ks.key_code) ==
                                  GLFW_PRESS)) {
                                 sink.consume(
-                                  {{"Cursor", ks.key_id},
+                                  {mouse_id,
+                                   {"Cursor", ks.key_id},
                                    input_value_kind::absolute_norm},
                                   ks.pressed);
                             }
@@ -1306,14 +1335,15 @@ void glfw3_opengl_window::update(execution_context& exec_ctx) {
                 }
             }
             if(!_imgui_visible) {
+                const identifier kb_id{"Keyboard"};
                 for(auto& ks : _key_states) {
                     if(ks.enabled) {
                         const auto state = glfwGetKey(_window, ks.key_code);
                         const auto press = state == GLFW_PRESS;
                         if(ks.pressed.assign(press) || press) {
-                            const message_id key_id{"Keyboard", ks.key_id};
+                            const message_id key_id{"Key", ks.key_id};
                             sink.consume(
-                              {key_id, input_value_kind::absolute_norm},
+                              {kb_id, key_id, input_value_kind::absolute_norm},
                               ks.pressed);
                             _feedback_key_press_change(key_id, ks.pressed);
                         }

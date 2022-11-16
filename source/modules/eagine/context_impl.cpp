@@ -652,14 +652,17 @@ auto execution_context::set_ui_slider(
 }
 //------------------------------------------------------------------------------
 auto execution_context::map_input(
-  const message_id input_id,
   const identifier mapping_id,
+  const message_id input_id,
+  const identifier device_id,
   const message_id signal_id,
   const input_setup setup) -> execution_context& {
-    _input_mappings[mapping_id].emplace(signal_id, input_id, setup);
+    _input_mappings[mapping_id].emplace(
+      std::make_tuple(device_id, signal_id), input_id, setup);
     log_info("mapped input signal ${signal} to input slot ${input}")
       .tag("mapInput")
       .arg("signal", signal_id)
+      .arg("device", device_id)
       .arg("input", input_id)
       .arg("mapping", mapping_id);
     return *this;
@@ -667,11 +670,7 @@ auto execution_context::map_input(
 //------------------------------------------------------------------------------
 auto execution_context::map_inputs(const identifier mapping_id)
   -> execution_context& {
-    map_input(
-      {"App", "Stop"},
-      mapping_id,
-      {"Keyboard", "Escape"},
-      input_setup().trigger());
+    map_key(mapping_id, {"App", "Stop"}, {"Escape"});
     return *this;
 }
 //------------------------------------------------------------------------------
@@ -680,18 +679,19 @@ auto execution_context::switch_input_mapping(const identifier mapping_id)
     if(_input_mapping != mapping_id) {
         _mapped_inputs.clear();
         const auto& mapping = _input_mappings[mapping_id];
-        for(auto& [signal_id, slot] : mapping) {
+        for(auto& [dev_sig_id, slot] : mapping) {
             const auto pos = _connected_inputs.find(std::get<0>(slot));
             if(pos != _connected_inputs.end()) {
                 _mapped_inputs.emplace(
-                  signal_id, std::get<1>(slot), std::get<1>(*pos));
+                  dev_sig_id, std::get<1>(slot), std::get<1>(*pos));
             }
         }
 
         for(auto& input : _input_providers) {
             extract(input).mapping_begin(mapping_id);
             for(auto& slot : _mapped_inputs) {
-                extract(input).mapping_enable(slot.first);
+                extract(input).mapping_enable(
+                  std::get<0>(slot.first), std::get<1>(slot.first));
             }
             extract(input).mapping_commit(mapping_id);
         }

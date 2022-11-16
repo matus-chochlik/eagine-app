@@ -72,8 +72,7 @@ example_parallax::example_parallax(execution_context& ec, video_context& vc)
       .connect_input(
         {"Example", "ChngTexMap"},
         make_callable_ref<&example_parallax::_switch_texture>(this))
-      .map_input(
-        {"Example", "ChngTexMap"}, {"Keyboard", "T"}, input_setup().trigger())
+      .map_key({"Example", "ChngTexMap"}, "T")
       .switch_input_mapping();
 
     const auto& glapi = _video.gl_api();
