@@ -693,7 +693,7 @@ auto execution_context::switch_input_mapping(const identifier mapping_id)
                 extract(input).mapping_enable(
                   std::get<0>(slot.first), std::get<1>(slot.first));
             }
-            extract(input).mapping_commit(mapping_id);
+            extract(input).mapping_commit(*this, mapping_id);
         }
 
         _input_mapping = mapping_id;

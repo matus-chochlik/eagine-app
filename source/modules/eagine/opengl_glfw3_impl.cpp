@@ -96,10 +96,12 @@ public:
     void video_end(execution_context&) final;
     void video_commit(execution_context&) final;
 
-    void input_enumerate(const callable_ref<void(
-                           const identifier,
-                           const message_id,
-                           const input_value_kinds) noexcept>) noexcept final;
+    void input_enumerate(
+      execution_context&,
+      const callable_ref<void(
+        const identifier,
+        const message_id,
+        const input_value_kinds) noexcept>) noexcept final;
 
     void input_connect(input_sink&) final;
     void input_disconnect() final;
@@ -107,7 +109,7 @@ public:
     void mapping_begin(const identifier setup_id) final;
     void mapping_enable(const identifier device_id, const message_id signal_id)
       final;
-    void mapping_commit(const identifier setup_id) final;
+    void mapping_commit(execution_context&, const identifier setup_id) final;
 
     auto add_ui_feedback(
       const message_id signal_id,
@@ -1049,11 +1051,12 @@ void glfw3_opengl_window::video_commit(execution_context&) {
 }
 //------------------------------------------------------------------------------
 void glfw3_opengl_window::input_enumerate(
+  execution_context& ctx,
   const callable_ref<
     void(const identifier, const message_id, const input_value_kinds) noexcept>
     callback) noexcept {
-    const identifier kb_id{"Keyboard"};
-    const identifier mouse_id{"Mouse"};
+    const auto kb_id{ctx.keyboard_device_id()};
+    const auto mouse_id{ctx.mouse_device_id()};
     // keyboard inputs
     for(const auto& ks : _key_states) {
         callback(
@@ -1117,9 +1120,10 @@ void glfw3_opengl_window::mapping_enable(
 }
 //------------------------------------------------------------------------------
 void glfw3_opengl_window::mapping_commit(
+  execution_context& ctx,
   [[maybe_unused]] const identifier setup_id) {
-    const identifier kb_id{"Keyboard"};
-    const identifier mouse_id{"Mouse"};
+    const auto kb_id{ctx.keyboard_device_id()};
+    const auto mouse_id{ctx.mouse_device_id()};
     for(auto& ks : _key_states) {
         ks.enabled = _enabled_signals.contains({kb_id, {"Key", ks.key_id}});
     }
@@ -1248,8 +1252,9 @@ void glfw3_opengl_window::update(execution_context& exec_ctx) {
         glfwGetWindowSize(_window, &_window_width, &_window_height);
 
         if(_input_sink) {
-            const identifier mouse_id{"Mouse"};
             auto& sink = extract(_input_sink);
+            const auto kb_id{exec_ctx.keyboard_device_id()};
+            const auto mouse_id{exec_ctx.mouse_device_id()};
 
             if(_wheel_scroll_x.assign(_wheel_change_x)) {
                 sink.consume(
@@ -1335,7 +1340,6 @@ void glfw3_opengl_window::update(execution_context& exec_ctx) {
                 }
             }
             if(!_imgui_visible) {
-                const identifier kb_id{"Keyboard"};
                 for(auto& ks : _key_states) {
                     if(ks.enabled) {
                         const auto state = glfwGetKey(_window, ks.key_code);

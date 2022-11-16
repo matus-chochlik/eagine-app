@@ -299,6 +299,16 @@ public:
         return *_audio_contexts.front();
     }
 
+    /// @brief Returns the canonical device id for keyboard.
+    constexpr auto keyboard_device_id() const noexcept -> identifier {
+        return {"Keyboard"};
+    }
+
+    /// @brief Returns the canonical device id for mouse.
+    constexpr auto mouse_device_id() const noexcept -> identifier {
+        return {"Mouse"};
+    }
+
     /// @brief Connect the specified logical input to a callable handler reference.
     auto connect_input(const message_id input_id, const input_handler handler)
       -> execution_context&;
@@ -368,7 +378,7 @@ public:
       const identifier key_id,
       const input_setup setup) -> execution_context& {
         return map_input(
-          mapping_id, input_id, {"Keyboard"}, {{"Key"}, key_id}, setup);
+          mapping_id, input_id, keyboard_device_id(), {{"Key"}, key_id}, setup);
     }
 
     /// @brief Map a specified logical input to a keyboard key signal.
