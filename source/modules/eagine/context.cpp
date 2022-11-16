@@ -325,6 +325,7 @@ public:
     /// @brief Add a mapping of one input signal to an action on another UI input.
     auto add_ui_feedback(
       const identifier mapping_id,
+      const identifier device_id,
       const message_id signal_id,
       const message_id input_id,
       input_feedback_trigger,

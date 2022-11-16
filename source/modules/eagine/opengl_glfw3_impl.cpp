@@ -113,6 +113,7 @@ public:
 
     auto add_ui_feedback(
       const identifier mapping_id,
+      const identifier device_id,
       const message_id signal_id,
       const message_id input_id,
       input_feedback_trigger,
@@ -322,10 +323,12 @@ private:
       const input_variable<bool>&) noexcept;
 
     void _feedback_key_press_change(
-      message_id key_id,
+      const identifier device_id,
+      const message_id key_id,
       const input_variable<bool>&) noexcept;
 
-    flat_map<message_id, ui_feedback_targets> _ui_feedbacks;
+    flat_map<std::tuple<identifier, message_id>, ui_feedback_targets>
+      _ui_feedbacks;
 #endif
 
     input_variable<float> _mouse_x_pix{0};
@@ -736,9 +739,11 @@ void glfw3_opengl_window::_ui_input_feedback(
 }
 //------------------------------------------------------------------------------
 void glfw3_opengl_window::_feedback_key_press_change(
-  message_id key_id,
+  const identifier device_id,
+  const message_id key_id,
   const input_variable<bool>& inp) noexcept {
-    if(const auto pos{_ui_feedbacks.find(key_id)}; pos != _ui_feedbacks.end()) {
+    if(const auto pos{_ui_feedbacks.find(std::make_tuple(device_id, key_id))};
+       pos != _ui_feedbacks.end()) {
         if(!pos->second.key_press_changed(*this, inp)) [[unlikely]] {
             _ui_feedbacks.erase(pos);
         }
@@ -748,6 +753,7 @@ void glfw3_opengl_window::_feedback_key_press_change(
 #endif
 auto glfw3_opengl_window::add_ui_feedback(
   [[maybe_unused]] const identifier mapping_id, // TODO
+  const identifier device_id,
   const message_id signal_id,
   const message_id input_id,
   input_feedback_trigger trigger,
@@ -755,7 +761,7 @@ auto glfw3_opengl_window::add_ui_feedback(
   std::variant<std::monostate, bool, float> threshold,
   std::variant<std::monostate, bool, float> constant) noexcept -> bool {
 #if EAGINE_APP_HAS_IMGUI
-    auto& info = _ui_feedbacks[signal_id];
+    auto& info = _ui_feedbacks[std::make_tuple(device_id, signal_id)];
     auto pos{
       std::find_if(info.targets.begin(), info.targets.end(), [=](auto& entry) {
           return entry.input_id == input_id;
@@ -1127,7 +1133,12 @@ void glfw3_opengl_window::mapping_commit(
     const auto kb_id{ctx.keyboard_device_id()};
     const auto mouse_id{ctx.mouse_device_id()};
     for(auto& ks : _key_states) {
-        ks.enabled = _enabled_signals.contains({kb_id, {"Key", ks.key_id}});
+        const auto key{std::make_tuple(kb_id, message_id{"Key", ks.key_id})};
+        ks.enabled =
+#if EAGINE_APP_HAS_IMGUI
+          _ui_feedbacks.contains(key) ||
+#endif
+          _enabled_signals.contains(key);
     }
 
     for(auto& ks : _mouse_states) {
@@ -1351,7 +1362,8 @@ void glfw3_opengl_window::update(execution_context& exec_ctx) {
                             sink.consume(
                               {kb_id, key_id, input_value_kind::absolute_norm},
                               ks.pressed);
-                            _feedback_key_press_change(key_id, ks.pressed);
+                            _feedback_key_press_change(
+                              kb_id, key_id, ks.pressed);
                         }
                     }
                 }

@@ -323,9 +323,10 @@ public:
 
     auto add_feedback() noexcept -> bool {
         assert(is_parsing_feedback());
-        if(_feedback_id && _input_id) {
+        if(_device_id && _feedback_id && _input_id) {
             _ctx.add_ui_feedback(
               _mapping_id,
+              extract(_device_id),
               extract(_feedback_id),
               extract(_input_id),
               extract_or(_trigger, input_feedback_trigger::change),

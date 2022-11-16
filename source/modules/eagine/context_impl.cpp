@@ -578,6 +578,7 @@ auto execution_context::connect_inputs() -> execution_context& {
 //------------------------------------------------------------------------------
 auto execution_context::add_ui_feedback(
   const identifier mapping_id,
+  const identifier device_id,
   const message_id signal_id,
   const message_id input_id,
   input_feedback_trigger trigger,
@@ -587,7 +588,14 @@ auto execution_context::add_ui_feedback(
   -> execution_context& {
     for(auto& input : _input_providers) {
         extract(input).add_ui_feedback(
-          mapping_id, signal_id, input_id, trigger, action, threshold, constant);
+          mapping_id,
+          device_id,
+          signal_id,
+          input_id,
+          trigger,
+          action,
+          threshold,
+          constant);
     }
     return *this;
 }
