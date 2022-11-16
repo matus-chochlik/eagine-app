@@ -60,6 +60,7 @@ export struct input_provider : interface<input_provider> {
       const identifier setup_id) = 0;
 
     virtual auto add_ui_feedback(
+      const identifier mapping_id,
       const message_id signal_id,
       const message_id input_id,
       input_feedback_trigger,

@@ -325,6 +325,7 @@ public:
         assert(is_parsing_feedback());
         if(_feedback_id && _input_id) {
             _ctx.add_ui_feedback(
+              _mapping_id,
               extract(_feedback_id),
               extract(_input_id),
               extract_or(_trigger, input_feedback_trigger::change),
@@ -371,6 +372,7 @@ public:
             if(_device_id && _input_id && _type) {
                 if(_type == "trigger") {
                     _ctx.map_input(
+                      _mapping_id,
                       extract(_slot_id),
                       extract(_device_id),
                       extract(_input_id),
@@ -473,7 +475,7 @@ public:
             const auto parent{path.parent()};
             if(parent.ends_with("input")) {
                 if(parse_msg_id(data, _input_id)) {
-                    if(parent.size() == 2) {
+                    if(parent.size() == 3) {
                         if(!is_parsing_feedback()) {
                             _status_l1 = status_type_l1::parsing_input;
                         }
@@ -485,13 +487,13 @@ public:
                 }
             } else if(parent.ends_with("slot")) {
                 if(parse_msg_id(data, _slot_id)) {
-                    if(parent.size() == 2) {
+                    if(parent.size() == 3) {
                         _status_l1 = status_type_l1::parsing_slot;
                     }
                 }
             } else if(parent.ends_with("feedback")) {
                 if(parse_msg_id(data, _feedback_id)) {
-                    if(parent.size() == 2) {
+                    if(parent.size() == 3) {
                         _status_l1 = status_type_l1::parsing_feedback;
                     }
                 }
@@ -501,13 +503,25 @@ public:
 
     void add_object(const basic_string_path& path) noexcept final {
         _str_data_offs = 0;
-        if(path.is("_")) {
+        if(path.size() == 1) {
             reset();
+            const auto entry{path.front()};
+            if(!entry.empty() && (entry != "_") && (entry != "default")) {
+                if(identifier::can_be_encoded(entry)) {
+                    _mapping_id = identifier{entry};
+                } else {
+                    log_error("invalid input mapping identifier ${id}")
+                      .arg("id", entry);
+                }
+            }
+            log_info("loading input mapping ${id}")
+              .tag("loadInpMap")
+              .arg("id", _mapping_id);
         }
     }
 
     void finish_object(const basic_string_path& path) noexcept final {
-        if(path.is("_")) {
+        if(path.size() == 2) {
             if(is_parsing_input()) {
                 add_input();
             } else if(is_parsing_feedback()) {
@@ -536,6 +550,7 @@ public:
         _initial_bool = {};
         _trigger = {};
         _action = {};
+        _mapping_id = {};
     }
 
 private:
@@ -559,6 +574,7 @@ private:
     std::optional<bool> _initial_bool;
     std::optional<input_feedback_trigger> _trigger;
     std::optional<input_feedback_action> _action;
+    identifier _mapping_id;
     identifier _temp_id;
     span_size_t _str_data_offs{0};
 

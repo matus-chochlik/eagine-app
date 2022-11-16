@@ -112,6 +112,7 @@ public:
     void mapping_commit(execution_context&, const identifier setup_id) final;
 
     auto add_ui_feedback(
+      const identifier mapping_id,
       const message_id signal_id,
       const message_id input_id,
       input_feedback_trigger,
@@ -746,6 +747,7 @@ void glfw3_opengl_window::_feedback_key_press_change(
 //------------------------------------------------------------------------------
 #endif
 auto glfw3_opengl_window::add_ui_feedback(
+  [[maybe_unused]] const identifier mapping_id, // TODO
   const message_id signal_id,
   const message_id input_id,
   input_feedback_trigger trigger,
