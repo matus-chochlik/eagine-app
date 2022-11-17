@@ -27,7 +27,14 @@ class PivotMeshArgParser(argparse.ArgumentParser):
         argparse.ArgumentParser.__init__(self, **kw)
 
         self.add_argument(
-            '--debug',
+            '--debug', '-d',
+            action="store_true",
+            default=False
+        )
+
+        self.add_argument(
+            '--do-not-save', '-D',
+            dest="do_not_save",
             action="store_true",
             default=False
         )
@@ -89,12 +96,15 @@ def find_nearest_point_t(options, pa, va, pb, vb):
 
 # ------------------------------------------------------------------------------
 def do_generate(options, src, dst):
+    vert_offs_ts = {}
+    dst_polys = []
     for poly in src.polygons:
         n = poly.loop_total
-        dverts = []
+        poly_vert_indices = []
         for i in range(n):
             li = poly.loop_start + i
-            vi = src.vertices[src.loops[li].vertex_index]
+            ii = src.loops[li].vertex_index
+            vi = src.vertices[ii]
             pi = numpy.array(vi.co)
             ni = -numpy.array(vi.normal)
             ni /= numpy.linalg.norm(ni)
@@ -103,16 +113,30 @@ def do_generate(options, src, dst):
                 if i != j:
                     dist = min(math.fabs(i-j), math.fabs(i+n-j), math.fabs(i-n-j))
                     lj = poly.loop_start + j
-                    vj = src.vertices[src.loops[lj].vertex_index]
+                    ij = src.loops[lj].vertex_index
+                    vj = src.vertices[ij]
                     pj = numpy.array(vj.co)
                     nj = -numpy.array(vj.normal)
                     nj /= numpy.linalg.norm(nj)
                     t = find_nearest_point_t(options, pi, ni, pj, nj)
                     ts.append((t, 1.0 / dist))
-            ti = sum(t * w for t, w in ts) / sum(w for t, w in ts)
-            dv = pi + ni * ti
-            dverts.append(dst.verts.new(dv))
-        dst.faces.new(dverts)
+
+            if ii in vert_offs_ts:
+                vert_offs_ts[ii][2] += ts
+            else:
+                vert_offs_ts[ii] = [pi, ni, ts]
+
+            poly_vert_indices.append(ii)
+        dst_polys.append(poly_vert_indices)
+
+    new_verts = []
+    for ii in range(len(src.vertices)):
+        pi, ni, ts = vert_offs_ts[ii]
+        ti = sum(t * w for t, w in ts) / sum(w for t, w in ts)
+        new_verts.append(dst.verts.new(pi + ni * ti))
+
+    for poly_verts in dst_polys:
+        dst.faces.new(new_verts[ii] for ii in poly_verts)
 
 # ------------------------------------------------------------------------------
 def generate(options):
@@ -129,7 +153,8 @@ def generate(options):
     obj = bpy.data.objects.new(options.pivot_mesh, msh)
     col = bpy.data.collections.get("Collection")
     col.objects.link(obj)
-    bpy.ops.wm.save_as_mainfile()
+    if not options.do_not_save:
+        bpy.ops.wm.save_as_mainfile()
 
 # ------------------------------------------------------------------------------
 def main():
