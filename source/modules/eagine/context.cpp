@@ -299,6 +299,11 @@ public:
         return *_audio_contexts.front();
     }
 
+    /// @brief Returns the canonical device id for application gui inputs.
+    constexpr auto app_gui_device_id() const noexcept -> identifier {
+        return {"AppGUI"};
+    }
+
     /// @brief Returns the canonical device id for keyboard.
     constexpr auto keyboard_device_id() const noexcept -> identifier {
         return {"Keyboard"};
@@ -504,7 +509,8 @@ public:
       const message_id input_id,
       const message_id signal_id,
       const input_setup setup) -> execution_context& {
-        return map_input(mapping_id, input_id, {"AppGUI"}, signal_id, setup);
+        return map_input(
+          mapping_id, input_id, app_gui_device_id(), signal_id, setup);
     }
 
     /// @brief Map a specified logical input to a GUI input signal.
@@ -512,7 +518,7 @@ public:
       const message_id input_id,
       const message_id signal_id,
       const input_setup setup) -> execution_context& {
-        return map_input({}, input_id, {"AppGUI"}, signal_id, setup);
+        return map_input({}, input_id, app_gui_device_id(), signal_id, setup);
     }
 
     /// @brief Binds generic application inputs to default physical input signals.
