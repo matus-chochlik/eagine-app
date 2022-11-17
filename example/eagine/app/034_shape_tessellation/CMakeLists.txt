@@ -15,6 +15,7 @@ eagine_embed_target_resources(
 		GeomShader "geometry.glsl"
 		FragShader "fragment.glsl"
 		Program    "prog.json"
+		Inputs     "inputs.json"
 		tetrasphre "tetrasphere.eagimesh"
 		octasphere "octasphere.eagimesh"
 		sqre_torus "square_torus.eagimesh"

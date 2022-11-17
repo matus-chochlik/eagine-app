@@ -1,0 +1,7 @@
+{"_":
+[{"input":["Slider","Factor"],"type":"ui_slider","label":"Factor"}
+,{"device":"Keyboard","feedback":["Key","Z"],"input":["Slider","Factor"],"action":"add","constant":-0.1}
+,{"device":"Keyboard","feedback":["Key","X"],"input":["Slider","Factor"],"action":"add","constant": 0.1}
+,{"slot":["Example","SetFactor"],"map":
+[{"device":"AppGUI","input":["Slider","Factor"],"type":"trigger"}
+]}]}

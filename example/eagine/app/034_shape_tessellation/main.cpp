@@ -30,13 +30,17 @@ private:
         return make_callable_ref<&example_tess::_on_loaded>(this);
     }
 
+    void _change_factor(const input&) noexcept;
+
     video_context& _video;
     background_icosahedron _bg;
 
     tess_program _prog;
     tess_geometry _geom;
+    pending_resource_requests _other;
 
     orbiting_camera _camera;
+    float _tess_factor{0.5F};
 };
 //------------------------------------------------------------------------------
 auto example_tess::_shape_id() -> identifier {
@@ -82,12 +86,16 @@ example_tess::example_tess(execution_context& ec, video_context& vc)
   , _video{vc}
   , _bg{_video, {0.0F, 0.0F, 0.0F, 1.F}, {0.25F, 0.25F, 0.25F, 0.0F}, 1.F}
   , _prog{ec}
-  , _geom{_shape_url(_shape_id()), ec} {
+  , _geom{_shape_url(_shape_id()), ec}
+  , _other{ec} {
     _prog.base_loaded.connect(_load_handler());
     _geom.base_loaded.connect(_load_handler());
+    _other.add(ec.loader().request_input_setup(url{"json:///Inputs"}, ec));
 
     _camera.connect_inputs(ec).basic_input_mapping(ec);
-    ec.setup_inputs().switch_input_mapping();
+    ec.setup_inputs().connect_input(
+      {"Example", "SetFactor"},
+      make_callable_ref<&example_tess::_change_factor>(this));
 
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
@@ -112,22 +120,29 @@ void example_tess::_on_loaded(const loaded_resource_base& loaded) noexcept {
     reset_timeout();
 }
 //------------------------------------------------------------------------------
+void example_tess::_change_factor(const input& i) noexcept {
+    context().cio_print("${F}").arg("F", i.get());
+    _tess_factor = i.get();
+}
+//------------------------------------------------------------------------------
 void example_tess::update() noexcept {
     auto& state = context().state();
+    const auto t = state.frame_time().value();
+
     if(state.is_active()) {
         reset_timeout();
     }
     if(state.user_idle_too_long()) {
         _camera.idle_update(state, 17.F);
+        _tess_factor = math::sine_wave01(t / 7.F);
     }
 
     _bg.clear(_video, _camera);
 
-    if(_prog && _geom) {
-        const auto t = state.frame_time().value();
+    if(_prog && _geom && _other) {
         _prog.use(_video);
         _prog.set_projection(_video, _camera);
-        _prog.set_factor(_video, math::sine_wave01(t / 7.F));
+        _prog.set_factor(_video, _tess_factor);
         _geom.use(_video);
         _geom.draw(_video);
     } else {
