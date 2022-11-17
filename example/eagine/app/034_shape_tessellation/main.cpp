@@ -121,7 +121,6 @@ void example_tess::_on_loaded(const loaded_resource_base& loaded) noexcept {
 }
 //------------------------------------------------------------------------------
 void example_tess::_change_factor(const input& i) noexcept {
-    context().cio_print("${F}").arg("F", i.get());
     _tess_factor = i.get();
 }
 //------------------------------------------------------------------------------
