@@ -663,6 +663,12 @@ void glfw3_opengl_window::ui_slider_state::apply_feedback(
   const ui_input_feedback& fbk,
   const input_value<T>& inp) {
     fbk.apply_to(value, inp);
+    if(value < min) {
+        value = min;
+    }
+    if(value > max) {
+        value = max;
+    }
     if(position.assign(value)) {
         parent._forward_feedback(ctx, uis, position);
     }
