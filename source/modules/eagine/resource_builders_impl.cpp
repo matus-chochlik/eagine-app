@@ -253,12 +253,12 @@ auto make_valtree_camera_parameters_builder(
 //------------------------------------------------------------------------------
 // input parameters
 //------------------------------------------------------------------------------
-class valtree_orbiting_input_setup_builder
-  : public valtree_builder_base<valtree_orbiting_input_setup_builder> {
-    using base = valtree_builder_base<valtree_orbiting_input_setup_builder>;
+class valtree_input_setup_builder
+  : public valtree_builder_base<valtree_input_setup_builder> {
+    using base = valtree_builder_base<valtree_input_setup_builder>;
 
 public:
-    valtree_orbiting_input_setup_builder(
+    valtree_input_setup_builder(
       const std::shared_ptr<pending_resource_info>& parent,
       execution_context& ctx) noexcept
       : base{parent}
@@ -333,6 +333,7 @@ public:
               extract_or(_action, input_feedback_action::copy),
               _threshold,
               _constant);
+            reset();
         }
         return false;
     }
@@ -362,6 +363,7 @@ public:
                   .arg("signal", extract(_input_id))
                   .arg("type", extract(_type));
             }
+            reset();
             return true;
         }
         return false;
@@ -371,21 +373,24 @@ public:
         assert(is_parsing_slot());
         if(_slot_id) {
             if(_device_id && _input_id && _type) {
+                input_setup setup;
                 if(_type == "trigger") {
-                    _ctx.map_input(
-                      _mapping_id,
-                      extract(_slot_id),
-                      extract(_device_id),
-                      extract(_input_id),
-                      input_setup().trigger());
-                    _input_id = {};
-                    _type = {};
-                } else {
-                    log_error("invalid signal type '${type}")
-                      .arg("slot", extract(_slot_id))
-                      .arg("signal", extract(_input_id))
-                      .arg("type", extract(_type));
+                    setup.trigger();
+                } else if(_type == "relative") {
+                    setup.relative();
+                } else if(_type == "absolute_free") {
+                    setup.absolute_free();
+                } else if(_type == "absolute_norm") {
+                    setup.absolute_norm();
                 }
+                _ctx.map_input(
+                  _mapping_id,
+                  extract(_slot_id),
+                  extract(_device_id),
+                  extract(_input_id),
+                  setup);
+                _input_id = {};
+                _type = {};
             }
         }
         return false;
@@ -506,6 +511,7 @@ public:
         _str_data_offs = 0;
         if(path.size() == 1) {
             reset();
+            _mapping_id = {};
             const auto entry{path.front()};
             if(!entry.empty() && (entry != "_") && (entry != "default")) {
                 if(identifier::can_be_encoded(entry)) {
@@ -551,7 +557,6 @@ public:
         _initial_bool = {};
         _trigger = {};
         _action = {};
-        _mapping_id = {};
     }
 
 private:
@@ -585,7 +590,7 @@ private:
 auto make_valtree_input_setup_builder(
   const std::shared_ptr<pending_resource_info>& parent,
   execution_context& ctx) noexcept -> std::unique_ptr<valtree::object_builder> {
-    return std::make_unique<valtree_orbiting_input_setup_builder>(parent, ctx);
+    return std::make_unique<valtree_input_setup_builder>(parent, ctx);
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app
