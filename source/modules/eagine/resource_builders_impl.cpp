@@ -501,6 +501,11 @@ public:
                 if(parse_msg_id(data, _feedback_id)) {
                     if(parent.size() == 3) {
                         _status_l1 = status_type_l1::parsing_feedback;
+                        if(!_device_id) {
+                            if(extract(_feedback_id).has_class("Key")) {
+                                _device_id = {"Keyboard"};
+                            }
+                        }
                     }
                 }
             }
