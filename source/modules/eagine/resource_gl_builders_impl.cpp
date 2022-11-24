@@ -322,7 +322,7 @@ public:
         }
     }
 
-    void finish() noexcept final {
+    auto finish() noexcept -> bool final {
         if(const auto parent{_parent.lock()}) {
             if(_success) {
                 _decompression.finish();
@@ -332,7 +332,9 @@ public:
                 extract(parent).mark_finished();
             }
             extract(parent).loader().buffers().eat(std::move(_temp));
+            return _success;
         }
+        return false;
     }
 
     void failed() noexcept final {
@@ -531,7 +533,7 @@ public:
         }
     }
 
-    void finish() noexcept final {
+    auto finish() noexcept -> bool final {
         if(const auto parent{_parent.lock()}) {
             if(_success) {
                 for(auto& [loc, tgt, para] : _image_requests) {
@@ -551,7 +553,9 @@ public:
             } else {
                 extract(parent).mark_finished();
             }
+            return _success;
         }
+        return false;
     }
 
 private:

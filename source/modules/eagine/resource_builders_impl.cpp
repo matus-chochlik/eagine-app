@@ -76,12 +76,14 @@ public:
         }
     }
 
-    void finish() noexcept final {
+    auto finish() noexcept -> bool final {
         if(auto parent{_parent.lock()}) {
             if(const auto cont{extract(parent).continuation()}) {
                 extract(cont).handle_float_vector(extract(parent), _values);
+                return true;
             }
         }
+        return false;
     }
 
 private:
@@ -162,10 +164,12 @@ public:
         }
     }
 
-    void finish() noexcept final {
+    auto finish() noexcept -> bool final {
         if(auto parent{_parent.lock()}) {
             extract(parent).handle_vec3_vector(extract(parent), _values);
+            return true;
         }
+        return false;
     }
 
 private:
@@ -542,9 +546,9 @@ public:
         }
     }
 
-    void finish() noexcept final {
+    auto finish() noexcept -> bool final {
         _ctx.switch_input_mapping();
-        base::finish();
+        return base::finish();
     }
 
     void reset() noexcept {

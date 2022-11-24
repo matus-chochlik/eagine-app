@@ -402,10 +402,12 @@ public:
 
     void do_add(const basic_string_path&, const auto&) noexcept {}
 
-    void finish() noexcept override {
+    auto finish() noexcept -> bool override {
         if(auto parent{_parent.lock()}) {
             extract(parent).mark_loaded();
+            return true;
         }
+        return false;
     }
 
     void failed() noexcept override {
