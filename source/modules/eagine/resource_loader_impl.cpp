@@ -726,7 +726,7 @@ auto resource_loader::request_float_vector(url locator) noexcept
     auto new_request{_new_resource(locator, resource_kind::float_vector)};
 
     if(const auto src_request{request_value_tree_traversal(
-         locator, make_valtree_float_vector_builder(new_request), 64)}) {
+         locator, make_valtree_float_vector_builder(new_request))}) {
         return new_request;
     }
     new_request.info().mark_finished();
@@ -738,7 +738,7 @@ auto resource_loader::request_vec3_vector(url locator) noexcept
     auto new_request{_new_resource(locator, resource_kind::vec3_vector)};
 
     if(const auto src_request{request_value_tree_traversal(
-         locator, make_valtree_vec3_vector_builder(new_request), 64)}) {
+         locator, make_valtree_vec3_vector_builder(new_request))}) {
         return new_request;
     }
     new_request.info().mark_finished();
@@ -799,8 +799,9 @@ auto resource_loader::request_json_traversal(
 //------------------------------------------------------------------------------
 auto resource_loader::request_json_traversal(
   url locator,
-  std::shared_ptr<valtree::object_builder> builder,
-  span_size_t max_token_size) noexcept -> resource_request_result {
+  std::shared_ptr<valtree::object_builder> builder) noexcept
+  -> resource_request_result {
+    const auto max_token_size{builder->max_token_size()};
     return request_json_traversal(
       std::move(locator),
       valtree::make_building_value_tree_visitor(std::move(builder)),
@@ -820,8 +821,9 @@ auto resource_loader::request_value_tree_traversal(
 //------------------------------------------------------------------------------
 auto resource_loader::request_value_tree_traversal(
   url locator,
-  std::shared_ptr<valtree::object_builder> builder,
-  span_size_t max_token_size) noexcept -> resource_request_result {
+  std::shared_ptr<valtree::object_builder> builder) noexcept
+  -> resource_request_result {
+    const auto max_token_size{builder->max_token_size()};
     return request_value_tree_traversal(
       std::move(locator),
       valtree::make_building_value_tree_visitor(std::move(builder)),
@@ -835,8 +837,7 @@ auto resource_loader::request_camera_parameters(
 
     if(const auto src_request{request_value_tree_traversal(
          locator,
-         make_valtree_camera_parameters_builder(new_request, camera),
-         64)}) {
+         make_valtree_camera_parameters_builder(new_request, camera))}) {
         return new_request;
     }
     new_request.info().mark_finished();
@@ -849,7 +850,7 @@ auto resource_loader::request_input_setup(
     auto new_request{_new_resource(locator, resource_kind::input_setup)};
 
     if(const auto src_request{request_value_tree_traversal(
-         locator, make_valtree_input_setup_builder(new_request, ctx), 64)}) {
+         locator, make_valtree_input_setup_builder(new_request, ctx))}) {
         return new_request;
     }
     new_request.info().mark_finished();
@@ -981,7 +982,7 @@ auto resource_loader::request_gl_program(
     new_request.info().add_gl_program_context(video);
 
     if(const auto src_request{request_value_tree_traversal(
-         locator, make_valtree_gl_program_builder(new_request, video), 128)}) {
+         locator, make_valtree_gl_program_builder(new_request, video))}) {
         return new_request;
     }
     new_request.info().mark_finished();
@@ -997,8 +998,7 @@ auto resource_loader::request_gl_texture_image(
 
     if(const auto src_request{request_json_traversal(
          locator,
-         make_valtree_gl_texture_image_loader(new_request, target, params),
-         128)}) {
+         make_valtree_gl_texture_image_loader(new_request, target, params))}) {
         return new_request;
     }
     new_request.info().mark_finished();
@@ -1032,8 +1032,7 @@ auto resource_loader::request_gl_texture(
 
     if(const auto src_request{request_json_traversal(
          locator,
-         make_valtree_gl_texture_builder(new_request, video, target, unit),
-         128)}) {
+         make_valtree_gl_texture_builder(new_request, video, target, unit))}) {
         return new_request;
     }
     new_request.info().mark_finished();
@@ -1049,8 +1048,7 @@ auto resource_loader::request_gl_buffer(
 
     if(const auto src_request{request_value_tree_traversal(
          locator,
-         make_valtree_gl_buffer_builder(new_request, video, target),
-         128)}) {
+         make_valtree_gl_buffer_builder(new_request, video, target))}) {
         return new_request;
     }
     new_request.info().mark_finished();

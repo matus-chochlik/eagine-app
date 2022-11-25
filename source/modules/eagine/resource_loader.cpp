@@ -1067,8 +1067,8 @@ public:
 
     auto request_json_traversal(
       url locator,
-      std::shared_ptr<valtree::object_builder>,
-      span_size_t max_token_size) noexcept -> resource_request_result;
+      std::shared_ptr<valtree::object_builder>) noexcept
+      -> resource_request_result;
 
     /// @brief Requests a value tree object traversal by the specified visitor.
     auto request_value_tree_traversal(
@@ -1079,8 +1079,8 @@ public:
     /// @brief Requests a value tree object traversal by the specified builder.
     auto request_value_tree_traversal(
       url locator,
-      std::shared_ptr<valtree::object_builder>,
-      span_size_t max_token_size) noexcept -> resource_request_result;
+      std::shared_ptr<valtree::object_builder>) noexcept
+      -> resource_request_result;
 
     /// @brief Requests camera parameters.
     auto request_camera_parameters(url locator, orbiting_camera&) noexcept

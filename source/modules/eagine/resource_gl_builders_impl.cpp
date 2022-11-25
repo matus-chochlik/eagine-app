@@ -40,6 +40,10 @@ public:
       : base{info}
       , _video{video} {}
 
+    auto max_token_size() noexcept -> span_size_t final {
+        return 256;
+    }
+
     using base::do_add;
 
     void do_add(
@@ -242,6 +246,10 @@ public:
         return false;
     }
 
+    auto max_token_size() noexcept -> span_size_t final {
+        return 256;
+    }
+
     using base::do_add;
 
     template <std::integral T>
@@ -389,6 +397,10 @@ public:
       , _video{video}
       , _tex_target{tex_target}
       , _tex_unit{tex_unit} {}
+
+    auto max_token_size() noexcept -> span_size_t final {
+        return 256;
+    }
 
     using base::do_add;
 
@@ -912,6 +924,10 @@ public:
       : base{info}
       , _video{video}
       , _buf_target{buf_target} {}
+
+    auto max_token_size() noexcept -> span_size_t final {
+        return 256;
+    }
 
     using base::do_add;
 

@@ -34,6 +34,10 @@ public:
     using base::base;
     using base::do_add;
 
+    auto max_token_size() noexcept -> span_size_t final {
+        return 64;
+    }
+
     template <std::integral T>
     void do_add(const basic_string_path& path, span<const T> data) noexcept {
         if(path.size() == 2) {
@@ -104,6 +108,11 @@ class valtree_vec3_vector_builder
 
 public:
     using base::base;
+
+    auto max_token_size() noexcept -> span_size_t final {
+        return 64;
+    }
+
     using base::do_add;
 
     template <typename T>
@@ -198,6 +207,10 @@ public:
       : base{parent}
       , _camera{camera} {}
 
+    auto max_token_size() noexcept -> span_size_t final {
+        return 64;
+    }
+
     using base::do_add;
 
     template <typename T>
@@ -267,6 +280,10 @@ public:
       execution_context& ctx) noexcept
       : base{parent}
       , _ctx{ctx} {}
+
+    auto max_token_size() noexcept -> span_size_t final {
+        return 64;
+    }
 
     using base::do_add;
 
