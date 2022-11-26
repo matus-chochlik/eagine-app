@@ -1,4 +1,4 @@
 {"shaders":
-[{"url":"glsl:///DrawVert","type":"vertex"}
-,{"url":"glsl:///DrawFrag","type":"fragment"}]
+[{"url":"glsl:///DrawVert","type":"vertex_shader"}
+,{"url":"glsl:///DrawFrag","type":"fragment_shader"}]
 }

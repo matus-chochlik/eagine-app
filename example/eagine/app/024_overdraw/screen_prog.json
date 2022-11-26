@@ -1,4 +1,4 @@
 {"shaders":
-[{"url":"glsl:///ScreenVert","type":"vertex"}
-,{"url":"glsl:///ScreenFrag","type":"fragment"}]
+[{"url":"glsl:///ScreenVert","type":"vertex_shader"}
+,{"url":"glsl:///ScreenFrag","type":"fragment_shader"}]
 }

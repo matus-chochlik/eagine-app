@@ -4,6 +4,6 @@
 ,"TexCoord": {"attrib":"wrap_coord"}
 ,"Occlusion": {"attrib":"occlusion"}}
 ,"shaders":
-[{"url":"glsl:///SurfVert","type":"vertex"}
-,{"url":"glsl:///SurfFrag","type":"fragment"}]
+[{"url":"glsl:///SurfVert","type":"vertex_shader"}
+,{"url":"glsl:///SurfFrag","type":"fragment_shader"}]
 }

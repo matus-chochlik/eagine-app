@@ -3,6 +3,6 @@
 ,"Pivot": {"attrib":"pivot"}
 ,"Coord": {"attrib":"box_coord"}}
 ,"shaders":
-[{"url":"glsl:///VertShader","type":"vertex"}
-,{"url":"glsl:///FragShader","type":"fragment"}]
+[{"url":"glsl:///VertShader","type":"vertex_shader"}
+,{"url":"glsl:///FragShader","type":"fragment_shader"}]
 }
