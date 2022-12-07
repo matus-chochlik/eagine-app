@@ -20,7 +20,6 @@ file(STRINGS "${EAGINE_CORE_ROOT}/VERSION" EAGINE_VERSION)
 add_subdirectory(submodules)
 
 include(EAGineCoreCommon)
-include(OGLplusBaking)
 find_package(EAGineGLFW3)
 
 add_subdirectory(assets)
