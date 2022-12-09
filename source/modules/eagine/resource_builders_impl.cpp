@@ -34,6 +34,10 @@ public:
     using base::base;
     using base::do_add;
 
+    auto max_token_size() noexcept -> span_size_t final {
+        return 64;
+    }
+
     template <std::integral T>
     void do_add(const basic_string_path& path, span<const T> data) noexcept {
         if(path.size() == 2) {
@@ -76,12 +80,14 @@ public:
         }
     }
 
-    void finish() noexcept final {
+    auto finish() noexcept -> bool final {
         if(auto parent{_parent.lock()}) {
             if(const auto cont{extract(parent).continuation()}) {
                 extract(cont).handle_float_vector(extract(parent), _values);
+                return true;
             }
         }
+        return false;
     }
 
 private:
@@ -102,6 +108,11 @@ class valtree_vec3_vector_builder
 
 public:
     using base::base;
+
+    auto max_token_size() noexcept -> span_size_t final {
+        return 64;
+    }
+
     using base::do_add;
 
     template <typename T>
@@ -162,10 +173,12 @@ public:
         }
     }
 
-    void finish() noexcept final {
+    auto finish() noexcept -> bool final {
         if(auto parent{_parent.lock()}) {
             extract(parent).handle_vec3_vector(extract(parent), _values);
+            return true;
         }
+        return false;
     }
 
 private:
@@ -193,6 +206,10 @@ public:
       orbiting_camera& camera) noexcept
       : base{parent}
       , _camera{camera} {}
+
+    auto max_token_size() noexcept -> span_size_t final {
+        return 64;
+    }
 
     using base::do_add;
 
@@ -253,16 +270,20 @@ auto make_valtree_camera_parameters_builder(
 //------------------------------------------------------------------------------
 // input parameters
 //------------------------------------------------------------------------------
-class valtree_orbiting_input_setup_builder
-  : public valtree_builder_base<valtree_orbiting_input_setup_builder> {
-    using base = valtree_builder_base<valtree_orbiting_input_setup_builder>;
+class valtree_input_setup_builder
+  : public valtree_builder_base<valtree_input_setup_builder> {
+    using base = valtree_builder_base<valtree_input_setup_builder>;
 
 public:
-    valtree_orbiting_input_setup_builder(
+    valtree_input_setup_builder(
       const std::shared_ptr<pending_resource_info>& parent,
       execution_context& ctx) noexcept
       : base{parent}
       , _ctx{ctx} {}
+
+    auto max_token_size() noexcept -> span_size_t final {
+        return 64;
+    }
 
     using base::do_add;
 
@@ -323,14 +344,17 @@ public:
 
     auto add_feedback() noexcept -> bool {
         assert(is_parsing_feedback());
-        if(_feedback_id && _input_id) {
+        if(_device_id && _feedback_id && _input_id) {
             _ctx.add_ui_feedback(
+              _mapping_id,
+              extract(_device_id),
               extract(_feedback_id),
               extract(_input_id),
               extract_or(_trigger, input_feedback_trigger::change),
               extract_or(_action, input_feedback_action::copy),
               _threshold,
               _constant);
+            reset();
         }
         return false;
     }
@@ -360,6 +384,7 @@ public:
                   .arg("signal", extract(_input_id))
                   .arg("type", extract(_type));
             }
+            reset();
             return true;
         }
         return false;
@@ -368,20 +393,25 @@ public:
     auto add_slot_mapping() noexcept -> bool {
         assert(is_parsing_slot());
         if(_slot_id) {
-            if(_input_id && _type) {
+            if(_device_id && _input_id && _type) {
+                input_setup setup;
                 if(_type == "trigger") {
-                    _ctx.map_input(
-                      extract(_slot_id),
-                      extract(_input_id),
-                      input_setup().trigger());
-                    _input_id = {};
-                    _type = {};
-                } else {
-                    log_error("invalid signal type '${type}")
-                      .arg("slot", extract(_slot_id))
-                      .arg("signal", extract(_input_id))
-                      .arg("type", extract(_type));
+                    setup.trigger();
+                } else if(_type == "relative") {
+                    setup.relative();
+                } else if(_type == "absolute_free") {
+                    setup.absolute_free();
+                } else if(_type == "absolute_norm") {
+                    setup.absolute_norm();
                 }
+                _ctx.map_input(
+                  _mapping_id,
+                  extract(_slot_id),
+                  extract(_device_id),
+                  extract(_input_id),
+                  setup);
+                _input_id = {};
+                _type = {};
             }
         }
         return false;
@@ -425,7 +455,18 @@ public:
     void do_add(
       const basic_string_path& path,
       const span<const string_view> data) noexcept {
-        if(path.ends_with("label")) {
+        if(path.ends_with("device")) {
+            if(data.has_single_value()) {
+                if(
+                  !extract(data).empty() &&
+                  identifier::can_be_encoded(extract(data))) {
+                    _device_id = identifier{extract(data)};
+                }
+            } else {
+                log_error("too many values for device id")
+                  .arg("count", data.size());
+            }
+        } else if(path.ends_with("label")) {
             if(data.has_single_value()) {
                 if(!extract(data).empty()) {
                     _label = extract(data).to_string();
@@ -461,7 +502,7 @@ public:
             const auto parent{path.parent()};
             if(parent.ends_with("input")) {
                 if(parse_msg_id(data, _input_id)) {
-                    if(parent.size() == 2) {
+                    if(parent.size() == 3) {
                         if(!is_parsing_feedback()) {
                             _status_l1 = status_type_l1::parsing_input;
                         }
@@ -473,14 +514,19 @@ public:
                 }
             } else if(parent.ends_with("slot")) {
                 if(parse_msg_id(data, _slot_id)) {
-                    if(parent.size() == 2) {
+                    if(parent.size() == 3) {
                         _status_l1 = status_type_l1::parsing_slot;
                     }
                 }
             } else if(parent.ends_with("feedback")) {
                 if(parse_msg_id(data, _feedback_id)) {
-                    if(parent.size() == 2) {
+                    if(parent.size() == 3) {
                         _status_l1 = status_type_l1::parsing_feedback;
+                        if(!_device_id) {
+                            if(extract(_feedback_id).has_class("Key")) {
+                                _device_id = {"Keyboard"};
+                            }
+                        }
                     }
                 }
             }
@@ -489,13 +535,26 @@ public:
 
     void add_object(const basic_string_path& path) noexcept final {
         _str_data_offs = 0;
-        if(path.is("_")) {
+        if(path.size() == 1) {
             reset();
+            _mapping_id = {};
+            const auto entry{path.front()};
+            if(!entry.empty() && (entry != "_") && (entry != "default")) {
+                if(identifier::can_be_encoded(entry)) {
+                    _mapping_id = identifier{entry};
+                } else {
+                    log_error("invalid input mapping identifier ${id}")
+                      .arg("id", entry);
+                }
+            }
+            log_info("loading input mapping ${id}")
+              .tag("loadInpMap")
+              .arg("id", _mapping_id);
         }
     }
 
     void finish_object(const basic_string_path& path) noexcept final {
-        if(path.is("_")) {
+        if(path.size() == 2) {
             if(is_parsing_input()) {
                 add_input();
             } else if(is_parsing_feedback()) {
@@ -504,9 +563,9 @@ public:
         }
     }
 
-    void finish() noexcept final {
+    auto finish() noexcept -> bool final {
         _ctx.switch_input_mapping();
-        base::finish();
+        return base::finish();
     }
 
     void reset() noexcept {
@@ -538,6 +597,7 @@ private:
     std::optional<message_id> _feedback_id;
     std::optional<message_id> _input_id;
     std::optional<message_id> _slot_id;
+    std::optional<identifier> _device_id;
     std::optional<std::string> _type;
     std::optional<std::string> _label;
     std::variant<std::monostate, bool, float> _threshold;
@@ -546,6 +606,7 @@ private:
     std::optional<bool> _initial_bool;
     std::optional<input_feedback_trigger> _trigger;
     std::optional<input_feedback_action> _action;
+    identifier _mapping_id;
     identifier _temp_id;
     span_size_t _str_data_offs{0};
 
@@ -555,7 +616,7 @@ private:
 auto make_valtree_input_setup_builder(
   const std::shared_ptr<pending_resource_info>& parent,
   execution_context& ctx) noexcept -> std::unique_ptr<valtree::object_builder> {
-    return std::make_unique<valtree_orbiting_input_setup_builder>(parent, ctx);
+    return std::make_unique<valtree_input_setup_builder>(parent, ctx);
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

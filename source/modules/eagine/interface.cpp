@@ -42,17 +42,26 @@ export struct input_provider : interface<input_provider> {
     virtual auto instance_id() const noexcept -> identifier = 0;
 
     virtual void input_enumerate(
-      const callable_ref<
-        void(const message_id, const input_value_kinds) noexcept>) = 0;
+      execution_context&,
+      const callable_ref<void(
+        const identifier,
+        const message_id,
+        const input_value_kinds) noexcept>) = 0;
 
     virtual void input_connect(input_sink&) = 0;
     virtual void input_disconnect() = 0;
 
     virtual void mapping_begin(const identifier setup_id) = 0;
-    virtual void mapping_enable(const message_id signal_id) = 0;
-    virtual void mapping_commit(const identifier setup_id) = 0;
+    virtual void mapping_enable(
+      const identifier device_id,
+      const message_id signal_id) = 0;
+    virtual void mapping_commit(
+      execution_context&,
+      const identifier setup_id) = 0;
 
     virtual auto add_ui_feedback(
+      const identifier mapping_id,
+      const identifier device_id,
       const message_id signal_id,
       const message_id input_id,
       input_feedback_trigger,

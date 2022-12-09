@@ -3,6 +3,6 @@
 ,"Coord": {"attrib":"wrap_coord"}}
 ,"label":"screen rays program"
 ,"shaders":
-[{"url":"glsl:///ScreenVert","type":"vertex"}
-,{"url":"glsl:///ScreenFrag","type":"fragment"}]
+[{"url":"glsl:///ScreenVert","type":"vertex_shader"}
+,{"url":"glsl:///ScreenFrag","type":"fragment_shader"}]
 }

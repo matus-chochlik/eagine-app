@@ -402,10 +402,12 @@ public:
 
     void do_add(const basic_string_path&, const auto&) noexcept {}
 
-    void finish() noexcept override {
+    auto finish() noexcept -> bool override {
         if(auto parent{_parent.lock()}) {
             extract(parent).mark_loaded();
+            return true;
         }
+        return false;
     }
 
     void failed() noexcept override {
@@ -1065,8 +1067,8 @@ public:
 
     auto request_json_traversal(
       url locator,
-      std::shared_ptr<valtree::object_builder>,
-      span_size_t max_token_size) noexcept -> resource_request_result;
+      std::shared_ptr<valtree::object_builder>) noexcept
+      -> resource_request_result;
 
     /// @brief Requests a value tree object traversal by the specified visitor.
     auto request_value_tree_traversal(
@@ -1077,8 +1079,8 @@ public:
     /// @brief Requests a value tree object traversal by the specified builder.
     auto request_value_tree_traversal(
       url locator,
-      std::shared_ptr<valtree::object_builder>,
-      span_size_t max_token_size) noexcept -> resource_request_result;
+      std::shared_ptr<valtree::object_builder>) noexcept
+      -> resource_request_result;
 
     /// @brief Requests camera parameters.
     auto request_camera_parameters(url locator, orbiting_camera&) noexcept

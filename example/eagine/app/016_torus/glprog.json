@@ -3,6 +3,6 @@
 ,"Normal": {"attrib":"normal"}
 ,"TexCoord": {"attrib":"wrap_coord"}}
 ,"shaders":
-[{"url":"glsl:///VertShader","type":"vertex","label":"draw vertex"}
-,{"url":"glsl:///FragShader","type":"fragment","label":"draw fragment"}]
+[{"url":"glsl:///VertShader","type":"vertex_shader","label":"draw vertex"}
+,{"url":"glsl:///FragShader","type":"fragment_shader","label":"draw fragment"}]
 }

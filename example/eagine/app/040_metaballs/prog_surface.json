@@ -4,7 +4,7 @@
 ,"WrapCoord": {"attrib":"wrap_coord"}}
 ,"label":"metaball surface polygonization"
 ,"shaders":
-[{"url":"glsl:///SrfceVert","type":"vertex"}
-,{"url":"glsl:///SrfceGeom","type":"geometry"}
-,{"url":"glsl:///SrfceFrag","type":"fragment"}]
+[{"url":"glsl:///SrfceVert","type":"vertex_shader"}
+,{"url":"glsl:///SrfceGeom","type":"geometry_shader"}
+,{"url":"glsl:///SrfceFrag","type":"fragment_shader"}]
 }

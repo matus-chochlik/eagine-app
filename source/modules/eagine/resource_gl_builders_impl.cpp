@@ -19,6 +19,7 @@ import eagine.core.reflection;
 import eagine.core.runtime;
 import eagine.core.utility;
 import eagine.core.value_tree;
+import eagine.core.c_api;
 import eagine.oglplus;
 import eagine.shapes;
 import <bitset>;
@@ -38,6 +39,10 @@ public:
       video_context& video) noexcept
       : base{info}
       , _video{video} {}
+
+    auto max_token_size() noexcept -> span_size_t final {
+        return 256;
+    }
 
     using base::do_add;
 
@@ -67,21 +72,9 @@ public:
                         _shdr_locator = {to_string(extract(data))};
                     }
                 } else if(path.ends_with("type")) {
-                    auto& GL = _video.gl_api().constants();
-                    if(data.has_single_value()) {
-                        if(extract(data) == "fragment") {
-                            _shdr_type = GL.fragment_shader;
-                        } else if(extract(data) == "vertex") {
-                            _shdr_type = GL.vertex_shader;
-                        } else if(extract(data) == "geometry") {
-                            _shdr_type = GL.geometry_shader;
-                        } else if(extract(data) == "compute") {
-                            _shdr_type = GL.compute_shader;
-                        } else if(extract(data) == "tess_evaluation") {
-                            _shdr_type = GL.tess_evaluation_shader;
-                        } else if(extract(data) == "tess_control") {
-                            _shdr_type = GL.tess_control_shader;
-                        }
+                    if(const auto conv{
+                         from_strings<oglplus::shader_type>(data)}) {
+                        _shdr_type = extract(conv);
                     }
                 }
             }
@@ -156,142 +149,45 @@ auto make_valtree_gl_program_builder(
 //------------------------------------------------------------------------------
 // valtree_gl_texture_image_loader
 //------------------------------------------------------------------------------
+template <typename T>
+static auto gl_enum_from_string(
+  span<const string_view> data,
+  oglplus::gl_types::enum_type& v) noexcept -> bool {
+    if(const auto conv{from_strings<T>(data)}) {
+        v = to_underlying(extract(conv));
+        return true;
+    }
+    return false;
+}
+//------------------------------------------------------------------------------
 static auto texture_target_from_string(
   span<const string_view> data,
   oglplus::gl_types::enum_type& v) noexcept -> bool {
-    if(data.has_single_value()) {
-        const auto str{extract(data)};
-        if(str == "texture_2d") {
-            v = 0x0DE1;
-            return true;
-        } else if(str == "texture_2d_array") {
-            v = 0x8C1A;
-            return true;
-        } else if(str == "texture_3d") {
-            v = 0x806F;
-            return true;
-        } else if(str == "texture_1d") {
-            v = 0x0DE0;
-            return true;
-        } else if(str == "texture_1d_array") {
-            v = 0x8C18;
-            return true;
-        } else if(str == "texture_cube_map") {
-            v = 0x8513;
-            return true;
-        } else if(str == "texture_cube_map_positive_x") {
-            v = 0x8515;
-            return true;
-        } else if(str == "texture_cube_map_negative_x") {
-            v = 0x8516;
-            return true;
-        } else if(str == "texture_cube_map_positive_y") {
-            v = 0x8517;
-            return true;
-        } else if(str == "texture_cube_map_negative_y") {
-            v = 0x8518;
-            return true;
-        } else if(str == "texture_cube_map_positive_z") {
-            v = 0x8519;
-            return true;
-        } else if(str == "texture_cube_map_negative_z") {
-            v = 0x851A;
-            return true;
-        }
-        // TODO
-    }
-    return false;
+    return gl_enum_from_string<oglplus::texture_target>(data, v);
 }
 //------------------------------------------------------------------------------
 static auto texture_data_type_from_string(
   span<const string_view> data,
   oglplus::gl_types::enum_type& v) noexcept -> bool {
-    if(data.has_single_value()) {
-        const auto str{extract(data)};
-        if(str == "unsigned_byte") {
-            v = 0x1401;
-            return true;
-        } else if(str == "unsigned_short") {
-            v = 0x1403;
-            return true;
-        } else if(str == "unsigned_int") {
-            v = 0x1405;
-            return true;
-        } else if(str == "float") {
-            v = 0x1406;
-            return true;
-        }
-        // TODO
-    }
-    return false;
+    return gl_enum_from_string<oglplus::pixel_data_type>(data, v);
 }
 //------------------------------------------------------------------------------
 static auto texture_iformat_from_string(
   span<const string_view> data,
   oglplus::gl_types::enum_type& v) noexcept -> bool {
-    if(data.has_single_value()) {
-        const auto str{extract(data)};
-        if(str == "rgba8") {
-            v = 0x8058;
-            return true;
-        } else if(str == "rgb8") {
-            v = 0x8051;
-            return true;
-        } else if(str == "r8") {
-            v = 0x8229;
-            return true;
-        } else if(str == "r8ui") {
-            v = 0x8232;
-            return true;
-        }
-        // TODO
-    }
-    return false;
+    return gl_enum_from_string<oglplus::pixel_internal_format>(data, v);
 }
 //------------------------------------------------------------------------------
 static auto texture_format_from_string(
   span<const string_view> data,
   oglplus::gl_types::enum_type& v) noexcept -> bool {
-    if(data.has_single_value()) {
-        const auto str{extract(data)};
-        if(str == "rgba") {
-            v = 0x1908;
-            return true;
-        } else if(str == "rgb") {
-            v = 0x1907;
-            return true;
-        } else if(str == "red") {
-            v = 0x1903;
-            return true;
-        } else if(str == "red_integer") {
-            v = 0x8D94;
-            return true;
-        }
-        // TODO
-    }
-    return false;
+    return gl_enum_from_string<oglplus::pixel_format>(data, v);
 }
 //------------------------------------------------------------------------------
 static auto texture_swizzle_from_string(
   span<const string_view> data,
   oglplus::gl_types::enum_type& v) noexcept -> bool {
-    if(data.has_single_value()) {
-        const auto str{extract(data)};
-        if(str == "red") {
-            v = 0x1903;
-            return true;
-        } else if(str == "green") {
-            v = 0x1904;
-            return true;
-        } else if(str == "blue") {
-            v = 0x1905;
-            return true;
-        } else if(str == "alpha") {
-            v = 0x1906;
-            return true;
-        }
-    }
-    return false;
+    return gl_enum_from_string<oglplus::texture_swizzle_mode>(data, v);
 }
 //------------------------------------------------------------------------------
 struct resource_gl_texture_image_params {
@@ -348,6 +244,10 @@ public:
             return true;
         }
         return false;
+    }
+
+    auto max_token_size() noexcept -> span_size_t final {
+        return 256;
     }
 
     using base::do_add;
@@ -430,7 +330,7 @@ public:
         }
     }
 
-    void finish() noexcept final {
+    auto finish() noexcept -> bool final {
         if(const auto parent{_parent.lock()}) {
             if(_success) {
                 _decompression.finish();
@@ -440,7 +340,9 @@ public:
                 extract(parent).mark_finished();
             }
             extract(parent).loader().buffers().eat(std::move(_temp));
+            return _success;
         }
+        return false;
     }
 
     void failed() noexcept final {
@@ -495,6 +397,10 @@ public:
       , _video{video}
       , _tex_target{tex_target}
       , _tex_unit{tex_unit} {}
+
+    auto max_token_size() noexcept -> span_size_t final {
+        return 256;
+    }
 
     using base::do_add;
 
@@ -639,7 +545,7 @@ public:
         }
     }
 
-    void finish() noexcept final {
+    auto finish() noexcept -> bool final {
         if(const auto parent{_parent.lock()}) {
             if(_success) {
                 for(auto& [loc, tgt, para] : _image_requests) {
@@ -659,7 +565,9 @@ public:
             } else {
                 extract(parent).mark_finished();
             }
+            return _success;
         }
+        return false;
     }
 
 private:
@@ -1016,6 +924,10 @@ public:
       : base{info}
       , _video{video}
       , _buf_target{buf_target} {}
+
+    auto max_token_size() noexcept -> span_size_t final {
+        return 256;
+    }
 
     using base::do_add;
 

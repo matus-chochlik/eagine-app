@@ -5,6 +5,6 @@
 ,"Bitangent": {"attrib":"bitangent"}
 ,"WrapCoord": {"attrib":"wrap_coord"}}
 ,"shaders":
-[{"url":"glsl:///VertShdr","type":"vertex"}
-,{"url":"glsl:///FragShdr","type":"fragment"}]
+[{"url":"glsl:///VertShdr","type":"vertex_shader"}
+,{"url":"glsl:///FragShdr","type":"fragment_shader"}]
 }

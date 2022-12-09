@@ -2,6 +2,6 @@
 {"Position": {"attrib":"position"}
 ,"Normal": {"attrib":"normal"}}
 ,"shaders":
-[{"url":"glsl:///SurfVert","type":"vertex"}
-,{"url":"glsl:///SurfFrag","type":"fragment"}]
+[{"url":"glsl:///SurfVert","type":"vertex_shader"}
+,{"url":"glsl:///SurfFrag","type":"fragment_shader"}]
 }

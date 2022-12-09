@@ -2,7 +2,7 @@
 {"Position": {"attrib":"position"}
 ,"Normal": {"attrib":"normal"}}
 ,"shaders":
-[{"url":"glsl:///HaloVert","type":"vertex"}
-,{"url":"glsl:///HaloGeom","type":"geometry"}
-,{"url":"glsl:///HaloFrag","type":"fragment"}]
+[{"url":"glsl:///HaloVert","type":"vertex_shader"}
+,{"url":"glsl:///HaloGeom","type":"geometry_shader"}
+,{"url":"glsl:///HaloFrag","type":"fragment_shader"}]
 }

@@ -17,10 +17,10 @@ list(APPEND CMAKE_MODULE_PATH ${EAGINE_CORE_ROOT}/config)
 list(APPEND CMAKE_MODULE_PATH ${EAGINE_OGLPLUS_ROOT}/config)
 file(STRINGS "${EAGINE_CORE_ROOT}/VERSION" EAGINE_VERSION)
 
+enable_testing()
 add_subdirectory(submodules)
 
 include(EAGineCoreCommon)
-include(OGLplusBaking)
 find_package(EAGineGLFW3)
 
 add_subdirectory(assets)

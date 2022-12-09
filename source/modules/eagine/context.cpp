@@ -299,6 +299,21 @@ public:
         return *_audio_contexts.front();
     }
 
+    /// @brief Returns the canonical device id for application gui inputs.
+    constexpr auto app_gui_device_id() const noexcept -> identifier {
+        return {"AppGUI"};
+    }
+
+    /// @brief Returns the canonical device id for keyboard.
+    constexpr auto keyboard_device_id() const noexcept -> identifier {
+        return {"Keyboard"};
+    }
+
+    /// @brief Returns the canonical device id for mouse.
+    constexpr auto mouse_device_id() const noexcept -> identifier {
+        return {"Mouse"};
+    }
+
     /// @brief Connect the specified logical input to a callable handler reference.
     auto connect_input(const message_id input_id, const input_handler handler)
       -> execution_context&;
@@ -314,6 +329,8 @@ public:
 
     /// @brief Add a mapping of one input signal to an action on another UI input.
     auto add_ui_feedback(
+      const identifier mapping_id,
+      const identifier device_id,
       const message_id signal_id,
       const message_id input_id,
       input_feedback_trigger,
@@ -346,17 +363,162 @@ public:
 
     /// @brief Map a specified logical input to a physical input signal.
     auto map_input(
-      const message_id input_id,
       const identifier mapping_id,
+      const message_id input_id,
+      const identifier device_id,
       const message_id signal_id,
       const input_setup setup) -> execution_context&;
 
     /// @brief Map a specified logical input to a physical input signal.
     auto map_input(
       const message_id input_id,
+      const identifier device_id,
       const message_id signal_id,
       const input_setup setup) -> execution_context& {
-        return map_input(input_id, {}, signal_id, setup);
+        return map_input({}, input_id, device_id, signal_id, setup);
+    }
+
+    /// @brief Map a specified logical input to a keyboard key signal.
+    auto map_key(
+      const identifier mapping_id,
+      const message_id input_id,
+      const identifier key_id,
+      const input_setup setup) -> execution_context& {
+        return map_input(
+          mapping_id, input_id, keyboard_device_id(), {{"Key"}, key_id}, setup);
+    }
+
+    /// @brief Map a specified logical input to a keyboard key signal.
+    auto map_key(
+      const identifier mapping_id,
+      const message_id input_id,
+      const identifier key_id) -> execution_context& {
+        return map_key(mapping_id, input_id, key_id, input_setup().trigger());
+    }
+
+    /// @brief Map a specified logical input to a keyboard key signal.
+    auto map_key(const message_id input_id, const identifier key_id)
+      -> execution_context& {
+        return map_key({}, input_id, key_id);
+    }
+
+    /// @brief Map a specified logical input to a keyboard key signal.
+    auto map_key(
+      const message_id input_id,
+      const identifier key_id,
+      const input_setup setup) -> execution_context& {
+        return map_key({}, input_id, key_id, setup);
+    }
+
+    /// @brief Map a specified logical input to a mouse x-axis motion signal.
+    auto map_cursor_motion_x(
+      const identifier mapping_id,
+      const message_id input_id,
+      const input_setup setup) -> execution_context& {
+        return map_input(
+          mapping_id, input_id, {"Mouse"}, {"Cursor", "MotionX"}, setup);
+    }
+
+    /// @brief Map a specified logical input to a mouse x-axis motion signal.
+    auto map_cursor_motion_x(const message_id input_id, const input_setup setup)
+      -> execution_context& {
+        return map_cursor_motion_x({}, input_id, setup);
+    }
+
+    /// @brief Map a specified logical input to a mouse y-axis motion signal.
+    auto map_cursor_motion_y(
+      const identifier mapping_id,
+      const message_id input_id,
+      const input_setup setup) -> execution_context& {
+        return map_input(
+          mapping_id, input_id, {"Mouse"}, {"Cursor", "MotionY"}, setup);
+    }
+
+    /// @brief Map a specified logical input to a mouse y-axis motion signal.
+    auto map_cursor_motion_y(const message_id input_id, const input_setup setup)
+      -> execution_context& {
+        return map_cursor_motion_y({}, input_id, setup);
+    }
+
+    /// @brief Map a specified logical input to a y-axis scroll signal.
+    auto map_wheel_scroll_y(
+      const identifier mapping_id,
+      const message_id input_id,
+      const input_setup setup) -> execution_context& {
+        return map_input(
+          mapping_id, input_id, {"Mouse"}, {"Wheel", "ScrollY"}, setup);
+    }
+
+    /// @brief Map a specified logical input to a y-axis scroll signal.
+    auto map_wheel_scroll_y(const message_id input_id, const input_setup setup)
+      -> execution_context& {
+        return map_wheel_scroll_y({}, input_id, setup);
+    }
+
+    /// @brief Map a specified logical input to a y-axis scroll signal.
+    auto map_wheel_scroll_y(const message_id input_id) -> execution_context& {
+        return map_wheel_scroll_y({}, input_id, input_setup().relative());
+    }
+
+    /// @brief Map a specified logical input to a left mouse button signal.
+    auto map_left_mouse_button(
+      const identifier mapping_id,
+      const message_id input_id,
+      const input_setup setup) -> execution_context& {
+        return map_input(
+          mapping_id, input_id, {"Mouse"}, {"Cursor", "Pressure"}, setup);
+    }
+
+    /// @brief Map a specified logical input to a left mouse button signal.
+    auto map_left_mouse_button(
+      const message_id input_id,
+      const input_setup setup) -> execution_context& {
+        return map_left_mouse_button({}, input_id, setup);
+    }
+
+    /// @brief Map a specified logical input to a left mouse button signal.
+    auto map_left_mouse_button(const message_id input_id)
+      -> execution_context& {
+        return map_left_mouse_button(input_id, input_setup().trigger());
+    }
+
+    /// @brief Map a specified logical input to a pointing device pressure signal.
+    auto map_cursor_pressure(
+      const identifier mapping_id,
+      const message_id input_id,
+      const input_setup setup) -> execution_context& {
+        return map_left_mouse_button(mapping_id, input_id, setup);
+    }
+
+    /// @brief Map a specified logical input to a pointing device pressure signal.
+    auto map_cursor_pressure(
+      const identifier mapping_id,
+      const message_id input_id) -> execution_context& {
+        return map_cursor_pressure(
+          mapping_id, input_id, input_setup().trigger());
+    }
+
+    /// @brief Map a specified logical input to a pointing device pressure signal.
+    auto map_cursor_pressure(const message_id input_id) -> execution_context& {
+        return map_cursor_pressure({}, input_id);
+    }
+
+    /// @brief Map a specified logical input to a GUI input signal.
+    auto map_ui_input(
+      const identifier mapping_id,
+      const message_id input_id,
+      const message_id signal_id,
+      const input_setup setup) -> execution_context& {
+        return map_input(
+          mapping_id, input_id, app_gui_device_id(), signal_id, setup);
+    }
+
+    /// @brief Map a specified logical input to a GUI input signal.
+    auto map_ui_input(
+      const message_id input_id,
+      const message_id signal_id,
+      const input_setup setup) -> execution_context& {
+        return map_input({}, input_id, app_gui_device_id(), signal_id, setup);
     }
 
     /// @brief Binds generic application inputs to default physical input signals.
@@ -429,14 +591,19 @@ private:
     // input id -> handler function reference
     flat_map<message_id, input_handler> _connected_inputs;
 
-    // mapping id -> signal id -> (input id, setup)
+    // mapping id -> (device id, signal id) -> (input id, setup)
     flat_map<
       identifier,
-      flat_map<message_id, std::tuple<message_id, input_setup>>>
+      flat_map<
+        std::tuple<identifier, message_id>,
+        std::tuple<message_id, input_setup>>>
       _input_mappings;
 
-    // signal id -> (setup, handler)
-    flat_map<message_id, std::tuple<input_setup, input_handler>> _mapped_inputs;
+    // (device id, signal id) -> (setup, handler)
+    flat_map<
+      std::tuple<identifier, message_id>,
+      std::tuple<input_setup, input_handler>>
+      _mapped_inputs;
 
     void _handle_stop_running(const input& engaged) noexcept {
         if(engaged) {
@@ -448,7 +615,8 @@ private:
     void _forward_input(
       const input_info& info,
       const input_value<T>& value) noexcept {
-        const auto slot_pos = _mapped_inputs.find(info.signal_id);
+        const auto slot_pos =
+          _mapped_inputs.find(std::make_tuple(info.device_id, info.signal_id));
         if(slot_pos != _mapped_inputs.end()) {
             const auto& [setup, handler] = slot_pos->second;
             if(setup.is_applicable() && setup.has(info.value_kind)) {

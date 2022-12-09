@@ -1,8 +1,8 @@
 {"inputs":{"Position": {"attrib":"position"}}
 ,"shaders":
-[{"url":"glsl:///VertShader","type":"vertex"}
-,{"url":"glsl:///TCtlShader","type":"tess_control"}
-,{"url":"glsl:///TEvlShader","type":"tess_evaluation"}
-,{"url":"glsl:///GeomShader","type":"geometry"}
-,{"url":"glsl:///FragShader","type":"fragment"}]
+[{"url":"glsl:///VertShader","type":"vertex_shader"}
+,{"url":"glsl:///TCtlShader","type":"tess_control_shader"}
+,{"url":"glsl:///TEvlShader","type":"tess_evaluation_shader"}
+,{"url":"glsl:///GeomShader","type":"geometry_shader"}
+,{"url":"glsl:///FragShader","type":"fragment_shader"}]
 }

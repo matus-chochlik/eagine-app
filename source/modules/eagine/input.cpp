@@ -24,28 +24,34 @@ namespace eagine::app {
 /// @ingroup application
 /// @see input_feedback_action
 export enum class input_feedback_trigger : std::uint8_t {
-    /// @brief Any change in the triggering signal value.
-    change,
-    /// @brief The triggering signal value is under the specified threshold.
-    under_threshold,
-    /// @brief The triggering signal value is over the specified threshold.
-    over_threshold,
     /// @brief The triggering signal has value of zero (or false).
-    zero,
+    zero = 0,
+    /// @brief The triggering signal has value of zero (or false).
+    release = 0,
     /// @brief The triggering signal has value of one (or true).
-    one
+    one = 1,
+    /// @brief The triggering signal has value of one (or true).
+    press = 1,
+    /// @brief Any change in the triggering signal value.
+    change = 2,
+    /// @brief The triggering signal value is under the specified threshold.
+    under_threshold = 4,
+    /// @brief The triggering signal value is over the specified threshold.
+    over_threshold = 5
 };
 
 export template <typename Selector>
 constexpr auto enumerator_mapping(
   const std::type_identity<input_feedback_trigger>,
   const Selector) noexcept {
-    return enumerator_map_type<input_feedback_trigger, 5>{
-      {{"change", input_feedback_trigger::change},
+    return enumerator_map_type<input_feedback_trigger, 7>{
+      {{"zero", input_feedback_trigger::zero},
+       {"release", input_feedback_trigger::release},
+       {"one", input_feedback_trigger::one},
+       {"press", input_feedback_trigger::press},
+       {"change", input_feedback_trigger::change},
        {"under_threshold", input_feedback_trigger::under_threshold},
-       {"over_threshold", input_feedback_trigger::over_threshold},
-       {"zero", input_feedback_trigger::zero},
-       {"one", input_feedback_trigger::one}}};
+       {"over_threshold", input_feedback_trigger::over_threshold}}};
 }
 //------------------------------------------------------------------------------
 /// @brief Enumeration of how a input feedback trigger should be applied.
@@ -125,12 +131,15 @@ using input_variable = variable_with_history<T, 3>;
 //------------------------------------------------------------------------------
 export struct input_info {
     message_id signal_id{};
+    identifier device_id{};
     input_value_kind value_kind{};
 
     constexpr input_info(
+      const identifier dev_id,
       const message_id sig_id,
       const input_value_kind kind) noexcept
       : signal_id{sig_id}
+      , device_id{dev_id}
       , value_kind{kind} {}
 };
 //------------------------------------------------------------------------------

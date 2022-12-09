@@ -140,7 +140,7 @@ example_mandelbrot::example_mandelbrot(execution_context& ec, video_context& vc)
     gl.disable(GL.depth_test);
 
     ec.connect_inputs()
-      .add_ui_button({"GUI", "ChngGrad"}, "Change gradient")
+      .add_ui_button({"Button", "ChngGrad"}, "Change gradient")
       .connect_input(
         {"Motion", "Dampening"},
         make_callable_ref<&example_mandelbrot::dampening>(this))
@@ -157,50 +157,38 @@ example_mandelbrot::example_mandelbrot(execution_context& ec, video_context& vc)
         {"Example", "ChngGrad"},
         make_callable_ref<&example_mandelbrot::change_gradient>(this))
       .map_inputs()
-      .map_input(
-        {"Motion", "Dampening"},
-        {"Keyboard", "LeftCtrl"},
+      .map_key({"Motion", "Dampening"}, {"LeftCtrl"})
+      .map_key({"Cursor", "Dragging"}, {"Button0"})
+      .map_wheel_scroll_y({"View", "Zoom"})
+      .map_key(
+        {"View", "Zoom"}, {"KpPlus"}, input_setup().trigger().multiply(0.25))
+      .map_key(
+        {"View", "Zoom"},
+        {"KpMinus"},
+        input_setup().trigger().multiply(0.25).invert())
+      .map_key(
+        {"View", "PanX"}, {"Left"}, input_setup().trigger().multiply(0.25))
+      .map_key(
+        {"View", "PanX"},
+        {"Right"},
+        input_setup().trigger().multiply(0.25).invert())
+      .map_key(
+        {"View", "PanY"}, {"Down"}, input_setup().trigger().multiply(0.25))
+      .map_key(
+        {"View", "PanY"},
+        {"Up"},
+        input_setup().trigger().multiply(0.25).invert())
+      .map_cursor_motion_x(
+        {"View", "PanX"},
+        input_setup().relative().multiply(2).only_if(is_dragging))
+      .map_cursor_motion_y(
+        {"View", "PanY"},
+        input_setup().relative().multiply(2).only_if(is_dragging))
+      .map_key({"Example", "ChngGrad"}, {"G"})
+      .map_ui_input(
+        {"Example", "ChngGrad"},
+        {"Button", "ChngGrad"},
         input_setup().trigger())
-      .map_input(
-        {"Cursor", "Dragging"}, {"Cursor", "Button0"}, input_setup().trigger())
-      .map_input(
-        {"View", "Zoom"}, {"Wheel", "ScrollY"}, input_setup().relative())
-      .map_input(
-        {"View", "Zoom"},
-        {"Keyboard", "KpPlus"},
-        input_setup().trigger().multiply(0.25))
-      .map_input(
-        {"View", "Zoom"},
-        {"Keyboard", "KpMinus"},
-        input_setup().trigger().multiply(0.25).invert())
-      .map_input(
-        {"View", "PanX"},
-        {"Keyboard", "Left"},
-        input_setup().trigger().multiply(0.25))
-      .map_input(
-        {"View", "PanX"},
-        {"Keyboard", "Right"},
-        input_setup().trigger().multiply(0.25).invert())
-      .map_input(
-        {"View", "PanY"},
-        {"Keyboard", "Down"},
-        input_setup().trigger().multiply(0.25))
-      .map_input(
-        {"View", "PanY"},
-        {"Keyboard", "Up"},
-        input_setup().trigger().multiply(0.25).invert())
-      .map_input(
-        {"View", "PanX"},
-        {"Cursor", "MotionX"},
-        input_setup().relative().multiply(2).only_if(is_dragging))
-      .map_input(
-        {"View", "PanY"},
-        {"Cursor", "MotionY"},
-        input_setup().relative().multiply(2).only_if(is_dragging))
-      .map_input(
-        {"Example", "ChngGrad"}, {"Keyboard", "G"}, input_setup().trigger())
-      .map_input(
-        {"Example", "ChngGrad"}, {"GUI", "ChngGrad"}, input_setup().trigger())
       .switch_input_mapping();
 }
 //------------------------------------------------------------------------------

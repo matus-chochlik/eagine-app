@@ -1,5 +1,5 @@
 {"shaders":
-[{"url":"glsl:///VertShader","type":"vertex"}
-,{"url":"glsl:///GeomShader","type":"geometry"}
-,{"url":"glsl:///FragShader","type":"fragment"}]
+[{"url":"glsl:///VertShader","type":"vertex_shader"}
+,{"url":"glsl:///GeomShader","type":"geometry_shader"}
+,{"url":"glsl:///FragShader","type":"fragment_shader"}]
 }

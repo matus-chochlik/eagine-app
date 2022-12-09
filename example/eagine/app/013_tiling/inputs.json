@@ -1,5 +1,6 @@
+{"_":
 [{"input":["GUI","ChngTilset"],"type":"ui_button","label":"Change tile-set"}
 ,{"slot":["Example","ChngTilset"],"map":
-[{"input":["Keyboard","T"],"type":"trigger"}
-,{"input":["GUI","ChngTilset"],"type":"trigger"}
-]}]
+[{"device":"Keyboard","input":["Key","T"],"type":"trigger"}
+,{"device":"AppGUI","input":["GUI","ChngTilset"],"type":"trigger"}
+]}]}

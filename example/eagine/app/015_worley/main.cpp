@@ -77,7 +77,7 @@ example_worley::example_worley(execution_context& ec, video_context& vc)
         {"Motion", "Dampening"},
         make_callable_ref<&example_worley::dampening>(this))
       .connect_input(
-        {"Cursor", "Dragging"},
+        {"Pointer", "Dragging"},
         make_callable_ref<&example_worley::dragging>(this))
       .connect_input(
         {"View", "Zoom"}, make_callable_ref<&example_worley::zoom>(this))
@@ -86,45 +86,32 @@ example_worley::example_worley(execution_context& ec, video_context& vc)
       .connect_input(
         {"View", "PanY"}, make_callable_ref<&example_worley::pan_y>(this))
       .map_inputs()
-      .map_input(
-        {"Motion", "Dampening"},
-        {"Keyboard", "LeftCtrl"},
-        input_setup().trigger())
-      .map_input(
-        {"Cursor", "Dragging"}, {"Cursor", "Button0"}, input_setup().trigger())
-      .map_input(
-        {"View", "Zoom"}, {"Wheel", "ScrollY"}, input_setup().relative())
-      .map_input(
+      .map_key({"Motion", "Dampening"}, {"LeftCtrl"})
+      .map_left_mouse_button({"Pointer", "Dragging"})
+      .map_wheel_scroll_y({"View", "Zoom"}, input_setup().relative())
+      .map_key(
+        {"View", "Zoom"}, {"KpPlus"}, input_setup().trigger().multiply(0.25))
+      .map_key(
         {"View", "Zoom"},
-        {"Keyboard", "KpPlus"},
-        input_setup().trigger().multiply(0.25))
-      .map_input(
-        {"View", "Zoom"},
-        {"Keyboard", "KpMinus"},
+        {"KpMinus"},
         input_setup().trigger().multiply(0.25).invert())
-      .map_input(
+      .map_key(
+        {"View", "PanX"}, {"Left"}, input_setup().trigger().multiply(0.25))
+      .map_key(
         {"View", "PanX"},
-        {"Keyboard", "Left"},
-        input_setup().trigger().multiply(0.25))
-      .map_input(
-        {"View", "PanX"},
-        {"Keyboard", "Right"},
+        {"Right"},
         input_setup().trigger().multiply(0.25).invert())
-      .map_input(
+      .map_key(
+        {"View", "PanY"}, {"Down"}, input_setup().trigger().multiply(0.25))
+      .map_key(
         {"View", "PanY"},
-        {"Keyboard", "Down"},
-        input_setup().trigger().multiply(0.25))
-      .map_input(
-        {"View", "PanY"},
-        {"Keyboard", "Up"},
+        {"Up"},
         input_setup().trigger().multiply(0.25).invert())
-      .map_input(
+      .map_cursor_motion_x(
         {"View", "PanX"},
-        {"Cursor", "MotionX"},
         input_setup().relative().multiply(2).only_if(is_dragging))
-      .map_input(
+      .map_cursor_motion_y(
         {"View", "PanY"},
-        {"Cursor", "MotionY"},
         input_setup().relative().multiply(2).only_if(is_dragging))
       .switch_input_mapping();
 }
