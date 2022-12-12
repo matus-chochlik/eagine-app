@@ -446,8 +446,8 @@ void pending_resource_info::_handle_glsl_strings(
     if(is(resource_kind::glsl_source)) {
         std::vector<const oglplus::gl_types::char_type*> gl_strs;
         std::vector<oglplus::gl_types::int_type> gl_ints;
-        gl_strs.reserve(std_size(data.size()));
-        gl_ints.reserve(std_size(data.size()));
+        gl_strs.reserve(data.std_size());
+        gl_ints.reserve(data.std_size());
 
         for(const auto& blk : data) {
             gl_strs.emplace_back(
