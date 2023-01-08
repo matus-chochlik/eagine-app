@@ -270,7 +270,7 @@ void pending_resource_info::_handle_json_text(
             auto& pvts = std::get<_pending_valtree_traversal_state>(_state);
             bool should_continue{true};
             for(auto chunk : data) {
-                if(!pvts.input.consume_data(chunk)) {
+                if(not pvts.input.consume_data(chunk)) {
                     pvts.input.finish();
                     should_continue = false;
                     break;
@@ -411,7 +411,7 @@ void pending_resource_info::_handle_gl_shape(
             const auto cleanup_temp{_parent.buffers().eat_later(temp)};
             auto& pggbs =
               std::get<_pending_gl_geometry_and_bindings_state>(_state);
-            if(!pggbs.bindings) {
+            if(not pggbs.bindings) {
                 pggbs.bindings = oglplus::vertex_attrib_bindings{shape};
             }
             gl_geometry_and_bindings geom{
@@ -506,7 +506,7 @@ void pending_resource_info::_handle_glsl_source(
 //------------------------------------------------------------------------------
 auto pending_resource_info::_finish_gl_program(
   _pending_gl_program_state& pgps) noexcept -> bool {
-    if(pgps.loaded && pgps.pending_requests.empty()) {
+    if(pgps.loaded and pgps.pending_requests.empty()) {
         _parent.log_info("loaded and linked GL program object")
           .arg("requestId", _request_id)
           .arg("bindgCount", pgps.input_bindings.count())
@@ -551,7 +551,7 @@ void pending_resource_info::_handle_gl_shader(
                     gl.attach_shader(pgps.prog, shdr);
 
                     pgps.pending_requests.erase(pos);
-                    if(!_finish_gl_program(pgps)) {
+                    if(not _finish_gl_program(pgps)) {
                         return;
                     }
                 }
@@ -563,14 +563,14 @@ void pending_resource_info::_handle_gl_shader(
 //------------------------------------------------------------------------------
 auto pending_resource_info::_finish_gl_texture(
   _pending_gl_texture_state& pgts) noexcept -> bool {
-    if(pgts.loaded && pgts.pending_requests.empty()) {
+    if(pgts.loaded and pgts.pending_requests.empty()) {
         const auto& gl = pgts.video.get().gl_api().operations();
         gl.active_texture(pgts.tex_unit);
 
         assert(pgts.pparams);
         const auto& params{*pgts.pparams};
         for(const auto level : integer_range(pgts.levels)) {
-            if(!pgts.level_images_done[std_size(level)]) {
+            if(not pgts.level_images_done[std_size(level)]) {
                 _clear_gl_texture_image(pgts, params, level, {});
             }
         }
@@ -646,7 +646,7 @@ auto resource_request_result::info() const noexcept -> pending_resource_info& {
 //------------------------------------------------------------------------------
 auto resource_loader::_is_json_resource(const url& locator) const noexcept
   -> bool {
-    return locator.has_path_suffix(".json") || locator.has_scheme("json");
+    return locator.has_path_suffix(".json") or locator.has_scheme("json");
 }
 //------------------------------------------------------------------------------
 void resource_loader::_handle_stream_data_appended(
@@ -913,7 +913,7 @@ auto resource_loader::request_gl_geometry_and_bindings(
 //------------------------------------------------------------------------------
 auto resource_loader::request_glsl_source(url locator) noexcept
   -> resource_request_result {
-    if(locator.has_path_suffix(".glsl") || locator.has_scheme("glsl")) {
+    if(locator.has_path_suffix(".glsl") or locator.has_scheme("glsl")) {
         if(const auto src_request{_new_resource(
              fetch_resource_chunks(
                locator,

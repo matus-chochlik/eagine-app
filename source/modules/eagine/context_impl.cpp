@@ -130,7 +130,7 @@ inline auto video_context_state::commit(
                       gl_type,
                       buffer);
 
-                    if(!target.dump_frame(
+                    if(not target.dump_frame(
                          extract(framedump_no),
                          width,
                          height,
@@ -301,8 +301,9 @@ auto video_context::init_gl_api() noexcept -> bool {
 
         _state = std::make_shared<video_context_state>(_parent, opts);
 
-        if(!extract(_provider).has_framebuffer()) {
-            if(!extract(_state).init_framebuffer(_parent, extract(_gl_api))) {
+        if(not extract(_provider).has_framebuffer()) {
+            if(not extract(_state).init_framebuffer(
+                 _parent, extract(_gl_api))) {
                 _parent.log_error("failed to create offscreen framebuffer");
                 return false;
             }
@@ -323,7 +324,7 @@ void video_context::end() {
 //------------------------------------------------------------------------------
 void video_context::commit() {
     if(_gl_api) [[likely]] {
-        if(!extract(_state).commit(
+        if(not extract(_state).commit(
              _frame_no, extract(_provider), extract(_gl_api))) [[unlikely]] {
             _parent.stop_running();
         }
@@ -422,14 +423,14 @@ inline auto execution_context::_setup_providers() noexcept -> bool {
 
     for(auto& video_opts : _options._video_opts) {
         // TODO: proper provider selection
-        if(!video_opts.second.has_provider()) {
+        if(not video_opts.second.has_provider()) {
             video_opts.second.set_provider("glfw3");
         }
     }
 
     for(auto& audio_opts : _options._audio_opts) {
         // TODO: proper provider selection
-        if(!audio_opts.second.has_provider()) {
+        if(not audio_opts.second.has_provider()) {
             audio_opts.second.set_provider("oalplus");
         }
     }
@@ -524,7 +525,7 @@ auto execution_context::prepare(std::unique_ptr<launchpad> pad)
 auto execution_context::is_running() noexcept -> bool {
     if(_keep_running) [[likely]] {
         if(_app) [[likely]] {
-            return !extract(_app).is_done();
+            return not extract(_app).is_done();
         }
     }
     return false;
@@ -634,8 +635,8 @@ auto execution_context::add_ui_slider(
   float min,
   float max,
   float initial) -> execution_context& {
-    if((min <= initial) && (initial <= max)) {
-        const input_value_kind kind = ((min >= 0.F) && (max <= 1.F))
+    if((min <= initial) and (initial <= max)) {
+        const input_value_kind kind = ((min >= 0.F) and (max <= 1.F))
                                         ? input_value_kind::absolute_norm
                                         : input_value_kind::absolute_free;
         for(auto& input : _input_providers) {

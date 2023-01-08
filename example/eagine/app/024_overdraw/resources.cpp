@@ -233,7 +233,7 @@ void draw_buffers::resize(example& e) {
     const auto& [gl, GL] = e.video().gl_api();
     const auto [width, height] = e.video().surface_size();
 
-    if(_width != width || _height != height) {
+    if(_width != width or _height != height) {
         _width = width;
         _height = height;
 

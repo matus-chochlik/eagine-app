@@ -120,10 +120,11 @@ public:
     auto check_requirements(video_context& vc) -> bool {
         const auto& [gl, GL] = vc.gl_api();
 
-        return gl.viewport && gl.clear_color && gl.clear &&
-               GL.color_buffer_bit && gl.load_identity && gl.ortho &&
-               gl.rotate_f && gl.begin && gl.end && gl.vertex2f && gl.color3f &&
-               GL.modelview && GL.projection && GL.triangle_fan && GL.line_loop;
+        return gl.viewport and gl.clear_color and gl.clear and
+               GL.color_buffer_bit and gl.load_identity and gl.ortho and
+               gl.rotate_f and gl.begin and gl.end and gl.vertex2f and
+               gl.color3f and GL.modelview and GL.projection and
+               GL.triangle_fan and GL.line_loop;
     }
 
     auto launch(execution_context& ec, const launch_options&)

@@ -265,7 +265,7 @@ public:
     /// @brief Returns the video context at the specified index.
     auto video_ctx(const span_size_t index = 0) const noexcept
       -> video_context* {
-        if((index >= 0) && (index < video_ctx_count())) {
+        if((index >= 0) and (index < video_ctx_count())) {
             return _video_contexts[integer(index)].get();
         }
         return nullptr;
@@ -273,7 +273,7 @@ public:
 
     /// @brief Returns the main video context.
     auto main_video() const noexcept -> video_context& {
-        assert(!_video_contexts.empty());
+        assert(not _video_contexts.empty());
         assert(_video_contexts.front());
         return *_video_contexts.front();
     }
@@ -286,7 +286,7 @@ public:
     /// @brief Returns the audio context at the specified index.
     auto audio_ctx(const span_size_t index = 0) const noexcept
       -> audio_context* {
-        if((index >= 0) && (index < audio_ctx_count())) {
+        if((index >= 0) and (index < audio_ctx_count())) {
             return _audio_contexts[integer(index)].get();
         }
         return nullptr;
@@ -294,7 +294,7 @@ public:
 
     /// @brief Returns the main audio context.
     auto main_audio() const noexcept -> audio_context& {
-        assert(!_audio_contexts.empty());
+        assert(not _audio_contexts.empty());
         assert(_audio_contexts.front());
         return *_audio_contexts.front();
     }
@@ -619,7 +619,7 @@ private:
           _mapped_inputs.find(std::make_tuple(info.device_id, info.signal_id));
         if(slot_pos != _mapped_inputs.end()) {
             const auto& [setup, handler] = slot_pos->second;
-            if(setup.is_applicable() && setup.has(info.value_kind)) {
+            if(setup.is_applicable() and setup.has(info.value_kind)) {
                 handler(input(value, info, setup));
             }
         }

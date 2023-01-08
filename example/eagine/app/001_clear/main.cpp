@@ -66,7 +66,7 @@ public:
     auto check_requirements(video_context& vc) -> bool {
         const auto& [gl, GL] = vc.gl_api();
 
-        return gl.clear_color && gl.clear && GL.color_buffer_bit;
+        return gl.clear_color and gl.clear and GL.color_buffer_bit;
     }
 
     auto launch(execution_context& ec, const launch_options&)

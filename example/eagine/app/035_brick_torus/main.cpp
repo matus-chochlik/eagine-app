@@ -87,15 +87,15 @@ example_parallax::example_parallax(execution_context& ec, video_context& vc)
 //------------------------------------------------------------------------------
 void example_parallax::_on_resource_loaded(
   const loaded_resource_base&) noexcept {
-    if(_prog && _torus) {
+    if(_prog and _torus) {
         _prog.apply_input_bindings(_video, _torus);
     }
     _apply_texture();
-    _load_progress.update_progress(_prog && _torus && _bricks && _stones);
+    _load_progress.update_progress(_prog and _torus and _bricks and _stones);
 }
 //------------------------------------------------------------------------------
 void example_parallax::_apply_texture() noexcept {
-    if(_prog && _bricks && _stones) {
+    if(_prog and _bricks and _stones) {
         if(_use_stones_tex) {
             _prog.set_texture_map(_video, _stones.tex_unit());
         } else {
@@ -105,8 +105,8 @@ void example_parallax::_apply_texture() noexcept {
 }
 //------------------------------------------------------------------------------
 void example_parallax::_switch_texture(const input& i) noexcept {
-    if(!i) {
-        _use_stones_tex = !_use_stones_tex;
+    if(not i) {
+        _use_stones_tex = not _use_stones_tex;
         _apply_texture();
         reset_timeout();
     }
@@ -171,14 +171,14 @@ public:
     auto check_requirements(video_context& vc) -> bool {
         const auto& [gl, GL] = vc.gl_api();
 
-        return gl.disable && gl.clear_color && gl.create_shader &&
-               gl.shader_source && gl.compile_shader && gl.create_program &&
-               gl.attach_shader && gl.link_program && gl.use_program &&
-               gl.gen_buffers && gl.bind_buffer && gl.buffer_data &&
-               gl.gen_vertex_arrays && gl.bind_vertex_array &&
-               gl.get_attrib_location && gl.vertex_attrib_pointer &&
-               gl.enable_vertex_attrib_array && gl.draw_arrays &&
-               GL.vertex_shader && GL.geometry_shader && GL.fragment_shader;
+        return gl.disable and gl.clear_color and gl.create_shader and
+               gl.shader_source and gl.compile_shader and gl.create_program and
+               gl.attach_shader and gl.link_program and gl.use_program and
+               gl.gen_buffers and gl.bind_buffer and gl.buffer_data and
+               gl.gen_vertex_arrays and gl.bind_vertex_array and
+               gl.get_attrib_location and gl.vertex_attrib_pointer and
+               gl.enable_vertex_attrib_array and gl.draw_arrays and
+               GL.vertex_shader and GL.geometry_shader and GL.fragment_shader;
     }
 
     auto launch(execution_context& ec, const launch_options&)

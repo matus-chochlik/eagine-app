@@ -64,11 +64,11 @@ inline auto raw_framedump::_write_to_file(
   const std::string& path,
   const memory::const_block data) -> bool {
     std::ofstream out{path};
-    if(!write_to_stream(out, data).flush().good()) {
+    if(not write_to_stream(out, data).flush().good()) {
         return false;
     }
     std::cout << path << std::endl << std::flush;
-    return std::getline(std::cin, _feedback).good() && (_feedback == path);
+    return std::getline(std::cin, _feedback).good() and (_feedback == path);
 }
 //------------------------------------------------------------------------------
 auto raw_framedump::dump_frame(

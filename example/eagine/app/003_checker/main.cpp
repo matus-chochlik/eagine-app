@@ -116,13 +116,14 @@ public:
     auto check_requirements(video_context& vc) -> bool {
         const auto& [gl, GL] = vc.gl_api();
 
-        return gl.viewport && gl.clear_color && gl.clear &&
-               GL.color_buffer_bit && gl.load_identity && gl.ortho &&
-               gl.rotate_f && gl.begin && gl.end && gl.vertex2i && gl.color3f &&
-               gl.tex_coord2i && GL.modelview && GL.projection &&
-               GL.triangle_fan && GL.line_loop && gl.create_shader &&
-               gl.shader_source && gl.compile_shader && GL.fragment_shader &&
-               gl.create_program && gl.attach_shader && gl.link_program;
+        return gl.viewport and gl.clear_color and gl.clear and
+               GL.color_buffer_bit and gl.load_identity and gl.ortho and
+               gl.rotate_f and gl.begin and gl.end and gl.vertex2i and
+               gl.color3f and gl.tex_coord2i and GL.modelview and
+               GL.projection and GL.triangle_fan and GL.line_loop and
+               gl.create_shader and gl.shader_source and gl.compile_shader and
+               GL.fragment_shader and gl.create_program and gl.attach_shader and
+               gl.link_program;
     }
 
     auto launch(execution_context& ec, const launch_options&)

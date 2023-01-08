@@ -57,8 +57,8 @@ public:
                     }
                 }
             }
-        } else if((path.size() == 3) && data) {
-            if((path.starts_with("inputs")) && (path.ends_with("attrib"))) {
+        } else if((path.size() == 3) and data) {
+            if((path.starts_with("inputs")) and (path.ends_with("attrib"))) {
                 if(const auto kind{
                      from_string<shapes::vertex_attrib_kind>(extract(data))}) {
                     _attrib_kind = extract(kind);
@@ -83,8 +83,8 @@ public:
 
     template <std::integral T>
     void do_add(const basic_string_path& path, span<const T>& data) noexcept {
-        if((path.size() == 3) && data) {
-            if((path.starts_with("inputs")) && (path.ends_with("variant"))) {
+        if((path.size() == 3) and data) {
+            if((path.starts_with("inputs")) and (path.ends_with("variant"))) {
                 _attrib_variant_index = span_size(extract(data));
             }
         }
@@ -106,7 +106,7 @@ public:
     void finish_object(const basic_string_path& path) noexcept final {
         if(path.size() == 2) {
             if(path.starts_with("inputs")) {
-                if(!_input_name.empty()) {
+                if(not _input_name.empty()) {
                     if(auto parent{_parent.lock()}) {
                         extract(parent).add_gl_program_input_binding(
                           std::move(_input_name),
@@ -120,7 +120,7 @@ public:
                         if(auto src_request{loader.request_gl_shader(
                              _shdr_locator, _video, _shdr_type)}) {
                             src_request.set_continuation(parent);
-                            if(!extract(parent).add_gl_program_shader_request(
+                            if(not extract(parent).add_gl_program_shader_request(
                                  src_request.request_id())) [[unlikely]] {
                                 src_request.info().mark_finished();
                                 extract(parent).mark_finished();
@@ -320,7 +320,7 @@ public:
     }
 
     void unparsed_data(span<const memory::const_block> data) noexcept final {
-        if(!_decompression.is_initialized()) {
+        if(not _decompression.is_initialized()) {
             _success &= init_decompression(data_compression_method::none);
         }
         if(_success) {
@@ -883,7 +883,7 @@ void pending_resource_info::_handle_gl_texture_image(
                     add_image_data(pgts.video.get().gl_api(), pgts);
 
                     pgts.pending_requests.erase(pos);
-                    if(!_finish_gl_texture(pgts)) {
+                    if(not _finish_gl_texture(pgts)) {
                         return;
                     }
                 }
@@ -977,7 +977,7 @@ auto pending_resource_info::handle_gl_buffer_params(
 //------------------------------------------------------------------------------
 auto pending_resource_info::_finish_gl_buffer(
   _pending_gl_buffer_state& pgbs) noexcept -> bool {
-    if(pgbs.loaded && pgbs.pending_requests.empty()) {
+    if(pgbs.loaded and pgbs.pending_requests.empty()) {
         _parent.log_info("loaded and set-up GL buffer object")
           .arg("requestId", _request_id)
           .arg("locator", _locator.str());

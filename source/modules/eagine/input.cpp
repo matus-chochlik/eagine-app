@@ -228,7 +228,7 @@ public:
     /// @brief Checks if an input value is currently applicable.
     /// @see only_if
     auto is_applicable() const noexcept {
-        return !_only_if || *_only_if;
+        return not _only_if or *_only_if;
     }
 
 private:
@@ -253,7 +253,7 @@ public:
 
     /// @brief Indicates if the current value is non-zero.
     explicit operator bool() const noexcept {
-        return !are_equal(this->get(), 0.F);
+        return not are_equal(this->get(), 0.F);
     }
 };
 //------------------------------------------------------------------------------
@@ -281,7 +281,7 @@ export struct input_slot : std::tuple<message_id, input_handler> {
 export class trigger_released {
 public:
     auto operator()(const input& i) noexcept -> trigger_released& {
-        _was_released |= !i;
+        _was_released |= not i;
         return *this;
     }
 
@@ -301,8 +301,8 @@ public:
       : _tap_timeout{tap_timeout} {}
 
     auto operator()(const input& i) noexcept -> button_tapped& {
-        if(!i && !_was_tapped) {
-            if(!_tap_timeout) {
+        if(not i and not _was_tapped) {
+            if(not _tap_timeout) {
                 _was_tapped |= true;
             }
             _tap_timeout.reset();

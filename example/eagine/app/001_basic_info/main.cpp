@@ -25,7 +25,7 @@ public:
     }
 
     auto is_done() noexcept -> bool final {
-        return _gl_info_printed && _al_info_printed;
+        return _gl_info_printed and _al_info_printed;
     }
 
     void on_video_resize() noexcept final {}
@@ -131,14 +131,15 @@ public:
     auto check_requirements(video_context& vc) -> bool {
         const auto& [gl, GL] = vc.gl_api();
 
-        return gl.get_integer && gl.get_string && GL.vendor && GL.renderer &&
-               GL.version && GL.shading_language_version && GL.extensions;
+        return gl.get_integer and gl.get_string and GL.vendor and
+               GL.renderer and GL.version and GL.shading_language_version and
+               GL.extensions;
     }
 
     auto check_requirements(audio_context& ac) -> bool {
         const auto& [al, AL] = ac.al_api();
 
-        return al.get_string && AL.vendor && AL.renderer && AL.version &&
+        return al.get_string and AL.vendor and AL.renderer and AL.version and
                AL.extensions;
     }
 
@@ -146,7 +147,7 @@ public:
       -> std::unique_ptr<application> final {
         auto opt_vc{ec.video_ctx()};
         auto opt_ac{ec.audio_ctx()};
-        if(opt_vc && opt_ac) {
+        if(opt_vc and opt_ac) {
             auto& vc = extract(opt_vc);
             auto& ac = extract(opt_ac);
             vc.begin();

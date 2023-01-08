@@ -54,7 +54,7 @@ public:
     /// @brief Indicates if video provider name is set (not empty).
     /// @see set_provider
     auto has_provider() const noexcept -> bool {
-        return !extract(_provider_name).empty();
+        return not extract(_provider_name).empty();
     }
 
     /// @brief Indicates if video provider name is the same as the argument.
@@ -350,8 +350,8 @@ public:
 
     /// @brief Indicates if a frame dump render run is requested.
     auto doing_framedump() const noexcept -> bool {
-        return (_framedump_color != framedump_data_type::none) ||
-               (_framedump_depth != framedump_data_type::none) ||
+        return (_framedump_color != framedump_data_type::none) or
+               (_framedump_depth != framedump_data_type::none) or
                (_framedump_stencil != framedump_data_type::none);
     }
 
@@ -433,7 +433,7 @@ public:
     /// @brief Indicates if audio provider name is set (not empty).
     /// @see set_provider
     auto has_provider() const noexcept -> bool {
-        return !extract(_provider_name).empty();
+        return not extract(_provider_name).empty();
     }
 
     /// @brief Indicates if video provider name is the same as the argument.
@@ -546,12 +546,12 @@ public:
     template <typename R, typename P>
     auto enough_run_time(
       const std::chrono::duration<R, P> run_time) const noexcept -> bool {
-        return _max_run_time && extract(_max_run_time) <= run_time;
+        return _max_run_time and extract(_max_run_time) <= run_time;
     }
 
     /// @brief Says if the application rendered enough frames according to the configuration.
     auto enough_frames(const span_size_t frame_no) const noexcept -> bool {
-        return _max_frames && extract(_max_frames) <= frame_no;
+        return _max_frames and extract(_max_frames) <= frame_no;
     }
 
 private:

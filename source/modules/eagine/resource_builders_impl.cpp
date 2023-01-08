@@ -41,8 +41,8 @@ public:
     template <std::integral T>
     void do_add(const basic_string_path& path, span<const T> data) noexcept {
         if(path.size() == 2) {
-            if(!data.empty()) {
-                if((path.starts_with("values")) || (path.starts_with("data"))) {
+            if(not data.empty()) {
+                if((path.starts_with("values")) or (path.starts_with("data"))) {
                     for(const auto v : data) {
                         _values.push_back(float(v));
                     }
@@ -50,7 +50,7 @@ public:
             }
         } else if(path.size() == 1) {
             if(data.has_single_value()) {
-                if((path.starts_with("count")) || (path.starts_with("size"))) {
+                if((path.starts_with("count")) or (path.starts_with("size"))) {
                     _values.reserve(std_size(extract(data)));
                 }
             }
@@ -60,8 +60,8 @@ public:
     template <std::floating_point T>
     void do_add(const basic_string_path& path, span<const T> data) noexcept {
         if(path.size() == 2) {
-            if(!data.empty()) {
-                if((path.starts_with("values")) && (path.starts_with("data"))) {
+            if(not data.empty()) {
+                if((path.starts_with("values")) and (path.starts_with("data"))) {
                     for(const auto v : data) {
                         _values.push_back(float(v));
                     }
@@ -72,8 +72,8 @@ public:
 
     void do_add(const basic_string_path& path, span<const float> data) noexcept {
         if(path.size() == 2) {
-            if(!data.empty()) {
-                if((path.starts_with("values")) && (path.starts_with("data"))) {
+            if(not data.empty()) {
+                if((path.starts_with("values")) and (path.starts_with("data"))) {
                     _values.insert(_values.end(), data.begin(), data.end());
                 }
             }
@@ -119,15 +119,15 @@ public:
     auto _do_add(const basic_string_path& path, span<const T> data) noexcept
       -> bool {
         if(path.size() == 3) {
-            if((path.starts_with("values")) || (path.starts_with("data"))) {
+            if((path.starts_with("values")) or (path.starts_with("data"))) {
                 if(data.has_single_value()) {
-                    if((path.ends_with("x")) || (path.ends_with("r"))) {
+                    if((path.ends_with("x")) or (path.ends_with("r"))) {
                         _temp._v[0] = extract(data);
                         return true;
-                    } else if((path.ends_with("y")) || (path.ends_with("g"))) {
+                    } else if((path.ends_with("y")) or (path.ends_with("g"))) {
                         _temp._v[1] = extract(data);
                         return true;
-                    } else if((path.ends_with("z")) || (path.ends_with("b"))) {
+                    } else if((path.ends_with("z")) or (path.ends_with("b"))) {
                         _temp._v[2] = extract(data);
                         return true;
                     }
@@ -150,9 +150,9 @@ public:
 
     template <std::integral T>
     void do_add(const basic_string_path& path, span<const T> data) noexcept {
-        if(!_do_add(path, data)) {
-            if((path.size() == 1) && data.has_single_value()) {
-                if((path.starts_with("count")) || (path.starts_with("size"))) {
+        if(not _do_add(path, data)) {
+            if((path.size() == 1) and data.has_single_value()) {
+                if((path.starts_with("count")) or (path.starts_with("size"))) {
                     _values.reserve(std_size(extract(data)));
                 }
             }
@@ -166,7 +166,7 @@ public:
 
     void finish_object(const basic_string_path& path) noexcept final {
         if(path.size() == 2) {
-            if((path.starts_with("values")) || (path.starts_with("data"))) {
+            if((path.starts_with("values")) or (path.starts_with("data"))) {
                 _values.push_back(_temp);
                 _temp = {0.F, 0.F, 0.F};
             }
@@ -217,7 +217,7 @@ public:
     void parse_param(
       const basic_string_path& path,
       span<const T> data) noexcept {
-        if((path.size() == 1) && data.has_single_value()) {
+        if((path.size() == 1) and data.has_single_value()) {
             const auto value{extract(data)};
             if(value > 0.F) {
                 if(path.starts_with("near")) {
@@ -344,7 +344,7 @@ public:
 
     auto add_feedback() noexcept -> bool {
         assert(is_parsing_feedback());
-        if(_device_id && _feedback_id && _input_id) {
+        if(_device_id and _feedback_id and _input_id) {
             _ctx.add_ui_feedback(
               _mapping_id,
               extract(_device_id),
@@ -361,7 +361,7 @@ public:
 
     auto add_input() noexcept -> bool {
         assert(is_parsing_input());
-        if(_input_id && _type && _label) {
+        if(_input_id and _type and _label) {
             if(_type == "ui_button") {
                 _ctx.add_ui_button(extract(_input_id), extract(_label));
                 _status_l1 = status_type_l1::unknown;
@@ -393,7 +393,7 @@ public:
     auto add_slot_mapping() noexcept -> bool {
         assert(is_parsing_slot());
         if(_slot_id) {
-            if(_device_id && _input_id && _type) {
+            if(_device_id and _input_id and _type) {
                 input_setup setup;
                 if(_type == "trigger") {
                     setup.trigger();
@@ -458,7 +458,7 @@ public:
         if(path.ends_with("device")) {
             if(data.has_single_value()) {
                 if(
-                  !extract(data).empty() &&
+                  not extract(data).empty() and
                   identifier::can_be_encoded(extract(data))) {
                     _device_id = identifier{extract(data)};
                 }
@@ -468,7 +468,7 @@ public:
             }
         } else if(path.ends_with("label")) {
             if(data.has_single_value()) {
-                if(!extract(data).empty()) {
+                if(not extract(data).empty()) {
                     _label = extract(data).to_string();
                 }
             } else {
@@ -477,7 +477,7 @@ public:
             }
         } else if(path.ends_with("type")) {
             if(data.has_single_value()) {
-                if(!extract(data).empty()) {
+                if(not extract(data).empty()) {
                     _type = extract(data).to_string();
                 }
                 if(is_parsing_slot()) {
@@ -503,7 +503,7 @@ public:
             if(parent.ends_with("input")) {
                 if(parse_msg_id(data, _input_id)) {
                     if(parent.size() == 3) {
-                        if(!is_parsing_feedback()) {
+                        if(not is_parsing_feedback()) {
                             _status_l1 = status_type_l1::parsing_input;
                         }
                     } else {
@@ -522,7 +522,7 @@ public:
                 if(parse_msg_id(data, _feedback_id)) {
                     if(parent.size() == 3) {
                         _status_l1 = status_type_l1::parsing_feedback;
-                        if(!_device_id) {
+                        if(not _device_id) {
                             if(extract(_feedback_id).has_class("Key")) {
                                 _device_id = {"Keyboard"};
                             }
@@ -539,7 +539,7 @@ public:
             reset();
             _mapping_id = {};
             const auto entry{path.front()};
-            if(!entry.empty() && (entry != "_") && (entry != "default")) {
+            if(not entry.empty() and (entry != "_") and (entry != "default")) {
                 if(identifier::can_be_encoded(entry)) {
                     _mapping_id = identifier{entry};
                 } else {

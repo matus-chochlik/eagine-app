@@ -134,13 +134,13 @@ private:
 
     template <typename Tup, std::size_t... I>
     auto _are_loaded(Tup& t, std::index_sequence<I...>) noexcept -> bool {
-        return (... && _are_loaded(std::get<I>(t)));
+        return (... and _are_loaded(std::get<I>(t)));
     }
 
     template <typename V>
     auto _are_loaded(V& res_vec) noexcept -> span_size_t {
         for(auto& res_info : res_vec) {
-            if(!std::get<0>(*res_info).is_loaded()) {
+            if(not std::get<0>(*res_info).is_loaded()) {
                 return false;
             }
         }

@@ -80,7 +80,7 @@ public:
     /// @brief Indicates if the example or the user is active in some way.
     /// @see user_idle_time
     auto is_active() const noexcept -> bool {
-        return !_new_user_idle || _has_activity;
+        return not _new_user_idle or _has_activity;
     }
 
     /// @brief Indicates if the user is idle (does not generate input events).

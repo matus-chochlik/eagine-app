@@ -63,7 +63,7 @@ public:
     /// @brief Indicates if this resource is one in the specified collection.
     template <std::derived_from<loaded_resource_base>... R>
     auto is_one_of(const R&... those) const noexcept -> bool {
-        return (... || is(those));
+        return (... or is(those));
     }
 
 protected:
@@ -224,7 +224,7 @@ public:
 
     /// @brief Updates the resource, possibly doing resource load request.
     auto load_if_needed(resource_loader& loader) -> work_done {
-        if(!is_loaded() && !is_loading()) {
+        if(not is_loaded() and not is_loading()) {
             if(const auto request{utils::request(loader, locator())}) {
                 _request_id = request.request_id();
                 return true;
@@ -357,7 +357,7 @@ public:
 
     /// @brief Updates the resource, possibly doing resource load request.
     auto load_if_needed(resource_loader& loader, P... params) -> work_done {
-        if(!derived().is_loaded() && !is_loading()) {
+        if(not derived().is_loaded() and not is_loading()) {
             if(const auto request{
                  utils::request(loader, locator(), params...)}) {
                 _request_id = request.request_id();
@@ -369,7 +369,7 @@ public:
 
     /// @brief Updates the resource, possibly doing resource load request.
     auto load_if_needed(execution_context& ctx, Cp... params) -> work_done {
-        if(!derived().is_loaded() && !is_loading()) {
+        if(not derived().is_loaded() and not is_loading()) {
             if(const auto request{utils::request(ctx, locator(), params...)}) {
                 _request_id = request.request_id();
                 return true;
@@ -381,7 +381,7 @@ public:
     /// @brief Updates the resource, possibly doing resource load request.
     auto load_if_needed(execution_context& ctx, const std::tuple<P...>& params)
       -> work_done {
-        if(!derived().is_loaded() && !is_loading()) {
+        if(not derived().is_loaded() and not is_loading()) {
             if(const auto request{utils::request(
                  ctx,
                  locator(),
@@ -449,7 +449,7 @@ public:
 
     /// @brief Indicates if this resource is loaded.
     auto is_loaded() const noexcept -> bool {
-        return !this->empty();
+        return not this->empty();
     }
 
     auto assign(const typename common::base_load_info& info) noexcept -> bool {
@@ -484,7 +484,7 @@ public:
 
     /// @brief Indicates if this resource is loaded.
     auto is_loaded() const noexcept -> bool {
-        return !this->control_points().empty();
+        return not this->control_points().empty();
     }
 
     auto assign(const typename common::base_load_info& info) noexcept -> bool {
