@@ -29,14 +29,14 @@ public:
     using base = oglplus::orbiting_camera;
     using base::matrix;
 
-    /// @brief Construction from a reference to a video context.
-    auto matrix(video_context& vc) const noexcept {
+    /// @brief Get matrix using a reference to a video context.
+    [[nodiscard]] auto matrix(video_context& vc) const noexcept {
         return base::matrix(vc.surface_aspect());
     }
 
     /// @brief Inddicates if the camera has changed and resets the flag.
     /// @see mark_changed
-    auto has_changed() noexcept {
+    [[nodiscard]] auto has_changed() noexcept {
         return std::exchange(_changed, false);
     }
 
@@ -96,13 +96,14 @@ public:
     /// This can be bound for example to mouse button press input signal.
     /// @see connect_inputs
     /// @see basic_input_mapping
-    auto pressure_input() noexcept -> input_slot {
+    [[nodiscard]] auto pressure_input() noexcept -> input_slot {
         return {
           pressure_input_id(),
           make_callable_ref<&orbiting_camera::_handle_pressure>(this)};
     }
 
-    constexpr auto dampening_input_id() const noexcept -> message_id {
+    [[nodiscard]] constexpr auto dampening_input_id() const noexcept
+      -> message_id {
         return {"Camera", "Dampening"};
     }
 
@@ -110,13 +111,14 @@ public:
     /// This can be bound for example to control or shift key press input signal.
     /// @see connect_inputs
     /// @see basic_input_mapping
-    auto dampening_input() noexcept -> input_slot {
+    [[nodiscard]] auto dampening_input() noexcept -> input_slot {
         return {
           dampening_input_id(),
           make_callable_ref<&orbiting_camera::_handle_dampening>(this)};
     }
 
-    constexpr auto altitude_change_input_id() const noexcept -> message_id {
+    [[nodiscard]] constexpr auto altitude_change_input_id() const noexcept
+      -> message_id {
         return {"Camera", "Altitude"};
     }
 
@@ -124,13 +126,14 @@ public:
     /// This can be bound for example to mouse wheel scroll input signal.
     /// @see connect_inputs
     /// @see basic_input_mapping
-    auto altitude_change_input() noexcept -> input_slot {
+    [[nodiscard]] auto altitude_change_input() noexcept -> input_slot {
         return {
           altitude_change_input_id(),
           make_callable_ref<&orbiting_camera::_change_altitude>(this)};
     }
 
-    constexpr auto longitude_change_input_id() const noexcept -> message_id {
+    [[nodiscard]] constexpr auto longitude_change_input_id() const noexcept
+      -> message_id {
         return {"Camera", "Longitude"};
     }
 
@@ -138,13 +141,14 @@ public:
     /// This can be bound for example to left/right arrow key press input signals.
     /// @see connect_inputs
     /// @see basic_input_mapping
-    auto longitude_change_input() noexcept -> input_slot {
+    [[nodiscard]] auto longitude_change_input() noexcept -> input_slot {
         return {
           longitude_change_input_id(),
           make_callable_ref<&orbiting_camera::_change_longitude>(this)};
     }
 
-    constexpr auto latitude_change_input_id() const noexcept -> message_id {
+    [[nodiscard]] constexpr auto latitude_change_input_id() const noexcept
+      -> message_id {
         return {"Camera", "Latitude"};
     }
 
@@ -152,7 +156,7 @@ public:
     /// This can be bound for example to up/down arrow key press input signals.
     /// @see connect_inputs
     /// @see basic_input_mapping
-    auto latitude_change_input() noexcept -> input_slot {
+    [[nodiscard]] auto latitude_change_input() noexcept -> input_slot {
         return {
           latitude_change_input_id(),
           make_callable_ref<&orbiting_camera::_change_latitude>(this)};
