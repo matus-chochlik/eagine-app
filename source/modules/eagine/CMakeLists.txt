@@ -212,18 +212,18 @@ eagine_add_module(
 		loaded_resource
 		resource_manager
 	SOURCES
-		options_impl
-		state_impl
-		framedump_raw_impl
-		openal_oalplus_impl
-		opengl_eglplus_impl
-		opengl_glfw3_impl
-		resource_loader_impl
-		resource_builders_impl
-		resource_gl_builders_impl
-		context_impl
-		camera_impl
-		background_impl
+		options
+		state
+		framedump_raw
+		openal_oalplus
+		opengl_eglplus
+		opengl_glfw3
+		resource_loader
+		resource_builders
+		resource_gl_builders
+		context
+		camera
+		background
 	IMPORTS
 		eagine.core.math
 		eagine.core.string
