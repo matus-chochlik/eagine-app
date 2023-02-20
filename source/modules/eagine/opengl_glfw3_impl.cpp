@@ -992,15 +992,20 @@ auto glfw3_opengl_window::initialize(
     }
 
     glfwWindowHint(GLFW_DOUBLEBUFFER, GL_TRUE);
-    glfwWindowHint(GLFW_RED_BITS, video_opts.color_bits() / GLFW_DONT_CARE);
-    glfwWindowHint(GLFW_BLUE_BITS, video_opts.color_bits() / GLFW_DONT_CARE);
-    glfwWindowHint(GLFW_GREEN_BITS, video_opts.color_bits() / GLFW_DONT_CARE);
-    glfwWindowHint(GLFW_ALPHA_BITS, video_opts.alpha_bits() / GLFW_DONT_CARE);
-    glfwWindowHint(GLFW_DEPTH_BITS, video_opts.depth_bits() / GLFW_DONT_CARE);
     glfwWindowHint(
-      GLFW_STENCIL_BITS, video_opts.stencil_bits() / GLFW_DONT_CARE);
+      GLFW_RED_BITS, video_opts.color_bits().value_or(GLFW_DONT_CARE));
+    glfwWindowHint(
+      GLFW_BLUE_BITS, video_opts.color_bits().value_or(GLFW_DONT_CARE));
+    glfwWindowHint(
+      GLFW_GREEN_BITS, video_opts.color_bits().value_or(GLFW_DONT_CARE));
+    glfwWindowHint(
+      GLFW_ALPHA_BITS, video_opts.alpha_bits().value_or(GLFW_DONT_CARE));
+    glfwWindowHint(
+      GLFW_DEPTH_BITS, video_opts.depth_bits().value_or(GLFW_DONT_CARE));
+    glfwWindowHint(
+      GLFW_STENCIL_BITS, video_opts.stencil_bits().value_or(GLFW_DONT_CARE));
 
-    glfwWindowHint(GLFW_SAMPLES, video_opts.samples() / GLFW_DONT_CARE);
+    glfwWindowHint(GLFW_SAMPLES, video_opts.samples().value_or(GLFW_DONT_CARE));
 
     GLFWmonitor* window_monitor = nullptr;
     int fallback_width = 1280, fallback_height = 800;
@@ -1026,8 +1031,8 @@ auto glfw3_opengl_window::initialize(
     }
 
     _window = glfwCreateWindow(
-      video_opts.surface_width() / fallback_width,
-      video_opts.surface_height() / fallback_height,
+      video_opts.surface_width().value_or(fallback_width),
+      video_opts.surface_height().value_or(fallback_height),
       c_str(options.application_title()),
       window_monitor,
       nullptr);

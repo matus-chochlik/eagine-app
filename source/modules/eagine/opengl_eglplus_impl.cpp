@@ -91,7 +91,7 @@ auto eglplus_opengl_surface::get_context_attribs(
 
     const auto add_major_version = [&](auto attribs) {
         return attribs + (EGL.context_major_version |
-                          (video_opts.gl_version_major() / 3));
+                          (video_opts.gl_version_major().value_or(3)));
     };
 
     const auto add_minor_version = [&](auto attribs) {
@@ -102,7 +102,7 @@ auto eglplus_opengl_surface::get_context_attribs(
             }
         }
         return attribs + (EGL.context_minor_version |
-                          (video_opts.gl_version_minor() / fallback));
+                          (video_opts.gl_version_minor().value_or(fallback)));
     };
 
     const auto add_profile_mask = [&](auto attribs) {
@@ -154,8 +154,8 @@ auto eglplus_opengl_surface::initialize(
 
     const bool gl_otherwise_gles = has_gl and not video_opts.prefer_gles();
 
-    _width = video_opts.surface_width() / 1;
-    _height = video_opts.surface_height() / 1;
+    _width = video_opts.surface_width().value_or(1);
+    _height = video_opts.surface_height().value_or(1);
 
     const auto surface_attribs = (EGL.width | _width) + (EGL.height | _height);
     if(ok surface{
@@ -246,12 +246,13 @@ auto eglplus_opengl_surface::initialize(
         _display = display;
 
         const auto config_attribs =
-          (EGL.red_size | (video_opts.color_bits() / EGL.dont_care)) +
-          (EGL.green_size | (video_opts.color_bits() / EGL.dont_care)) +
-          (EGL.blue_size | (video_opts.color_bits() / EGL.dont_care)) +
-          (EGL.alpha_size | (video_opts.alpha_bits() / EGL.dont_care)) +
-          (EGL.depth_size | (video_opts.depth_bits() / EGL.dont_care)) +
-          (EGL.stencil_size | (video_opts.stencil_bits() / EGL.dont_care)) +
+          (EGL.red_size | (video_opts.color_bits().value_or(EGL.dont_care))) +
+          (EGL.green_size | (video_opts.color_bits().value_or(EGL.dont_care))) +
+          (EGL.blue_size | (video_opts.color_bits().value_or(EGL.dont_care))) +
+          (EGL.alpha_size | (video_opts.alpha_bits().value_or(EGL.dont_care))) +
+          (EGL.depth_size | (video_opts.depth_bits().value_or(EGL.dont_care))) +
+          (EGL.stencil_size |
+           (video_opts.stencil_bits().value_or(EGL.dont_care))) +
           (EGL.color_buffer_type | EGL.rgb_buffer) +
           (EGL.surface_type | EGL.pbuffer_bit) +
           (EGL.renderable_type | (EGL.opengl_bit | EGL.opengl_es3_bit));
