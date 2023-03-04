@@ -13,7 +13,7 @@ import eagine.core;
 import eagine.shapes;
 import eagine.oglplus;
 import eagine.app;
-import <array>;
+import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------

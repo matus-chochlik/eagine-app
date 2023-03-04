@@ -9,6 +9,7 @@
 import eagine.core;
 import eagine.oglplus;
 import eagine.app;
+import std;
 
 #include "resources.hpp"
 

@@ -8,7 +8,7 @@
 import eagine.core;
 import eagine.oglplus;
 import eagine.app;
-import <cmath>;
+import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------

@@ -20,7 +20,7 @@ import eagine.oglplus;
 import :context;
 import :geometry;
 import :resource_loader;
-import <concepts>;
+import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------

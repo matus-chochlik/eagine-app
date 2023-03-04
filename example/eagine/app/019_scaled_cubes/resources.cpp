@@ -8,7 +8,7 @@
 
 #include "resources.hpp"
 
-import <cmath>;
+import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------

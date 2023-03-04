@@ -12,6 +12,7 @@
 import eagine.core;
 import eagine.oglplus;
 import eagine.app;
+import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------

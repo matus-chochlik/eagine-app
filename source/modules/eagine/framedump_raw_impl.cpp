@@ -12,10 +12,7 @@ import eagine.core.memory;
 import eagine.core.reflection;
 import eagine.core.runtime;
 import eagine.core.main_ctx;
-import <fstream>;
-import <iomanip>;
-import <iostream>;
-import <sstream>;
+import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------

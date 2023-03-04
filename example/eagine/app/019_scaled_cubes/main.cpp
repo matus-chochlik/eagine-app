@@ -10,7 +10,7 @@ import eagine.core;
 import eagine.shapes;
 import eagine.oglplus;
 import eagine.app;
-import <cmath>;
+import std;
 
 #include "resources.hpp"
 

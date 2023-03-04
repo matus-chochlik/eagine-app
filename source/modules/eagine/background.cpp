@@ -14,7 +14,7 @@ import eagine.shapes;
 import eagine.oglplus;
 import :context;
 import :camera;
-import <vector>;
+import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------

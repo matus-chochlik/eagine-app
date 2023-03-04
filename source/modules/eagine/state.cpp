@@ -14,8 +14,7 @@ import eagine.core.runtime;
 import eagine.core.utility;
 import eagine.core.units;
 import eagine.core.main_ctx;
-import <chrono>;
-import <random>;
+import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------

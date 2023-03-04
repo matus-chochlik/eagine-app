@@ -18,6 +18,7 @@ import eagine.oglplus;
 import :state;
 import :input;
 import :context;
+import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------

@@ -14,9 +14,7 @@ import eagine.core.reflection;
 import eagine.core.valid_if;
 import eagine.core.utility;
 import eagine.core.runtime;
-import <cstdint>;
-import <chrono>;
-import <utility>;
+import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------

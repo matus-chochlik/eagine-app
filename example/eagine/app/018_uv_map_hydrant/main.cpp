@@ -10,6 +10,7 @@ import eagine.core;
 import eagine.shapes;
 import eagine.oglplus;
 import eagine.app;
+import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------

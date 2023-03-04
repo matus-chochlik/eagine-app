@@ -25,7 +25,7 @@ import :options;
 import :state;
 import :input;
 import :resource_loader;
-import <map>;
+import std;
 
 namespace eagine::app {
 export class video_context_state;

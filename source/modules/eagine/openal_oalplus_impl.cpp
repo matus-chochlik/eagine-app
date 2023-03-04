@@ -15,7 +15,7 @@ import eagine.core.logging;
 import eagine.core.c_api;
 import eagine.core.main_ctx;
 import eagine.oalplus;
-import <map>;
+import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------

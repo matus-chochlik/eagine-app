@@ -21,7 +21,7 @@ import eagine.core.runtime;
 import eagine.core.main_ctx;
 import eagine.oglplus;
 import eagine.oalplus;
-import <map>;
+import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------

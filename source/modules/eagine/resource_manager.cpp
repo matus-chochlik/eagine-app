@@ -16,8 +16,7 @@ import eagine.oglplus;
 import :loaded_resource;
 import :geometry;
 import :context;
-import <tuple>;
-import <utility>;
+import std;
 
 namespace eagine::app {
 export template <typename... Resources>

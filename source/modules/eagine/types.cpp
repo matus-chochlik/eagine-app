@@ -9,7 +9,7 @@ export module eagine.app:types;
 
 import eagine.core.types;
 import eagine.core.reflection;
-import <cstdint>;
+import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------

@@ -24,7 +24,7 @@ import eagine.shapes;
 import eagine.oglplus;
 import eagine.msgbus;
 
-import <iostream>;
+import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------

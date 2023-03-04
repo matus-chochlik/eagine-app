@@ -38,11 +38,7 @@ import eagine.core.utility;
 import eagine.core.valid_if;
 import eagine.core.c_api;
 import eagine.core.main_ctx;
-import <cmath>;
-import <string>;
-import <variant>;
-import <vector>;
-import <map>;
+import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------

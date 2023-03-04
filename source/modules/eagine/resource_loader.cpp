@@ -21,11 +21,7 @@ import eagine.core.main_ctx;
 import eagine.shapes;
 import eagine.oglplus;
 import eagine.msgbus;
-import <bitset>;
-import <memory>;
-import <functional>;
-import <utility>;
-import <variant>;
+import std;
 
 namespace eagine::app {
 

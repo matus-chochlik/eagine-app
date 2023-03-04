@@ -22,8 +22,7 @@ import eagine.core.value_tree;
 import eagine.core.c_api;
 import eagine.oglplus;
 import eagine.shapes;
-import <bitset>;
-import <string>;
+import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------

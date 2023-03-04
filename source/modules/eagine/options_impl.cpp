@@ -13,8 +13,7 @@ import eagine.core.string;
 import eagine.core.identifier;
 import eagine.core.reflection;
 import eagine.core.main_ctx;
-import <map>;
-import <string>;
+import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------

@@ -16,7 +16,7 @@ import eagine.core.valid_if;
 import eagine.core.c_api;
 import eagine.core.main_ctx;
 import eagine.eglplus;
-import <map>;
+import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------

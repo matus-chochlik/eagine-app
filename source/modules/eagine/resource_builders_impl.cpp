@@ -19,8 +19,7 @@ import eagine.core.identifier;
 import eagine.core.reflection;
 import eagine.core.value_tree;
 import eagine.core.units;
-import <optional>;
-import <string>;
+import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
