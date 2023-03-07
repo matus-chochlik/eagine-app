@@ -6,8 +6,8 @@
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
 
-#ifndef OGLPLUS_EXAMPLE_MAIN_HPP // NOLINT(llvm-header-guard)
-#define OGLPLUS_EXAMPLE_MAIN_HPP
+#ifndef EAGINE_APP_EXAMPLE_MAIN_HPP // NOLINT(llvm-header-guard)
+#define EAGINE_APP_EXAMPLE_MAIN_HPP
 
 #include "resources.hpp"
 
