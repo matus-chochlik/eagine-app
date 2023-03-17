@@ -16,7 +16,7 @@ import eagine.core.valid_if;
 import eagine.core.c_api;
 import eagine.core.main_ctx;
 import eagine.eglplus;
-import <map>;
+import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
@@ -91,18 +91,18 @@ auto eglplus_opengl_surface::get_context_attribs(
 
     const auto add_major_version = [&](auto attribs) {
         return attribs + (EGL.context_major_version |
-                          (video_opts.gl_version_major() / 3));
+                          (video_opts.gl_version_major().value_or(3)));
     };
 
     const auto add_minor_version = [&](auto attribs) {
         eglplus::context_attrib_traits::value_type fallback = 0;
         if(gl_otherwise_gles) {
-            if(!video_opts.gl_compatibility_context()) {
+            if(not video_opts.gl_compatibility_context()) {
                 fallback = 3;
             }
         }
         return attribs + (EGL.context_minor_version |
-                          (video_opts.gl_version_minor() / fallback));
+                          (video_opts.gl_version_minor().value_or(fallback)));
     };
 
     const auto add_profile_mask = [&](auto attribs) {
@@ -142,7 +142,7 @@ auto eglplus_opengl_surface::initialize(
     const bool has_gl = apis.has(EGL.opengl_bit);
     const bool has_gles = apis.has(EGL.opengl_es_bit);
 
-    if(!has_gl && !has_gles) {
+    if(not has_gl and not has_gles) {
         log_info("display does not support any OpenAPI APIs;skipping");
         return false;
     }
@@ -152,10 +152,10 @@ auto eglplus_opengl_surface::initialize(
       .arg("OpenGL_ES", yes_no_maybe(has_gles))
       .arg("PreferES", yes_no_maybe(video_opts.prefer_gles()));
 
-    const bool gl_otherwise_gles = has_gl && !video_opts.prefer_gles();
+    const bool gl_otherwise_gles = has_gl and not video_opts.prefer_gles();
 
-    _width = video_opts.surface_width() / 1;
-    _height = video_opts.surface_height() / 1;
+    _width = video_opts.surface_width().value_or(1);
+    _height = video_opts.surface_height().value_or(1);
 
     const auto surface_attribs = (EGL.width | _width) + (EGL.height | _height);
     if(ok surface{
@@ -176,17 +176,17 @@ auto eglplus_opengl_surface::initialize(
                 return true;
             } else {
                 log_error("failed to create context")
-                  .arg("message", (!ctxt).message());
+                  .arg("message", (not ctxt).message());
             }
         } else {
             log_error("failed to bind OpenGL API")
-              .arg("message", (!bound).message());
+              .arg("message", (not bound).message());
         }
     } else {
         log_error("failed to create pbuffer ${width}x${height}")
           .arg("width", _width)
           .arg("height", _height)
-          .arg("message", (!surface).message());
+          .arg("message", (not surface).message());
     }
     return false;
 }
@@ -246,12 +246,13 @@ auto eglplus_opengl_surface::initialize(
         _display = display;
 
         const auto config_attribs =
-          (EGL.red_size | (video_opts.color_bits() / EGL.dont_care)) +
-          (EGL.green_size | (video_opts.color_bits() / EGL.dont_care)) +
-          (EGL.blue_size | (video_opts.color_bits() / EGL.dont_care)) +
-          (EGL.alpha_size | (video_opts.alpha_bits() / EGL.dont_care)) +
-          (EGL.depth_size | (video_opts.depth_bits() / EGL.dont_care)) +
-          (EGL.stencil_size | (video_opts.stencil_bits() / EGL.dont_care)) +
+          (EGL.red_size | (video_opts.color_bits().value_or(EGL.dont_care))) +
+          (EGL.green_size | (video_opts.color_bits().value_or(EGL.dont_care))) +
+          (EGL.blue_size | (video_opts.color_bits().value_or(EGL.dont_care))) +
+          (EGL.alpha_size | (video_opts.alpha_bits().value_or(EGL.dont_care))) +
+          (EGL.depth_size | (video_opts.depth_bits().value_or(EGL.dont_care))) +
+          (EGL.stencil_size |
+           (video_opts.stencil_bits().value_or(EGL.dont_care))) +
           (EGL.color_buffer_type | EGL.rgb_buffer) +
           (EGL.surface_type | EGL.pbuffer_bit) +
           (EGL.renderable_type | (EGL.opengl_bit | EGL.opengl_es3_bit));
@@ -270,15 +271,15 @@ auto eglplus_opengl_surface::initialize(
                   .arg("depth", "integer", video_opts.depth_bits(), dont_care)
                   .arg(
                     "stencil", "integer", video_opts.stencil_bits(), dont_care)
-                  .arg("message", (!config).message());
+                  .arg("message", (not config).message());
             }
         } else {
             log_error("failed to query framebuffer configurations")
-              .arg("message", (!count).message());
+              .arg("message", (not count).message());
         }
     } else {
         exec_ctx.log_error("failed to initialize EGL display")
-          .arg("message", (!initialized).message());
+          .arg("message", (not initialized).message());
     }
     return false;
 }
@@ -295,10 +296,10 @@ auto eglplus_opengl_surface::initialize(
     const auto device_path = video_opts.device_path();
     const auto device_idx = video_opts.device_index();
     const bool select_device =
-      device_kind.is_valid() || device_path.is_valid() ||
-      device_idx.is_valid() || video_opts.driver_name().is_valid();
+      device_kind.is_valid() or device_path.is_valid() or
+      device_idx.is_valid() or video_opts.driver_name().is_valid();
 
-    if(select_device && egl.EXT_device_enumeration) {
+    if(select_device and egl.EXT_device_enumeration) {
         if(const ok dev_count{egl.query_devices.count()}) {
             const auto n = std_size(extract(dev_count));
             std::vector<eglplus::egl_types::device_type> devices;
@@ -324,7 +325,7 @@ auto eglplus_opengl_surface::initialize(
 
                     if(device_kind) {
                         if(extract(device_kind) == video_device_kind::hardware) {
-                            if(!egl.MESA_device_software(device)) {
+                            if(not egl.MESA_device_software(device)) {
                                 log_info(
                                   "device ${index} seems to be hardware as "
                                   "explicitly specified by configuration")
@@ -338,7 +339,7 @@ auto eglplus_opengl_surface::initialize(
                             }
                         } else if(
                           extract(device_kind) == video_device_kind::software) {
-                            if(!egl.EXT_device_drm(device)) {
+                            if(not egl.EXT_device_drm(device)) {
                                 log_info(
                                   "device ${index} seems to be software as "
                                   "explicitly specified by configuration")
@@ -406,7 +407,7 @@ auto eglplus_opengl_surface::initialize(
             return initialize(exec_ctx, display, -1, opts, video_opts);
         } else {
             exec_ctx.log_error("failed to get EGL display")
-              .arg("message", (!display).message());
+              .arg("message", (not display).message());
         }
     }
     return false;
@@ -494,10 +495,10 @@ private:
 };
 //------------------------------------------------------------------------------
 auto eglplus_opengl_provider::is_implemented() const noexcept -> bool {
-    return _egl_api.get_display && _egl_api.initialize && _egl_api.terminate &&
-           _egl_api.get_configs && _egl_api.choose_config &&
-           _egl_api.get_config_attrib && _egl_api.query_string &&
-           _egl_api.swap_buffers;
+    return _egl_api.get_display and _egl_api.initialize and
+           _egl_api.terminate and _egl_api.get_configs and
+           _egl_api.choose_config and _egl_api.get_config_attrib and
+           _egl_api.query_string and _egl_api.swap_buffers;
 }
 //------------------------------------------------------------------------------
 auto eglplus_opengl_provider::implementation_name() const noexcept
@@ -506,7 +507,7 @@ auto eglplus_opengl_provider::implementation_name() const noexcept
 }
 //------------------------------------------------------------------------------
 auto eglplus_opengl_provider::is_initialized() -> bool {
-    return !_surfaces.empty();
+    return not _surfaces.empty();
 }
 //------------------------------------------------------------------------------
 auto eglplus_opengl_provider::should_initialize(execution_context& exec_ctx)
@@ -525,7 +526,7 @@ auto eglplus_opengl_provider::initialize(execution_context& exec_ctx) -> bool {
         auto& options = exec_ctx.options();
         for(auto& [inst, video_opts] : options.video_requirements()) {
             const bool should_create_surface =
-              video_opts.has_provider(implementation_name()) &&
+              video_opts.has_provider(implementation_name()) and
               (video_opts.video_kind() == video_context_kind::opengl);
 
             if(should_create_surface) {

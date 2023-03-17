@@ -21,11 +21,7 @@ import eagine.core.main_ctx;
 import eagine.shapes;
 import eagine.oglplus;
 import eagine.msgbus;
-import <bitset>;
-import <memory>;
-import <functional>;
-import <utility>;
-import <variant>;
+import std;
 
 namespace eagine::app {
 
@@ -465,7 +461,7 @@ public:
 
     /// @brief Indicates if the request is valid.
     explicit operator bool() const noexcept {
-        return !_was_cancelled;
+        return not _was_cancelled;
     }
 
     auto info() const noexcept -> pending_resource_info&;
@@ -601,7 +597,7 @@ export struct resource_loader_signals {
         auto load(default_mapped_struct auto& object) const noexcept -> bool {
             valtree_deserializer_backend backend{tree};
             const auto errors{deserialize(object, backend)};
-            return !errors;
+            return not errors;
         }
 
         /// @brief Loads the data from the value tree resource into an object.
@@ -610,7 +606,7 @@ export struct resource_loader_signals {
           const basic_string_path& path) const noexcept -> bool {
             valtree_deserializer_backend backend{tree, tree.find(path)};
             const auto errors{deserialize(object, backend)};
-            return !errors;
+            return not errors;
         }
     };
 
@@ -1018,7 +1014,7 @@ public:
 
     /// @brief Indicates if this loader has any pending requests.
     auto has_pending_requests() const noexcept -> bool {
-        return !_pending.empty();
+        return not _pending.empty();
     }
 
     void forget_resource(identifier_t request_id) noexcept;

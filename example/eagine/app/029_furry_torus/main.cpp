@@ -101,16 +101,16 @@ void example_fur::_on_loaded(const loaded_resource_base& loaded) noexcept {
           .set_orbit_max(2.6F * sr)
           .set_fov(degrees_(45));
     }
-    if(_shape_gen && _surf_prog) {
+    if(_shape_gen and _surf_prog) {
         _surf_prog.apply_input_bindings(_video, _surf);
         _surf_prog.set_uniform(_video, "Tex", 0);
     }
-    if(_shape_gen && _hair_prog) {
+    if(_shape_gen and _hair_prog) {
         _hair_prog.apply_input_bindings(_video, _hair);
         _hair_prog.set_uniform(_video, "Tex", 0);
     }
     _load_progress.update_progress(
-      _surf_prog && _hair_prog && _shape_gen && _shape_tex);
+      _surf_prog and _hair_prog and _shape_gen and _shape_tex);
 }
 //------------------------------------------------------------------------------
 void example_fur::update() noexcept {
@@ -167,14 +167,14 @@ public:
     auto check_requirements(video_context& vc) -> bool {
         const auto& [gl, GL] = vc.gl_api();
 
-        return gl.disable && gl.clear_color && gl.create_shader &&
-               gl.shader_source && gl.compile_shader && gl.create_program &&
-               gl.attach_shader && gl.link_program && gl.use_program &&
-               gl.gen_buffers && gl.bind_buffer && gl.buffer_data &&
-               gl.gen_vertex_arrays && gl.bind_vertex_array &&
-               gl.get_attrib_location && gl.vertex_attrib_pointer &&
-               gl.enable_vertex_attrib_array && gl.draw_arrays &&
-               GL.vertex_shader && GL.fragment_shader;
+        return gl.disable and gl.clear_color and gl.create_shader and
+               gl.shader_source and gl.compile_shader and gl.create_program and
+               gl.attach_shader and gl.link_program and gl.use_program and
+               gl.gen_buffers and gl.bind_buffer and gl.buffer_data and
+               gl.gen_vertex_arrays and gl.bind_vertex_array and
+               gl.get_attrib_location and gl.vertex_attrib_pointer and
+               gl.enable_vertex_attrib_array and gl.draw_arrays and
+               GL.vertex_shader and GL.fragment_shader;
     }
 
     auto launch(execution_context& ec, const launch_options&)

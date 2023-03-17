@@ -10,7 +10,7 @@ export module eagine.app:main;
 import eagine.core.main_ctx;
 import :interface;
 import :context;
-import <memory>;
+import std;
 
 namespace eagine::app {
 

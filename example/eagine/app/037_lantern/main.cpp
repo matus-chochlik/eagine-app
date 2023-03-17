@@ -10,7 +10,7 @@ import eagine.core;
 import eagine.shapes;
 import eagine.oglplus;
 import eagine.app;
-import <cmath>;
+import std;
 
 #include "resources.hpp"
 
@@ -86,19 +86,19 @@ void example_lantern::_on_resource_loaded(
           .set_orbit_max(sr * 3.0F);
     }
     if(loaded.is_one_of(pumpkin, draw_prog)) {
-        if(pumpkin && draw_prog) {
+        if(pumpkin and draw_prog) {
             draw_prog.use(_video);
             draw_prog.apply_input_bindings(_video, pumpkin);
         }
     }
     if(loaded.is_one_of(pumpkin_tex, draw_prog)) {
-        if(pumpkin_tex && draw_prog) {
+        if(pumpkin_tex and draw_prog) {
             draw_prog.use(_video);
             draw_prog.set_texture_unit(_video, pumpkin_tex.tex_unit());
         }
     }
     if(loaded.is_one_of(screen, screen_prog)) {
-        if(screen && screen_prog) {
+        if(screen and screen_prog) {
             screen_prog.use(_video);
             screen_prog.apply_input_bindings(_video, screen);
             screen_prog.set_texture_unit(_video, draw_bufs.tex_unit());
@@ -154,12 +154,12 @@ void example_lantern::update() noexcept {
         gl.clear(GL.color_buffer_bit);
 
         pumpkin_tex.load_if_needed(context());
-        if(!pumpkin) {
+        if(not pumpkin) {
             pumpkin.load_if_needed(context());
         } else {
             draw_prog.load_if_needed(context());
         }
-        if(!screen) {
+        if(not screen) {
             screen.load_if_needed(context());
         } else {
             screen_prog.load_if_needed(context());
@@ -187,15 +187,15 @@ public:
     auto check_requirements(video_context& vc) -> bool {
         const auto& [gl, GL] = vc.gl_api();
 
-        return gl.disable && gl.clear_color && gl.create_shader &&
-               gl.shader_source && gl.compile_shader && gl.create_program &&
-               gl.attach_shader && gl.link_program && gl.use_program &&
-               gl.gen_buffers && gl.bind_buffer && gl.buffer_data &&
-               gl.gen_vertex_arrays && gl.bind_vertex_array &&
-               gl.get_attrib_location && gl.vertex_attrib_pointer &&
-               gl.enable_vertex_attrib_array && gl.draw_arrays &&
-               gl.tex_image2d && gl.framebuffer_texture2d &&
-               gl.framebuffer_renderbuffer && GL.vertex_shader &&
+        return gl.disable and gl.clear_color and gl.create_shader and
+               gl.shader_source and gl.compile_shader and gl.create_program and
+               gl.attach_shader and gl.link_program and gl.use_program and
+               gl.gen_buffers and gl.bind_buffer and gl.buffer_data and
+               gl.gen_vertex_arrays and gl.bind_vertex_array and
+               gl.get_attrib_location and gl.vertex_attrib_pointer and
+               gl.enable_vertex_attrib_array and gl.draw_arrays and
+               gl.tex_image2d and gl.framebuffer_texture2d and
+               gl.framebuffer_renderbuffer and GL.vertex_shader and
                GL.fragment_shader;
     }
 

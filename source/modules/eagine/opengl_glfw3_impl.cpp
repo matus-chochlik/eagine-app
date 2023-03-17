@@ -38,11 +38,7 @@ import eagine.core.utility;
 import eagine.core.valid_if;
 import eagine.core.c_api;
 import eagine.core.main_ctx;
-import <cmath>;
-import <string>;
-import <variant>;
-import <vector>;
-import <map>;
+import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
@@ -226,14 +222,14 @@ private:
             dst = 1.F;
         }
         void flip(bool& dst) const noexcept {
-            dst = !dst;
+            dst = not dst;
         }
         void flip(float&) const noexcept {
             // TODO: what does this mean?
         }
 
         void add_to(bool& dst) const noexcept {
-            dst = dst || multiply(true);
+            dst = dst or multiply(true);
         }
         void add_to(float& dst) const noexcept {
             dst = dst + multiply(1.F);
@@ -241,11 +237,11 @@ private:
 
         void multiply_add_to(bool& dst, const input_value<bool>& inp)
           const noexcept {
-            dst = dst || multiply(inp.get());
+            dst = dst or multiply(inp.get());
         }
         void multiply_add_to(bool& dst, const input_value<float>& inp)
           const noexcept {
-            dst = dst || (std::abs(multiply(inp.get())) > 0.F);
+            dst = dst or (std::abs(multiply(inp.get())) > 0.F);
         }
         void multiply_add_to(float& dst, const input_value<bool>& inp)
           const noexcept {
@@ -593,8 +589,8 @@ auto glfw3_opengl_window::ui_input_feedback::multiply(bool value) const noexcept
     return std::visit(
       overloaded(
         [=](std::monostate) { return value; },
-        [=](bool mult) { return mult && value; },
-        [=](float mult) { return (mult > 0.F) && value; }),
+        [=](bool mult) { return mult and value; },
+        [=](float mult) { return (mult > 0.F) and value; }),
       constant);
 }
 //------------------------------------------------------------------------------
@@ -702,9 +698,9 @@ auto glfw3_opengl_window::ui_input_feedback::is_under_threshold(
   const input_variable<bool>& inp) const noexcept -> bool {
     return std::visit(
       overloaded(
-        [&](std::monostate) { return !inp; },
-        [&](bool t) { return t || !inp; },
-        [&](float t) { return (t >= 0.5F) || !inp; }),
+        [&](std::monostate) { return not inp; },
+        [&](bool t) { return t or not inp; },
+        [&](float t) { return (t >= 0.5F) or not inp; }),
       threshold);
 }
 //------------------------------------------------------------------------------
@@ -713,8 +709,8 @@ auto glfw3_opengl_window::ui_input_feedback::is_over_threshold(
     return std::visit(
       overloaded(
         [&](std::monostate) { return bool(inp); },
-        [&](bool t) { return !t || inp; },
-        [&](float t) { return (t <= 0.5F) || inp; }),
+        [&](bool t) { return not t or inp; },
+        [&](float t) { return (t <= 0.5F) or inp; }),
       threshold);
 }
 //------------------------------------------------------------------------------
@@ -749,7 +745,7 @@ auto glfw3_opengl_window::ui_input_feedback::is_triggered(
         case input_feedback_trigger::over_threshold:
             return is_over_threshold(inp);
         case input_feedback_trigger::zero:
-            return !inp;
+            return not inp;
         case input_feedback_trigger::one:
             return bool(inp);
     }
@@ -780,7 +776,7 @@ auto glfw3_opengl_window::ui_feedback_targets::key_press_changed(
   const execution_context& ctx,
   glfw3_opengl_window& parent,
   const input_variable<bool>& inp) const noexcept -> bool {
-    if(!targets.empty()) [[likely]] {
+    if(not targets.empty()) [[likely]] {
         for(auto& target : targets) {
             target.key_press_changed(ctx, parent, inp);
         }
@@ -808,7 +804,7 @@ void glfw3_opengl_window::_feedback_key_press_change(
   const input_variable<bool>& inp) noexcept {
     if(const auto pos{_ui_feedbacks.find(std::make_tuple(device_id, key_id))};
        pos != _ui_feedbacks.end()) {
-        if(!pos->second.key_press_changed(ctx, *this, inp)) [[unlikely]] {
+        if(not pos->second.key_press_changed(ctx, *this, inp)) [[unlikely]] {
             _ui_feedbacks.erase(pos);
         }
     }
@@ -982,7 +978,7 @@ auto glfw3_opengl_window::initialize(
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
         log_debug("using compatibility GL context")
           .arg("instance", _instance_id);
-    } else if(!compat) {
+    } else if(not compat) {
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
         log_debug("using core GL context").arg("instance", _instance_id);
     }
@@ -992,15 +988,20 @@ auto glfw3_opengl_window::initialize(
     }
 
     glfwWindowHint(GLFW_DOUBLEBUFFER, GL_TRUE);
-    glfwWindowHint(GLFW_RED_BITS, video_opts.color_bits() / GLFW_DONT_CARE);
-    glfwWindowHint(GLFW_BLUE_BITS, video_opts.color_bits() / GLFW_DONT_CARE);
-    glfwWindowHint(GLFW_GREEN_BITS, video_opts.color_bits() / GLFW_DONT_CARE);
-    glfwWindowHint(GLFW_ALPHA_BITS, video_opts.alpha_bits() / GLFW_DONT_CARE);
-    glfwWindowHint(GLFW_DEPTH_BITS, video_opts.depth_bits() / GLFW_DONT_CARE);
     glfwWindowHint(
-      GLFW_STENCIL_BITS, video_opts.stencil_bits() / GLFW_DONT_CARE);
+      GLFW_RED_BITS, video_opts.color_bits().value_or(GLFW_DONT_CARE));
+    glfwWindowHint(
+      GLFW_BLUE_BITS, video_opts.color_bits().value_or(GLFW_DONT_CARE));
+    glfwWindowHint(
+      GLFW_GREEN_BITS, video_opts.color_bits().value_or(GLFW_DONT_CARE));
+    glfwWindowHint(
+      GLFW_ALPHA_BITS, video_opts.alpha_bits().value_or(GLFW_DONT_CARE));
+    glfwWindowHint(
+      GLFW_DEPTH_BITS, video_opts.depth_bits().value_or(GLFW_DONT_CARE));
+    glfwWindowHint(
+      GLFW_STENCIL_BITS, video_opts.stencil_bits().value_or(GLFW_DONT_CARE));
 
-    glfwWindowHint(GLFW_SAMPLES, video_opts.samples() / GLFW_DONT_CARE);
+    glfwWindowHint(GLFW_SAMPLES, video_opts.samples().value_or(GLFW_DONT_CARE));
 
     GLFWmonitor* window_monitor = nullptr;
     int fallback_width = 1280, fallback_height = 800;
@@ -1026,8 +1027,8 @@ auto glfw3_opengl_window::initialize(
     }
 
     _window = glfwCreateWindow(
-      video_opts.surface_width() / fallback_width,
-      video_opts.surface_height() / fallback_height,
+      video_opts.surface_width().value_or(fallback_width),
+      video_opts.surface_height().value_or(fallback_height),
       c_str(options.application_title()),
       window_monitor,
       nullptr);
@@ -1037,7 +1038,7 @@ auto glfw3_opengl_window::initialize(
         glfwSetScrollCallback(_window, &glfw3_opengl_window_scroll_callback);
         glfwSetWindowTitle(_window, c_str(options.application_title()));
         glfwGetWindowSize(_window, &_window_width, &_window_height);
-        if(_window_width > 0 && _window_height > 0) {
+        if(_window_width > 0 and _window_height > 0) {
             _norm_x_ndc = 1.F / float(_window_width);
             _norm_y_ndc = 1.F / float(_window_height);
             _aspect = _norm_y_ndc / _norm_x_ndc;
@@ -1112,7 +1113,7 @@ void glfw3_opengl_window::video_commit(execution_context&) {
     assert(_window);
 #if EAGINE_APP_HAS_IMGUI
     if(_imgui_enabled) {
-        if(_imgui_visible || !_provider.activities().empty()) {
+        if(_imgui_visible or not _provider.activities().empty()) {
             if(const auto draw_data{ImGui::GetDrawData()}) {
                 ImGui_ImplOpenGL3_RenderDrawData(draw_data);
             }
@@ -1200,7 +1201,7 @@ void glfw3_opengl_window::mapping_commit(
         const auto key{std::make_tuple(kb_id, message_id{"Key", ks.key_id})};
         ks.enabled =
 #if EAGINE_APP_HAS_IMGUI
-          _ui_feedbacks.contains(key) ||
+          _ui_feedbacks.contains(key) or
 #endif
           _enabled_signals.contains(key);
     }
@@ -1211,9 +1212,9 @@ void glfw3_opengl_window::mapping_commit(
     }
 
     _mouse_enabled =
-      _enabled_signals.contains({mouse_id, {"Cursor", "PositionX"}}) ||
-      _enabled_signals.contains({mouse_id, {"Cursor", "PositionY"}}) ||
-      _enabled_signals.contains({mouse_id, {"Cursor", "MotionX"}}) ||
+      _enabled_signals.contains({mouse_id, {"Cursor", "PositionX"}}) or
+      _enabled_signals.contains({mouse_id, {"Cursor", "PositionY"}}) or
+      _enabled_signals.contains({mouse_id, {"Cursor", "MotionX"}}) or
       _enabled_signals.contains({mouse_id, {"Cursor", "MotionY"}});
 }
 //------------------------------------------------------------------------------
@@ -1232,7 +1233,7 @@ void glfw3_opengl_window::update(execution_context& exec_ctx) {
         ImGui::NewFrame();
 
         ImGuiWindowFlags window_flags = 0;
-        if(!activities.empty()) {
+        if(not activities.empty()) {
             // NOLINTNEXTLINE(hicpp-signed-bitwise)
             window_flags |= ImGuiWindowFlags_NoResize;
             ImGui::SetNextWindowSize(ImVec2(float(_window_width) * 0.8F, 0.F));
@@ -1400,7 +1401,7 @@ void glfw3_opengl_window::update(execution_context& exec_ctx) {
                     }
                 }
 
-                if(!_imgui_visible) {
+                if(not _imgui_visible) {
                     for(auto& ks : _mouse_states) {
                         if(ks.enabled) {
                             if(ks.pressed.assign(
@@ -1416,12 +1417,12 @@ void glfw3_opengl_window::update(execution_context& exec_ctx) {
                     }
                 }
             }
-            if(!_imgui_visible) {
+            if(not _imgui_visible) {
                 for(auto& ks : _key_states) {
                     if(ks.enabled) {
                         const auto state = glfwGetKey(_window, ks.key_code);
                         const auto press = state == GLFW_PRESS;
-                        if(ks.pressed.assign(press) || press) {
+                        if(ks.pressed.assign(press) or press) {
                             const message_id key_id{"Key", ks.key_id};
                             sink.consume(
                               {kb_id, key_id, input_value_kind::absolute_norm},
@@ -1438,7 +1439,7 @@ void glfw3_opengl_window::update(execution_context& exec_ctx) {
                   glfwGetKey(_window, GLFW_KEY_GRAVE_ACCENT) == GLFW_PRESS;
                 if(_backtick_was_pressed != backtick_is_pressed) {
                     if(_backtick_was_pressed) {
-                        _imgui_visible = !_imgui_visible;
+                        _imgui_visible = not _imgui_visible;
                     }
                     _backtick_was_pressed = backtick_is_pressed;
                 }
@@ -1485,7 +1486,7 @@ auto glfw3_opengl_provider::_handle_progress() noexcept -> bool {
     glfwPollEvents();
     for(auto& entry : _windows) {
         assert(std::get<1>(entry));
-        if(!extract(std::get<1>(entry)).handle_progress()) {
+        if(not extract(std::get<1>(entry)).handle_progress()) {
             return false;
         }
     }
@@ -1504,7 +1505,7 @@ auto glfw3_opengl_provider::implementation_name() const noexcept
 //------------------------------------------------------------------------------
 auto glfw3_opengl_provider::is_initialized() -> bool {
 #if EAGINE_APP_HAS_GLFW3
-    return !_windows.empty();
+    return not _windows.empty();
 #endif
     return false;
 }
@@ -1543,7 +1544,7 @@ auto glfw3_opengl_provider::initialize(execution_context& exec_ctx) -> bool {
         auto& options = exec_ctx.options();
         for(auto& [inst, video_opts] : options.video_requirements()) {
             const bool should_create_window =
-              video_opts.has_provider(implementation_name()) &&
+              video_opts.has_provider(implementation_name()) and
               (video_opts.video_kind() == video_context_kind::opengl);
 
             if(should_create_window) {

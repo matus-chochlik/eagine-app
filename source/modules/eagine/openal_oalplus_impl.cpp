@@ -15,7 +15,7 @@ import eagine.core.logging;
 import eagine.core.c_api;
 import eagine.core.main_ctx;
 import eagine.oalplus;
-import <map>;
+import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
@@ -90,7 +90,7 @@ auto oalplus_openal_player::initialize(
         return true;
     } else {
         exec_ctx.log_error("failed to create AL context")
-          .arg("message", (!context).message());
+          .arg("message", (not context).message());
     }
 
     return false;
@@ -159,8 +159,8 @@ private:
 };
 //------------------------------------------------------------------------------
 auto oalplus_openal_provider::is_implemented() const noexcept -> bool {
-    return _alc_api.open_device && _alc_api.close_device &&
-           _alc_api.create_context && _alc_api.destroy_context &&
+    return _alc_api.open_device and _alc_api.close_device and
+           _alc_api.create_context and _alc_api.destroy_context and
            _alc_api.make_context_current;
 }
 //------------------------------------------------------------------------------
@@ -170,7 +170,7 @@ auto oalplus_openal_provider::implementation_name() const noexcept
 }
 //------------------------------------------------------------------------------
 auto oalplus_openal_provider::is_initialized() -> bool {
-    return !_players.empty();
+    return not _players.empty();
 }
 //------------------------------------------------------------------------------
 auto oalplus_openal_provider::should_initialize(execution_context& exec_ctx)
@@ -189,7 +189,7 @@ auto oalplus_openal_provider::initialize(execution_context& exec_ctx) -> bool {
         auto& options = exec_ctx.options();
         for(auto& [inst, audio_opts] : options.audio_requirements()) {
             const bool should_create_player =
-              audio_opts.has_provider(implementation_name()) &&
+              audio_opts.has_provider(implementation_name()) and
               (audio_opts.audio_kind() == audio_context_kind::openal);
 
             if(should_create_player) {

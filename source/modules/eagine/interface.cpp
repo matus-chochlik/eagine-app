@@ -15,9 +15,7 @@ import eagine.core.main_ctx;
 import :types;
 import :options;
 import :input;
-import <variant>;
-import <string>;
-import <memory>;
+import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------

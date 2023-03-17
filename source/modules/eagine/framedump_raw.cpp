@@ -10,7 +10,7 @@ export module eagine.app:framedump_raw;
 import eagine.core.types;
 import eagine.core.main_ctx;
 import :interface;
-import <memory>;
+import std;
 
 namespace eagine::app {
 

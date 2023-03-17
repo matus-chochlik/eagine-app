@@ -12,8 +12,7 @@ import eagine.core.valid_if;
 import eagine.core.runtime;
 import eagine.core.units;
 import eagine.core.main_ctx;
-import <chrono>;
-import <random>;
+import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
@@ -45,7 +44,7 @@ context_state::context_state(main_ctx_parent parent)
 }
 //------------------------------------------------------------------------------
 auto context_state::update_activity() noexcept -> context_state& {
-    if(!_new_user_idle) {
+    if(not _new_user_idle) {
         _user_active_time = context_state_view::clock_type::now();
     }
     _has_activity = _sim_activity_for.count() > _frame_time.value();

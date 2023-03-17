@@ -6,14 +6,14 @@
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
 
-#ifndef OGLPLUS_EXAMPLE_RESOURCES_HPP // NOLINT(llvm-header-guard)
-#define OGLPLUS_EXAMPLE_RESOURCES_HPP
+#ifndef EAGINE_APP_EXAMPLE_RESOURCES_HPP // NOLINT(llvm-header-guard)
+#define EAGINE_APP_EXAMPLE_RESOURCES_HPP
 
 import eagine.core;
 import eagine.shapes;
 import eagine.oglplus;
 import eagine.app;
-import <vector>;
+import std;
 
 namespace eagine::app {
 class example;

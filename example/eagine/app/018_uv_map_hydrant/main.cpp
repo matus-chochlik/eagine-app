@@ -10,6 +10,7 @@ import eagine.core;
 import eagine.shapes;
 import eagine.oglplus;
 import eagine.app;
+import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
@@ -82,7 +83,7 @@ example_uv_map::example_uv_map(execution_context& ec, video_context& vc)
 //------------------------------------------------------------------------------
 void example_uv_map::_on_loaded(const loaded_resource_base& loaded) noexcept {
     if(loaded.is_one_of(_shape, _prog)) {
-        if(_shape && _prog) {
+        if(_shape and _prog) {
             _prog_inputs.apply(_video.gl_api(), _prog, _shape);
         }
     }
@@ -128,7 +129,7 @@ void example_uv_map::update() noexcept {
 
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
-    if(_shape && _prog && _tex) {
+    if(_shape and _prog and _tex) {
         const auto rad = radians_(state.frame_time().value());
 
         gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
@@ -168,14 +169,14 @@ public:
     auto check_requirements(video_context& vc) -> bool {
         const auto& [gl, GL] = vc.gl_api();
 
-        return gl.disable && gl.clear_color && gl.create_shader &&
-               gl.shader_source && gl.compile_shader && gl.create_program &&
-               gl.attach_shader && gl.link_program && gl.use_program &&
-               gl.gen_buffers && gl.bind_buffer && gl.buffer_data &&
-               gl.gen_vertex_arrays && gl.bind_vertex_array &&
-               gl.get_attrib_location && gl.vertex_attrib_pointer &&
-               gl.enable_vertex_attrib_array && gl.draw_arrays &&
-               gl.tex_image2d && GL.vertex_shader && GL.fragment_shader;
+        return gl.disable and gl.clear_color and gl.create_shader and
+               gl.shader_source and gl.compile_shader and gl.create_program and
+               gl.attach_shader and gl.link_program and gl.use_program and
+               gl.gen_buffers and gl.bind_buffer and gl.buffer_data and
+               gl.gen_vertex_arrays and gl.bind_vertex_array and
+               gl.get_attrib_location and gl.vertex_attrib_pointer and
+               gl.enable_vertex_attrib_array and gl.draw_arrays and
+               gl.tex_image2d and GL.vertex_shader and GL.fragment_shader;
     }
 
     auto launch(execution_context& ec, const launch_options&)

@@ -96,7 +96,7 @@ void example_arrow::update() noexcept {
         _camera.idle_update(state, 5);
     }
 
-    if(_depth_prog && _draw_prog) {
+    if(_depth_prog and _draw_prog) {
         const auto& glapi = _video.gl_api();
         auto& [gl, GL] = glapi;
 
@@ -160,7 +160,7 @@ public:
               shapes::vertex_attrib_kind::normal);
         }
 
-        if(!_gen) {
+        if(not _gen) {
             auto load_shape_data = [&]() {
                 return valtree::from_json_text(
                   as_chars(embed<"ArrowJson">("arrow.json").unpack(ctx)), ctx);
@@ -173,14 +173,14 @@ public:
     auto check_requirements(video_context& vc) -> bool {
         const auto& [gl, GL] = vc.gl_api();
 
-        return gl.disable && gl.clear_color && gl.create_shader &&
-               gl.shader_source && gl.compile_shader && gl.create_program &&
-               gl.attach_shader && gl.link_program && gl.use_program &&
-               gl.gen_buffers && gl.bind_buffer && gl.buffer_data &&
-               gl.gen_vertex_arrays && gl.bind_vertex_array &&
-               gl.get_attrib_location && gl.vertex_attrib_pointer &&
-               gl.enable_vertex_attrib_array && gl.draw_arrays &&
-               GL.vertex_shader && GL.fragment_shader;
+        return gl.disable and gl.clear_color and gl.create_shader and
+               gl.shader_source and gl.compile_shader and gl.create_program and
+               gl.attach_shader and gl.link_program and gl.use_program and
+               gl.gen_buffers and gl.bind_buffer and gl.buffer_data and
+               gl.gen_vertex_arrays and gl.bind_vertex_array and
+               gl.get_attrib_location and gl.vertex_attrib_pointer and
+               gl.enable_vertex_attrib_array and gl.draw_arrays and
+               GL.vertex_shader and GL.fragment_shader;
     }
 
     auto launch(execution_context& ec, const launch_options&)

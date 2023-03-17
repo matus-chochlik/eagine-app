@@ -47,8 +47,8 @@ auto example_tess::_shape_id() -> identifier {
     if(const auto arg{context().main_context().args().find("--shape").next()}) {
         if(const identifier res_id{arg.get()}) {
             if(
-              (res_id == identifier{"icosphere"}) ||
-              (res_id == identifier{"torus"}) ||
+              (res_id == identifier{"icosphere"}) or
+              (res_id == identifier{"torus"}) or
               context().loader().has_embedded_resource(res_id)) {
                 return res_id;
             }
@@ -114,7 +114,7 @@ void example_tess::_on_loaded(const loaded_resource_base& loaded) noexcept {
           .set_orbit_max(3.0F * sr)
           .set_fov(degrees_(30.F));
     }
-    if(_prog && _geom) {
+    if(_prog and _geom) {
         _prog.apply_input_bindings(_video, _geom);
     }
     reset_timeout();
@@ -138,7 +138,7 @@ void example_tess::update() noexcept {
 
     _bg.clear(_video, _camera);
 
-    if(_prog && _geom && _other) {
+    if(_prog and _geom and _other) {
         _prog.use(_video);
         _prog.set_projection(_video, _camera);
         _prog.set_factor(_video, _tess_factor);
@@ -167,16 +167,16 @@ public:
     auto check_requirements(video_context& vc) -> bool {
         const auto& [gl, GL] = vc.gl_api();
 
-        return gl.disable && gl.clear_color && gl.create_shader &&
-               gl.shader_source && gl.compile_shader && gl.create_program &&
-               gl.attach_shader && gl.link_program && gl.use_program &&
-               gl.gen_buffers && gl.bind_buffer && gl.buffer_data &&
-               gl.gen_vertex_arrays && gl.bind_vertex_array &&
-               gl.get_attrib_location && gl.vertex_attrib_pointer &&
-               gl.enable_vertex_attrib_array && gl.draw_arrays &&
-               GL.vertex_shader && GL.tess_control_shader &&
-               GL.tess_evaluation_shader && GL.vertex_shader &&
-               GL.geometry_shader && GL.fragment_shader;
+        return gl.disable and gl.clear_color and gl.create_shader and
+               gl.shader_source and gl.compile_shader and gl.create_program and
+               gl.attach_shader and gl.link_program and gl.use_program and
+               gl.gen_buffers and gl.bind_buffer and gl.buffer_data and
+               gl.gen_vertex_arrays and gl.bind_vertex_array and
+               gl.get_attrib_location and gl.vertex_attrib_pointer and
+               gl.enable_vertex_attrib_array and gl.draw_arrays and
+               GL.vertex_shader and GL.tess_control_shader and
+               GL.tess_evaluation_shader and GL.vertex_shader and
+               GL.geometry_shader and GL.fragment_shader;
     }
 
     auto launch(execution_context& ec, const launch_options&)

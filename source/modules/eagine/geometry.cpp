@@ -12,6 +12,7 @@ import eagine.core.memory;
 import eagine.shapes;
 import eagine.oglplus;
 import :context;
+import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
