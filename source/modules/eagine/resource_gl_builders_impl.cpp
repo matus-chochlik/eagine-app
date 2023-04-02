@@ -11,6 +11,7 @@ module;
 
 module eagine.app;
 
+import std;
 import eagine.core.types;
 import eagine.core.math;
 import eagine.core.memory;
@@ -22,7 +23,6 @@ import eagine.core.value_tree;
 import eagine.core.c_api;
 import eagine.oglplus;
 import eagine.shapes;
-import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------

@@ -11,6 +11,7 @@ module;
 
 module eagine.app;
 
+import std;
 import eagine.core.types;
 import eagine.core.math;
 import eagine.core.memory;
@@ -19,7 +20,6 @@ import eagine.core.identifier;
 import eagine.core.reflection;
 import eagine.core.value_tree;
 import eagine.core.units;
-import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------

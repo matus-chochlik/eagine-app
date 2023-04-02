@@ -7,6 +7,7 @@
 ///
 export module eagine.app:background;
 
+import std;
 import eagine.core.types;
 import eagine.core.memory;
 import eagine.core.c_api;
@@ -14,7 +15,6 @@ import eagine.shapes;
 import eagine.oglplus;
 import :context;
 import :camera;
-import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------

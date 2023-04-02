@@ -7,6 +7,7 @@
 ///
 export module eagine.app:interface;
 
+import std;
 import eagine.core.types;
 import eagine.core.memory;
 import eagine.core.identifier;
@@ -15,7 +16,6 @@ import eagine.core.main_ctx;
 import :types;
 import :options;
 import :input;
-import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------

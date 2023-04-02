@@ -7,13 +7,13 @@
 ///
 module eagine.app;
 
+import std;
 import eagine.core.types;
 import eagine.core.memory;
 import eagine.core.string;
 import eagine.core.identifier;
 import eagine.core.reflection;
 import eagine.core.main_ctx;
-import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------

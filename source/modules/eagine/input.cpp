@@ -7,6 +7,7 @@
 ///
 export module eagine.app:input;
 
+import std;
 import eagine.core.types;
 import eagine.core.memory;
 import eagine.core.identifier;
@@ -14,7 +15,6 @@ import eagine.core.reflection;
 import eagine.core.valid_if;
 import eagine.core.utility;
 import eagine.core.runtime;
-import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------

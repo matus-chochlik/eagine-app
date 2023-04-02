@@ -7,9 +7,9 @@
 ///
 export module eagine.app:types;
 
+import std;
 import eagine.core.types;
 import eagine.core.reflection;
-import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------

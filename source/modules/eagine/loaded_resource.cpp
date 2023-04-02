@@ -7,6 +7,7 @@
 ///
 export module eagine.app:loaded_resource;
 
+import std;
 import eagine.core.types;
 import eagine.core.math;
 import eagine.core.memory;
@@ -20,7 +21,6 @@ import eagine.oglplus;
 import :context;
 import :geometry;
 import :resource_loader;
-import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------

@@ -11,6 +11,7 @@ module;
 
 module eagine.app;
 
+import std;
 import eagine.core.types;
 import eagine.core.memory;
 import eagine.core.string;
@@ -23,8 +24,6 @@ import eagine.core.main_ctx;
 import eagine.shapes;
 import eagine.oglplus;
 import eagine.msgbus;
-
-import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
