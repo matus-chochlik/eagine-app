@@ -18,6 +18,7 @@ import eagine.core.string;
 import eagine.core.math;
 import eagine.core.container;
 import eagine.core.reflection;
+import eagine.core.value_tree;
 import eagine.core.utility;
 import eagine.core.runtime;
 import eagine.core.main_ctx;
