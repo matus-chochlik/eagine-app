@@ -193,7 +193,6 @@ eagine_add_module(
 
 eagine_add_module(
 	eagine.app
-	PP_NAME APP
 	INTERFACES app
 	PARTITIONS
 		types
