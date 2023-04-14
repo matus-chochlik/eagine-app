@@ -657,7 +657,7 @@ public:
 
     /// @brief Indicates if this resource is loaded.
     auto is_loaded() const noexcept -> bool {
-        return this->is_valid();
+        return this->has_value();
     }
 
     auto assign(const typename common::base_load_info& info) noexcept -> bool {
@@ -850,7 +850,7 @@ public:
 
     /// @brief Indicates if this resource is loaded.
     auto is_loaded() const noexcept -> bool {
-        return this->is_valid();
+        return this->has_value();
     }
 
     auto assign(const typename common::base_load_info& info) noexcept -> bool {
@@ -929,7 +929,7 @@ public:
 
     /// @brief Indicates if this resource is loaded.
     auto is_loaded() const noexcept -> bool {
-        return this->is_valid();
+        return this->has_value();
     }
 
     auto assign(const typename common::base_load_info& info) noexcept -> bool {
@@ -963,7 +963,7 @@ public:
 
     /// @brief Indicates if this resource is loaded.
     auto is_loaded() const noexcept -> bool {
-        return this->is_valid();
+        return this->has_value();
     }
 
     auto assign(const typename common::base_load_info& info) noexcept -> bool {
