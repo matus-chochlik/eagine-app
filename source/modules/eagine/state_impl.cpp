@@ -28,7 +28,7 @@ context_state::context_state(main_ctx_parent parent)
       valid_if_positive<std::default_random_engine::result_type>>(
       "application.random.seed",
       std::default_random_engine::result_type{0U})}
-  , _rand_init{extract_or(_rand_seed, std::random_device{}())}
+  , _rand_init{_rand_seed.value_or(std::random_device{}())}
   , _rand_eng{_rand_init} {
     if(app_config().fetch(
          "application.user_idle_interval", _user_idle_interval)) {

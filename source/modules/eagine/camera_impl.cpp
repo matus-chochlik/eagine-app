@@ -56,7 +56,7 @@ auto orbiting_camera::update_pitch(const float inc) noexcept
 auto orbiting_camera::idle_update(
   const context_state_view& state,
   const valid_if_positive<float>& divisor) noexcept -> orbiting_camera& {
-    const auto s = state.frame_duration().value() / extract_or(divisor, 1.F);
+    const auto s = state.frame_duration().value() / divisor.value_or(1.F);
     return update_orbit(s).update_turns(s).update_pitch(s);
 }
 //------------------------------------------------------------------------------

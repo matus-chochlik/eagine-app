@@ -349,8 +349,8 @@ public:
               extract(_device_id),
               extract(_feedback_id),
               extract(_input_id),
-              extract_or(_trigger, input_feedback_trigger::change),
-              extract_or(_action, input_feedback_action::copy),
+              _trigger.value_or(input_feedback_trigger::change),
+              _action.value_or(input_feedback_action::copy),
               _threshold,
               _constant);
             reset();
@@ -368,15 +368,15 @@ public:
                 _ctx.add_ui_toggle(
                   extract(_input_id),
                   extract(_label),
-                  extract_or(_initial_bool, false));
+                  _initial_bool.value_or(false));
                 _status_l1 = status_type_l1::unknown;
             } else if(_type == "ui_slider") {
                 _ctx.add_ui_slider(
                   extract(_input_id),
                   extract(_label),
-                  extract_or(_min, 0.F),
-                  extract_or(_max, 1.F),
-                  extract_or(_initial_float, 0.5F));
+                  _min.value_or(0.F),
+                  _max.value_or(1.F),
+                  _initial_float.value_or(0.5F));
                 _status_l1 = status_type_l1::unknown;
             } else {
                 log_error("invalid input type '${type}")
