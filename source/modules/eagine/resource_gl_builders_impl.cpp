@@ -50,7 +50,7 @@ public:
       span<const string_view> data) noexcept {
         if(path.size() == 1) {
             if(path.starts_with("label")) {
-                if(has_value(data)) {
+                if(data.has_single_value()) {
                     if(auto parent{_parent.lock()}) {
                         extract(parent).add_label(extract(data));
                     }
@@ -459,7 +459,7 @@ public:
             using Et = oglplus::gl_types::enum_type;
 
             if(path.starts_with("label")) {
-                if(has_value(data)) {
+                if(data.has_single_value()) {
                     if(const auto parent{_parent.lock()}) {
                         extract(parent).add_label(extract(data));
                     }
@@ -495,7 +495,7 @@ public:
         } else if(path.size() == 3) {
             if(path.starts_with("images")) {
                 if(path.ends_with("url")) {
-                    if(has_value(data)) {
+                    if(data.has_single_value()) {
                         _image_locator = {to_string(extract(data))};
                     } else {
                         _success = false;
@@ -935,7 +935,7 @@ public:
       span<const string_view> data) noexcept {
         if(path.size() == 1) {
             if(path.starts_with("label")) {
-                if(has_value(data)) {
+                if(data.has_single_value()) {
                     if(auto parent{_parent.lock()}) {
                         extract(parent).add_label(extract(data));
                     }
