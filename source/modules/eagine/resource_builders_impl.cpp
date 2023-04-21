@@ -99,7 +99,7 @@ void valtree_float_vector_builder::do_add(
     }
 }
 //------------------------------------------------------------------------------
-auto valtree_float_vector_builder::finish() noexcept -> bool final {
+auto valtree_float_vector_builder::finish() noexcept -> bool {
     if(auto parent{_parent.lock()}) {
         if(const auto cont{extract(parent).continuation()}) {
             extract(cont).handle_float_vector(extract(parent), _values);
