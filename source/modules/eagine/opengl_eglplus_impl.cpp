@@ -296,8 +296,8 @@ auto eglplus_opengl_surface::initialize(
     const auto device_path = video_opts.device_path();
     const auto device_idx = video_opts.device_index();
     const bool select_device =
-      device_kind.is_valid() or device_path.is_valid() or
-      device_idx.is_valid() or video_opts.driver_name().is_valid();
+      device_kind.has_value() or device_path.has_value() or
+      device_idx.has_value() or video_opts.driver_name().has_value();
 
     if(select_device and egl.EXT_device_enumeration) {
         if(const ok dev_count{egl.query_devices.count()}) {
