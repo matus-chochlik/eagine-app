@@ -47,27 +47,27 @@ private:
         const auto& [gl, GL] = _video.gl_api();
 
         if(const ok info{gl.get_string(GL.vendor)}) {
-            gl_cio.print("Vendor: ${info}").arg("info", extract(info));
+            gl_cio.print("Vendor: ${info}").arg("info", info);
         }
 
         if(const ok info{gl.get_string(GL.renderer)}) {
-            gl_cio.print("Renderer: ${info}").arg("info", extract(info));
+            gl_cio.print("Renderer: ${info}").arg("info", info);
         }
 
         if(const ok info{gl.get_string(GL.version)}) {
-            gl_cio.print("Version: ${info}").arg("info", extract(info));
+            gl_cio.print("Version: ${info}").arg("info", info);
         }
 
         if(const ok info{gl.get_integer(GL.major_version)}) {
-            gl_cio.print("Major version: ${info}").arg("info", extract(info));
+            gl_cio.print("Major version: ${info}").arg("info", info);
         }
 
         if(const ok info{gl.get_integer(GL.minor_version)}) {
-            gl_cio.print("Minor version: ${info}").arg("info", extract(info));
+            gl_cio.print("Minor version: ${info}").arg("info", info);
         }
 
         if(const ok info{gl.get_string(GL.shading_language_version)}) {
-            gl_cio.print("GLSL version: ${info}").arg("info", extract(info));
+            gl_cio.print("GLSL version: ${info}").arg("info", info);
         }
 
         const auto ext_cio{gl_cio.print("GL extensions:").to_be_continued()};
@@ -89,15 +89,15 @@ private:
         const auto& [al, AL] = _audio.al_api();
 
         if(const ok info{al.get_string(AL.vendor)}) {
-            al_cio.print("Vendor: ${info}").arg("info", extract(info));
+            al_cio.print("Vendor: ${info}").arg("info", info);
         }
 
         if(const ok info{al.get_string(AL.renderer)}) {
-            al_cio.print("Renderer: ${info}").arg("info", extract(info));
+            al_cio.print("Renderer: ${info}").arg("info", info);
         }
 
         if(const ok info{al.get_string(AL.version)}) {
-            al_cio.print("Version: ${info}").arg("info", extract(info));
+            al_cio.print("Version: ${info}").arg("info", info);
         }
 
         const auto ext_cio{al_cio.print("AL extensions:").to_be_continued()};

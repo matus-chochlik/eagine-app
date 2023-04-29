@@ -228,6 +228,7 @@ eagine_add_module(
 		eagine.core.math
 		eagine.core.string
 		eagine.core.identifier
+		eagine.core.reflection
 		eagine.core.container
 		eagine.core.utility
 		eagine.core.valid_if
