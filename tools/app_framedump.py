@@ -363,7 +363,7 @@ class Framedump(object):
         self.runConvert([
             '-size', '%dx24'%(len(self.options.main_label)*12 + 144), 'xc:none',
             '-background', 'none',
-            '-pointsize', '24',
+            '-pointsize', '16',
             '-gravity', 'center',
             '-stroke', 'black',
             '-strokewidth', '7',
@@ -544,7 +544,7 @@ class Framedump(object):
                     self.options.frame_height
                 ),
                 '-alpha', 'Off',
-                '-gravity', 'SouthEast',
+                '-gravity', 'South',
                 self.main_label_file,
                 '-composite',
                 '-gravity', 'SouthEast',

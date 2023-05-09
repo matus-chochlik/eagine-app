@@ -89,10 +89,6 @@ target_include_directories(
 	eagine-app-imgui
 	PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/imgui>"
 )
-target_compile_definitions(
-	eagine-app-imgui
-	PUBLIC EAGINE_APP_USE_IMGUI=1
-)
 if(UNIX AND NOT APPLE)
 	target_link_libraries(
 		eagine-app-imgui

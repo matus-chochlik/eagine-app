@@ -7,6 +7,7 @@
 ///
 export module eagine.app:loaded_resource;
 
+import std;
 import eagine.core.types;
 import eagine.core.math;
 import eagine.core.memory;
@@ -20,7 +21,6 @@ import eagine.oglplus;
 import :context;
 import :geometry;
 import :resource_loader;
-import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
@@ -657,7 +657,7 @@ public:
 
     /// @brief Indicates if this resource is loaded.
     auto is_loaded() const noexcept -> bool {
-        return this->is_valid();
+        return this->has_value();
     }
 
     auto assign(const typename common::base_load_info& info) noexcept -> bool {
@@ -850,7 +850,7 @@ public:
 
     /// @brief Indicates if this resource is loaded.
     auto is_loaded() const noexcept -> bool {
-        return this->is_valid();
+        return this->has_value();
     }
 
     auto assign(const typename common::base_load_info& info) noexcept -> bool {
@@ -929,7 +929,7 @@ public:
 
     /// @brief Indicates if this resource is loaded.
     auto is_loaded() const noexcept -> bool {
-        return this->is_valid();
+        return this->has_value();
     }
 
     auto assign(const typename common::base_load_info& info) noexcept -> bool {
@@ -963,7 +963,7 @@ public:
 
     /// @brief Indicates if this resource is loaded.
     auto is_loaded() const noexcept -> bool {
-        return this->is_valid();
+        return this->has_value();
     }
 
     auto assign(const typename common::base_load_info& info) noexcept -> bool {

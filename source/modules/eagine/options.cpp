@@ -7,13 +7,13 @@
 ///
 export module eagine.app:options;
 
+import std;
 import eagine.core.types;
 import eagine.core.memory;
 import eagine.core.identifier;
 import eagine.core.valid_if;
 import eagine.core.main_ctx;
 import :types;
-import std;
 
 namespace eagine::app {
 export class execution_context;
@@ -357,7 +357,7 @@ public:
     /// @brief Returns adjusted frame number for frame-dump functionality.
     auto framedump_number(const long frame_no) const noexcept
       -> valid_if_nonnegative<long> {
-        return frame_no - extract_or(_framedump_skip.value(), 0);
+        return frame_no - _framedump_skip.value().value_or(0);
     }
 
 private:

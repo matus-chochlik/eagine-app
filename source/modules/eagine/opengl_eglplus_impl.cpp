@@ -7,16 +7,18 @@
 ///
 module eagine.app;
 
+import std;
 import eagine.core.types;
 import eagine.core.memory;
 import eagine.core.identifier;
+import eagine.core.reflection;
 import eagine.core.logging;
 import eagine.core.utility;
 import eagine.core.valid_if;
 import eagine.core.c_api;
 import eagine.core.main_ctx;
 import eagine.eglplus;
-import std;
+import :types;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
@@ -160,7 +162,7 @@ auto eglplus_opengl_surface::initialize(
     const auto surface_attribs = (EGL.width | _width) + (EGL.height | _height);
     if(ok surface{
          egl.create_pbuffer_surface(display, config, surface_attribs)}) {
-        _surface = std::move(extract(surface));
+        _surface = std::move(surface.get());
 
         const auto gl_api = gl_otherwise_gles
                               ? eglplus::client_api(EGL.opengl_api)
@@ -172,7 +174,7 @@ auto eglplus_opengl_surface::initialize(
 
             if(ok ctxt{egl.create_context(
                  display, config, eglplus::context_handle{}, context_attribs)}) {
-                _context = std::move(extract(ctxt));
+                _context = std::move(ctxt.get());
                 return true;
             } else {
                 log_error("failed to create context")
@@ -200,27 +202,24 @@ auto eglplus_opengl_surface::initialize(
     const auto& [egl, EGL] = _egl_api;
 
     if(device_idx) {
-        log_info("trying EGL device ${index}").arg("index", extract(device_idx));
+        log_info("trying EGL device ${index}").arg("index", *device_idx);
     } else {
         exec_ctx.log_info("trying default EGL display device");
     }
 
     if(const ok initialized{egl.initialize(display)}) {
-        if(const auto conf_driver_name{video_opts.driver_name()}) {
+        if(const ok conf_driver_name{video_opts.driver_name()}) {
             if(egl.MESA_query_driver(display)) {
                 if(const ok driver_name{egl.get_display_driver_name(display)}) {
-                    if(are_equal(
-                         extract(video_opts.driver_name()),
-                         extract(driver_name))) {
+                    if(are_equal(video_opts.driver_name(), driver_name)) {
                         log_info("using the ${driver} MESA display driver")
-                          .arg("driver", "Identifier", extract(driver_name));
+                          .arg("driver", "Identifier", driver_name);
                     } else {
                         log_info(
                           "${current} does not match the configured "
                           "${config} display driver; skipping")
-                          .arg("current", "Identifier", extract(driver_name))
-                          .arg(
-                            "config", "Identifier", extract(conf_driver_name));
+                          .arg("current", "Identifier", driver_name)
+                          .arg("config", "Identifier", conf_driver_name);
                         return false;
                     }
                 } else {
@@ -231,14 +230,14 @@ auto eglplus_opengl_surface::initialize(
                 log_info(
                   "cannot determine current display driver to match "
                   "with configured ${config} driver; skipping")
-                  .arg("config", "Identifier", extract(conf_driver_name));
+                  .arg("config", "Identifier", conf_driver_name);
                 return false;
             }
         } else {
             if(egl.MESA_query_driver(display)) {
                 if(const ok driver_name{egl.get_display_driver_name(display)}) {
                     log_info("using the ${driver} MESA display driver")
-                      .arg("driver", "Identifier", extract(driver_name));
+                      .arg("driver", "Identifier", driver_name);
                 }
             }
         }
@@ -259,7 +258,7 @@ auto eglplus_opengl_surface::initialize(
 
         if(const ok count{egl.choose_config.count(_display, config_attribs)}) {
             log_info("found ${count} suitable framebuffer configurations")
-              .arg("count", extract(count));
+              .arg("count", count);
 
             if(const ok config{egl.choose_config(_display, config_attribs)}) {
                 return initialize(exec_ctx, _display, config, opts, video_opts);
@@ -292,16 +291,15 @@ auto eglplus_opengl_surface::initialize(
     _instance_id = id;
     const auto& [egl, EGL] = _egl_api;
 
-    const auto device_kind = video_opts.device_kind();
-    const auto device_path = video_opts.device_path();
-    const auto device_idx = video_opts.device_index();
+    const ok device_kind{video_opts.device_kind()};
+    const ok device_path{video_opts.device_path()};
+    const ok device_idx{video_opts.device_index()};
     const bool select_device =
-      device_kind.is_valid() or device_path.is_valid() or
-      device_idx.is_valid() or video_opts.driver_name().is_valid();
+      device_kind or device_path or device_idx or video_opts.driver_name();
 
     if(select_device and egl.EXT_device_enumeration) {
         if(const ok dev_count{egl.query_devices.count()}) {
-            const auto n = std_size(extract(dev_count));
+            const auto n = std_size(dev_count);
             std::vector<eglplus::egl_types::device_type> devices;
             devices.resize(n);
             if(egl.query_devices(cover(devices))) {
@@ -310,21 +308,21 @@ auto eglplus_opengl_surface::initialize(
                     auto device = eglplus::device_handle(devices[cur_dev_idx]);
 
                     if(device_idx) {
-                        if(std_size(extract(device_idx)) == cur_dev_idx) {
+                        if(std_size(device_idx) == cur_dev_idx) {
                             log_info("explicitly selected device ${index}")
-                              .arg("index", extract(device_idx));
+                              .arg("index", device_idx);
                         } else {
                             matching_device = false;
                             log_info(
                               "current device index is ${current} but, "
                               "device ${config} requested; skipping")
                               .arg("current", cur_dev_idx)
-                              .arg("config", extract(device_idx));
+                              .arg("config", device_idx);
                         }
                     }
 
                     if(device_kind) {
-                        if(extract(device_kind) == video_device_kind::hardware) {
+                        if(device_kind == video_device_kind::hardware) {
                             if(not egl.MESA_device_software(device)) {
                                 log_info(
                                   "device ${index} seems to be hardware as "
@@ -337,8 +335,7 @@ auto eglplus_opengl_surface::initialize(
                                   "hardware device requested; skipping")
                                   .arg("index", cur_dev_idx);
                             }
-                        } else if(
-                          extract(device_kind) == video_device_kind::software) {
+                        } else if(device_kind == video_device_kind::software) {
                             if(not egl.EXT_device_drm(device)) {
                                 log_info(
                                   "device ${index} seems to be software as "
@@ -358,29 +355,25 @@ auto eglplus_opengl_surface::initialize(
                         if(egl.EXT_device_drm(device)) {
                             if(const ok path{egl.query_device_string(
                                  device, EGL.drm_device_file)}) {
-                                if(are_equal(
-                                     extract(device_path), extract(path))) {
+                                if(are_equal(device_path, path)) {
                                     log_info(
                                       "using DRM device ${path} as "
                                       "explicitly specified by configuration")
-                                      .arg("path", "FsPath", extract(path));
+                                      .arg("path", "FsPath", path);
                                 } else {
                                     matching_device = false;
                                     log_info(
                                       "device file is ${current}, but "
                                       "${config} was requested; skipping")
-                                      .arg("current", "FsPath", extract(path))
-                                      .arg(
-                                        "config",
-                                        "FsPath",
-                                        extract(device_path));
+                                      .arg("current", "FsPath", path)
+                                      .arg("config", "FsPath", device_path);
                                 }
                             }
                         } else {
                             log_warning(
                               "${config} requested by config, but cannot "
                               "determine current device file path")
-                              .arg("config", "FsPath", extract(device_path));
+                              .arg("config", "FsPath", device_path);
                         }
                     }
 

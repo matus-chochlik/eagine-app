@@ -7,6 +7,7 @@
 ///
 export module eagine.app:resource_manager;
 
+import std;
 import eagine.core.types;
 import eagine.core.math;
 import eagine.core.utility;
@@ -16,7 +17,6 @@ import eagine.oglplus;
 import :loaded_resource;
 import :geometry;
 import :context;
-import std;
 
 namespace eagine::app {
 export template <typename... Resources>

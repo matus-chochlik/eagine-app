@@ -7,6 +7,7 @@
 ///
 export module eagine.app:resource_loader;
 
+import std;
 import eagine.core.types;
 import eagine.core.math;
 import eagine.core.memory;
@@ -14,6 +15,7 @@ import eagine.core.string;
 import eagine.core.container;
 import eagine.core.reflection;
 import eagine.core.serialization;
+import eagine.core.value_tree;
 import eagine.core.utility;
 import eagine.core.runtime;
 import eagine.core.logging;
@@ -21,7 +23,6 @@ import eagine.core.main_ctx;
 import eagine.shapes;
 import eagine.oglplus;
 import eagine.msgbus;
-import std;
 
 namespace eagine::app {
 

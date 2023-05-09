@@ -7,6 +7,7 @@
 ///
 export module eagine.app:camera;
 
+import std;
 import eagine.core.types;
 import eagine.core.memory;
 import eagine.core.identifier;
@@ -18,7 +19,6 @@ import eagine.oglplus;
 import :state;
 import :input;
 import :context;
-import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------

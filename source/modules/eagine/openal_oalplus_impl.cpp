@@ -7,6 +7,7 @@
 ///
 module eagine.app;
 
+import std;
 import eagine.core.types;
 import eagine.core.memory;
 import eagine.core.identifier;
@@ -15,7 +16,6 @@ import eagine.core.logging;
 import eagine.core.c_api;
 import eagine.core.main_ctx;
 import eagine.oalplus;
-import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
@@ -86,7 +86,7 @@ auto oalplus_openal_player::initialize(
 
     if(ok context{alc.create_context(
          _device, get_context_attribs(exec_ctx, opts, audio_opts))}) {
-        _context = std::move(extract(context));
+        _context = std::move(context.get());
         return true;
     } else {
         exec_ctx.log_error("failed to create AL context")
@@ -197,7 +197,7 @@ auto oalplus_openal_provider::initialize(execution_context& exec_ctx) -> bool {
                      *this, _alc_api)}) {
                     if(extract(player).initialize(
                          exec_ctx,
-                         std::move(extract(device)),
+                         std::move(device),
                          inst,
                          options,
                          audio_opts)) {

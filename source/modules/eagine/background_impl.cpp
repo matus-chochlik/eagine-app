@@ -7,12 +7,12 @@
 ///
 module eagine.app;
 
+import std;
 import eagine.core.types;
 import eagine.core.memory;
 import eagine.core.c_api;
 import eagine.shapes;
 import eagine.oglplus;
-import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------

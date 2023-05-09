@@ -84,6 +84,7 @@ eagine_add_module(
 		eagine.core.string
 		eagine.core.reflection
 		eagine.core.serialization
+		eagine.core.value_tree
 		eagine.core.utility
 		eagine.core.runtime
 		eagine.core.logging
@@ -192,7 +193,6 @@ eagine_add_module(
 
 eagine_add_module(
 	eagine.app
-	PP_NAME APP
 	INTERFACES app
 	PARTITIONS
 		types
@@ -228,9 +228,11 @@ eagine_add_module(
 		eagine.core.math
 		eagine.core.string
 		eagine.core.identifier
+		eagine.core.reflection
 		eagine.core.container
 		eagine.core.utility
 		eagine.core.valid_if
+		eagine.core.value_tree
 		eagine.core.logging
 		eagine.core.progress
 		eagine.core.c_api
@@ -238,6 +240,7 @@ eagine_add_module(
 		eagine.eglplus
 		eagine.oglplus
 		eagine.oalplus
+		eagine.msgbus
 	PRIVATE_LINK_LIBRARIES
 		eagine-app-imgui
 		EAGine::Deps::GLFW3
