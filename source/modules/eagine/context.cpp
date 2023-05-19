@@ -244,9 +244,13 @@ public:
 
     /// @brief Starts the main application loop (will block until stopped).
     auto run() noexcept -> execution_context& {
+        declare_state("running", "runStart", "runFinish");
+        active_state("running");
+        log_info("application main loop started").tag("runStart");
         while(is_running()) {
             update();
         }
+        log_info("application main loop finishing").tag("runFinish");
         clean_up();
         return *this;
     }
