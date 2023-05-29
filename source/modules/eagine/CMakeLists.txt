@@ -195,24 +195,6 @@ eagine_add_module(
 
 eagine_add_module(
 	eagine.app
-	INTERFACES app
-	PARTITIONS
-		types
-		options
-		input
-		state
-		interface
-		implementation
-		framedump_raw
-		resource_loader
-		context
-		main
-		framebuffer
-		geometry
-		camera
-		background
-		loaded_resource
-		resource_manager
 	SOURCES
 		options
 		state
