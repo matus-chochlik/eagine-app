@@ -52,15 +52,15 @@ public:
             if(path.starts_with("label")) {
                 if(data.has_single_value()) {
                     if(auto parent{_parent.lock()}) {
-                        extract(parent).add_label(extract(data));
+                        parent->add_label(*data);
                     }
                 }
             }
         } else if((path.size() == 3) and data) {
             if((path.starts_with("inputs")) and (path.ends_with("attrib"))) {
                 if(const auto kind{
-                     from_string<shapes::vertex_attrib_kind>(extract(data))}) {
-                    _attrib_kind = extract(kind);
+                     from_string<shapes::vertex_attrib_kind>(*data)}) {
+                    _attrib_kind = *kind;
                 } else {
                     _input_name.clear();
                 }
@@ -68,12 +68,12 @@ public:
             if(path.starts_with("shaders")) {
                 if(path.ends_with("url")) {
                     if(data.has_single_value()) {
-                        _shdr_locator = {to_string(extract(data))};
+                        _shdr_locator = {to_string(*data)};
                     }
                 } else if(path.ends_with("type")) {
                     if(const auto conv{
                          from_strings<oglplus::shader_type>(data)}) {
-                        _shdr_type = extract(conv);
+                        _shdr_type = *conv;
                     }
                 }
             }
@@ -84,7 +84,7 @@ public:
     void do_add(const basic_string_path& path, span<const T>& data) noexcept {
         if((path.size() == 3) and data) {
             if((path.starts_with("inputs")) and (path.ends_with("variant"))) {
-                _attrib_variant_index = span_size(extract(data));
+                _attrib_variant_index = span_size(*data);
             }
         }
     }
@@ -107,7 +107,7 @@ public:
             if(path.starts_with("inputs")) {
                 if(not _input_name.empty()) {
                     if(auto parent{_parent.lock()}) {
-                        extract(parent).add_gl_program_input_binding(
+                        parent->add_gl_program_input_binding(
                           std::move(_input_name),
                           {_attrib_kind, _attrib_variant_index});
                     }
@@ -115,14 +115,14 @@ public:
             } else if(path.starts_with("shaders")) {
                 if(_shdr_locator) {
                     if(auto parent{_parent.lock()}) {
-                        auto& loader = extract(parent).loader();
+                        auto& loader = parent->loader();
                         if(auto src_request{loader.request_gl_shader(
                              _shdr_locator, _video, _shdr_type)}) {
                             src_request.set_continuation(parent);
-                            if(not extract(parent).add_gl_program_shader_request(
+                            if(not parent->add_gl_program_shader_request(
                                  src_request.request_id())) [[unlikely]] {
                                 src_request.info().mark_finished();
-                                extract(parent).mark_finished();
+                                parent->mark_finished();
                             }
                         }
                     }
@@ -152,11 +152,12 @@ template <typename T>
 static auto gl_enum_from_string(
   span<const string_view> data,
   oglplus::gl_types::enum_type& v) noexcept -> bool {
-    if(const auto conv{from_strings<T>(data)}) {
-        v = to_underlying(extract(conv));
-        return true;
-    }
-    return false;
+    return from_strings<T>(data)
+      .and_then([&](auto conv) -> tribool {
+          v = to_underlying(conv);
+          return true;
+      })
+      .value_or(false);
 }
 //------------------------------------------------------------------------------
 static auto texture_target_from_string(
@@ -217,7 +218,7 @@ public:
       , _target{target}
       , _params{params} {
         if(const auto parent{_parent.lock()}) {
-            extract(parent).loader().buffers().get(512 * 512);
+            parent->loader().buffers().get(512 * 512);
         }
     }
 
@@ -236,7 +237,7 @@ public:
     auto init_decompression(data_compression_method method) noexcept -> bool {
         if(const auto parent{_parent.lock()}) {
             _decompression = stream_decompression{
-              data_compressor{method, extract(parent).loader().buffers()},
+              data_compressor{method, parent->loader().buffers()},
               make_callable_ref<
                 &valtree_gl_texture_image_loader::append_image_data>(this),
               method};
@@ -306,8 +307,8 @@ public:
             } else if(path.starts_with("data_filter")) {
                 if(data.has_single_value()) {
                     if(const auto method{
-                         from_string<data_compression_method>(extract(data))}) {
-                        _success &= init_decompression(extract(method));
+                         from_string<data_compression_method>(*data)}) {
+                        _success &= init_decompression(*method);
                     } else {
                         _success = false;
                     }
@@ -333,12 +334,11 @@ public:
         if(const auto parent{_parent.lock()}) {
             if(_success) {
                 _decompression.finish();
-                extract(parent).handle_gl_texture_image(
-                  _target, _params, _temp);
+                parent->handle_gl_texture_image(_target, _params, _temp);
             } else {
-                extract(parent).mark_finished();
+                parent->mark_finished();
             }
-            extract(parent).loader().buffers().eat(std::move(_temp));
+            parent->loader().buffers().eat(std::move(_temp));
             return _success;
         }
         return false;
@@ -346,8 +346,8 @@ public:
 
     void failed() noexcept final {
         if(const auto parent{_parent.lock()}) {
-            extract(parent).mark_finished();
-            extract(parent).loader().buffers().eat(std::move(_temp));
+            parent->mark_finished();
+            parent->loader().buffers().eat(std::move(_temp));
         }
     }
 
@@ -461,7 +461,7 @@ public:
             if(path.starts_with("label")) {
                 if(data.has_single_value()) {
                     if(const auto parent{_parent.lock()}) {
-                        extract(parent).add_label(extract(data));
+                        parent->add_label(*data);
                     }
                 }
             } else if(path.starts_with("data_type")) {
@@ -496,7 +496,7 @@ public:
             if(path.starts_with("images")) {
                 if(path.ends_with("url")) {
                     if(data.has_single_value()) {
-                        _image_locator = {to_string(extract(data))};
+                        _image_locator = {to_string(*data)};
                     } else {
                         _success = false;
                     }
@@ -506,7 +506,7 @@ public:
                         _image_target = oglplus::texture_target{tgt};
                     } else {
                         log_error("invalid texture target '${name}'")
-                          .arg("name", extract(data));
+                          .arg("name", *data);
                         _success = false;
                     }
                 }
@@ -528,8 +528,7 @@ public:
         if(path.empty()) {
             if(_success) {
                 if(const auto parent{_parent.lock()}) {
-                    _success &=
-                      extract(parent).handle_gl_texture_params(_params);
+                    _success &= parent->handle_gl_texture_params(_params);
                 } else {
                     _success = false;
                 }
@@ -549,20 +548,20 @@ public:
             if(_success) {
                 for(auto& [loc, tgt, para] : _image_requests) {
                     const auto img_request{
-                      extract(parent).loader().request_gl_texture_image(
+                      parent->loader().request_gl_texture_image(
                         std::move(loc), tgt, para)};
                     img_request.set_continuation(parent);
-                    extract(parent).add_gl_texture_image_request(
+                    parent->add_gl_texture_image_request(
                       img_request.request_id());
                 }
                 _image_requests.clear();
                 for(const auto [param, value] : _i_params) {
-                    extract(parent).handle_gl_texture_i_param(
+                    parent->handle_gl_texture_i_param(
                       oglplus::texture_parameter{param}, value);
                 }
-                extract(parent).mark_loaded();
+                parent->mark_loaded();
             } else {
-                extract(parent).mark_finished();
+                parent->mark_finished();
             }
             return _success;
         }
@@ -937,7 +936,7 @@ public:
             if(path.starts_with("label")) {
                 if(data.has_single_value()) {
                     if(auto parent{_parent.lock()}) {
-                        extract(parent).add_label(extract(data));
+                        parent->add_label(*data);
                     }
                 }
             }
