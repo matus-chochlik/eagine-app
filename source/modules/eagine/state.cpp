@@ -153,41 +153,42 @@ public:
 
     /// @brief Generates random uniformly-distributed bytes.
     void random_uniform(span<byte> dest) {
-        fill_with_random_bytes(dest, _rand_eng);
+        main_context().fill_with_random_bytes(dest);
     }
 
     /// @brief Generates random uniformly-distributed floats in range <0, 1>.
     void random_uniform_01(span<float> dest) {
-        generate(dest, [this] { return _dist_uniform_float_01(_rand_eng); });
+        main_context().random_uniform_01(dest);
     }
 
     /// @brief Generates random uniformly-distributed float in range <0, 1>.
     auto random_uniform_01() -> float {
-        return _dist_uniform_float_01(_rand_eng);
+        float result{};
+        random_uniform_01(cover_one(result));
+        return result;
+    }
+
+    /// @brief Generates random uniformly-distributed floats in range <-1, 1>.
+    void random_uniform_11(span<float> dest) {
+        main_context().random_uniform_11(dest);
     }
 
     /// @brief Generates random uniformly-distributed float in range <-1, 1>.
     auto random_uniform_11() -> float {
-        return _dist_uniform_float_11(_rand_eng);
+        float result{};
+        random_uniform_11(cover_one(result));
+        return result;
     }
 
     /// @brief Generates random normally-distributed floats.
     void random_normal(span<float> dest) {
-        generate(dest, [this] { return _dist_normal_float(_rand_eng); });
+        main_context().random_normal(dest);
     }
 
 private:
     valid_if_positive<float> _fixed_fps;
 
     std::chrono::duration<float> _sim_activity_for;
-
-    valid_if_positive<std::default_random_engine::result_type> _rand_seed;
-    std::default_random_engine::result_type _rand_init;
-
-    std::default_random_engine _rand_eng;
-    std::uniform_real_distribution<float> _dist_uniform_float_01{0.F, 1.F};
-    std::uniform_real_distribution<float> _dist_uniform_float_11{-1.F, 1.F};
-    std::normal_distribution<float> _dist_normal_float{0.F, 1.F};
 };
 //------------------------------------------------------------------------------
 } // namespace eagine::app
