@@ -84,10 +84,12 @@ eagine_add_module(
 		eagine.core.string
 		eagine.core.reflection
 		eagine.core.serialization
+		eagine.core.container
 		eagine.core.value_tree
 		eagine.core.utility
 		eagine.core.runtime
 		eagine.core.logging
+		eagine.core.main_ctx
 		eagine.shapes
 		eagine.oglplus
 		eagine.msgbus
@@ -193,24 +195,6 @@ eagine_add_module(
 
 eagine_add_module(
 	eagine.app
-	INTERFACES app
-	PARTITIONS
-		types
-		options
-		input
-		state
-		interface
-		implementation
-		framedump_raw
-		resource_loader
-		context
-		main
-		framebuffer
-		geometry
-		camera
-		background
-		loaded_resource
-		resource_manager
 	SOURCES
 		options
 		state
@@ -225,18 +209,23 @@ eagine_add_module(
 		camera
 		background
 	IMPORTS
+		eagine.core.types
+		eagine.core.memory
 		eagine.core.math
 		eagine.core.string
 		eagine.core.identifier
 		eagine.core.reflection
 		eagine.core.container
 		eagine.core.utility
+		eagine.core.runtime
 		eagine.core.valid_if
 		eagine.core.value_tree
 		eagine.core.logging
 		eagine.core.progress
+		eagine.core.units
 		eagine.core.c_api
 		eagine.core.main_ctx
+		eagine.shapes
 		eagine.eglplus
 		eagine.oglplus
 		eagine.oalplus

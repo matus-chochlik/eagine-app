@@ -23,20 +23,12 @@ context_state::context_state(main_ctx_parent parent)
       0.F)}
   , _sim_activity_for{cfg_init(
       "application.simulate.activity_for",
-      std::chrono::duration<float>{0.F})}
-  , _rand_seed{cfg_extr<
-      valid_if_positive<std::default_random_engine::result_type>>(
-      "application.random.seed",
-      std::default_random_engine::result_type{0U})}
-  , _rand_init{_rand_seed.value_or(std::random_device{}())}
-  , _rand_eng{_rand_init} {
+      std::chrono::duration<float>{0.F})} {
     if(app_config().fetch(
          "application.user_idle_interval", _user_idle_interval)) {
         log_info("user idle interval set to ${interval}")
           .arg("interval", _user_idle_interval);
     }
-    log_info("using ${init} to initialize random generator")
-      .arg("init", _rand_init);
     if(_fixed_fps) {
         log_info("running with fixed ${fps} frames per second")
           .arg("fps", extract(_fixed_fps));

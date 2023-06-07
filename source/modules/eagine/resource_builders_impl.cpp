@@ -66,7 +66,7 @@ void valtree_float_vector_builder::do_add(
     } else if(path.size() == 1) {
         if(data.has_single_value()) {
             if((path.starts_with("count")) or (path.starts_with("size"))) {
-                _values.reserve(std_size(extract(data)));
+                _values.reserve(std_size(*data));
             }
         }
     }
@@ -101,8 +101,8 @@ void valtree_float_vector_builder::do_add(
 //------------------------------------------------------------------------------
 auto valtree_float_vector_builder::finish() noexcept -> bool {
     if(auto parent{_parent.lock()}) {
-        if(const auto cont{extract(parent).continuation()}) {
-            extract(cont).handle_float_vector(extract(parent), _values);
+        if(const auto cont{parent->continuation()}) {
+            cont->handle_float_vector(*parent, _values);
             return true;
         }
     }
@@ -135,7 +135,7 @@ public:
         if(not _do_add(path, data)) {
             if((path.size() == 1) and data.has_single_value()) {
                 if((path.starts_with("count")) or (path.starts_with("size"))) {
-                    _values.reserve(std_size(extract(data)));
+                    _values.reserve(std_size(*data));
                 }
             }
         }
@@ -157,7 +157,7 @@ public:
 
     auto finish() noexcept -> bool final {
         if(auto parent{_parent.lock()}) {
-            extract(parent).handle_vec3_vector(extract(parent), _values);
+            parent->handle_vec3_vector(*parent, _values);
             return true;
         }
         return false;
@@ -181,13 +181,13 @@ auto valtree_vec3_vector_builder::_do_add(
         if((path.starts_with("values")) or (path.starts_with("data"))) {
             if(data.has_single_value()) {
                 if((path.ends_with("x")) or (path.ends_with("r"))) {
-                    _temp._v[0] = extract(data);
+                    _temp._v[0] = *data;
                     return true;
                 } else if((path.ends_with("y")) or (path.ends_with("g"))) {
-                    _temp._v[1] = extract(data);
+                    _temp._v[1] = *data;
                     return true;
                 } else if((path.ends_with("z")) or (path.ends_with("b"))) {
-                    _temp._v[2] = extract(data);
+                    _temp._v[2] = *data;
                     return true;
                 }
             }
@@ -255,7 +255,7 @@ void valtree_orbiting_camera_parameters_builder::parse_param(
   const basic_string_path& path,
   span<const T> data) noexcept {
     if((path.size() == 1) and data.has_single_value()) {
-        const auto value{extract(data)};
+        const auto value{*data};
         if(value > 0.F) {
             if(path.starts_with("near")) {
                 _camera.set_near(value);
@@ -396,28 +396,26 @@ auto valtree_input_setup_builder::parse_msg_id(
                 return true;
             } else {
                 log_error("invalid method identifier ${data}")
-                  .arg("data", extract(data));
+                  .arg("data", *data);
             }
         } else {
-            log_error("invalid class identifier ${data}")
-              .arg("data", extract(data));
+            log_error("invalid class identifier ${data}").arg("data", *data);
         }
     } else if(data.has_single_value()) {
         if(_str_data_offs == 0) {
-            if(identifier::can_be_encoded(extract(data))) {
-                _temp_id = identifier{extract(data)};
+            if(identifier::can_be_encoded(*data)) {
+                _temp_id = identifier{*data};
             } else {
-                log_error("invalid class identifier ${data}")
-                  .arg("data", extract(data));
+                log_error("invalid class identifier ${data}").arg("data", *data);
             }
         } else if(_str_data_offs == 1) {
-            if(identifier::can_be_encoded(extract(data))) {
-                dest = message_id{_temp_id, identifier{extract(data)}};
+            if(identifier::can_be_encoded(*data)) {
+                dest = message_id{_temp_id, identifier{*data}};
                 _str_data_offs = 0;
                 return true;
             } else {
                 log_error("invalid method identifier ${data}")
-                  .arg("data", extract(data));
+                  .arg("data", *data);
             }
         } else {
             log_error("too many values for message id");
@@ -432,9 +430,9 @@ auto valtree_input_setup_builder::add_feedback() noexcept -> bool {
     if(_device_id and _feedback_id and _input_id) {
         _ctx.add_ui_feedback(
           _mapping_id,
-          extract(_device_id),
-          extract(_feedback_id),
-          extract(_input_id),
+          *_device_id,
+          *_feedback_id,
+          *_input_id,
           _trigger.value_or(input_feedback_trigger::change),
           _action.value_or(input_feedback_action::copy),
           _threshold,
@@ -448,26 +446,24 @@ auto valtree_input_setup_builder::add_input() noexcept -> bool {
     assert(is_parsing_input());
     if(_input_id and _type and _label) {
         if(_type == "ui_button") {
-            _ctx.add_ui_button(extract(_input_id), extract(_label));
+            _ctx.add_ui_button(*_input_id, *_label);
             _status_l1 = status_type_l1::unknown;
         } else if(_type == "ui_toggle") {
             _ctx.add_ui_toggle(
-              extract(_input_id),
-              extract(_label),
-              _initial_bool.value_or(false));
+              *_input_id, *_label, _initial_bool.value_or(false));
             _status_l1 = status_type_l1::unknown;
         } else if(_type == "ui_slider") {
             _ctx.add_ui_slider(
-              extract(_input_id),
-              extract(_label),
+              *_input_id,
+              *_label,
               _min.value_or(0.F),
               _max.value_or(1.F),
               _initial_float.value_or(0.5F));
             _status_l1 = status_type_l1::unknown;
         } else {
             log_error("invalid input type '${type}")
-              .arg("signal", extract(_input_id))
-              .arg("type", extract(_type));
+              .arg("signal", *_input_id)
+              .arg("type", *_type);
         }
         reset();
         return true;
@@ -490,11 +486,7 @@ auto valtree_input_setup_builder::add_slot_mapping() noexcept -> bool {
                 setup.absolute_norm();
             }
             _ctx.map_input(
-              _mapping_id,
-              extract(_slot_id),
-              extract(_device_id),
-              extract(_input_id),
-              setup);
+              _mapping_id, *_slot_id, *_device_id, *_input_id, setup);
             _input_id = {};
             _type = {};
         }
@@ -507,11 +499,11 @@ void valtree_input_setup_builder::do_add(
   const span<const bool> data) noexcept {
     if(data.has_single_value()) {
         if(path.ends_with("initial")) {
-            _initial_bool = extract(data);
+            _initial_bool = *data;
         } else if(path.ends_with("threshold")) {
-            _threshold = extract(data);
+            _threshold = *data;
         } else if(path.ends_with("constant")) {
-            _constant = extract(data);
+            _constant = *data;
         }
     }
 }
@@ -522,15 +514,15 @@ void valtree_input_setup_builder::do_add(
   const span<const T> data) noexcept {
     if(data.has_single_value()) {
         if(path.ends_with("initial")) {
-            _initial_float = extract(data);
+            _initial_float = *data;
         } else if(path.ends_with("min")) {
-            _min = extract(data);
+            _min = *data;
         } else if(path.ends_with("max")) {
-            _max = extract(data);
+            _max = *data;
         } else if(path.ends_with("threshold")) {
-            _threshold = float(extract(data));
+            _threshold = float(*data);
         } else if(path.ends_with("constant")) {
-            _constant = float(extract(data));
+            _constant = float(*data);
         }
     } else {
         log_error("too many values for ${what}").arg("what", path.back());
@@ -542,18 +534,16 @@ void valtree_input_setup_builder::do_add(
   const span<const string_view> data) noexcept {
     if(path.ends_with("device")) {
         if(data.has_single_value()) {
-            if(
-              not extract(data).empty() and
-              identifier::can_be_encoded(extract(data))) {
-                _device_id = identifier{extract(data)};
+            if(not data->empty() and identifier::can_be_encoded(*data)) {
+                _device_id = identifier{*data};
             }
         } else {
             log_error("too many values for device id").arg("count", data.size());
         }
     } else if(path.ends_with("label")) {
         if(data.has_single_value()) {
-            if(not extract(data).empty()) {
-                _label = extract(data).to_string();
+            if(not data->empty()) {
+                _label = data->to_string();
             }
         } else {
             log_error("too many values for input label")
@@ -561,8 +551,8 @@ void valtree_input_setup_builder::do_add(
         }
     } else if(path.ends_with("type")) {
         if(data.has_single_value()) {
-            if(not extract(data).empty()) {
-                _type = extract(data).to_string();
+            if(not data->empty()) {
+                _type = data->to_string();
             }
             if(is_parsing_slot()) {
                 add_slot_mapping();
@@ -570,16 +560,14 @@ void valtree_input_setup_builder::do_add(
         }
     } else if(path.ends_with("trigger")) {
         if(data.has_single_value()) {
-            if(const auto trigger{
-                 from_string<input_feedback_trigger>(extract(data))}) {
-                _trigger = extract(trigger);
+            if(const auto trigger{from_string<input_feedback_trigger>(*data)}) {
+                _trigger = *trigger;
             }
         }
     } else if(path.ends_with("action")) {
         if(data.has_single_value()) {
-            if(const auto action{
-                 from_string<input_feedback_action>(extract(data))}) {
-                _action = extract(action);
+            if(const auto action{from_string<input_feedback_action>(*data)}) {
+                _action = *action;
             }
         }
     } else if(path.ends_with("_")) {
@@ -607,7 +595,7 @@ void valtree_input_setup_builder::do_add(
                 if(parent.size() == 3) {
                     _status_l1 = status_type_l1::parsing_feedback;
                     if(not _device_id) {
-                        if(extract(_feedback_id).has_class("Key")) {
+                        if(_feedback_id->has_class("Key")) {
                             _device_id = {"Keyboard"};
                         }
                     }

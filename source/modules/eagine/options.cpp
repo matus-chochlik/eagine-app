@@ -53,7 +53,7 @@ public:
     /// @brief Indicates if video provider name is set (not empty).
     /// @see set_provider
     auto has_provider() const noexcept -> bool {
-        return not extract(_provider_name).empty();
+        return not _provider_name->empty();
     }
 
     /// @brief Indicates if video provider name is the same as the argument.
@@ -161,8 +161,8 @@ public:
     auto surface_size(
       const valid_surface_size& width,
       const valid_surface_size& height) -> auto& {
-        _surface_width = extract(width);
-        _surface_height = extract(height);
+        _surface_width = *width;
+        _surface_height = *height;
         return *this;
     }
 
@@ -184,7 +184,7 @@ public:
     /// @brief Sets the number of per-pixel samples.
     /// @see samples_dont_care
     auto samples(const valid_samples& value) noexcept -> auto& {
-        _samples = extract(value);
+        _samples = *value;
         return *this;
     }
 
@@ -432,7 +432,7 @@ public:
     /// @brief Indicates if audio provider name is set (not empty).
     /// @see set_provider
     auto has_provider() const noexcept -> bool {
-        return not extract(_provider_name).empty();
+        return not _provider_name->empty();
     }
 
     /// @brief Indicates if video provider name is the same as the argument.
@@ -545,12 +545,12 @@ public:
     template <typename R, typename P>
     auto enough_run_time(
       const std::chrono::duration<R, P> run_time) const noexcept -> bool {
-        return _max_run_time and extract(_max_run_time) <= run_time;
+        return _max_run_time and _max_run_time.value() <= run_time;
     }
 
     /// @brief Says if the application rendered enough frames according to the configuration.
     auto enough_frames(const span_size_t frame_no) const noexcept -> bool {
-        return _max_frames and extract(_max_frames) <= frame_no;
+        return _max_frames and _max_frames.value() <= frame_no;
     }
 
 private:
