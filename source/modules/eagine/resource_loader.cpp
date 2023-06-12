@@ -401,7 +401,7 @@ public:
 
     auto finish() noexcept -> bool override {
         if(auto parent{_parent.lock()}) {
-            extract(parent).mark_loaded();
+            parent->mark_loaded();
             return true;
         }
         return false;
@@ -409,7 +409,7 @@ public:
 
     void failed() noexcept override {
         if(auto parent{_parent.lock()}) {
-            extract(parent).mark_loaded();
+            parent->mark_loaded();
         }
     }
 };
@@ -478,7 +478,7 @@ public:
 
     /// @brief Returns the unique id of the request.
     auto request_id() const noexcept -> identifier_t {
-        return extract(_info).request_id();
+        return _info->request_id();
     }
 
     /// @brief Returns the locator of the requested resource.
@@ -1283,7 +1283,7 @@ inline auto valtree_builder_common::log(
   log_event_severity severity,
   const string_view format) noexcept -> log_entry {
     if(auto parent{_parent.lock()}) [[likely]] {
-        return extract(parent).loader().log(severity, format);
+        return parent->loader().log(severity, format);
     }
     return {{}, {}, severity, {}, nullptr};
 }

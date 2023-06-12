@@ -791,7 +791,7 @@ void glfw3_opengl_window::_ui_input_feedback(
   const ui_input_feedback& fbk,
   const input_variable<bool>& inp) noexcept {
     if(const auto target{_find_ui_input(fbk.input_id)}) {
-        extract(target).apply([&](auto& ui_input) {
+        target->apply([&](auto& ui_input) {
             ui_input.apply_feedback(ctx, *this, extract(target), fbk, inp);
         });
     }
@@ -904,8 +904,8 @@ auto glfw3_opengl_window::set_ui_toggle(
   bool value) noexcept -> bool {
 #if EAGINE_APP_HAS_IMGUI
     if(auto found{_find_ui_input(input_id)}) {
-        if(auto toggle{extract(found).get_toggle()}) {
-            extract(toggle).toggled_on = value;
+        if(auto toggle{found->get_toggle()}) {
+            toggle->toggled_on = value;
             return true;
         }
     }
@@ -940,8 +940,8 @@ auto glfw3_opengl_window::set_ui_slider(
   float value) noexcept -> bool {
 #if EAGINE_APP_HAS_IMGUI
     if(auto found{_find_ui_input(input_id)}) {
-        if(auto slider{extract(found).get_slider()}) {
-            extract(slider).value = value;
+        if(auto slider{found->get_slider()}) {
+            slider->value = value;
             return true;
         }
     }
@@ -1018,8 +1018,8 @@ auto glfw3_opengl_window::initialize(
     }
     if(const auto mode{glfwGetVideoMode(
          window_monitor ? window_monitor : glfwGetPrimaryMonitor())}) {
-        fallback_width = extract(mode).width;
-        fallback_height = extract(mode).height;
+        fallback_width = mode->width;
+        fallback_height = mode->height;
     }
 
     if(video_opts.offscreen()) {
@@ -1486,7 +1486,7 @@ auto glfw3_opengl_provider::_handle_progress() noexcept -> bool {
     glfwPollEvents();
     for(auto& entry : _windows) {
         assert(std::get<1>(entry));
-        if(not extract(std::get<1>(entry)).handle_progress()) {
+        if(not std::get<1>(entry)->handle_progress()) {
             return false;
         }
     }
@@ -1550,11 +1550,10 @@ auto glfw3_opengl_provider::initialize(execution_context& exec_ctx) -> bool {
             if(should_create_window) {
                 if(const auto new_win{std::make_shared<glfw3_opengl_window>(
                      this->main_context().config(), inst, *this)}) {
-                    if(extract(new_win).initialize(
-                         options, video_opts, monitors)) {
+                    if(new_win->initialize(options, video_opts, monitors)) {
                         _windows[inst] = new_win;
                     } else {
-                        extract(new_win).clean_up();
+                        new_win->clean_up();
                     }
                 }
             }

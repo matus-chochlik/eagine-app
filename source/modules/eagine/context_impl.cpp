@@ -64,7 +64,7 @@ inline video_context_state::video_context_state(
     if(_options.doing_framedump()) {
 
         auto raw_framedump = make_raw_framedump(ctx);
-        if(extract(raw_framedump).initialize(ctx, opts)) {
+        if(raw_framedump->initialize(ctx, opts)) {
             if(_options.framedump_color() != framedump_data_type::none) {
                 _framedump_color = raw_framedump;
             }
@@ -131,7 +131,7 @@ inline auto video_context_state::commit(
                       buffer);
 
                     if(not target.dump_frame(
-                         extract(framedump_no),
+                         *framedump_no,
                          width,
                          height,
                          elements,
@@ -150,7 +150,7 @@ inline auto video_context_state::commit(
                         break;
                     case framedump_data_type::float_type:
                         dump_frame(
-                          extract(_framedump_color),
+                          *_framedump_color,
                           GL.rgba,
                           GL.float_,
                           framedump_pixel_format::rgba,
@@ -160,7 +160,7 @@ inline auto video_context_state::commit(
                         break;
                     case framedump_data_type::byte_type:
                         dump_frame(
-                          extract(_framedump_color),
+                          *_framedump_color,
                           GL.rgba,
                           GL.unsigned_byte_,
                           framedump_pixel_format::rgba,
@@ -178,7 +178,7 @@ inline auto video_context_state::commit(
                         break;
                     case framedump_data_type::float_type:
                         dump_frame(
-                          extract(_framedump_depth),
+                          *_framedump_depth,
                           GL.depth_component,
                           GL.float_,
                           framedump_pixel_format::depth,
@@ -196,7 +196,7 @@ inline auto video_context_state::commit(
                         break;
                     case framedump_data_type::byte_type:
                         dump_frame(
-                          extract(_framedump_stencil),
+                          *_framedump_stencil,
                           GL.stencil_index,
                           GL.unsigned_byte_,
                           framedump_pixel_format::stencil,
@@ -263,16 +263,16 @@ video_context::video_context(
   : _parent{parent}
   , _provider{std::move(provider)} {
     assert(_provider);
-    extract(_provider).parent_context_changed(*this);
+    _provider->parent_context_changed(*this);
 }
 //------------------------------------------------------------------------------
 auto video_context::init_gl_api() noexcept -> bool {
     try {
         _gl_api = std::make_shared<oglplus::gl_api>();
-        const auto& [gl, GL] = extract(_gl_api);
+        const auto& [gl, GL] = *_gl_api;
 
-        const auto pos = _parent.options().video_requirements().find(
-          extract(_provider).instance_id());
+        const auto pos =
+          _parent.options().video_requirements().find(_provider->instance_id());
         assert(pos != _parent.options().video_requirements().end());
         const auto& opts = pos->second;
 
@@ -301,9 +301,8 @@ auto video_context::init_gl_api() noexcept -> bool {
 
         _state = std::make_shared<video_context_state>(_parent, opts);
 
-        if(not extract(_provider).has_framebuffer()) {
-            if(not extract(_state).init_framebuffer(
-                 _parent, extract(_gl_api))) {
+        if(not _provider->has_framebuffer()) {
+            if(not _state->init_framebuffer(_parent, *_gl_api)) {
                 _parent.log_error("failed to create offscreen framebuffer");
                 return false;
             }
@@ -315,21 +314,20 @@ auto video_context::init_gl_api() noexcept -> bool {
 }
 //------------------------------------------------------------------------------
 void video_context::begin() {
-    extract(_provider).video_begin(_parent);
+    _provider->video_begin(_parent);
 }
 //------------------------------------------------------------------------------
 void video_context::end() {
-    extract(_provider).video_end(_parent);
+    _provider->video_end(_parent);
 }
 //------------------------------------------------------------------------------
 void video_context::commit() {
     if(_gl_api) [[likely]] {
-        if(not extract(_state).commit(
-             _frame_no, extract(_provider), extract(_gl_api))) [[unlikely]] {
+        if(not _state->commit(_frame_no, *_provider, *_gl_api)) [[unlikely]] {
             _parent.stop_running();
         }
     }
-    extract(_provider).video_commit(_parent);
+    _provider->video_commit(_parent);
 
     if(_parent.enough_frames(++_frame_no)) [[unlikely]] {
         _parent.stop_running();
@@ -342,14 +340,14 @@ void video_context::commit() {
 void video_context::add_cleanup_op(
   callable_ref<void(video_context&) noexcept> op) {
     if(_state) {
-        extract(_state).add_cleanup_op(op);
+        _state->add_cleanup_op(op);
     }
 }
 //------------------------------------------------------------------------------
 void video_context::clean_up() noexcept {
     try {
         if(_state) {
-            extract(_state).clean_up(*this);
+            _state->clean_up(*this);
             _state.reset();
         }
     } catch(...) {
@@ -364,19 +362,19 @@ audio_context::audio_context(
   : _parent{parent}
   , _provider{std::move(provider)} {
     assert(_provider);
-    extract(_provider).parent_context_changed(*this);
+    _provider->parent_context_changed(*this);
 }
 //------------------------------------------------------------------------------
 void audio_context::begin() {
-    extract(_provider).audio_begin(_parent);
+    _provider->audio_begin(_parent);
 }
 //------------------------------------------------------------------------------
 void audio_context::end() {
-    extract(_provider).audio_end(_parent);
+    _provider->audio_end(_parent);
 }
 //------------------------------------------------------------------------------
 void audio_context::commit() {
-    extract(_provider).audio_commit(_parent);
+    _provider->audio_commit(_parent);
 }
 //------------------------------------------------------------------------------
 auto audio_context::init_al_api() noexcept -> bool {
@@ -403,19 +401,19 @@ inline auto make_all_hmi_providers(main_ctx_parent parent)
 //------------------------------------------------------------------------------
 inline auto execution_context::_setup_providers() noexcept -> bool {
     const auto try_init = [&](auto provider) -> bool {
-        if(extract(provider).is_initialized()) {
+        if(provider->is_initialized()) {
             return true;
         }
-        if(extract(provider).should_initialize(*this)) {
-            if(extract(provider).initialize(*this)) {
+        if(provider->should_initialize(*this)) {
+            if(provider->initialize(*this)) {
                 return true;
             } else {
                 log_error("failed to initialize HMI provider ${name}")
-                  .arg("name", extract(provider).implementation_name());
+                  .arg("name", provider->implementation_name());
             }
         } else {
             log_debug("skipping initialization of HMI provider ${name}")
-              .arg("name", extract(provider).implementation_name());
+              .arg("name", provider->implementation_name());
             return true;
         }
         return false;
@@ -438,22 +436,22 @@ inline auto execution_context::_setup_providers() noexcept -> bool {
     for(auto& provider : _hmi_providers) {
         if(try_init(provider)) {
             const auto add_input = [&](std::shared_ptr<input_provider> input) {
-                extract(input).input_connect(*this);
+                input->input_connect(*this);
                 _input_providers.emplace_back(std::move(input));
             };
-            extract(provider).input_enumerate({construct_from, add_input});
+            provider->input_enumerate({construct_from, add_input});
 
             const auto add_video = [&](std::shared_ptr<video_provider> video) {
                 _video_contexts.emplace_back(
                   std::make_unique<video_context>(*this, std::move(video)));
             };
-            extract(provider).video_enumerate({construct_from, add_video});
+            provider->video_enumerate({construct_from, add_video});
 
             const auto add_audio = [&](std::shared_ptr<audio_provider> audio) {
                 _audio_contexts.emplace_back(
                   std::make_unique<audio_context>(*this, std::move(audio)));
             };
-            extract(provider).audio_enumerate({construct_from, add_audio});
+            provider->audio_enumerate({construct_from, add_audio});
         }
     }
 
@@ -465,7 +463,8 @@ auto execution_context::buffer() const noexcept -> memory::buffer& {
 }
 //------------------------------------------------------------------------------
 auto execution_context::state() const noexcept -> const context_state_view& {
-    return extract(_state);
+    assert(_state);
+    return *_state;
 }
 //------------------------------------------------------------------------------
 auto execution_context::enough_run_time() const noexcept -> bool {
@@ -480,16 +479,16 @@ auto execution_context::enough_frames(const span_size_t frame_no) const noexcept
 auto execution_context::prepare(std::unique_ptr<launchpad> pad)
   -> execution_context& {
     if(pad) {
-        if(extract(pad).setup(main_context(), _options)) {
+        if(pad->setup(main_context(), _options)) {
 
             for(auto& provider : make_all_hmi_providers(*this)) {
-                if(extract(provider).is_implemented()) {
+                if(provider->is_implemented()) {
                     log_debug("using ${name} HMI provider")
-                      .arg("name", extract(provider).implementation_name());
+                      .arg("name", provider->implementation_name());
                     _hmi_providers.emplace_back(std::move(provider));
                 } else {
                     log_debug("${name} HMI provider is not implemented")
-                      .arg("name", extract(provider).implementation_name());
+                      .arg("name", provider->implementation_name());
                 }
             }
 
@@ -500,8 +499,8 @@ auto execution_context::prepare(std::unique_ptr<launchpad> pad)
                 if(_setup_providers()) {
                     _state = std::make_shared<context_state>(*this);
                     assert(_state);
-                    if((_app = extract(pad).launch(*this, _options))) {
-                        extract(_app).on_video_resize();
+                    if((_app = pad->launch(*this, _options))) {
+                        _app->on_video_resize();
                     } else {
                         log_error("failed to launch application");
                         _exec_result = 3;
@@ -525,7 +524,7 @@ auto execution_context::prepare(std::unique_ptr<launchpad> pad)
 auto execution_context::is_running() noexcept -> bool {
     if(_keep_running) [[likely]] {
         if(_app) [[likely]] {
-            return not extract(_app).is_done();
+            return not _app->is_done();
         }
     }
     return false;
@@ -537,16 +536,16 @@ void execution_context::stop_running() noexcept {
 //------------------------------------------------------------------------------
 void execution_context::clean_up() noexcept {
     if(_app) {
-        extract(_app).clean_up();
+        _app->clean_up();
     }
     for(auto& input : _input_providers) {
-        extract(input).input_disconnect();
+        input->input_disconnect();
     }
     for(auto& audio : _audio_contexts) {
-        extract(audio).clean_up();
+        audio->clean_up();
     }
     for(auto& video : _video_contexts) {
-        extract(video).clean_up();
+        video->clean_up();
     }
 }
 //------------------------------------------------------------------------------
@@ -554,12 +553,12 @@ void execution_context::update() noexcept {
     const auto exec_time{measure_time_interval("appUpdate")};
     _registry.update_and_process();
     _loader.update();
-    extract(_state).update_activity();
+    _state->update_activity();
     for(auto& provider : _hmi_providers) {
-        extract(provider).update(*this);
+        provider->update(*this);
     }
-    extract(_state).advance_time();
-    extract(_app).update();
+    _state->advance_time();
+    _app->update();
 }
 //------------------------------------------------------------------------------
 auto execution_context::connect_input(
@@ -588,7 +587,7 @@ auto execution_context::add_ui_feedback(
   std::variant<std::monostate, bool, float> constant) noexcept
   -> execution_context& {
     for(auto& input : _input_providers) {
-        extract(input).add_ui_feedback(
+        input->add_ui_feedback(
           mapping_id,
           device_id,
           signal_id,
@@ -605,7 +604,7 @@ auto execution_context::add_ui_button(
   const message_id input_id,
   const string_view label) -> execution_context& {
     for(auto& input : _input_providers) {
-        extract(input).add_ui_button(input_id, label);
+        input->add_ui_button(input_id, label);
     }
     return *this;
 }
@@ -615,7 +614,7 @@ auto execution_context::add_ui_toggle(
   const string_view label,
   bool initial) -> execution_context& {
     for(auto& input : _input_providers) {
-        extract(input).add_ui_toggle(input_id, label, initial);
+        input->add_ui_toggle(input_id, label, initial);
     }
     return *this;
 }
@@ -624,7 +623,7 @@ auto execution_context::set_ui_toggle(
   const message_id input_id,
   bool value) noexcept -> execution_context& {
     for(auto& input : _input_providers) {
-        extract(input).set_ui_toggle(input_id, value);
+        input->set_ui_toggle(input_id, value);
     }
     return *this;
 }
@@ -640,8 +639,7 @@ auto execution_context::add_ui_slider(
                                         ? input_value_kind::absolute_norm
                                         : input_value_kind::absolute_free;
         for(auto& input : _input_providers) {
-            extract(input).add_ui_slider(
-              input_id, label, min, max, initial, kind);
+            input->add_ui_slider(input_id, label, min, max, initial, kind);
         }
     } else {
         log_error("inconsistent min, max and initial values")
@@ -656,7 +654,7 @@ auto execution_context::set_ui_slider(
   const message_id input_id,
   float value) noexcept -> execution_context& {
     for(auto& input : _input_providers) {
-        extract(input).set_ui_slider(input_id, value);
+        input->set_ui_slider(input_id, value);
     }
     return *this;
 }
@@ -698,12 +696,12 @@ auto execution_context::switch_input_mapping(const identifier mapping_id)
         }
 
         for(auto& input : _input_providers) {
-            extract(input).mapping_begin(mapping_id);
+            input->mapping_begin(mapping_id);
             for(auto& slot : _mapped_inputs) {
-                extract(input).mapping_enable(
+                input->mapping_enable(
                   std::get<0>(slot.first), std::get<1>(slot.first));
             }
-            extract(input).mapping_commit(*this, mapping_id);
+            input->mapping_commit(*this, mapping_id);
         }
 
         _input_mapping = mapping_id;
@@ -712,23 +710,23 @@ auto execution_context::switch_input_mapping(const identifier mapping_id)
 }
 //------------------------------------------------------------------------------
 void execution_context::random_uniform(span<byte> dest) {
-    extract(_state).random_uniform(dest);
+    _state->random_uniform(dest);
 }
 //------------------------------------------------------------------------------
 void execution_context::random_uniform_01(span<float> dest) {
-    extract(_state).random_uniform_01(dest);
+    _state->random_uniform_01(dest);
 }
 //------------------------------------------------------------------------------
 auto execution_context::random_uniform_01() -> float {
-    return extract(_state).random_uniform_01();
+    return _state->random_uniform_01();
 }
 //------------------------------------------------------------------------------
 auto execution_context::random_uniform_11() -> float {
-    return extract(_state).random_uniform_11();
+    return _state->random_uniform_11();
 }
 //------------------------------------------------------------------------------
 void execution_context::random_normal(span<float> dest) {
-    extract(_state).random_normal(dest);
+    _state->random_normal(dest);
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

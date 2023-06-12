@@ -156,7 +156,7 @@ void pending_resource_info::handle_gl_texture_image(
   const resource_gl_texture_image_params& params,
   const memory::const_block data) noexcept {
     if(const auto cont{continuation()}) {
-        extract(cont)._handle_gl_texture_image(*this, target, params, data);
+        cont->_handle_gl_texture_image(*this, target, params, data);
     }
 }
 //------------------------------------------------------------------------------
@@ -197,7 +197,7 @@ void pending_resource_info::handle_gl_buffer_data(
   const resource_gl_buffer_data_params& params,
   const memory::const_block data) noexcept {
     if(const auto cont{continuation()}) {
-        extract(cont)._handle_gl_buffer_data(*this, target, params, data);
+        cont->_handle_gl_buffer_data(*this, target, params, data);
     }
 }
 //------------------------------------------------------------------------------
@@ -216,7 +216,7 @@ auto pending_resource_info::update() noexcept -> work_done {
         if(const auto shape_gen{
              std::get<_pending_shape_generator_state>(_state).generator}) {
             if(const auto cont{continuation()}) {
-                extract(cont)._handle_shape_generator(*this, shape_gen);
+                cont->_handle_shape_generator(*this, shape_gen);
             }
             _parent.shape_generator_loaded(
               {.request_id = _request_id,
@@ -260,7 +260,7 @@ void pending_resource_info::_handle_json_text(
     if(is(resource_kind::value_tree)) {
         auto tree{valtree::from_json_data(data, _parent.main_context().log())};
         if(const auto cont{continuation()}) {
-            extract(cont)._handle_value_tree(*this, tree);
+            cont->_handle_value_tree(*this, tree);
         }
         _parent.value_tree_loaded(
           {.request_id = _request_id, .locator = _locator, .tree = tree});
@@ -337,7 +337,7 @@ void pending_resource_info::handle_vec3_vector(
       .arg("locator", _locator.str());
 
     if(const auto cont{continuation()}) {
-        extract(cont)._handle_vec3_vector(*this, values);
+        cont->_handle_vec3_vector(*this, values);
     }
 
     if(is(resource_kind::vec3_vector)) {
@@ -387,7 +387,7 @@ void pending_resource_info::_handle_shape_generator(
             const oglplus::shape_generator shape{
               pgss.video.get().gl_api(), _apply_shape_modifiers(gen)};
             if(const auto cont{continuation()}) {
-                extract(cont)._handle_gl_shape(*this, shape);
+                cont->_handle_gl_shape(*this, shape);
             }
             _parent.gl_shape_loaded(
               {.request_id = _request_id, .locator = _locator, .shape = shape});
@@ -459,7 +459,7 @@ void pending_resource_info::_handle_glsl_strings(
         const oglplus::glsl_source_ref glsl_src{
           data.size(), gl_strs.data(), gl_ints.data()};
         if(const auto cont{continuation()}) {
-            extract(cont)._handle_glsl_source(*this, glsl_src);
+            cont->_handle_glsl_source(*this, glsl_src);
         }
         _parent.glsl_source_loaded(
           {.request_id = _request_id, .locator = _locator, .source = glsl_src});
@@ -485,7 +485,7 @@ void pending_resource_info::_handle_glsl_source(
             gl.shader_source(shdr, glsl_src);
             gl.compile_shader(shdr);
             if(const auto cont{continuation()}) {
-                extract(cont)._handle_gl_shader(*this, shdr);
+                cont->_handle_gl_shader(*this, shdr);
             }
             _parent.gl_shader_loaded(
               {.request_id = _request_id,
@@ -656,9 +656,8 @@ void resource_loader::_handle_stream_data_appended(
   const msgbus::blob_info& binfo) noexcept {
     if(const auto pos{_pending.find(request_id)}; pos != _pending.end()) {
         if(const auto& prinfo{std::get<1>(*pos)}) {
-            if(const auto continuation{extract(prinfo).continuation()}) {
-                extract(continuation)
-                  .handle_source_data(binfo, extract(prinfo), offset, data);
+            if(const auto continuation{prinfo->continuation()}) {
+                continuation->handle_source_data(binfo, *prinfo, offset, data);
             }
         }
     }
@@ -667,9 +666,9 @@ void resource_loader::_handle_stream_data_appended(
 void resource_loader::_handle_stream_finished(identifier_t request_id) noexcept {
     if(const auto pos{_pending.find(request_id)}; pos != _pending.end()) {
         if(const auto& prinfo{std::get<1>(*pos)}) {
-            auto& rinfo{extract(prinfo)};
+            auto& rinfo{*prinfo};
             if(const auto continuation{rinfo.continuation()}) {
-                extract(continuation).handle_source_finished(rinfo);
+                continuation->handle_source_finished(rinfo);
             }
             rinfo.mark_finished();
         }
@@ -680,9 +679,9 @@ void resource_loader::_handle_stream_cancelled(
   identifier_t request_id) noexcept {
     if(const auto pos{_pending.find(request_id)}; pos != _pending.end()) {
         if(const auto& prinfo{std::get<1>(*pos)}) {
-            auto& rinfo{extract(prinfo)};
+            auto& rinfo{*prinfo};
             if(const auto continuation{rinfo.continuation()}) {
-                extract(continuation).handle_source_cancelled(rinfo);
+                continuation->handle_source_cancelled(rinfo);
             }
             resource_cancelled(request_id, rinfo._kind, rinfo._locator);
             rinfo.mark_finished();
@@ -1060,7 +1059,7 @@ auto resource_loader::update() noexcept -> work_done {
 
     for(auto& [request_id, pinfo] : _cancelled) {
         assert(pinfo);
-        auto& info{extract(pinfo)};
+        auto& info{*pinfo};
         resource_cancelled(request_id, info._kind, info._locator);
         something_done();
     }
@@ -1071,7 +1070,7 @@ auto resource_loader::update() noexcept -> work_done {
     something_done(_finished.erase_if([this](auto& entry) {
         auto& [request_id, pinfo] = entry;
         assert(pinfo);
-        auto& info{extract(pinfo)};
+        auto& info{*pinfo};
         if(info.is_done()) {
             info.cleanup();
         } else {
@@ -1083,7 +1082,7 @@ auto resource_loader::update() noexcept -> work_done {
     for(auto& entry : _pending) {
         auto& pinfo{std::get<1>(entry)};
         assert(pinfo);
-        something_done(extract(pinfo).update());
+        something_done(pinfo->update());
     }
 
     return something_done;

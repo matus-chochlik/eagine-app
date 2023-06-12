@@ -92,7 +92,7 @@ public:
     /// @brief Returns the rendering surface's dimensions (in pixels).
     auto surface_size() noexcept -> std::tuple<int, int> {
         if(_provider) [[likely]] {
-            return extract(_provider).surface_size();
+            return _provider->surface_size();
         }
         return {1, 1};
     }
@@ -100,7 +100,7 @@ public:
     /// @brief Returns the rendering surface's aspect ratio.
     auto surface_aspect() noexcept -> float {
         if(_provider) [[likely]] {
-            return extract(_provider).surface_aspect();
+            return _provider->surface_aspect();
         }
         return 1.F;
     }
@@ -627,7 +627,7 @@ private:
                 handler(input(value, info, setup));
             }
         }
-        extract(_state).notice_user_active();
+        _state->notice_user_active();
     }
 
     void consume(
