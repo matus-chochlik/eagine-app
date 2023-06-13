@@ -416,34 +416,34 @@ public:
 //------------------------------------------------------------------------------
 auto make_valtree_float_vector_builder(
   const std::shared_ptr<pending_resource_info>& parent) noexcept
-  -> std::unique_ptr<valtree::object_builder>;
+  -> unique_holder<valtree::object_builder>;
 auto make_valtree_vec3_vector_builder(
   const std::shared_ptr<pending_resource_info>& parent) noexcept
-  -> std::unique_ptr<valtree::object_builder>;
+  -> unique_holder<valtree::object_builder>;
 auto make_valtree_camera_parameters_builder(
   const std::shared_ptr<pending_resource_info>& parent,
-  orbiting_camera&) noexcept -> std::unique_ptr<valtree::object_builder>;
+  orbiting_camera&) noexcept -> unique_holder<valtree::object_builder>;
 auto make_valtree_input_setup_builder(
   const std::shared_ptr<pending_resource_info>& parent,
-  execution_context&) noexcept -> std::unique_ptr<valtree::object_builder>;
+  execution_context&) noexcept -> unique_holder<valtree::object_builder>;
 //------------------------------------------------------------------------------
 auto make_valtree_gl_program_builder(
   const std::shared_ptr<pending_resource_info>& parent,
-  video_context& video) noexcept -> std::unique_ptr<valtree::object_builder>;
+  video_context& video) noexcept -> unique_holder<valtree::object_builder>;
 auto make_valtree_gl_texture_image_loader(
   const std::shared_ptr<pending_resource_info>& parent,
   oglplus::texture_target,
   const resource_gl_texture_image_params& params) noexcept
-  -> std::unique_ptr<valtree::object_builder>;
+  -> unique_holder<valtree::object_builder>;
 auto make_valtree_gl_texture_builder(
   const std::shared_ptr<pending_resource_info>& parent,
   video_context& video,
   oglplus::texture_target,
-  oglplus::texture_unit) noexcept -> std::unique_ptr<valtree::object_builder>;
+  oglplus::texture_unit) noexcept -> unique_holder<valtree::object_builder>;
 auto make_valtree_gl_buffer_builder(
   const std::shared_ptr<pending_resource_info>& parent,
   video_context& video,
-  oglplus::buffer_target) noexcept -> std::unique_ptr<valtree::object_builder>;
+  oglplus::buffer_target) noexcept -> unique_holder<valtree::object_builder>;
 //------------------------------------------------------------------------------
 /// @brief Result of resource request operation.
 /// @see resource_kind
@@ -1059,24 +1059,24 @@ public:
 
     auto request_json_traversal(
       url locator,
-      std::shared_ptr<valtree::value_tree_visitor>,
+      shared_holder<valtree::value_tree_visitor>,
       span_size_t max_token_size) noexcept -> resource_request_result;
 
     auto request_json_traversal(
       url locator,
-      std::shared_ptr<valtree::object_builder>) noexcept
+      shared_holder<valtree::object_builder>) noexcept
       -> resource_request_result;
 
     /// @brief Requests a value tree object traversal by the specified visitor.
     auto request_value_tree_traversal(
       url locator,
-      std::shared_ptr<valtree::value_tree_visitor>,
+      shared_holder<valtree::value_tree_visitor>,
       span_size_t max_token_size) noexcept -> resource_request_result;
 
     /// @brief Requests a value tree object traversal by the specified builder.
     auto request_value_tree_traversal(
       url locator,
-      std::shared_ptr<valtree::object_builder>) noexcept
+      shared_holder<valtree::object_builder>) noexcept
       -> resource_request_result;
 
     /// @brief Requests camera parameters.

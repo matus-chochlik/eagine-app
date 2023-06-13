@@ -779,7 +779,7 @@ auto resource_loader::request_value_tree(url locator) noexcept
 //------------------------------------------------------------------------------
 auto resource_loader::request_json_traversal(
   url locator,
-  std::shared_ptr<valtree::value_tree_visitor> visitor,
+  shared_holder<valtree::value_tree_visitor> visitor,
   span_size_t max_token_size) noexcept -> resource_request_result {
     if(const auto src_request{_new_resource(
          stream_resource(
@@ -798,7 +798,7 @@ auto resource_loader::request_json_traversal(
 //------------------------------------------------------------------------------
 auto resource_loader::request_json_traversal(
   url locator,
-  std::shared_ptr<valtree::object_builder> builder) noexcept
+  shared_holder<valtree::object_builder> builder) noexcept
   -> resource_request_result {
     const auto max_token_size{builder->max_token_size()};
     return request_json_traversal(
@@ -809,7 +809,7 @@ auto resource_loader::request_json_traversal(
 //------------------------------------------------------------------------------
 auto resource_loader::request_value_tree_traversal(
   url locator,
-  std::shared_ptr<valtree::value_tree_visitor> visitor,
+  shared_holder<valtree::value_tree_visitor> visitor,
   span_size_t max_token_size) noexcept -> resource_request_result {
     if(_is_json_resource(locator)) {
         return request_json_traversal(
@@ -820,7 +820,7 @@ auto resource_loader::request_value_tree_traversal(
 //------------------------------------------------------------------------------
 auto resource_loader::request_value_tree_traversal(
   url locator,
-  std::shared_ptr<valtree::object_builder> builder) noexcept
+  shared_holder<valtree::object_builder> builder) noexcept
   -> resource_request_result {
     const auto max_token_size{builder->max_token_size()};
     return request_value_tree_traversal(

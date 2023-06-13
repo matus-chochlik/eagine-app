@@ -142,8 +142,8 @@ private:
 //------------------------------------------------------------------------------
 auto make_valtree_gl_program_builder(
   const std::shared_ptr<pending_resource_info>& parent,
-  video_context& video) noexcept -> std::unique_ptr<valtree::object_builder> {
-    return std::make_unique<valtree_gl_program_builder>(parent, video);
+  video_context& video) noexcept -> unique_holder<valtree::object_builder> {
+    return {hold<valtree_gl_program_builder>, parent, video};
 }
 //------------------------------------------------------------------------------
 // valtree_gl_texture_image_loader
@@ -363,9 +363,8 @@ auto make_valtree_gl_texture_image_loader(
   const std::shared_ptr<pending_resource_info>& parent,
   oglplus::texture_target target,
   const resource_gl_texture_image_params& params) noexcept
-  -> std::unique_ptr<valtree::object_builder> {
-    return std::make_unique<valtree_gl_texture_image_loader>(
-      parent, target, params);
+  -> unique_holder<valtree::object_builder> {
+    return {hold<valtree_gl_texture_image_loader>, parent, target, params};
 }
 
 //------------------------------------------------------------------------------
@@ -590,9 +589,8 @@ auto make_valtree_gl_texture_builder(
   video_context& video,
   oglplus::texture_target target,
   oglplus::texture_unit unit) noexcept
-  -> std::unique_ptr<valtree::object_builder> {
-    return std::make_unique<valtree_gl_texture_builder>(
-      parent, video, target, unit);
+  -> unique_holder<valtree::object_builder> {
+    return {hold<valtree_gl_texture_builder>, parent, video, target, unit};
 }
 //------------------------------------------------------------------------------
 auto pending_resource_info::handle_gl_texture_params(
@@ -958,8 +956,8 @@ auto make_valtree_gl_buffer_builder(
   const std::shared_ptr<pending_resource_info>& parent,
   video_context& video,
   oglplus::buffer_target target) noexcept
-  -> std::unique_ptr<valtree::object_builder> {
-    return std::make_unique<valtree_gl_buffer_builder>(parent, video, target);
+  -> unique_holder<valtree::object_builder> {
+    return {hold<valtree_gl_buffer_builder>, parent, video, target};
 }
 //------------------------------------------------------------------------------
 auto pending_resource_info::handle_gl_buffer_params(
