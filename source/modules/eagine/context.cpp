@@ -110,8 +110,7 @@ public:
 
     template <typename Obj>
     auto clean_up_later(Obj& obj) -> auto& {
-        add_cleanup_op(callable_ref<void(video_context&) noexcept>{
-          obj, &_call_clean_up<Obj>});
+        add_cleanup_op(make_callable_ref({obj}, &_call_clean_up<Obj>));
         return *this;
     }
 
