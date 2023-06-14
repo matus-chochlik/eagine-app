@@ -113,9 +113,9 @@ void example::clean_up() noexcept {
 class example_launchpad : public launchpad {
 public:
     auto setup(main_ctx&, launch_options&) -> bool final;
-    auto check_requirements(video_context&) -> bool;
+    auto check_requirements(video_context&) -> bool final;
     auto launch(execution_context&, const launch_options&)
-      -> std::unique_ptr<application> final;
+      -> unique_holder<application> final;
 };
 //------------------------------------------------------------------------------
 auto example_launchpad::setup(main_ctx&, launch_options& opts) -> bool {
@@ -137,17 +137,8 @@ auto example_launchpad::check_requirements(video_context& vc) -> bool {
 }
 //------------------------------------------------------------------------------
 auto example_launchpad::launch(execution_context& ec, const launch_options&)
-  -> std::unique_ptr<application> {
-    if(auto opt_vc{ec.video_ctx()}) {
-        auto& vc = extract(opt_vc);
-        vc.begin();
-        if(vc.init_gl_api()) {
-            if(check_requirements(vc)) {
-                return {std::make_unique<example>(ec, vc)};
-            }
-        }
-    }
-    return {};
+  -> unique_holder<application> {
+    return launch_with_video<example>(ec);
 }
 //------------------------------------------------------------------------------
 auto establish(main_ctx&) -> std::unique_ptr<launchpad> {

@@ -497,7 +497,7 @@ auto execution_context::prepare(std::unique_ptr<launchpad> pad)
                 _exec_result = 5;
             } else {
                 if(_setup_providers()) {
-                    _state = std::make_shared<context_state>(*this);
+                    _state.emplace(*this);
                     assert(_state);
                     if((_app = pad->launch(*this, _options))) {
                         _app->on_video_resize();
@@ -727,6 +727,16 @@ auto execution_context::random_uniform_11() -> float {
 //------------------------------------------------------------------------------
 void execution_context::random_normal(span<float> dest) {
     _state->random_normal(dest);
+}
+//------------------------------------------------------------------------------
+auto video_ctx(execution_context& ec, span_size_t index) noexcept
+  -> optional_reference<video_context> {
+    return ec.video_ctx(index);
+}
+//------------------------------------------------------------------------------
+auto audio_ctx(execution_context& ec, span_size_t index) noexcept
+  -> optional_reference<audio_context> {
+    return ec.audio_ctx(index);
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

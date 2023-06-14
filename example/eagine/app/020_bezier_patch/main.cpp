@@ -113,7 +113,7 @@ public:
         return true;
     }
 
-    auto check_requirements(video_context& vc) -> bool {
+    auto check_requirements(video_context& vc) -> bool final {
         const auto& [gl, GL] = vc.gl_api();
 
         return gl.disable and gl.clear_color and gl.create_shader and
@@ -129,17 +129,8 @@ public:
     }
 
     auto launch(execution_context& ec, const launch_options&)
-      -> std::unique_ptr<application> final {
-        if(auto opt_vc{ec.video_ctx()}) {
-            auto& vc = extract(opt_vc);
-            vc.begin();
-            if(vc.init_gl_api()) {
-                if(check_requirements(vc)) {
-                    return {std::make_unique<example_bpatch>(ec, vc)};
-                }
-            }
-        }
-        return {};
+      -> unique_holder<application> final {
+        return launch_with_video<example_bpatch>(ec);
     }
 };
 //------------------------------------------------------------------------------

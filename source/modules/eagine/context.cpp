@@ -267,11 +267,11 @@ public:
 
     /// @brief Returns the video context at the specified index.
     auto video_ctx(const span_size_t index = 0) const noexcept
-      -> video_context* {
+      -> optional_reference<video_context> {
         if((index >= 0) and (index < video_ctx_count())) {
             return _video_contexts[integer(index)].get();
         }
-        return nullptr;
+        return {};
     }
 
     /// @brief Returns the main video context.
@@ -288,11 +288,11 @@ public:
 
     /// @brief Returns the audio context at the specified index.
     auto audio_ctx(const span_size_t index = 0) const noexcept
-      -> audio_context* {
+      -> optional_reference<audio_context> {
         if((index >= 0) and (index < audio_ctx_count())) {
             return _audio_contexts[integer(index)].get();
         }
-        return nullptr;
+        return {};
     }
 
     /// @brief Returns the main audio context.
@@ -576,8 +576,8 @@ private:
     int _exec_result{0};
     launch_options _options;
     msgbus::registry _registry;
-    std::shared_ptr<context_state> _state;
-    std::unique_ptr<application> _app;
+    shared_holder<context_state> _state;
+    unique_holder<application> _app;
 
     resource_loader& _loader;
     std::vector<std::shared_ptr<hmi_provider>> _hmi_providers;
