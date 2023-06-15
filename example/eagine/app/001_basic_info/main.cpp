@@ -128,7 +128,7 @@ public:
         return true;
     }
 
-    auto check_requirements(video_context& vc) -> bool {
+    auto check_requirements(video_context& vc) -> bool final {
         const auto& [gl, GL] = vc.gl_api();
 
         return gl.get_integer and gl.get_string and GL.vendor and
@@ -136,7 +136,7 @@ public:
                GL.extensions;
     }
 
-    auto check_requirements(audio_context& ac) -> bool {
+    auto check_requirements(audio_context& ac) -> bool final {
         const auto& [al, AL] = ac.al_api();
 
         return al.get_string and AL.vendor and AL.renderer and AL.version and
@@ -144,19 +144,19 @@ public:
     }
 
     auto launch(execution_context& ec, const launch_options&)
-      -> std::unique_ptr<application> final {
+      -> unique_holder<application> final {
         auto opt_vc{ec.video_ctx()};
         auto opt_ac{ec.audio_ctx()};
         if(opt_vc and opt_ac) {
-            auto& vc = extract(opt_vc);
-            auto& ac = extract(opt_ac);
+            auto& vc = *opt_vc;
+            auto& ac = *opt_ac;
             vc.begin();
             if(vc.init_gl_api()) {
                 if(check_requirements(vc)) {
                     ac.begin();
                     if(ac.init_al_api()) {
                         if(check_requirements(ac)) {
-                            return {std::make_unique<example_info>(ec, vc, ac)};
+                            return {hold<example_info>, ec, vc, ac};
                         } else {
                             ec.log_error("AL requirements not met");
                         }

@@ -146,7 +146,7 @@ private:
     application_config_value<bool> _imgui_enabled;
 
     GLFWwindow* _window{nullptr};
-    input_sink* _input_sink{nullptr};
+    optional_reference<input_sink> _input_sink{nullptr};
     const video_context* _parent_context{nullptr};
     int _window_width{1};
     int _window_height{1};
@@ -310,8 +310,8 @@ private:
 
         auto kind() const noexcept -> input_value_kind;
 
-        auto get_toggle() noexcept -> ui_toggle_state*;
-        auto get_slider() noexcept -> ui_slider_state*;
+        auto get_toggle() noexcept -> optional_reference<ui_toggle_state>;
+        auto get_slider() noexcept -> optional_reference<ui_slider_state>;
 
         auto apply(const auto& func) noexcept {
             std::visit(func, state);
@@ -319,7 +319,8 @@ private:
     };
 
     auto _setup_ui_input(message_id input_id, ui_state_variant state) -> bool;
-    auto _find_ui_input(message_id input_id) noexcept -> ui_input_state*;
+    auto _find_ui_input(message_id input_id) noexcept
+      -> optional_reference<ui_input_state>;
 
     std::vector<ui_input_state> _ui_input_states;
 
@@ -679,19 +680,19 @@ auto glfw3_opengl_window::ui_input_state::kind() const noexcept
 }
 //------------------------------------------------------------------------------
 auto glfw3_opengl_window::ui_input_state::get_toggle() noexcept
-  -> glfw3_opengl_window::ui_toggle_state* {
+  -> optional_reference<glfw3_opengl_window::ui_toggle_state> {
     if(std::holds_alternative<ui_toggle_state>(state)) {
         return &(std::get<ui_toggle_state>(state));
     }
-    return nullptr;
+    return {};
 }
 //------------------------------------------------------------------------------
 auto glfw3_opengl_window::ui_input_state::get_slider() noexcept
-  -> glfw3_opengl_window::ui_slider_state* {
+  -> optional_reference<glfw3_opengl_window::ui_slider_state> {
     if(std::holds_alternative<ui_slider_state>(state)) {
         return &(std::get<ui_slider_state>(state));
     }
-    return nullptr;
+    return {};
 }
 //------------------------------------------------------------------------------
 auto glfw3_opengl_window::ui_input_feedback::is_under_threshold(
@@ -757,7 +758,7 @@ void glfw3_opengl_window::_forward_feedback(
   const glfw3_opengl_window::ui_input_state& input,
   const input_value<T>& value) {
     if(_input_sink) {
-        auto& sink = extract(_input_sink);
+        auto& sink = *_input_sink;
         sink.consume(
           {ctx.app_gui_device_id(), input.input_id, input.kind()}, value);
     }
@@ -791,8 +792,8 @@ void glfw3_opengl_window::_ui_input_feedback(
   const ui_input_feedback& fbk,
   const input_variable<bool>& inp) noexcept {
     if(const auto target{_find_ui_input(fbk.input_id)}) {
-        extract(target).apply([&](auto& ui_input) {
-            ui_input.apply_feedback(ctx, *this, extract(target), fbk, inp);
+        target->apply([&](auto& ui_input) {
+            ui_input.apply_feedback(ctx, *this, *target, fbk, inp);
         });
     }
 }
@@ -861,7 +862,7 @@ auto glfw3_opengl_window::_setup_ui_input(
 }
 //------------------------------------------------------------------------------
 auto glfw3_opengl_window::_find_ui_input(message_id input_id) noexcept
-  -> ui_input_state* {
+  -> optional_reference<ui_input_state> {
 #if EAGINE_APP_HAS_IMGUI
     const auto pos{std::find_if(
       _ui_input_states.begin(), _ui_input_states.end(), [=](const auto& entry) {
@@ -871,7 +872,7 @@ auto glfw3_opengl_window::_find_ui_input(message_id input_id) noexcept
         return &(*pos);
     }
 #endif
-    return nullptr;
+    return {};
 }
 //------------------------------------------------------------------------------
 auto glfw3_opengl_window::add_ui_button(
@@ -904,8 +905,8 @@ auto glfw3_opengl_window::set_ui_toggle(
   bool value) noexcept -> bool {
 #if EAGINE_APP_HAS_IMGUI
     if(auto found{_find_ui_input(input_id)}) {
-        if(auto toggle{extract(found).get_toggle()}) {
-            extract(toggle).toggled_on = value;
+        if(auto toggle{found->get_toggle()}) {
+            toggle->toggled_on = value;
             return true;
         }
     }
@@ -940,8 +941,8 @@ auto glfw3_opengl_window::set_ui_slider(
   float value) noexcept -> bool {
 #if EAGINE_APP_HAS_IMGUI
     if(auto found{_find_ui_input(input_id)}) {
-        if(auto slider{extract(found).get_slider()}) {
-            extract(slider).value = value;
+        if(auto slider{found->get_slider()}) {
+            slider->value = value;
             return true;
         }
     }
@@ -968,10 +969,10 @@ auto glfw3_opengl_window::initialize(
   const video_options& video_opts,
   const span<GLFWmonitor* const> monitors) -> bool {
     if(const auto ver_maj{video_opts.gl_version_major()}) {
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, extract(ver_maj));
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, *ver_maj);
     }
     if(const auto ver_min{video_opts.gl_version_minor()}) {
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, extract(ver_min));
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, *ver_min);
     }
     const auto compat = video_opts.gl_compatibility_context();
     if(compat) {
@@ -1010,7 +1011,7 @@ auto glfw3_opengl_window::initialize(
         if(const auto opt_mon_name{video_opts.display_name()}) {
             for(auto monitor : monitors) {
                 string_view mon_name(glfwGetMonitorName(monitor));
-                if(are_equal(extract(opt_mon_name), mon_name)) {
+                if(are_equal(*opt_mon_name, mon_name)) {
                     window_monitor = monitor;
                 }
             }
@@ -1018,8 +1019,8 @@ auto glfw3_opengl_window::initialize(
     }
     if(const auto mode{glfwGetVideoMode(
          window_monitor ? window_monitor : glfwGetPrimaryMonitor())}) {
-        fallback_width = extract(mode).width;
-        fallback_height = extract(mode).height;
+        fallback_width = mode->width;
+        fallback_height = mode->height;
     }
 
     if(video_opts.offscreen()) {
@@ -1266,7 +1267,7 @@ void glfw3_opengl_window::update(execution_context& exec_ctx) {
               long(_provider.activities().size()));
 
             if(_input_sink) {
-                auto& sink = extract(_input_sink);
+                auto& sink = *_input_sink;
                 const identifier gui_id{exec_ctx.app_gui_device_id()};
                 for(auto& entry : _ui_input_states) {
                     entry.apply(overloaded(
@@ -1330,7 +1331,7 @@ void glfw3_opengl_window::update(execution_context& exec_ctx) {
         glfwGetWindowSize(_window, &_window_width, &_window_height);
 
         if(_input_sink) {
-            auto& sink = extract(_input_sink);
+            auto& sink = *_input_sink;
             const auto kb_id{exec_ctx.keyboard_device_id()};
             const auto mouse_id{exec_ctx.mouse_device_id()};
 
@@ -1486,7 +1487,7 @@ auto glfw3_opengl_provider::_handle_progress() noexcept -> bool {
     glfwPollEvents();
     for(auto& entry : _windows) {
         assert(std::get<1>(entry));
-        if(not extract(std::get<1>(entry)).handle_progress()) {
+        if(not std::get<1>(entry)->handle_progress()) {
             return false;
         }
     }
@@ -1550,11 +1551,10 @@ auto glfw3_opengl_provider::initialize(execution_context& exec_ctx) -> bool {
             if(should_create_window) {
                 if(const auto new_win{std::make_shared<glfw3_opengl_window>(
                      this->main_context().config(), inst, *this)}) {
-                    if(extract(new_win).initialize(
-                         options, video_opts, monitors)) {
+                    if(new_win->initialize(options, video_opts, monitors)) {
                         _windows[inst] = new_win;
                     } else {
-                        extract(new_win).clean_up();
+                        new_win->clean_up();
                     }
                 }
             }

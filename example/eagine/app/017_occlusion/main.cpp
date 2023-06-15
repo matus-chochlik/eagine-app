@@ -223,7 +223,7 @@ public:
         return true;
     }
 
-    auto check_requirements(video_context& vc) -> bool {
+    auto check_requirements(video_context& vc) -> bool final {
         const auto& [gl, GL] = vc.gl_api();
 
         return gl.disable and gl.clear_color and gl.create_shader and
@@ -237,9 +237,9 @@ public:
     }
 
     auto launch(execution_context& ec, const launch_options&)
-      -> std::unique_ptr<application> final {
+      -> unique_holder<application> final {
         if(auto opt_vc{ec.video_ctx()}) {
-            auto& vc = extract(opt_vc);
+            auto& vc = *opt_vc;
             vc.begin();
             if(vc.init_gl_api()) {
                 if(check_requirements(vc)) {
@@ -249,8 +249,12 @@ public:
                     std::string color_variant_name{"Color"};
                     ec.app_config().fetch("example.color", color_variant_name);
 
-                    return {std::make_unique<example_occlusion>(
-                      ec, vc, shape_file_path, color_variant_name)};
+                    return {
+                      hold<example_occlusion>,
+                      ec,
+                      vc,
+                      shape_file_path,
+                      color_variant_name};
                 }
             }
         }

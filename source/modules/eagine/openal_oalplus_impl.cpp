@@ -195,7 +195,7 @@ auto oalplus_openal_provider::initialize(execution_context& exec_ctx) -> bool {
             if(should_create_player) {
                 if(auto player{std::make_shared<oalplus_openal_player>(
                      *this, _alc_api)}) {
-                    if(extract(player).initialize(
+                    if(player->initialize(
                          exec_ctx,
                          std::move(device),
                          inst,
@@ -203,7 +203,7 @@ auto oalplus_openal_provider::initialize(execution_context& exec_ctx) -> bool {
                          audio_opts)) {
                         _players[inst] = std::move(player);
                     } else {
-                        extract(player).clean_up();
+                        player->clean_up();
                     }
                 }
             }

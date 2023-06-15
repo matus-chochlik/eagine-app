@@ -111,8 +111,8 @@ auto valtree_float_vector_builder::finish() noexcept -> bool {
 //------------------------------------------------------------------------------
 auto make_valtree_float_vector_builder(
   const std::shared_ptr<pending_resource_info>& parent) noexcept
-  -> std::unique_ptr<valtree::object_builder> {
-    return std::make_unique<valtree_float_vector_builder>(parent);
+  -> unique_holder<valtree::object_builder> {
+    return {hold<valtree_float_vector_builder>, parent};
 }
 //------------------------------------------------------------------------------
 // valtree_vec3_vector_builder
@@ -209,8 +209,8 @@ auto valtree_vec3_vector_builder::_do_add(
 //------------------------------------------------------------------------------
 auto make_valtree_vec3_vector_builder(
   const std::shared_ptr<pending_resource_info>& parent) noexcept
-  -> std::unique_ptr<valtree::object_builder> {
-    return std::make_unique<valtree_vec3_vector_builder>(parent);
+  -> unique_holder<valtree::object_builder> {
+    return {hold<valtree_vec3_vector_builder>, parent};
 }
 //------------------------------------------------------------------------------
 // camera parameters
@@ -285,10 +285,8 @@ void valtree_orbiting_camera_parameters_builder::parse_param(
 //------------------------------------------------------------------------------
 auto make_valtree_camera_parameters_builder(
   const std::shared_ptr<pending_resource_info>& parent,
-  orbiting_camera& camera) noexcept
-  -> std::unique_ptr<valtree::object_builder> {
-    return std::make_unique<valtree_orbiting_camera_parameters_builder>(
-      parent, camera);
+  orbiting_camera& camera) noexcept -> unique_holder<valtree::object_builder> {
+    return {hold<valtree_orbiting_camera_parameters_builder>, parent, camera};
 }
 //------------------------------------------------------------------------------
 // input parameters
@@ -656,8 +654,8 @@ void valtree_input_setup_builder::reset() noexcept {
 //------------------------------------------------------------------------------
 auto make_valtree_input_setup_builder(
   const std::shared_ptr<pending_resource_info>& parent,
-  execution_context& ctx) noexcept -> std::unique_ptr<valtree::object_builder> {
-    return std::make_unique<valtree_input_setup_builder>(parent, ctx);
+  execution_context& ctx) noexcept -> unique_holder<valtree::object_builder> {
+    return {hold<valtree_input_setup_builder>, parent, ctx};
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

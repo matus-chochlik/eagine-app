@@ -525,11 +525,11 @@ auto eglplus_opengl_provider::initialize(execution_context& exec_ctx) -> bool {
             if(should_create_surface) {
                 if(auto surface{std::make_shared<eglplus_opengl_surface>(
                      *this, _egl_api)}) {
-                    if(extract(surface).initialize(
+                    if(surface->initialize(
                          exec_ctx, inst, options, video_opts)) {
                         _surfaces[inst] = std::move(surface);
                     } else {
-                        extract(surface).clean_up();
+                        surface->clean_up();
                     }
                 }
             }

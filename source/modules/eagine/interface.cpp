@@ -89,6 +89,8 @@ export struct input_provider : interface<input_provider> {
 };
 //------------------------------------------------------------------------------
 export class video_context;
+auto video_ctx(execution_context&, span_size_t = 0) noexcept
+  -> optional_reference<video_context>;
 export struct video_provider : interface<video_provider> {
 
     virtual auto video_kind() const noexcept -> video_context_kind = 0;
@@ -106,6 +108,8 @@ export struct video_provider : interface<video_provider> {
 };
 //------------------------------------------------------------------------------
 export class audio_context;
+auto audio_ctx(execution_context&, span_size_t = 0) noexcept
+  -> optional_reference<audio_context>;
 export struct audio_provider : interface<audio_provider> {
 
     virtual auto audio_kind() const noexcept -> audio_context_kind = 0;
@@ -169,7 +173,30 @@ export struct launchpad : interface<launchpad> {
     }
 
     [[nodiscard]] virtual auto launch(execution_context&, const launch_options&)
-      -> std::unique_ptr<application> = 0;
+      -> unique_holder<application> = 0;
+
+    [[nodiscard]] virtual auto check_requirements(video_context&) -> bool {
+        return true;
+    }
+
+    [[nodiscard]] virtual auto check_requirements(audio_context&) -> bool {
+        return true;
+    }
+
+    template <typename Application>
+    auto launch_with_video(execution_context& ec)
+      -> unique_holder<application> {
+        return video_ctx(ec).and_then(
+          [this, &ec](auto& vc) -> unique_holder<application> {
+              vc.begin();
+              if(vc.init_gl_api()) {
+                  if(check_requirements(vc)) {
+                      return {hold<Application>, ec, vc};
+                  }
+              }
+              return {};
+          });
+    }
 };
 //------------------------------------------------------------------------------
 } // namespace eagine::app
