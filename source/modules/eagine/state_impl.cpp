@@ -31,7 +31,7 @@ context_state::context_state(main_ctx_parent parent)
     }
     if(_fixed_fps) {
         log_info("running with fixed ${fps} frames per second")
-          .arg("fps", extract(_fixed_fps));
+          .arg("fps", *_fixed_fps);
     }
 }
 //------------------------------------------------------------------------------
