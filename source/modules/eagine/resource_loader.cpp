@@ -153,7 +153,7 @@ public:
       const pending_resource_info& source,
       std::vector<math::vector<float, 3, true>>& values) noexcept;
 
-    void add_shape_generator(std::shared_ptr<shapes::generator> gen) noexcept;
+    void add_shape_generator(shared_holder<shapes::generator> gen) noexcept;
     void add_gl_shape_context(video_context&) noexcept;
     void add_gl_geometry_and_bindings_context(
       video_context&,
@@ -220,7 +220,7 @@ private:
     };
 
     struct _pending_shape_generator_state {
-        std::shared_ptr<shapes::generator> generator;
+        shared_holder<shapes::generator> generator;
     };
 
     struct _pending_gl_shape_state {
@@ -300,11 +300,11 @@ private:
       const pending_resource_info& source,
       const std::vector<math::vector<float, 3, true>>& values) noexcept;
 
-    auto _apply_shape_modifiers(std::shared_ptr<shapes::generator>) noexcept
-      -> std::shared_ptr<shapes::generator>;
+    auto _apply_shape_modifiers(shared_holder<shapes::generator>) noexcept
+      -> shared_holder<shapes::generator>;
     void _handle_shape_generator(
       const pending_resource_info& source,
-      const std::shared_ptr<shapes::generator>& gen) noexcept;
+      const shared_holder<shapes::generator>& gen) noexcept;
     void _handle_gl_shape(
       const pending_resource_info& source,
       const oglplus::shape_generator& shape) noexcept;
@@ -528,11 +528,11 @@ export struct resource_loader_signals {
     struct shape_generator_load_info {
         const identifier_t request_id;
         const url& locator;
-        const std::shared_ptr<shapes::generator>& generator;
+        const shared_holder<shapes::generator>& generator;
     };
 
     template <>
-    struct get_load_info<std::shared_ptr<shapes::generator>>
+    struct get_load_info<shared_holder<shapes::generator>>
       : std::type_identity<shape_generator_load_info> {};
 
     /// @brief Emitted when a shape generator is loaded.
@@ -540,8 +540,7 @@ export struct resource_loader_signals {
       shape_generator_loaded;
 
     auto load_signal(
-      std::type_identity<std::shared_ptr<shapes::generator>>) noexcept
-      -> auto& {
+      std::type_identity<shared_holder<shapes::generator>>) noexcept -> auto& {
         return shape_generator_loaded;
     }
 
@@ -1092,7 +1091,7 @@ public:
       -> resource_request_result;
 
     auto request(
-      std::type_identity<std::shared_ptr<shapes::generator>>,
+      std::type_identity<shared_holder<shapes::generator>>,
       url locator) noexcept {
         return request_shape_generator(std::move(locator));
     }

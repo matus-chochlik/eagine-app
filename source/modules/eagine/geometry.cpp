@@ -37,7 +37,7 @@ public:
       : base{vc.gl_api(), shape, bindings, var, temp} {}
 
     gl_geometry_and_bindings(
-      const std::shared_ptr<shapes::generator>& gen,
+      const shared_holder<shapes::generator>& gen,
       const oglplus::vertex_attrib_bindings& bindings,
       const shapes::drawing_variant var,
       video_context& vc,
@@ -63,7 +63,7 @@ public:
       : gl_geometry_and_bindings{shape, bindings, vc, vc.parent().buffer()} {}
 
     gl_geometry_and_bindings(
-      const std::shared_ptr<shapes::generator>& gen,
+      const shared_holder<shapes::generator>& gen,
       const oglplus::vertex_attrib_bindings& bindings,
       video_context& vc,
       memory::buffer& temp) noexcept
@@ -85,7 +85,7 @@ public:
       : gl_geometry_and_bindings{shape, vc, vc.parent().buffer()} {}
 
     gl_geometry_and_bindings(
-      const std::shared_ptr<shapes::generator>& gen,
+      const shared_holder<shapes::generator>& gen,
       video_context& vc,
       memory::buffer& temp) noexcept
       : gl_geometry_and_bindings{
@@ -94,7 +94,7 @@ public:
           temp} {}
 
     gl_geometry_and_bindings(
-      const std::shared_ptr<shapes::generator>& gen,
+      const shared_holder<shapes::generator>& gen,
       video_context& vc) noexcept
       : gl_geometry_and_bindings{gen, vc, vc.parent().buffer()} {}
 

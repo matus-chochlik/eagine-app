@@ -82,7 +82,7 @@ example_fur::example_fur(execution_context& ec, video_context& vc)
 //------------------------------------------------------------------------------
 void example_fur::_on_loaded(const loaded_resource_base& loaded) noexcept {
     if(loaded.is(_shape_gen)) {
-        auto gen{[&loaded, this]() -> std::shared_ptr<shapes::generator> {
+        auto gen{[&loaded, this]() -> shared_holder<shapes::generator> {
             if(loaded.locator().has_path("/unit_torus")) {
                 return shapes::scale_wrap_coords(_shape_gen, 4.F, 2.F, 1.F);
             }

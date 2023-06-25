@@ -495,12 +495,12 @@ export using smooth_vec3_curve_resource =
   loaded_resource<math::bezier_curves<math::vector<float, 3, true>, float, 3>>;
 //------------------------------------------------------------------------------
 export template <>
-class loaded_resource<std::shared_ptr<shapes::generator>>
+class loaded_resource<shared_holder<shapes::generator>>
   : public loaded_resource_common<
-      loaded_resource<std::shared_ptr<shapes::generator>>> {
+      loaded_resource<shared_holder<shapes::generator>>> {
 
     using common =
-      loaded_resource_common<loaded_resource<std::shared_ptr<shapes::generator>>>;
+      loaded_resource_common<loaded_resource<shared_holder<shapes::generator>>>;
 
 public:
     using common::common;
@@ -526,7 +526,7 @@ public:
     }
 };
 export using shape_generator_resource =
-  loaded_resource<std::shared_ptr<shapes::generator>>;
+  loaded_resource<shared_holder<shapes::generator>>;
 //------------------------------------------------------------------------------
 template <>
 struct get_resource_load_params<gl_geometry_and_bindings>
