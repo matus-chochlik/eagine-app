@@ -65,7 +65,7 @@ void hair_program::set_model(
 //------------------------------------------------------------------------------
 void shape_surface::init(
   video_context& vc,
-  const std::shared_ptr<shapes::generator>& gen) {
+  const shared_holder<shapes::generator>& gen) {
     gl_geometry_and_bindings::init({gen, vc});
 
     vc.clean_up_later(*this);
@@ -75,7 +75,7 @@ void shape_surface::init(
 //------------------------------------------------------------------------------
 void shape_hair::init(
   video_context& vc,
-  const std::shared_ptr<shapes::generator>& gen) {
+  const shared_holder<shapes::generator>& gen) {
 
     const auto& glapi = vc.gl_api();
 

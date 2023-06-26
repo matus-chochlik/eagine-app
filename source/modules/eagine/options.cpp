@@ -208,7 +208,7 @@ public:
     /// @see depth_bits
     /// @see stencil_bits
     auto color_bits(const valid_color_bits& value) noexcept -> auto& {
-        _color_bits = extract(value);
+        value.and_then(_1.assign_to(_color_bits));
         return *this;
     }
 
@@ -225,7 +225,7 @@ public:
     /// @see depth_bits
     /// @see stencil_bits
     auto alpha_bits(const valid_alpha_bits& value) noexcept -> auto& {
-        _alpha_bits = extract(value);
+        value.and_then(_1.assign_to(_alpha_bits));
         return *this;
     }
 
@@ -251,7 +251,7 @@ public:
     /// @see alpha_bits
     /// @see stencil_bits
     auto depth_bits(const valid_depth_bits& value) noexcept -> auto& {
-        _depth_bits = extract(value);
+        value.and_then(_1.assign_to(_depth_bits));
         return *this;
     }
 
@@ -276,7 +276,7 @@ public:
     /// @see alpha_bits
     /// @see depth_bits
     auto stencil_bits(const valid_stencil_bits& value) noexcept -> auto& {
-        _stencil_bits = extract(value);
+        value.and_then(_1.assign_to(_stencil_bits));
         return *this;
     }
 

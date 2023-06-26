@@ -99,7 +99,7 @@ void pending_resource_info::add_valtree_stream_input(
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::add_shape_generator(
-  std::shared_ptr<shapes::generator> gen) noexcept {
+  shared_holder<shapes::generator> gen) noexcept {
     _state = _pending_shape_generator_state{.generator = std::move(gen)};
 }
 //------------------------------------------------------------------------------
@@ -363,8 +363,8 @@ void pending_resource_info::_handle_vec3_vector(
 }
 //------------------------------------------------------------------------------
 auto pending_resource_info::_apply_shape_modifiers(
-  std::shared_ptr<shapes::generator> gen) noexcept
-  -> std::shared_ptr<shapes::generator> {
+  shared_holder<shapes::generator> gen) noexcept
+  -> shared_holder<shapes::generator> {
     if(_locator.query().arg_has_value("to_patches", true)) {
         _parent.log_info("applying 'to_patches' shape modifier")
           .arg("requestId", _request_id)
@@ -376,7 +376,7 @@ auto pending_resource_info::_apply_shape_modifiers(
 //------------------------------------------------------------------------------
 void pending_resource_info::_handle_shape_generator(
   const pending_resource_info&,
-  const std::shared_ptr<shapes::generator>& gen) noexcept {
+  const shared_holder<shapes::generator>& gen) noexcept {
     _parent.log_info("loaded shape geometry generator")
       .arg("requestId", _request_id)
       .arg("locator", _locator.str());

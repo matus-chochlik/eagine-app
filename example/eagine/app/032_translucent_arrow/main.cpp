@@ -20,7 +20,7 @@ public:
     example_arrow(
       execution_context&,
       video_context&,
-      const std::shared_ptr<shapes::generator>&);
+      const shared_holder<shapes::generator>&);
 
     void update() noexcept final;
     void clean_up() noexcept final;
@@ -45,7 +45,7 @@ private:
 example_arrow::example_arrow(
   execution_context& ec,
   video_context& vc,
-  const std::shared_ptr<shapes::generator>& gen)
+  const shared_holder<shapes::generator>& gen)
   : timeouting_application{ec, std::chrono::seconds{30}}
   , _video{vc}
   , _depth_prog{ec}
@@ -198,7 +198,7 @@ public:
     }
 
 private:
-    std::shared_ptr<shapes::generator> _gen;
+    shared_holder<shapes::generator> _gen;
 };
 //------------------------------------------------------------------------------
 auto establish(main_ctx&) -> std::unique_ptr<launchpad> {

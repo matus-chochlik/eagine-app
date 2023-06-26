@@ -50,7 +50,7 @@ private:
 //------------------------------------------------------------------------------
 class shape_geometry : public gl_geometry_and_bindings {
 public:
-    void init(const std::shared_ptr<shapes::generator>&, video_context&);
+    void init(const shared_holder<shapes::generator>&, video_context&);
 
     auto bounding_sphere() noexcept {
         return bound_sphere;

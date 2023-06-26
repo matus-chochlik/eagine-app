@@ -60,7 +60,7 @@ void draw_program::update(execution_context& ec, video_context& vc) {
 // geometry
 //------------------------------------------------------------------------------
 void shape_geometry::init(
-  const std::shared_ptr<shapes::generator>& gen,
+  const shared_holder<shapes::generator>& gen,
   video_context& vc) {
     const auto& glapi = vc.gl_api();
 

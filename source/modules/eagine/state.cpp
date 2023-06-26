@@ -134,7 +134,7 @@ public:
     /// @brief Advances the simulation time.
     auto advance_time() noexcept -> auto& {
         if(_fixed_fps) [[unlikely]] {
-            _frame_time.advance(1.F / extract(_fixed_fps));
+            _frame_time.advance(1.F / *_fixed_fps);
         } else {
             _frame_time.assign(
               std::chrono::duration<float>(run_time()).count());
