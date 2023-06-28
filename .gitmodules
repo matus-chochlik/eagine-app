@@ -19,3 +19,6 @@
 [submodule "submodules/imgui"]
 	path = submodules/imgui
 	url = https://github.com/ocornut/imgui.git
+[submodule "submodules/eagine-guiplus"]
+	path = submodules/eagine-guiplus
+	url = https://github.com/matus-chochlik/eagine-guiplus.git

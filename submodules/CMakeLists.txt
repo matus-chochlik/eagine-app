@@ -69,6 +69,19 @@ if(NOT TARGET EAGine::OALplus AND NOT TARGET eagine.oalplus)
 	add_subdirectory(eagine-oalplus EXCLUDE_FROM_ALL)
 endif()
 
+if(NOT TARGET EAGine::GUIplus AND NOT TARGET eagine.guiplus)
+	if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/eagine-guiplus/CMakeLists.txt")
+		unset(SUBMODULE_INIT_ARG)
+	else()
+		set(SUBMODULE_INIT_ARG --init)
+	endif()
+	execute_process(
+		COMMAND git submodule update ${SUBMODULE_INIT_ARG}
+		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/eagine-guiplus"
+	)
+	add_subdirectory(eagine-guiplus)
+endif()
+
 if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui.h")
 	execute_process(
 		COMMAND git submodule update --init
