@@ -814,18 +814,19 @@ public:
 
     /// @brief Binds the location of a input attribute variable.
     auto bind(
-      const oglplus::gl_api& glapi,
-      oglplus::vertex_attrib_location loc,
-      const string_view var_name) -> loaded_resource& {
-        glapi.bind_attrib_location(*this, loc, var_name);
+      oglplus::gl_api& glapi,
+      const oglplus::vertex_attrib_location loc,
+      const string_view& var_name) -> loaded_resource& {
+        glapi.BindAttribLocation(
+          this->value(), loc.location(), c_str(var_name));
         return *this;
     }
 
     /// @brief Binds the location of a input attribute variable.
     auto bind(
       video_context& video,
-      oglplus::vertex_attrib_location loc,
-      const string_view var_name) -> loaded_resource& {
+      const oglplus::vertex_attrib_location loc,
+      const string_view& var_name) -> loaded_resource& {
         return bind(video.gl_api(), loc, var_name);
     }
 
