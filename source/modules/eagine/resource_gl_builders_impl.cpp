@@ -97,7 +97,9 @@ public:
                 _attrib_variant_index = 0;
             } else if(path.starts_with("shaders")) {
                 _shdr_locator = {};
-                _shdr_type = _video.gl_api().constants().fragment_shader;
+                _video.with_gl([this](auto&, auto& GL, auto&) {
+                    _shdr_type = GL.fragment_shader;
+                });
             }
         }
     }

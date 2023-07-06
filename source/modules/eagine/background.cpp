@@ -44,14 +44,16 @@ public:
       : background_color{0.5F} {}
 
     auto setup(video_context& vc) noexcept -> background_color& {
-        vc.gl_api().clear_color(_red, _green, _blue, _alpha);
+        vc.with_gl([this](auto& gl, auto&, auto&) {
+            gl.clear_color(_red, _green, _blue, _alpha);
+        });
         return *this;
     }
 
     auto clear(video_context& vc) noexcept -> background_color& {
         setup(vc);
-        const auto& [gl, GL] = vc.gl_api();
-        gl.clear(GL.color_buffer_bit);
+        vc.with_gl(
+          [](auto& gl, auto& GL, auto&) { gl.clear(GL.color_buffer_bit); });
         return *this;
     }
 
@@ -93,14 +95,15 @@ public:
 
     auto setup(video_context& vc) noexcept -> background_color_depth& {
         _color.setup(vc);
-        vc.gl_api().clear_depth(_depth);
+        vc.with_gl([this](auto& gl, auto&, auto&) { gl.clear_depth(_depth); });
         return *this;
     }
 
     auto clear(video_context& vc) noexcept -> background_color_depth& {
         setup(vc);
-        const auto& [gl, GL] = vc.gl_api();
-        gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
+        vc.with_gl([this](auto& gl, auto& GL, auto&) {
+            gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
+        });
         return *this;
     }
 
@@ -125,6 +128,9 @@ public:
       -> background_icosahedron&;
 
 private:
+    void _init(auto&, auto&, auto&) noexcept;
+    void _clean_up(auto&, auto&, auto&) noexcept;
+
     oglplus::vec4 _ecolor;
     oglplus::vec4 _fcolor;
     float_type _depth;
@@ -154,6 +160,9 @@ public:
       -> background_skybox&;
 
 private:
+    void _init(auto&, auto&, auto&) noexcept;
+    void _clean_up(auto&, auto&, auto&) noexcept;
+
     oglplus::gl_types::enum_type _tex_unit{0};
 
     oglplus::owned_program_name _prog;

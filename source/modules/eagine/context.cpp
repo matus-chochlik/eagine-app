@@ -83,10 +83,24 @@ public:
 
     /// @brief Returns a reference to the GL rendering API in this context.
     /// @see init_gl_api
+    /// @see gl_ref
+    /// @see with_gl
     /// @pre has_gl_api()
     auto gl_api() const noexcept -> oglplus::gl_api& {
         assert(has_gl_api());
         return *_gl_api;
+    }
+
+    /// @brief Returns a smart reference to the GL rendering API in this context.
+    /// @see gl_api
+    /// @see with_gl
+    auto gl_ref() const noexcept -> oglplus::gl_api_reference {
+        return {_gl_api};
+    }
+
+    template <typename Function>
+    constexpr auto with_gl(Function&& function) const noexcept {
+        return gl_ref().then(std::forward<Function>(function));
     }
 
     /// @brief Returns the rendering surface's dimensions (in pixels).

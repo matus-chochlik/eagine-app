@@ -18,16 +18,7 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 // background_icosahedron
 //------------------------------------------------------------------------------
-background_icosahedron::background_icosahedron(
-  video_context& video,
-  const oglplus::vec4 edge_color,
-  const oglplus::vec4 face_color,
-  const float depth) noexcept
-  : _ecolor{edge_color}
-  , _fcolor{face_color}
-  , _depth{depth} {
-    const auto& glapi = video.gl_api();
-    const auto& [gl, GL] = glapi;
+void background_icosahedron::_init(auto& gl, auto& GL, auto& api) noexcept {
     memory::buffer temp;
 
     gl.clear_depth(_depth);
@@ -39,13 +30,13 @@ background_icosahedron::background_icosahedron(
         const auto cleanup_fs = gl.delete_shader.raii(fs);
 
         const string_view fs_source = R"(
-          #version 140
-          in  vec4 geomColor;
-          out vec4 fragColor;
+		#version 140
+		in  vec4 geomColor;
+		out vec4 fragColor;
 
-          void main() {
-              fragColor = geomColor;
-          })";
+		void main() {
+			fragColor = geomColor;
+		})";
 
         gl.shader_source(fs, oglplus::glsl_string_ref(fs_source));
         gl.compile_shader(fs);
@@ -61,49 +52,49 @@ background_icosahedron::background_icosahedron(
             const auto cleanup_gs = gl.delete_shader.raii(gs);
 
             const string_view gs_source = R"(
-          #version 330
+			#version 330
 
-          layout(triangles) in;
-          layout(triangle_strip, max_vertices = 3) out;
-          out vec4 geomColor;
-          uniform mat4 Camera;
-          uniform vec4 Color;
+			layout(triangles) in;
+			layout(triangle_strip, max_vertices = 3) out;
+			out vec4 geomColor;
+			uniform mat4 Camera;
+			uniform vec4 Color;
 
-          void main() {
-              float m = mod(gl_PrimitiveIDIn / 1.618, 1.0);
-              geomColor = vec4(mix(0.96, 1.04, m) * Color.rgb, Color.a);
+			void main() {
+				float m = mod(gl_PrimitiveIDIn / 1.618, 1.0);
+				geomColor = vec4(mix(0.96, 1.04, m) * Color.rgb, Color.a);
 
-              for(int i=0; i<3; ++i) {
-                  gl_Position = Camera * gl_in[i].gl_Position;
-                  EmitVertex();
-              }
-          })";
+				for(int i=0; i<3; ++i) {
+					gl_Position = Camera * gl_in[i].gl_Position;
+					EmitVertex();
+				}
+			})";
             gl.shader_source(gs, oglplus::glsl_string_ref(gs_source));
             gl.compile_shader(gs);
             gl.attach_shader(_prog, gs);
 
             const string_view vs_source = R"(
-          #version 140
-          in vec3 Position;
-          uniform float Scale = 1.0;
+			#version 140
+			in vec3 Position;
+			uniform float Scale = 1.0;
 
-          void main() {
-              gl_Position = vec4(Position * Scale, 1.0);
-           })";
+			void main() {
+				gl_Position = vec4(Position * Scale, 1.0);
+			})";
             gl.shader_source(vs, oglplus::glsl_string_ref(vs_source));
         } else {
             const string_view vs_source = R"(
-          #version 140
-          in vec3 Position;
-          out vec4 geomColor;
-          uniform mat4 Camera;
-          uniform vec4 Color;
-          uniform float Scale = 1.0;
+			#version 140
+			in vec3 Position;
+			out vec4 geomColor;
+			uniform mat4 Camera;
+			uniform vec4 Color;
+			uniform float Scale = 1.0;
 
-          void main() {
-              gl_Position = Camera * vec4(Position * Scale, 1.0);
-              geomColor = Color;
-          })";
+			void main() {
+				gl_Position = Camera * vec4(Position * Scale, 1.0);
+				geomColor = Color;
+			})";
             gl.shader_source(vs, oglplus::glsl_string_ref(vs_source));
         }
         gl.compile_shader(vs);
@@ -118,17 +109,17 @@ background_icosahedron::background_icosahedron(
     gl.get_uniform_location(_prog, "Color") >> _color_loc;
 
     oglplus::shape_generator shape{
-      glapi, shapes::unit_icosahedron(shapes::vertex_attrib_kind::position)};
+      api, shapes::unit_icosahedron(shapes::vertex_attrib_kind::position)};
 
     _ops.resize(integer(shape.operation_count()));
-    shape.instructions(glapi, cover(_ops));
+    shape.instructions(api, cover(_ops));
 
     gl.gen_vertex_arrays() >> _vao;
     gl.bind_vertex_array(_vao);
 
     gl.gen_buffers() >> _positions;
     shape.attrib_setup(
-      glapi,
+      api,
       _vao,
       _positions,
       oglplus::vertex_attrib_location{0},
@@ -136,55 +127,63 @@ background_icosahedron::background_icosahedron(
       temp);
 
     gl.gen_buffers() >> _indices;
-    shape.index_setup(glapi, _indices, temp);
+    shape.index_setup(api, _indices, temp);
 }
 //------------------------------------------------------------------------------
-auto background_icosahedron::clean_up(video_context& video) noexcept
-  -> background_icosahedron& {
-    const auto& gl = video.gl_api();
-
+background_icosahedron::background_icosahedron(
+  video_context& video,
+  const oglplus::vec4 edge_color,
+  const oglplus::vec4 face_color,
+  const float depth) noexcept
+  : _ecolor{edge_color}
+  , _fcolor{face_color}
+  , _depth{depth} {
+    video.gl_ref().then(this, &background_icosahedron::_init);
+}
+//------------------------------------------------------------------------------
+void background_icosahedron::_clean_up(auto& gl, auto&, auto&) noexcept {
     gl.delete_program(std::move(_prog));
     gl.delete_buffers(std::move(_indices));
     gl.delete_buffers(std::move(_positions));
     gl.delete_vertex_arrays(std::move(_vao));
+}
+//------------------------------------------------------------------------------
+auto background_icosahedron::clean_up(video_context& video) noexcept
+  -> background_icosahedron& {
+    video.gl_ref().then(this, &background_icosahedron::_clean_up);
     return *this;
 }
 //------------------------------------------------------------------------------
 auto background_icosahedron::clear(
   video_context& video,
   const orbiting_camera& camera) noexcept -> background_icosahedron& {
-    const auto glapi = video.gl_api();
-    const auto& [gl, GL] = glapi;
-    const auto radius{(camera.skybox_distance())};
+    video.with_gl([&, this](auto& gl, auto& GL, auto& api) {
+        const auto radius{(camera.skybox_distance())};
 
-    gl.clear(GL.color_buffer_bit);
-    gl.use_program(_prog);
-    glapi.set_uniform(_prog, _camera_loc, camera.matrix(video));
-    glapi.set_uniform(_prog, _scale_loc, radius);
-    gl.disable(GL.depth_test);
-    gl.disable(GL.cull_face);
-    gl.bind_vertex_array(_vao);
-    gl.polygon_mode(GL.front_and_back, GL.fill);
-    glapi.set_uniform(_prog, _color_loc, _fcolor);
-    draw_using_instructions(glapi, view(_ops));
-    gl.polygon_mode(GL.front_and_back, GL.line);
-    glapi.set_uniform(_prog, _color_loc, _ecolor);
-    draw_using_instructions(glapi, view(_ops));
-    gl.polygon_mode(GL.front_and_back, GL.fill);
-    gl.enable(GL.cull_face);
-    gl.enable(GL.depth_test);
-    gl.clear(GL.depth_buffer_bit);
+        gl.clear(GL.color_buffer_bit);
+        gl.use_program(_prog);
+        api.set_uniform(_prog, _camera_loc, camera.matrix(video));
+        api.set_uniform(_prog, _scale_loc, radius);
+        gl.disable(GL.depth_test);
+        gl.disable(GL.cull_face);
+        gl.bind_vertex_array(_vao);
+        gl.polygon_mode(GL.front_and_back, GL.fill);
+        api.set_uniform(_prog, _color_loc, _fcolor);
+        draw_using_instructions(api, view(_ops));
+        gl.polygon_mode(GL.front_and_back, GL.line);
+        api.set_uniform(_prog, _color_loc, _ecolor);
+        draw_using_instructions(api, view(_ops));
+        gl.polygon_mode(GL.front_and_back, GL.fill);
+        gl.enable(GL.cull_face);
+        gl.enable(GL.depth_test);
+        gl.clear(GL.depth_buffer_bit);
+    });
     return *this;
 }
 //------------------------------------------------------------------------------
 // background_skybox
 //------------------------------------------------------------------------------
-background_skybox::background_skybox(
-  video_context& video,
-  oglplus::gl_types::enum_type tex_unit) noexcept
-  : _tex_unit{tex_unit} {
-    const auto& glapi = video.gl_api();
-    const auto& [gl, GL] = glapi;
+void background_skybox::_init(auto& gl, auto& GL, auto& api) noexcept {
     memory::buffer temp;
 
     gl.create_program() >> _prog;
@@ -308,23 +307,23 @@ background_skybox::background_skybox(
     gl.get_uniform_location(_prog, "Scale") >> _scale_loc;
     gl.get_uniform_location(_prog, "Tex") >> _tex_loc;
 
-    glapi.set_uniform(_prog, _tex_loc, oglplus::gl_types::int_type(_tex_unit));
+    api.set_uniform(_prog, _tex_loc, oglplus::gl_types::int_type(_tex_unit));
 
     oglplus::shape_generator shape{
-      glapi,
+      api,
       shapes::skybox(
         shapes::vertex_attrib_kind::position |
         shapes::vertex_attrib_kind::face_coord)};
 
     _ops.resize(integer(shape.operation_count()));
-    shape.instructions(glapi, cover(_ops));
+    shape.instructions(api, cover(_ops));
 
     gl.gen_vertex_arrays() >> _vao;
     gl.bind_vertex_array(_vao);
 
     gl.gen_buffers() >> _positions;
     shape.attrib_setup(
-      glapi,
+      api,
       _vao,
       _positions,
       oglplus::vertex_attrib_location{0},
@@ -333,7 +332,7 @@ background_skybox::background_skybox(
 
     gl.gen_buffers() >> _coords;
     shape.attrib_setup(
-      glapi,
+      api,
       _vao,
       _coords,
       oglplus::vertex_attrib_location{1},
@@ -341,39 +340,48 @@ background_skybox::background_skybox(
       temp);
 
     gl.gen_buffers() >> _indices;
-    shape.index_setup(glapi, _indices, temp);
+    shape.index_setup(api, _indices, temp);
 }
 //------------------------------------------------------------------------------
-auto background_skybox::clean_up(video_context& video) noexcept
-  -> background_skybox& {
-    const auto& gl = video.gl_api();
-
+background_skybox::background_skybox(
+  video_context& video,
+  oglplus::gl_types::enum_type tex_unit) noexcept
+  : _tex_unit{tex_unit} {
+    video.gl_ref().then(this, &background_skybox::_init);
+    video.with_gl([&, this](auto& gl, auto& GL, auto& api) {});
+}
+//------------------------------------------------------------------------------
+void background_skybox::_clean_up(auto& gl, auto&, auto&) noexcept {
     gl.delete_program(std::move(_prog));
     gl.delete_buffers(std::move(_indices));
     gl.delete_buffers(std::move(_coords));
     gl.delete_buffers(std::move(_positions));
     gl.delete_vertex_arrays(std::move(_vao));
+}
+//------------------------------------------------------------------------------
+auto background_skybox::clean_up(video_context& video) noexcept
+  -> background_skybox& {
+    video.gl_ref().then(this, &background_skybox::_clean_up);
     return *this;
 }
 //------------------------------------------------------------------------------
 auto background_skybox::clear(
   video_context& video,
   const orbiting_camera& camera) noexcept -> background_skybox& {
-    const auto glapi = video.gl_api();
-    const auto& [gl, GL] = glapi;
+    video.with_gl([&, this](auto& gl, auto& GL, auto& api) {
+        gl.use_program(_prog);
+        api.set_uniform(_prog, _camera_loc, camera.matrix(video));
+        api.set_uniform(_prog, _scale_loc, camera.skybox_distance());
+        gl.bind_vertex_array(_vao);
+        gl.disable(GL.depth_test);
+        gl.disable(GL.cull_face);
+        draw_using_instructions(api, view(_ops));
+        gl.enable(GL.cull_face);
+        gl.enable(GL.depth_test);
 
-    gl.use_program(_prog);
-    glapi.set_uniform(_prog, _camera_loc, camera.matrix(video));
-    glapi.set_uniform(_prog, _scale_loc, camera.skybox_distance());
-    gl.bind_vertex_array(_vao);
-    gl.disable(GL.depth_test);
-    gl.disable(GL.cull_face);
-    draw_using_instructions(glapi, view(_ops));
-    gl.enable(GL.cull_face);
-    gl.enable(GL.depth_test);
-
-    gl.clear_depth(1.F);
-    gl.clear(GL.depth_buffer_bit | GL.stencil_buffer_bit);
+        gl.clear_depth(1.F);
+        gl.clear(GL.depth_buffer_bit | GL.stencil_buffer_bit);
+    });
     return *this;
 }
 //------------------------------------------------------------------------------

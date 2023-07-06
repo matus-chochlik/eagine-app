@@ -46,6 +46,8 @@ public:
     void clean_up(video_context&) noexcept;
 
 private:
+    void _clean_up(auto&, auto&, auto&) noexcept;
+
     const video_options& _options;
     oglplus::owned_renderbuffer_name _color_rbo;
     oglplus::owned_renderbuffer_name _depth_rbo;
@@ -216,24 +218,27 @@ void video_context_state::add_cleanup_op(
     _cleanup_ops.push_back(op);
 }
 //------------------------------------------------------------------------------
+void video_context_state::_clean_up(auto& gl, auto&, auto&) noexcept {
+    if(_offscreen_fbo) {
+        gl.delete_framebuffers(std::move(_offscreen_fbo));
+    }
+    if(_stencil_rbo) {
+        gl.delete_renderbuffers(std::move(_stencil_rbo));
+    }
+    if(_depth_rbo) {
+        gl.delete_renderbuffers(std::move(_depth_rbo));
+    }
+    if(_color_rbo) {
+        gl.delete_renderbuffers(std::move(_color_rbo));
+    }
+}
+//------------------------------------------------------------------------------
 inline void video_context_state::clean_up(video_context& vc) noexcept {
     for(auto& clean_up : _cleanup_ops) {
         clean_up(vc);
     }
     _cleanup_ops.clear();
-    const auto& api = vc.gl_api();
-    if(_offscreen_fbo) {
-        api.delete_framebuffers(std::move(_offscreen_fbo));
-    }
-    if(_stencil_rbo) {
-        api.delete_renderbuffers(std::move(_stencil_rbo));
-    }
-    if(_depth_rbo) {
-        api.delete_renderbuffers(std::move(_depth_rbo));
-    }
-    if(_color_rbo) {
-        api.delete_renderbuffers(std::move(_color_rbo));
-    }
+    vc.gl_ref().then(this, &video_context_state::_clean_up);
 }
 //------------------------------------------------------------------------------
 static void video_context_debug_callback(
