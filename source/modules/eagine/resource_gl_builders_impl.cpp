@@ -595,6 +595,126 @@ auto make_valtree_gl_texture_builder(
     return {hold<valtree_gl_texture_builder>, parent, video, target, unit};
 }
 //------------------------------------------------------------------------------
+auto pending_resource_info::_handle_pending_gl_texture_state(
+  auto& gl,
+  auto&,
+  auto& glapi,
+  _pending_gl_texture_state& pgts,
+  const resource_gl_texture_params& params) noexcept -> bool {
+
+    gl.active_texture(pgts.tex_unit);
+    glapi.bind_texture(pgts.tex_target, pgts.tex);
+    if(params.dimensions == 3) {
+        if(glapi.texture_storage3d) {
+            return bool(glapi.texture_storage3d(
+              pgts.tex,
+              params.levels,
+              oglplus::pixel_internal_format{params.iformat},
+              params.width,
+              params.height,
+              params.depth));
+        } else if(glapi.tex_storage3d) {
+            return bool(glapi.tex_storage3d(
+              pgts.tex_target,
+              params.levels,
+              oglplus::pixel_internal_format{params.iformat},
+              params.width,
+              params.height,
+              params.depth));
+        } else if(glapi.tex_image3d) {
+            bool result{true};
+            auto width = params.width;
+            auto height = params.height;
+            auto depth = params.depth;
+            for(auto level : integer_range(params.levels)) {
+                result &= bool(glapi.tex_image3d(
+                  pgts.tex_target,
+                  level,
+                  oglplus::pixel_internal_format{params.iformat},
+                  width,
+                  height,
+                  depth,
+                  0, // border
+                  oglplus::pixel_format{params.format},
+                  oglplus::pixel_data_type{params.data_type},
+                  {}));
+                width = std::max(width / 2, 1);
+                height = std::max(height / 2, 1);
+                if(pgts.tex_target == glapi.texture_3d) {
+                    depth = std::max(depth / 2, 1);
+                }
+            }
+            return result;
+        }
+    } else if(params.dimensions == 2) {
+        if(glapi.texture_storage2d) {
+            return bool(glapi.texture_storage2d(
+              pgts.tex,
+              params.levels,
+              oglplus::pixel_internal_format{params.iformat},
+              params.width,
+              params.height));
+        } else if(glapi.tex_storage2d) {
+            return bool(glapi.tex_storage2d(
+              pgts.tex_target,
+              params.levels,
+              oglplus::pixel_internal_format{params.iformat},
+              params.width,
+              params.height));
+        } else if(glapi.tex_image2d) {
+            bool result{true};
+            auto width = params.width;
+            auto height = params.height;
+            for(auto level : integer_range(params.levels)) {
+                result &= bool(glapi.tex_image2d(
+                  pgts.tex_target,
+                  level,
+                  oglplus::pixel_internal_format{params.iformat},
+                  width,
+                  height,
+                  0, // border
+                  oglplus::pixel_format{params.format},
+                  oglplus::pixel_data_type{params.data_type},
+                  {}));
+                width = std::max(width / 2, 1);
+                height = std::max(height / 2, 1);
+            }
+            return result;
+        }
+    } else if(params.dimensions == 1) {
+        if(glapi.texture_storage1d) {
+            return bool(glapi.texture_storage1d(
+              pgts.tex,
+              params.levels,
+              oglplus::pixel_internal_format{params.iformat},
+              params.width));
+        } else if(glapi.tex_storage1d) {
+            return bool(glapi.tex_storage1d(
+              pgts.tex_target,
+              params.levels,
+              oglplus::pixel_internal_format{params.iformat},
+              params.width));
+        } else if(glapi.tex_image1d) {
+            bool result{true};
+            auto width = params.width;
+            for(auto level : integer_range(params.levels)) {
+                result &= bool(glapi.tex_image1d(
+                  pgts.tex_target,
+                  level,
+                  oglplus::pixel_internal_format{params.iformat},
+                  width,
+                  0, // border
+                  oglplus::pixel_format{params.format},
+                  oglplus::pixel_data_type{params.data_type},
+                  {}));
+                width = std::max(width / 2, 1);
+            }
+            return result;
+        }
+    }
+    return false;
+}
+//------------------------------------------------------------------------------
 auto pending_resource_info::handle_gl_texture_params(
   const resource_gl_texture_params& params) noexcept -> bool {
     if(std::holds_alternative<_pending_gl_texture_state>(_state)) {
@@ -610,117 +730,14 @@ auto pending_resource_info::handle_gl_texture_params(
         pgts.pparams = &params;
         pgts.levels = span_size(params.levels);
 
-        auto& glapi = pgts.video.get().gl_api();
-        glapi.operations().active_texture(pgts.tex_unit);
-        glapi.bind_texture(pgts.tex_target, pgts.tex);
-        if(params.dimensions == 3) {
-            if(glapi.texture_storage3d) {
-                return bool(glapi.texture_storage3d(
-                  pgts.tex,
-                  params.levels,
-                  oglplus::pixel_internal_format{params.iformat},
-                  params.width,
-                  params.height,
-                  params.depth));
-            } else if(glapi.tex_storage3d) {
-                return bool(glapi.tex_storage3d(
-                  pgts.tex_target,
-                  params.levels,
-                  oglplus::pixel_internal_format{params.iformat},
-                  params.width,
-                  params.height,
-                  params.depth));
-            } else if(glapi.tex_image3d) {
-                bool result{true};
-                auto width = params.width;
-                auto height = params.height;
-                auto depth = params.depth;
-                for(auto level : integer_range(params.levels)) {
-                    result &= bool(glapi.tex_image3d(
-                      pgts.tex_target,
-                      level,
-                      oglplus::pixel_internal_format{params.iformat},
-                      width,
-                      height,
-                      depth,
-                      0, // border
-                      oglplus::pixel_format{params.format},
-                      oglplus::pixel_data_type{params.data_type},
-                      {}));
-                    width = std::max(width / 2, 1);
-                    height = std::max(height / 2, 1);
-                    if(pgts.tex_target == glapi.texture_3d) {
-                        depth = std::max(depth / 2, 1);
-                    }
-                }
-                return result;
-            }
-        } else if(params.dimensions == 2) {
-            if(glapi.texture_storage2d) {
-                return bool(glapi.texture_storage2d(
-                  pgts.tex,
-                  params.levels,
-                  oglplus::pixel_internal_format{params.iformat},
-                  params.width,
-                  params.height));
-            } else if(glapi.tex_storage2d) {
-                return bool(glapi.tex_storage2d(
-                  pgts.tex_target,
-                  params.levels,
-                  oglplus::pixel_internal_format{params.iformat},
-                  params.width,
-                  params.height));
-            } else if(glapi.tex_image2d) {
-                bool result{true};
-                auto width = params.width;
-                auto height = params.height;
-                for(auto level : integer_range(params.levels)) {
-                    result &= bool(glapi.tex_image2d(
-                      pgts.tex_target,
-                      level,
-                      oglplus::pixel_internal_format{params.iformat},
-                      width,
-                      height,
-                      0, // border
-                      oglplus::pixel_format{params.format},
-                      oglplus::pixel_data_type{params.data_type},
-                      {}));
-                    width = std::max(width / 2, 1);
-                    height = std::max(height / 2, 1);
-                }
-                return result;
-            }
-        } else if(params.dimensions == 1) {
-            if(glapi.texture_storage1d) {
-                return bool(glapi.texture_storage1d(
-                  pgts.tex,
-                  params.levels,
-                  oglplus::pixel_internal_format{params.iformat},
-                  params.width));
-            } else if(glapi.tex_storage1d) {
-                return bool(glapi.tex_storage1d(
-                  pgts.tex_target,
-                  params.levels,
-                  oglplus::pixel_internal_format{params.iformat},
-                  params.width));
-            } else if(glapi.tex_image1d) {
-                bool result{true};
-                auto width = params.width;
-                for(auto level : integer_range(params.levels)) {
-                    result &= bool(glapi.tex_image1d(
-                      pgts.tex_target,
-                      level,
-                      oglplus::pixel_internal_format{params.iformat},
-                      width,
-                      0, // border
-                      oglplus::pixel_format{params.format},
-                      oglplus::pixel_data_type{params.data_type},
-                      {}));
-                    width = std::max(width / 2, 1);
-                }
-                return result;
-            }
-        }
+        return pgts.video.get()
+          .gl_ref()
+          .then<bool(decltype(pgts), decltype(params))>(
+            this,
+            &pending_resource_info::_handle_pending_gl_texture_state,
+            pgts,
+            params)
+          .or_false();
     }
     return false;
 }
@@ -736,12 +753,13 @@ void pending_resource_info::handle_gl_texture_i_param(
         if(std::holds_alternative<_pending_gl_texture_state>(_state)) {
             auto& pgts = std::get<_pending_gl_texture_state>(_state);
             if(pgts.tex) [[likely]] {
-                const auto& glapi = pgts.video.get().gl_api();
-                if(glapi.texture_parameter_i) {
-                    glapi.texture_parameter_i(pgts.tex, param, value);
-                } else if(glapi.tex_parameter_i) {
-                    glapi.tex_parameter_i(pgts.tex_target, param, value);
-                }
+                pgts.video.get().with_gl([&](auto& gl, auto&, auto&) {
+                    if(gl.texture_parameter_i) {
+                        gl.texture_parameter_i(pgts.tex, param, value);
+                    } else if(gl.tex_parameter_i) {
+                        gl.tex_parameter_i(pgts.tex_target, param, value);
+                    }
+                });
             }
         }
     }
@@ -758,15 +776,16 @@ void pending_resource_info::_clear_gl_texture_image(
       .arg("dataSize", data.size())
       .arg("locator", locator().str());
 
-    auto& glapi = pgts.video.get().gl_api();
-    if(glapi.clear_tex_image) {
-        glapi.clear_tex_image(
-          pgts.tex,
-          limit_cast<oglplus::gl_types::int_type>(level),
-          oglplus::pixel_format{params.format},
-          oglplus::pixel_data_type{params.data_type},
-          data);
-    }
+    pgts.video.get().with_gl([&](auto& gl, auto&, auto&) {
+        if(gl.clear_tex_image) {
+            gl.clear_tex_image(
+              pgts.tex,
+              limit_cast<oglplus::gl_types::int_type>(level),
+              oglplus::pixel_format{params.format},
+              oglplus::pixel_data_type{params.data_type},
+              data);
+        }
+    });
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::_handle_gl_texture_image(
