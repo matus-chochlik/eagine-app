@@ -138,10 +138,11 @@ background_icosahedron::background_icosahedron(
   : _ecolor{edge_color}
   , _fcolor{face_color}
   , _depth{depth} {
-    video.gl_ref().then(this, &background_icosahedron::_init);
+    video.with_gl(
+      [this](auto& gl, auto& GL, auto& api) { _init(gl, GL, api); });
 }
 //------------------------------------------------------------------------------
-void background_icosahedron::_clean_up(auto& gl, auto&, auto&) noexcept {
+void background_icosahedron::_clean_up(auto& gl) noexcept {
     gl.delete_program(std::move(_prog));
     gl.delete_buffers(std::move(_indices));
     gl.delete_buffers(std::move(_positions));
@@ -150,7 +151,7 @@ void background_icosahedron::_clean_up(auto& gl, auto&, auto&) noexcept {
 //------------------------------------------------------------------------------
 auto background_icosahedron::clean_up(video_context& video) noexcept
   -> background_icosahedron& {
-    video.gl_ref().then(this, &background_icosahedron::_clean_up);
+    video.with_gl([this](auto& gl) { _clean_up(gl); });
     return *this;
 }
 //------------------------------------------------------------------------------
@@ -347,11 +348,11 @@ background_skybox::background_skybox(
   video_context& video,
   oglplus::gl_types::enum_type tex_unit) noexcept
   : _tex_unit{tex_unit} {
-    video.gl_ref().then(this, &background_skybox::_init);
-    video.with_gl([&, this](auto& gl, auto& GL, auto& api) {});
+    video.with_gl(
+      [&, this](auto& gl, auto& GL, auto& api) { _init(gl, GL, api); });
 }
 //------------------------------------------------------------------------------
-void background_skybox::_clean_up(auto& gl, auto&, auto&) noexcept {
+void background_skybox::_clean_up(auto& gl) noexcept {
     gl.delete_program(std::move(_prog));
     gl.delete_buffers(std::move(_indices));
     gl.delete_buffers(std::move(_coords));
@@ -361,7 +362,7 @@ void background_skybox::_clean_up(auto& gl, auto&, auto&) noexcept {
 //------------------------------------------------------------------------------
 auto background_skybox::clean_up(video_context& video) noexcept
   -> background_skybox& {
-    video.gl_ref().then(this, &background_skybox::_clean_up);
+    video.with_gl([this](auto& gl) { _clean_up(gl); });
     return *this;
 }
 //------------------------------------------------------------------------------

@@ -46,7 +46,7 @@ public:
     void clean_up(video_context&) noexcept;
 
 private:
-    void _clean_up(auto&, auto&, auto&) noexcept;
+    void _clean_up(auto&) noexcept;
 
     const video_options& _options;
     oglplus::owned_renderbuffer_name _color_rbo;
@@ -218,7 +218,7 @@ void video_context_state::add_cleanup_op(
     _cleanup_ops.push_back(op);
 }
 //------------------------------------------------------------------------------
-void video_context_state::_clean_up(auto& gl, auto&, auto&) noexcept {
+void video_context_state::_clean_up(auto& gl) noexcept {
     if(_offscreen_fbo) {
         gl.delete_framebuffers(std::move(_offscreen_fbo));
     }
@@ -238,7 +238,7 @@ inline void video_context_state::clean_up(video_context& vc) noexcept {
         clean_up(vc);
     }
     _cleanup_ops.clear();
-    vc.gl_ref().then(this, &video_context_state::_clean_up);
+    vc.with_gl([this](auto& gl) { _clean_up(gl); });
 }
 //------------------------------------------------------------------------------
 static void video_context_debug_callback(

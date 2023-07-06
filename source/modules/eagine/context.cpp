@@ -100,7 +100,7 @@ public:
 
     template <typename Function>
     constexpr auto with_gl(Function&& function) const noexcept {
-        return gl_ref().then(std::forward<Function>(function));
+        return gl_ref().and_then(std::forward<Function>(function));
     }
 
     /// @brief Returns the rendering surface's dimensions (in pixels).

@@ -97,9 +97,8 @@ public:
                 _attrib_variant_index = 0;
             } else if(path.starts_with("shaders")) {
                 _shdr_locator = {};
-                _video.with_gl([this](auto&, auto& GL, auto&) {
-                    _shdr_type = GL.fragment_shader;
-                });
+                _video.with_gl(
+                  [this](auto&, auto& GL) { _shdr_type = GL.fragment_shader; });
             }
         }
     }
@@ -731,12 +730,10 @@ auto pending_resource_info::handle_gl_texture_params(
         pgts.levels = span_size(params.levels);
 
         return pgts.video.get()
-          .gl_ref()
-          .then<bool(decltype(pgts), decltype(params))>(
-            this,
-            &pending_resource_info::_handle_pending_gl_texture_state,
-            pgts,
-            params)
+          .with_gl([&, this](auto& gl, auto& GL, auto& glapi) {
+              return _handle_pending_gl_texture_state(
+                gl, GL, glapi, pgts, params);
+          })
           .or_false();
     }
     return false;
@@ -753,7 +750,7 @@ void pending_resource_info::handle_gl_texture_i_param(
         if(std::holds_alternative<_pending_gl_texture_state>(_state)) {
             auto& pgts = std::get<_pending_gl_texture_state>(_state);
             if(pgts.tex) [[likely]] {
-                pgts.video.get().with_gl([&](auto& gl, auto&, auto&) {
+                pgts.video.get().with_gl([&](auto& gl) {
                     if(gl.texture_parameter_i) {
                         gl.texture_parameter_i(pgts.tex, param, value);
                     } else if(gl.tex_parameter_i) {
@@ -776,7 +773,7 @@ void pending_resource_info::_clear_gl_texture_image(
       .arg("dataSize", data.size())
       .arg("locator", locator().str());
 
-    pgts.video.get().with_gl([&](auto& gl, auto&, auto&) {
+    pgts.video.get().with_gl([&](auto& gl) {
         if(gl.clear_tex_image) {
             gl.clear_tex_image(
               pgts.tex,
