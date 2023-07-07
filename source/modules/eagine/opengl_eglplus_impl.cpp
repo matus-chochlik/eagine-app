@@ -18,6 +18,7 @@ import eagine.core.valid_if;
 import eagine.core.c_api;
 import eagine.core.main_ctx;
 import eagine.eglplus;
+import eagine.guiplus;
 import :types;
 
 namespace eagine::app {
@@ -70,6 +71,7 @@ public:
 
     auto egl_ref() noexcept -> eglplus::egl_api_reference final;
     auto egl_display() noexcept -> eglplus::display_handle final;
+    auto imgui_ref() noexcept -> guiplus::imgui_api_reference final;
 
     void parent_context_changed(const video_context&) final;
     void video_begin(execution_context&) final;
@@ -451,6 +453,11 @@ auto eglplus_opengl_surface::egl_ref() noexcept -> eglplus::egl_api_reference {
 //------------------------------------------------------------------------------
 auto eglplus_opengl_surface::egl_display() noexcept -> eglplus::display_handle {
     return _display;
+}
+//------------------------------------------------------------------------------
+auto eglplus_opengl_surface::imgui_ref() noexcept
+  -> guiplus::imgui_api_reference {
+    return {};
 }
 //------------------------------------------------------------------------------
 void eglplus_opengl_surface::parent_context_changed(const video_context&) {}

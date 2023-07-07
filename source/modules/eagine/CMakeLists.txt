@@ -56,6 +56,7 @@ eagine_add_module(
 		eagine.core.utility
 		eagine.core.main_ctx
 		eagine.eglplus
+		eagine.guiplus
 )
 
 eagine_add_module(
@@ -231,8 +232,8 @@ eagine_add_module(
 		eagine.eglplus
 		eagine.oglplus
 		eagine.oalplus
+		eagine.guiplus
 		eagine.msgbus
 	PRIVATE_LINK_LIBRARIES
-		eagine-app-imgui
 		EAGine::Deps::GLFW3
 )
