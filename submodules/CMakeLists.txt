@@ -81,30 +81,3 @@ if(NOT TARGET EAGine::GUIplus AND NOT TARGET eagine.guiplus)
 	)
 	add_subdirectory(eagine-guiplus)
 endif()
-
-if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/imgui/imgui.h")
-	execute_process(
-		COMMAND git submodule update --init
-		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/imgui"
-	)
-endif()
-
-add_library(
-	eagine-app-imgui
-	imgui/imgui.cpp
-	imgui/imgui_draw.cpp
-	imgui/imgui_widgets.cpp
-	imgui/imgui_tables.cpp
-	imgui/backends/imgui_impl_glfw.cpp
-	imgui/backends/imgui_impl_opengl3.cpp
-)
-target_include_directories(
-	eagine-app-imgui
-	PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/imgui>"
-)
-if(UNIX AND NOT APPLE)
-	target_link_libraries(
-		eagine-app-imgui
-		PUBLIC dl
-	)
-endif()
