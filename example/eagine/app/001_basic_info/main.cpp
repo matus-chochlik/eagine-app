@@ -31,6 +31,7 @@ public:
     void on_video_resize() noexcept final {}
 
     void update() noexcept final {
+        _print_egl_info();
         _print_gl_info();
         _print_al_info();
         _video.commit();
@@ -41,6 +42,36 @@ public:
     }
 
 private:
+    void _print_egl_info() {
+        const auto egl_cio{cio_print("EGL info:").to_be_continued()};
+
+        _video.with_egl([&, this](auto& egl, auto& EGL) {
+            if(const auto display{_video.egl_display()}) {
+                if(const ok info{egl.query_string(display, EGL.vendor)}) {
+                    egl_cio.print("Vendor: ${info}").arg("info", info);
+                }
+
+                if(const ok info{egl.query_string(display, EGL.version)}) {
+                    egl_cio.print("Version: ${info}").arg("info", info);
+                }
+
+                const auto ext_cio{
+                  egl_cio.print("EGL extensions:").to_be_continued()};
+
+                if(const ok extensions{egl.get_extensions(display)}) {
+                    for(auto name : extensions) {
+                        ext_cio.print(name);
+                    }
+                } else {
+                    ext_cio
+                      .error("failed to get EGL extension list: ${message}")
+                      .arg("message", (!extensions).message());
+                }
+                _egl_info_printed = true;
+            }
+        });
+    }
+
     void _print_gl_info() {
         const auto gl_cio{cio_print("GL info:").to_be_continued()};
 
@@ -117,6 +148,7 @@ private:
 
     video_context& _video;
     audio_context& _audio;
+    bool _egl_info_printed{false};
     bool _gl_info_printed{false};
     bool _al_info_printed{false};
 };

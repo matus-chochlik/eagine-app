@@ -39,6 +39,7 @@ import eagine.core.utility;
 import eagine.core.valid_if;
 import eagine.core.c_api;
 import eagine.core.main_ctx;
+import eagine.eglplus;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
@@ -86,6 +87,8 @@ public:
     auto has_framebuffer() noexcept -> tribool final;
     auto surface_size() noexcept -> std::tuple<int, int> final;
     auto surface_aspect() noexcept -> float final;
+    auto egl_ref() noexcept -> eglplus::egl_api_reference final;
+    auto egl_display() noexcept -> eglplus::display_handle final;
 
     void parent_context_changed(const video_context&) final;
     void video_begin(execution_context&) final;
@@ -1095,6 +1098,14 @@ auto glfw3_opengl_window::surface_size() noexcept -> std::tuple<int, int> {
 //------------------------------------------------------------------------------
 auto glfw3_opengl_window::surface_aspect() noexcept -> float {
     return _aspect;
+}
+//------------------------------------------------------------------------------
+auto glfw3_opengl_window::egl_ref() noexcept -> eglplus::egl_api_reference {
+    return {};
+}
+//------------------------------------------------------------------------------
+auto glfw3_opengl_window::egl_display() noexcept -> eglplus::display_handle {
+    return {};
 }
 //------------------------------------------------------------------------------
 void glfw3_opengl_window::parent_context_changed(const video_context& vctx) {

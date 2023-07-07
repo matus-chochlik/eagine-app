@@ -55,6 +55,7 @@ eagine_add_module(
 		eagine.core.identifier
 		eagine.core.utility
 		eagine.core.main_ctx
+		eagine.eglplus
 )
 
 eagine_add_module(
@@ -107,6 +108,7 @@ eagine_add_module(
 		eagine.core.container
 		eagine.core.utility
 		eagine.core.main_ctx
+		eagine.eglplus
 		eagine.oglplus
 		eagine.oalplus
 		eagine.msgbus

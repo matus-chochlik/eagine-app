@@ -18,6 +18,7 @@ import eagine.core.identifier;
 import eagine.core.container;
 import eagine.core.utility;
 import eagine.core.main_ctx;
+import eagine.eglplus;
 import eagine.oglplus;
 import eagine.oalplus;
 import eagine.msgbus;
@@ -92,15 +93,47 @@ public:
     }
 
     /// @brief Returns a smart reference to the GL rendering API in this context.
-    /// @see gl_api
+    /// @see init_gl_api
     /// @see with_gl
     auto gl_ref() const noexcept -> oglplus::gl_api_reference {
         return {_gl_api};
     }
 
+    /// @brief Calls the specified function if the EGL API is available.
+    /// @see init_gl_api
+    /// @see gl_ref
     template <typename Function>
     constexpr auto with_gl(Function&& function) const noexcept {
         return gl_ref().and_then(std::forward<Function>(function));
+    }
+
+    /// @brief Returns a smart reference to the EGL API in this context.
+    /// @see init_egl_api
+    /// @see egl_display
+    /// @see with_egl
+    auto egl_ref() const noexcept -> eglplus::egl_api_reference {
+        if(_provider) [[likely]] {
+            return _provider->egl_ref();
+        }
+        return {};
+    }
+
+    /// @brief Returns a handle to this context's EGL display (if any).
+    /// @see egl_ref
+    auto egl_display() noexcept -> eglplus::display_handle {
+        if(_provider) [[likely]] {
+            return _provider->egl_display();
+        }
+        return {};
+    }
+
+    /// @brief Calls the specified function if the EGL API is available.
+    /// @see init_egl_api
+    /// @see egl_ref
+    /// @see egl_display
+    template <typename Function>
+    constexpr auto with_egl(Function&& function) const noexcept {
+        return egl_ref().and_then(std::forward<Function>(function));
     }
 
     /// @brief Returns the rendering surface's dimensions (in pixels).

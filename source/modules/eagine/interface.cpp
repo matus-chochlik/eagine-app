@@ -13,6 +13,7 @@ import eagine.core.memory;
 import eagine.core.identifier;
 import eagine.core.utility;
 import eagine.core.main_ctx;
+import eagine.eglplus;
 import :types;
 import :options;
 import :input;
@@ -100,6 +101,9 @@ export struct video_provider : interface<video_provider> {
     virtual auto has_framebuffer() noexcept -> tribool = 0;
     virtual auto surface_size() noexcept -> std::tuple<int, int> = 0;
     virtual auto surface_aspect() noexcept -> float = 0;
+
+    virtual auto egl_ref() noexcept -> eglplus::egl_api_reference = 0;
+    virtual auto egl_display() noexcept -> eglplus::display_handle = 0;
 
     virtual void parent_context_changed(const video_context&) = 0;
     virtual void video_begin(execution_context&) = 0;
