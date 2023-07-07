@@ -174,23 +174,18 @@ public:
     void commit();
 
     /// @brief Tries to intialize the AL sound API in this video context.
-    /// @see has_al_api
-    /// @see al_api
+    /// @see al_ref
     auto init_al_api() noexcept -> bool;
 
-    /// @brief Indicates if the AL API in this audio context is initialized.
-    /// @see init_al_api
-    /// @see al_api
-    auto has_al_api() const noexcept {
-        return bool(_al_api);
+    /// @brief Returns a reference to the AL sound API in this context.
+    /// @see with_al
+    auto al_ref() const noexcept -> oalplus::al_api_reference {
+        return {_al_api};
     }
 
-    /// @brief Returns a reference to the AL API in this context.
-    /// @see init_al_api
-    /// @pre has_al_api()
-    auto al_api() const noexcept -> auto& {
-        assert(has_al_api());
-        return *_al_api;
+    template <typename Function>
+    constexpr auto with_al(Function&& function) const noexcept {
+        return al_ref().and_then(std::forward<Function>(function));
     }
 
     /// @brief Cleans up and releases this audio context and APIs.
