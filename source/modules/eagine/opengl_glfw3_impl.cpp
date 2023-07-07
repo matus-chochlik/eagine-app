@@ -1237,53 +1237,55 @@ void glfw3_opengl_window::update(execution_context& exec_ctx) {
                 _imgui_api.text_buffered(
                   _format_buffer, "Frame number: {}", par_ctx.frame_number());
                 _imgui_api.text_buffered(
-                  _format_buffer, "Frame time: {} [ms]", frame_dur * 1000.F);
+                  _format_buffer,
+                  "Frame time: {:.2f} [ms]",
+                  frame_dur * 1000.F);
                 _imgui_api.text_buffered(
-                  _format_buffer, "Frames per second: {}", frames_per_second);
+                  _format_buffer,
+                  "Frames per second: {:.1f}",
+                  frames_per_second);
                 _imgui_api.text_buffered(
                   _format_buffer,
                   "Activities in progress: {}",
                   _provider.activities().size());
 
                 if(_input_sink) {
-                    /* TODO
-                        auto& sink = *_input_sink;
-                        const identifier gui_id{exec_ctx.app_gui_device_id()};
-                        for(auto& entry : _ui_input_states) {
-                            entry.apply(overloaded(
-                              [&, this](ui_button_state& button) {
-                                  if(button.pressed.assign(
-                                       ImGui::Button(button.label.c_str()))) {
+                    auto& sink = *_input_sink;
+                    const identifier gui_id{exec_ctx.app_gui_device_id()};
+                    for(auto& entry : _ui_input_states) {
+                        entry.apply(overloaded(
+                          [&, this](glfw3_window_ui_button_state& button) {
+                              if(button.pressed.assign(
+                                   _imgui_api.button(button.label).or_false())) {
+                                  sink.consume(
+                                    {gui_id, entry.input_id, entry.kind()},
+                                    button.pressed);
+                              }
+                          },
+                          [&, this](glfw3_window_ui_toggle_state& toggle) {
+                              _imgui_api.checkbox(toggle.label, toggle.value);
+                              if(toggle.toggled_on.assign(toggle.value)) {
+                                  sink.consume(
+                                    {gui_id, entry.input_id, entry.kind()},
+                                    toggle.toggled_on);
+                              }
+                          },
+                          [&, this](glfw3_window_ui_slider_state& slider) {
+                              if(_imgui_api
+                                   .slider_float(
+                                     slider.label,
+                                     slider.value,
+                                     slider.min,
+                                     slider.max)
+                                   .or_false()) {
+                                  if(slider.position.assign(slider.value)) {
                                       sink.consume(
                                         {gui_id, entry.input_id, entry.kind()},
-                                        button.pressed);
+                                        slider.position);
                                   }
-                              },
-                              [&, this](ui_toggle_state& toggle) {
-                                  ImGui::Checkbox(
-                                    toggle.label.c_str(), &toggle.value);
-                                  if(toggle.toggled_on.assign(toggle.value)) {
-                                      sink.consume(
-                                        {gui_id, entry.input_id, entry.kind()},
-                                        toggle.toggled_on);
-                                  }
-                              },
-                              [&, this](ui_slider_state& slider) {
-                                  if(ImGui::SliderFloat(
-                                       slider.label.c_str(),
-                                       &slider.value,
-                                       slider.min,
-                                       slider.max,
-                                       "%0.2f")) {
-                                      if(slider.position.assign(slider.value)) {
-                                          sink.consume(
-                                            {gui_id, entry.input_id,
-                       entry.kind()}, slider.position);
-                                      }
-                                  }
-                              }));
-                        }
-                        */
+                              }
+                          }));
+                    }
                 }
 
                 if(_imgui_api.button("Hide").or_false()) {
