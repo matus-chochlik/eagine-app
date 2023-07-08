@@ -489,7 +489,7 @@ public:
     auto is_initialized() -> bool final;
     auto should_initialize(execution_context&) -> bool final;
     auto initialize(execution_context&) -> bool final;
-    void update(execution_context&) final;
+    void update(execution_context&, application&) final;
     void clean_up(execution_context&) final;
 
     void input_enumerate(
@@ -558,7 +558,7 @@ auto eglplus_opengl_provider::initialize(execution_context& exec_ctx) -> bool {
     return false;
 }
 //------------------------------------------------------------------------------
-void eglplus_opengl_provider::update(execution_context&) {}
+void eglplus_opengl_provider::update(execution_context&, application&) {}
 //------------------------------------------------------------------------------
 void eglplus_opengl_provider::clean_up(execution_context&) {
     for(auto& entry : _surfaces) {

@@ -127,6 +127,7 @@ export struct audio_provider : interface<audio_provider> {
     virtual void audio_commit(execution_context&) = 0;
 };
 //------------------------------------------------------------------------------
+export struct application;
 export struct hmi_provider : interface<hmi_provider> {
 
     virtual auto is_implemented() const noexcept -> bool = 0;
@@ -135,7 +136,7 @@ export struct hmi_provider : interface<hmi_provider> {
     virtual auto is_initialized() -> bool = 0;
     virtual auto should_initialize(execution_context&) -> bool = 0;
     virtual auto initialize(execution_context&) -> bool = 0;
-    virtual void update(execution_context&) = 0;
+    virtual void update(execution_context&, application&) = 0;
     virtual void clean_up(execution_context&) = 0;
 
     virtual void input_enumerate(
@@ -169,6 +170,7 @@ export struct application : interface<application> {
     virtual auto is_done() noexcept -> bool = 0;
     virtual void on_video_resize() noexcept = 0;
     virtual void update() noexcept = 0;
+    virtual void update_gui(const guiplus::imgui_api&) noexcept {}
     virtual void clean_up() noexcept {}
 };
 //------------------------------------------------------------------------------

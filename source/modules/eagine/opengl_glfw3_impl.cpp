@@ -263,7 +263,7 @@ public:
       const video_options&,
       const span<GLFWmonitor* const>) -> bool;
 
-    void update(execution_context&);
+    void update(execution_context&, application&);
 
     void clean_up();
 
@@ -438,7 +438,7 @@ public:
     auto is_initialized() -> bool final;
     auto should_initialize(execution_context&) -> bool final;
     auto initialize(execution_context&) -> bool final;
-    void update(execution_context&) final;
+    void update(execution_context&, application&) final;
     void clean_up(execution_context&) final;
 
     void input_enumerate(
@@ -1197,7 +1197,7 @@ void glfw3_opengl_window::mapping_commit(
       _enabled_signals.contains({mouse_id, {"Cursor", "MotionY"}});
 }
 //------------------------------------------------------------------------------
-void glfw3_opengl_window::update(execution_context& exec_ctx) {
+void glfw3_opengl_window::update(execution_context& exec_ctx, application& app) {
     if(_imgui_enabled) {
         assert(_parent_context);
         const auto activities{_provider.activities()};
@@ -1225,7 +1225,6 @@ void glfw3_opengl_window::update(execution_context& exec_ctx) {
         }
 
         if(_imgui_visible) {
-            // NOLINTNEXTLINE(hicpp-signed-bitwise)
             if(_imgui_api.begin(
                  "Application", &_imgui_visible, _imgui_api.window_no_resize)) {
                 _imgui_api.text_buffered(
@@ -1302,6 +1301,7 @@ void glfw3_opengl_window::update(execution_context& exec_ctx) {
                 }
                 _imgui_api.end();
             }
+            app.update_gui(_imgui_api);
         }
         _imgui_api.end_frame();
         _imgui_api.render();
@@ -1549,11 +1549,12 @@ auto glfw3_opengl_provider::initialize(execution_context& exec_ctx) -> bool {
 }
 //------------------------------------------------------------------------------
 void glfw3_opengl_provider::update(
-  [[maybe_unused]] execution_context& exec_ctx) {
+  [[maybe_unused]] execution_context& exec_ctx,
+  [[maybe_unused]] application& app) {
 #if EAGINE_APP_HAS_GLFW3
     glfwPollEvents();
     for(auto& entry : _windows) {
-        entry.second->update(exec_ctx);
+        entry.second->update(exec_ctx, app);
     }
 #endif // EAGINE_APP_HAS_GLFW3
 }

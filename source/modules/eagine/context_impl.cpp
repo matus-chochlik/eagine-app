@@ -573,7 +573,7 @@ void execution_context::update() noexcept {
     _loader.update();
     _state->update_activity();
     for(auto& provider : _hmi_providers) {
-        provider->update(*this);
+        provider->update(*this, *_app);
     }
     _state->advance_time();
     _app->update();
