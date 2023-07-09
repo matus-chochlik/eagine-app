@@ -330,6 +330,12 @@ private:
       const resource_gl_texture_params&,
       span_size_t level,
       const memory::const_block) noexcept;
+    auto _handle_pending_gl_texture_state(
+      auto& gl,
+      auto&,
+      auto& glapi,
+      _pending_gl_texture_state& pgts,
+      const resource_gl_texture_params& params) noexcept -> bool;
     void _handle_gl_texture_image(
       const pending_resource_info& source,
       const oglplus::texture_target,

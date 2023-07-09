@@ -18,6 +18,7 @@ import eagine.core.valid_if;
 import eagine.core.c_api;
 import eagine.core.main_ctx;
 import eagine.eglplus;
+import eagine.guiplus;
 import :types;
 
 namespace eagine::app {
@@ -67,6 +68,10 @@ public:
     auto has_framebuffer() noexcept -> tribool final;
     auto surface_size() noexcept -> std::tuple<int, int> final;
     auto surface_aspect() noexcept -> float final;
+
+    auto egl_ref() noexcept -> eglplus::egl_api_reference final;
+    auto egl_display() noexcept -> eglplus::display_handle final;
+    auto imgui_ref() noexcept -> guiplus::imgui_api_reference final;
 
     void parent_context_changed(const video_context&) final;
     void video_begin(execution_context&) final;
@@ -442,6 +447,19 @@ auto eglplus_opengl_surface::surface_aspect() noexcept -> float {
     return float(_width) / float(_height);
 }
 //------------------------------------------------------------------------------
+auto eglplus_opengl_surface::egl_ref() noexcept -> eglplus::egl_api_reference {
+    return {_egl_api};
+}
+//------------------------------------------------------------------------------
+auto eglplus_opengl_surface::egl_display() noexcept -> eglplus::display_handle {
+    return _display;
+}
+//------------------------------------------------------------------------------
+auto eglplus_opengl_surface::imgui_ref() noexcept
+  -> guiplus::imgui_api_reference {
+    return {};
+}
+//------------------------------------------------------------------------------
 void eglplus_opengl_surface::parent_context_changed(const video_context&) {}
 //------------------------------------------------------------------------------
 void eglplus_opengl_surface::video_begin(execution_context&) {
@@ -471,7 +489,7 @@ public:
     auto is_initialized() -> bool final;
     auto should_initialize(execution_context&) -> bool final;
     auto initialize(execution_context&) -> bool final;
-    void update(execution_context&) final;
+    void update(execution_context&, application&) final;
     void clean_up(execution_context&) final;
 
     void input_enumerate(
@@ -540,7 +558,7 @@ auto eglplus_opengl_provider::initialize(execution_context& exec_ctx) -> bool {
     return false;
 }
 //------------------------------------------------------------------------------
-void eglplus_opengl_provider::update(execution_context&) {}
+void eglplus_opengl_provider::update(execution_context&, application&) {}
 //------------------------------------------------------------------------------
 void eglplus_opengl_provider::clean_up(execution_context&) {
     for(auto& entry : _surfaces) {

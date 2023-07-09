@@ -13,6 +13,8 @@ import eagine.core.memory;
 import eagine.core.identifier;
 import eagine.core.utility;
 import eagine.core.main_ctx;
+import eagine.eglplus;
+import eagine.guiplus;
 import :types;
 import :options;
 import :input;
@@ -101,6 +103,10 @@ export struct video_provider : interface<video_provider> {
     virtual auto surface_size() noexcept -> std::tuple<int, int> = 0;
     virtual auto surface_aspect() noexcept -> float = 0;
 
+    virtual auto egl_ref() noexcept -> eglplus::egl_api_reference = 0;
+    virtual auto egl_display() noexcept -> eglplus::display_handle = 0;
+    virtual auto imgui_ref() noexcept -> guiplus::imgui_api_reference = 0;
+
     virtual void parent_context_changed(const video_context&) = 0;
     virtual void video_begin(execution_context&) = 0;
     virtual void video_end(execution_context&) = 0;
@@ -121,6 +127,7 @@ export struct audio_provider : interface<audio_provider> {
     virtual void audio_commit(execution_context&) = 0;
 };
 //------------------------------------------------------------------------------
+export struct application;
 export struct hmi_provider : interface<hmi_provider> {
 
     virtual auto is_implemented() const noexcept -> bool = 0;
@@ -129,7 +136,7 @@ export struct hmi_provider : interface<hmi_provider> {
     virtual auto is_initialized() -> bool = 0;
     virtual auto should_initialize(execution_context&) -> bool = 0;
     virtual auto initialize(execution_context&) -> bool = 0;
-    virtual void update(execution_context&) = 0;
+    virtual void update(execution_context&, application&) = 0;
     virtual void clean_up(execution_context&) = 0;
 
     virtual void input_enumerate(
@@ -163,6 +170,7 @@ export struct application : interface<application> {
     virtual auto is_done() noexcept -> bool = 0;
     virtual void on_video_resize() noexcept = 0;
     virtual void update() noexcept = 0;
+    virtual void update_gui(const guiplus::imgui_api&) noexcept {}
     virtual void clean_up() noexcept {}
 };
 //------------------------------------------------------------------------------

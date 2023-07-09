@@ -31,6 +31,7 @@ public:
     void on_video_resize() noexcept final {}
 
     void update() noexcept final {
+        _print_egl_info();
         _print_gl_info();
         _print_al_info();
         _video.commit();
@@ -41,80 +42,113 @@ public:
     }
 
 private:
+    void _print_egl_info() {
+        const auto egl_cio{cio_print("EGL info:").to_be_continued()};
+
+        _video.with_egl([&, this](auto& egl, auto& EGL) {
+            if(const auto display{_video.egl_display()}) {
+                if(const ok info{egl.query_string(display, EGL.vendor)}) {
+                    egl_cio.print("Vendor: ${info}").arg("info", info);
+                }
+
+                if(const ok info{egl.query_string(display, EGL.version)}) {
+                    egl_cio.print("Version: ${info}").arg("info", info);
+                }
+
+                const auto ext_cio{
+                  egl_cio.print("EGL extensions:").to_be_continued()};
+
+                if(const ok extensions{egl.get_extensions(display)}) {
+                    for(auto name : extensions) {
+                        ext_cio.print(name);
+                    }
+                } else {
+                    ext_cio
+                      .error("failed to get EGL extension list: ${message}")
+                      .arg("message", (!extensions).message());
+                }
+                _egl_info_printed = true;
+            }
+        });
+    }
+
     void _print_gl_info() {
         const auto gl_cio{cio_print("GL info:").to_be_continued()};
 
-        const auto& [gl, GL] = _video.gl_api();
-
-        if(const ok info{gl.get_string(GL.vendor)}) {
-            gl_cio.print("Vendor: ${info}").arg("info", info);
-        }
-
-        if(const ok info{gl.get_string(GL.renderer)}) {
-            gl_cio.print("Renderer: ${info}").arg("info", info);
-        }
-
-        if(const ok info{gl.get_string(GL.version)}) {
-            gl_cio.print("Version: ${info}").arg("info", info);
-        }
-
-        if(const ok info{gl.get_integer(GL.major_version)}) {
-            gl_cio.print("Major version: ${info}").arg("info", info);
-        }
-
-        if(const ok info{gl.get_integer(GL.minor_version)}) {
-            gl_cio.print("Minor version: ${info}").arg("info", info);
-        }
-
-        if(const ok info{gl.get_string(GL.shading_language_version)}) {
-            gl_cio.print("GLSL version: ${info}").arg("info", info);
-        }
-
-        const auto ext_cio{gl_cio.print("GL extensions:").to_be_continued()};
-
-        if(const ok extensions{gl.get_extensions()}) {
-            for(auto name : extensions) {
-                ext_cio.print(name);
+        _video.with_gl([&, this](auto& gl, auto& GL) {
+            if(const ok info{gl.get_string(GL.vendor)}) {
+                gl_cio.print("Vendor: ${info}").arg("info", info);
             }
-        } else {
-            ext_cio.error("failed to get GL extension list: ${message}")
-              .arg("message", (!extensions).message());
-        }
-        _gl_info_printed = true;
+
+            if(const ok info{gl.get_string(GL.renderer)}) {
+                gl_cio.print("Renderer: ${info}").arg("info", info);
+            }
+
+            if(const ok info{gl.get_string(GL.version)}) {
+                gl_cio.print("Version: ${info}").arg("info", info);
+            }
+
+            if(const ok info{gl.get_integer(GL.major_version)}) {
+                gl_cio.print("Major version: ${info}").arg("info", info);
+            }
+
+            if(const ok info{gl.get_integer(GL.minor_version)}) {
+                gl_cio.print("Minor version: ${info}").arg("info", info);
+            }
+
+            if(const ok info{gl.get_string(GL.shading_language_version)}) {
+                gl_cio.print("GLSL version: ${info}").arg("info", info);
+            }
+
+            const auto ext_cio{
+              gl_cio.print("GL extensions:").to_be_continued()};
+
+            if(const ok extensions{gl.get_extensions()}) {
+                for(auto name : extensions) {
+                    ext_cio.print(name);
+                }
+            } else {
+                ext_cio.error("failed to get GL extension list: ${message}")
+                  .arg("message", (!extensions).message());
+            }
+            _gl_info_printed = true;
+        });
     }
 
     void _print_al_info() {
         const auto al_cio{cio_print("AL info:").to_be_continued()};
 
-        const auto& [al, AL] = _audio.al_api();
-
-        if(const ok info{al.get_string(AL.vendor)}) {
-            al_cio.print("Vendor: ${info}").arg("info", info);
-        }
-
-        if(const ok info{al.get_string(AL.renderer)}) {
-            al_cio.print("Renderer: ${info}").arg("info", info);
-        }
-
-        if(const ok info{al.get_string(AL.version)}) {
-            al_cio.print("Version: ${info}").arg("info", info);
-        }
-
-        const auto ext_cio{al_cio.print("AL extensions:").to_be_continued()};
-
-        if(const ok extensions{al.get_extensions()}) {
-            for(auto name : extensions) {
-                ext_cio.print(name);
+        _audio.with_al([&, this](auto& al, auto& AL) {
+            if(const ok info{al.get_string(AL.vendor)}) {
+                al_cio.print("Vendor: ${info}").arg("info", info);
             }
-        } else {
-            ext_cio.error("failed to get AL extension list: ${message}")
-              .arg("message", (!extensions).message());
-        }
-        _al_info_printed = true;
+
+            if(const ok info{al.get_string(AL.renderer)}) {
+                al_cio.print("Renderer: ${info}").arg("info", info);
+            }
+
+            if(const ok info{al.get_string(AL.version)}) {
+                al_cio.print("Version: ${info}").arg("info", info);
+            }
+
+            const auto ext_cio{
+              al_cio.print("AL extensions:").to_be_continued()};
+
+            if(const ok extensions{al.get_extensions()}) {
+                for(auto name : extensions) {
+                    ext_cio.print(name);
+                }
+            } else {
+                ext_cio.error("failed to get AL extension list: ${message}")
+                  .arg("message", (!extensions).message());
+            }
+            _al_info_printed = true;
+        });
     }
 
     video_context& _video;
     audio_context& _audio;
+    bool _egl_info_printed{false};
     bool _gl_info_printed{false};
     bool _al_info_printed{false};
 };
@@ -129,18 +163,20 @@ public:
     }
 
     auto check_requirements(video_context& vc) -> bool final {
-        const auto& [gl, GL] = vc.gl_api();
-
-        return gl.get_integer and gl.get_string and GL.vendor and
-               GL.renderer and GL.version and GL.shading_language_version and
-               GL.extensions;
+        const auto check{[](auto& gl, auto& GL) {
+            return gl.get_integer and gl.get_string and GL.vendor and
+                   GL.renderer and GL.version and
+                   GL.shading_language_version and GL.extensions;
+        }};
+        return vc.with_gl(check).or_false();
     }
 
     auto check_requirements(audio_context& ac) -> bool final {
-        const auto& [al, AL] = ac.al_api();
-
-        return al.get_string and AL.vendor and AL.renderer and AL.version and
-               AL.extensions;
+        const auto check{[](auto& al, auto& AL) {
+            return al.get_string and AL.vendor and AL.renderer and
+                   AL.version and AL.extensions;
+        }};
+        return ac.with_al(check).or_false();
     }
 
     auto launch(execution_context& ec, const launch_options&)

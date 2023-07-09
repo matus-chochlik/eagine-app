@@ -18,6 +18,7 @@ import eagine.core.identifier;
 import eagine.core.container;
 import eagine.core.utility;
 import eagine.core.main_ctx;
+import eagine.eglplus;
 import eagine.oglplus;
 import eagine.oalplus;
 import eagine.msgbus;
@@ -83,10 +84,56 @@ public:
 
     /// @brief Returns a reference to the GL rendering API in this context.
     /// @see init_gl_api
+    /// @see gl_ref
+    /// @see with_gl
     /// @pre has_gl_api()
     auto gl_api() const noexcept -> oglplus::gl_api& {
         assert(has_gl_api());
         return *_gl_api;
+    }
+
+    /// @brief Returns a smart reference to the GL rendering API in this context.
+    /// @see init_gl_api
+    /// @see with_gl
+    auto gl_ref() const noexcept -> oglplus::gl_api_reference {
+        return {_gl_api};
+    }
+
+    /// @brief Calls the specified function if the EGL API is available.
+    /// @see init_gl_api
+    /// @see gl_ref
+    template <typename Function>
+    constexpr auto with_gl(Function&& function) const noexcept {
+        return gl_ref().and_then(std::forward<Function>(function));
+    }
+
+    /// @brief Returns a smart reference to the EGL API in this context.
+    /// @see init_egl_api
+    /// @see egl_display
+    /// @see with_egl
+    auto egl_ref() const noexcept -> eglplus::egl_api_reference {
+        if(_provider) [[likely]] {
+            return _provider->egl_ref();
+        }
+        return {};
+    }
+
+    /// @brief Returns a handle to this context's EGL display (if any).
+    /// @see egl_ref
+    auto egl_display() noexcept -> eglplus::display_handle {
+        if(_provider) [[likely]] {
+            return _provider->egl_display();
+        }
+        return {};
+    }
+
+    /// @brief Calls the specified function if the EGL API is available.
+    /// @see init_egl_api
+    /// @see egl_ref
+    /// @see egl_display
+    template <typename Function>
+    constexpr auto with_egl(Function&& function) const noexcept {
+        return egl_ref().and_then(std::forward<Function>(function));
     }
 
     /// @brief Returns the rendering surface's dimensions (in pixels).
@@ -160,23 +207,18 @@ public:
     void commit();
 
     /// @brief Tries to intialize the AL sound API in this video context.
-    /// @see has_al_api
-    /// @see al_api
+    /// @see al_ref
     auto init_al_api() noexcept -> bool;
 
-    /// @brief Indicates if the AL API in this audio context is initialized.
-    /// @see init_al_api
-    /// @see al_api
-    auto has_al_api() const noexcept {
-        return bool(_al_api);
+    /// @brief Returns a reference to the AL sound API in this context.
+    /// @see with_al
+    auto al_ref() const noexcept -> oalplus::al_api_reference {
+        return {_al_api};
     }
 
-    /// @brief Returns a reference to the AL API in this context.
-    /// @see init_al_api
-    /// @pre has_al_api()
-    auto al_api() const noexcept -> auto& {
-        assert(has_al_api());
-        return *_al_api;
+    template <typename Function>
+    constexpr auto with_al(Function&& function) const noexcept {
+        return al_ref().and_then(std::forward<Function>(function));
     }
 
     /// @brief Cleans up and releases this audio context and APIs.

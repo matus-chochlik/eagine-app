@@ -46,6 +46,13 @@ public:
     void clean_up(video_context&) noexcept;
 
 private:
+    auto _dump_frame(
+      const long frame_number,
+      video_provider& provider,
+      oglplus::gl_api& api) -> bool;
+
+    void _clean_up(auto&) noexcept;
+
     const video_options& _options;
     oglplus::owned_renderbuffer_name _color_rbo;
     oglplus::owned_renderbuffer_name _depth_rbo;
@@ -96,117 +103,125 @@ auto video_context_state::framedump_number(const long frame_no) const noexcept
     return _options.framedump_number(frame_no);
 }
 //------------------------------------------------------------------------------
+auto video_context_state::_dump_frame(
+  const long frame_number,
+  video_provider& provider,
+  oglplus::gl_api& api) -> bool {
+    bool result = true;
+    const auto& [gl, GL] = api;
+
+    if(gl.read_pixels) [[likely]] {
+        const auto dump_frame{[&, this](
+                                framedump& target,
+                                const auto gl_format,
+                                const auto gl_type,
+                                const framedump_pixel_format format,
+                                const framedump_data_type type,
+                                const int elements,
+                                const span_size_t element_size) {
+            const auto [width, height] = provider.surface_size();
+
+            if(const auto framedump_no{framedump_number(frame_number)}) {
+                const auto size =
+                  span_size(width * height * elements * element_size);
+                auto buffer{target.get_buffer(size)};
+
+                api.operations().read_pixels(
+                  0,
+                  0,
+                  oglplus::gl_types::sizei_type(width),
+                  oglplus::gl_types::sizei_type(height),
+                  gl_format,
+                  gl_type,
+                  buffer);
+
+                if(not target.dump_frame(
+                     *framedump_no,
+                     width,
+                     height,
+                     elements,
+                     element_size,
+                     format,
+                     type,
+                     buffer)) {
+                    result = false;
+                }
+            }
+        }};
+
+        if(_framedump_color) {
+            switch(_options.framedump_color()) {
+                case framedump_data_type::none:
+                    break;
+                case framedump_data_type::float_type:
+                    dump_frame(
+                      *_framedump_color,
+                      GL.rgba,
+                      GL.float_,
+                      framedump_pixel_format::rgba,
+                      framedump_data_type::float_type,
+                      4,
+                      span_size_of<oglplus::gl_types::float_type>());
+                    break;
+                case framedump_data_type::byte_type:
+                    dump_frame(
+                      *_framedump_color,
+                      GL.rgba,
+                      GL.unsigned_byte_,
+                      framedump_pixel_format::rgba,
+                      framedump_data_type::byte_type,
+                      4,
+                      span_size_of<oglplus::gl_types::ubyte_type>());
+                    break;
+            }
+        }
+
+        if(_framedump_depth) {
+            switch(_options.framedump_depth()) {
+                case framedump_data_type::none:
+                case framedump_data_type::byte_type:
+                    break;
+                case framedump_data_type::float_type:
+                    dump_frame(
+                      *_framedump_depth,
+                      GL.depth_component,
+                      GL.float_,
+                      framedump_pixel_format::depth,
+                      framedump_data_type::float_type,
+                      1,
+                      span_size_of<oglplus::gl_types::float_type>());
+                    break;
+            }
+        }
+
+        if(_framedump_stencil) {
+            switch(_options.framedump_stencil()) {
+                case framedump_data_type::none:
+                case framedump_data_type::float_type:
+                    break;
+                case framedump_data_type::byte_type:
+                    dump_frame(
+                      *_framedump_stencil,
+                      GL.stencil_index,
+                      GL.unsigned_byte_,
+                      framedump_pixel_format::stencil,
+                      framedump_data_type::byte_type,
+                      1,
+                      span_size_of<oglplus::gl_types::ubyte_type>());
+                    break;
+            }
+        }
+    }
+    return result;
+}
+//------------------------------------------------------------------------------
 inline auto video_context_state::commit(
   const long frame_number,
   video_provider& provider,
   oglplus::gl_api& api) -> bool {
     bool result = true;
     if(doing_framedump()) [[unlikely]] {
-        const auto& [gl, GL] = api;
-
-        if(gl.read_pixels) [[likely]] {
-
-            const auto dump_frame = [&, this](
-                                      framedump& target,
-                                      const auto gl_format,
-                                      const auto gl_type,
-                                      const framedump_pixel_format format,
-                                      const framedump_data_type type,
-                                      const int elements,
-                                      const span_size_t element_size) {
-                const auto [width, height] = provider.surface_size();
-
-                if(const auto framedump_no{framedump_number(frame_number)}) {
-                    const auto size =
-                      span_size(width * height * elements * element_size);
-                    auto buffer{target.get_buffer(size)};
-
-                    api.operations().read_pixels(
-                      0,
-                      0,
-                      oglplus::gl_types::sizei_type(width),
-                      oglplus::gl_types::sizei_type(height),
-                      gl_format,
-                      gl_type,
-                      buffer);
-
-                    if(not target.dump_frame(
-                         *framedump_no,
-                         width,
-                         height,
-                         elements,
-                         element_size,
-                         format,
-                         type,
-                         buffer)) {
-                        result = false;
-                    }
-                }
-            };
-
-            if(_framedump_color) {
-                switch(_options.framedump_color()) {
-                    case framedump_data_type::none:
-                        break;
-                    case framedump_data_type::float_type:
-                        dump_frame(
-                          *_framedump_color,
-                          GL.rgba,
-                          GL.float_,
-                          framedump_pixel_format::rgba,
-                          framedump_data_type::float_type,
-                          4,
-                          span_size_of<oglplus::gl_types::float_type>());
-                        break;
-                    case framedump_data_type::byte_type:
-                        dump_frame(
-                          *_framedump_color,
-                          GL.rgba,
-                          GL.unsigned_byte_,
-                          framedump_pixel_format::rgba,
-                          framedump_data_type::byte_type,
-                          4,
-                          span_size_of<oglplus::gl_types::ubyte_type>());
-                        break;
-                }
-            }
-
-            if(_framedump_depth) {
-                switch(_options.framedump_depth()) {
-                    case framedump_data_type::none:
-                    case framedump_data_type::byte_type:
-                        break;
-                    case framedump_data_type::float_type:
-                        dump_frame(
-                          *_framedump_depth,
-                          GL.depth_component,
-                          GL.float_,
-                          framedump_pixel_format::depth,
-                          framedump_data_type::float_type,
-                          1,
-                          span_size_of<oglplus::gl_types::float_type>());
-                        break;
-                }
-            }
-
-            if(_framedump_stencil) {
-                switch(_options.framedump_stencil()) {
-                    case framedump_data_type::none:
-                    case framedump_data_type::float_type:
-                        break;
-                    case framedump_data_type::byte_type:
-                        dump_frame(
-                          *_framedump_stencil,
-                          GL.stencil_index,
-                          GL.unsigned_byte_,
-                          framedump_pixel_format::stencil,
-                          framedump_data_type::byte_type,
-                          1,
-                          span_size_of<oglplus::gl_types::ubyte_type>());
-                        break;
-                }
-            }
-        }
+        result = _dump_frame(frame_number, provider, api) and result;
     }
     return result;
 }
@@ -216,24 +231,27 @@ void video_context_state::add_cleanup_op(
     _cleanup_ops.push_back(op);
 }
 //------------------------------------------------------------------------------
+void video_context_state::_clean_up(auto& gl) noexcept {
+    if(_offscreen_fbo) {
+        gl.delete_framebuffers(std::move(_offscreen_fbo));
+    }
+    if(_stencil_rbo) {
+        gl.delete_renderbuffers(std::move(_stencil_rbo));
+    }
+    if(_depth_rbo) {
+        gl.delete_renderbuffers(std::move(_depth_rbo));
+    }
+    if(_color_rbo) {
+        gl.delete_renderbuffers(std::move(_color_rbo));
+    }
+}
+//------------------------------------------------------------------------------
 inline void video_context_state::clean_up(video_context& vc) noexcept {
     for(auto& clean_up : _cleanup_ops) {
         clean_up(vc);
     }
     _cleanup_ops.clear();
-    const auto& api = vc.gl_api();
-    if(_offscreen_fbo) {
-        api.delete_framebuffers(std::move(_offscreen_fbo));
-    }
-    if(_stencil_rbo) {
-        api.delete_renderbuffers(std::move(_stencil_rbo));
-    }
-    if(_depth_rbo) {
-        api.delete_renderbuffers(std::move(_depth_rbo));
-    }
-    if(_color_rbo) {
-        api.delete_renderbuffers(std::move(_color_rbo));
-    }
+    vc.with_gl([this](auto& gl) { _clean_up(gl); });
 }
 //------------------------------------------------------------------------------
 static void video_context_debug_callback(
@@ -555,7 +573,7 @@ void execution_context::update() noexcept {
     _loader.update();
     _state->update_activity();
     for(auto& provider : _hmi_providers) {
-        provider->update(*this);
+        provider->update(*this, *_app);
     }
     _state->advance_time();
     _app->update();

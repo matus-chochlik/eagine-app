@@ -16,15 +16,6 @@ module;
 #define EAGINE_APP_HAS_GLFW3 0
 #endif
 
-#if __has_include(<imgui.h>)
-#include <backends/imgui_impl_glfw.h>
-#include <backends/imgui_impl_opengl3.h>
-#include <imgui.h>
-#define EAGINE_APP_HAS_IMGUI 1
-#else
-#define EAGINE_APP_HAS_IMGUI 0
-#endif
-
 module eagine.app;
 
 import std;
@@ -39,11 +30,12 @@ import eagine.core.utility;
 import eagine.core.valid_if;
 import eagine.core.c_api;
 import eagine.core.main_ctx;
+import eagine.eglplus;
+import eagine.guiplus;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
 #if EAGINE_APP_HAS_GLFW3
-#if EAGINE_APP_HAS_IMGUI
 struct glfw3_activity_progress_info {
     activity_progress_id_t activity_id{0};
     activity_progress_id_t parent_id{0};
@@ -51,7 +43,203 @@ struct glfw3_activity_progress_info {
     span_size_t total_steps{0};
     std::string title;
 };
-#endif
+//------------------------------------------------------------------------------
+// glfw3_window_ui_input_feedback
+//------------------------------------------------------------------------------
+class glfw3_opengl_window;
+struct glfw3_window_ui_input_state;
+struct glfw3_window_ui_input_feedback {
+    message_id input_id;
+    std::variant<std::monostate, bool, float> threshold;
+    std::variant<std::monostate, bool, float> constant;
+    input_feedback_trigger trigger{input_feedback_trigger::change};
+    input_feedback_action action{input_feedback_action::copy};
+
+    auto is_under_threshold(const input_variable<bool>& inp) const noexcept
+      -> bool;
+    auto is_over_threshold(const input_variable<bool>& inp) const noexcept
+      -> bool;
+    auto is_under_threshold(const input_variable<float>& inp) const noexcept
+      -> bool;
+    auto is_over_threshold(const input_variable<float>& inp) const noexcept
+      -> bool;
+
+    template <typename T>
+    auto is_triggered(const input_variable<T>& inp) const noexcept -> bool;
+
+    void key_press_changed(
+      const execution_context& ctx,
+      glfw3_opengl_window& parent,
+      const input_variable<bool>& inp) const noexcept;
+
+    auto multiply(bool value) const noexcept -> bool;
+    auto multiply(float value) const noexcept -> float;
+
+    void copy_to(bool& dst, const input_value<bool>& inp) const noexcept {
+        dst = inp.get();
+    }
+    void copy_to(bool& dst, const input_value<float>& inp) const noexcept {
+        dst = std::abs(inp.get()) > 0.F;
+    }
+    void copy_to(float& dst, const input_value<bool>& inp) const noexcept {
+        dst = (inp.get() ? 1.F : 0.F);
+    }
+    void copy_to(float& dst, const input_value<float>& inp) const noexcept {
+        dst = inp.get();
+    }
+
+    void set_zero(bool& dst) const noexcept {
+        dst = false;
+    }
+    void set_zero(float& dst) const noexcept {
+        dst = 0.F;
+    }
+    void set_one(bool& dst) const noexcept {
+        dst = true;
+    }
+    void set_one(float& dst) const noexcept {
+        dst = 1.F;
+    }
+    void flip(bool& dst) const noexcept {
+        dst = not dst;
+    }
+    void flip(float&) const noexcept {
+        // TODO: what does this mean?
+    }
+
+    void add_to(bool& dst) const noexcept {
+        dst = dst or multiply(true);
+    }
+    void add_to(float& dst) const noexcept {
+        dst = dst + multiply(1.F);
+    }
+
+    void multiply_add_to(bool& dst, const input_value<bool>& inp)
+      const noexcept {
+        dst = dst or multiply(inp.get());
+    }
+    void multiply_add_to(bool& dst, const input_value<float>& inp)
+      const noexcept {
+        dst = dst or (std::abs(multiply(inp.get())) > 0.F);
+    }
+    void multiply_add_to(float& dst, const input_value<bool>& inp)
+      const noexcept {
+        dst = dst + (multiply(inp.get()) ? 1.F : 0.F);
+    }
+    void multiply_add_to(float& dst, const input_value<float>& inp)
+      const noexcept {
+        dst = dst + multiply(inp.get());
+    }
+
+    template <typename T, typename S>
+    void apply_to(T& dst, const input_value<S>& src) const noexcept;
+};
+//------------------------------------------------------------------------------
+// glfw3_window_ui_button_state
+//------------------------------------------------------------------------------
+struct glfw3_window_ui_button_state {
+    input_variable<bool> pressed{false};
+    std::string label;
+
+    template <typename T>
+    void apply_feedback(
+      const execution_context& ctx,
+      glfw3_opengl_window&,
+      const glfw3_window_ui_input_state&,
+      const glfw3_window_ui_input_feedback&,
+      const input_value<T>&);
+};
+//------------------------------------------------------------------------------
+template <typename T>
+void glfw3_window_ui_button_state::apply_feedback(
+  const execution_context&,
+  glfw3_opengl_window& parent,
+  const glfw3_window_ui_input_state&,
+  const glfw3_window_ui_input_feedback&,
+  const input_value<T>&) {}
+//------------------------------------------------------------------------------
+// glfw3_window_ui_toggle_state
+//------------------------------------------------------------------------------
+struct glfw3_window_ui_toggle_state {
+    input_variable<bool> toggled_on{false};
+    std::string label;
+    bool value{false};
+
+    template <typename T>
+    void apply_feedback(
+      const execution_context& ctx,
+      glfw3_opengl_window&,
+      const glfw3_window_ui_input_state&,
+      const glfw3_window_ui_input_feedback&,
+      const input_value<T>&);
+};
+//------------------------------------------------------------------------------
+// glfw3_window_ui_slider_state
+//------------------------------------------------------------------------------
+struct glfw3_window_ui_slider_state {
+    input_variable<float> position{0.5F};
+    std::string label;
+    float min{0.F};
+    float max{1.F};
+    float value{0.5F};
+    input_value_kind kind{input_value_kind::absolute_norm};
+
+    template <typename T>
+    void apply_feedback(
+      const execution_context& ctx,
+      glfw3_opengl_window&,
+      const glfw3_window_ui_input_state&,
+      const glfw3_window_ui_input_feedback&,
+      const input_value<T>&);
+};
+//------------------------------------------------------------------------------
+// glfw3_window_ui_input_state
+//------------------------------------------------------------------------------
+using glfw3_window_ui_state_variant = std::variant<
+  glfw3_window_ui_button_state,
+  glfw3_window_ui_toggle_state,
+  glfw3_window_ui_slider_state>;
+
+struct glfw3_window_ui_input_state {
+    message_id input_id;
+    glfw3_window_ui_state_variant state;
+
+    auto kind() const noexcept -> input_value_kind;
+
+    auto get_toggle() noexcept
+      -> optional_reference<glfw3_window_ui_toggle_state>;
+    auto get_slider() noexcept
+      -> optional_reference<glfw3_window_ui_slider_state>;
+
+    auto apply(const auto& func) noexcept {
+        std::visit(func, state);
+    }
+};
+//------------------------------------------------------------------------------
+auto glfw3_window_ui_input_state::kind() const noexcept -> input_value_kind {
+    if(std::holds_alternative<glfw3_window_ui_slider_state>(state)) {
+        return std::get<glfw3_window_ui_slider_state>(state).kind;
+    }
+    return input_value_kind::absolute_norm;
+}
+//------------------------------------------------------------------------------
+auto glfw3_window_ui_input_state::get_toggle() noexcept
+  -> optional_reference<glfw3_window_ui_toggle_state> {
+    if(std::holds_alternative<glfw3_window_ui_toggle_state>(state)) {
+        return &(std::get<glfw3_window_ui_toggle_state>(state));
+    }
+    return {};
+}
+//------------------------------------------------------------------------------
+auto glfw3_window_ui_input_state::get_slider() noexcept
+  -> optional_reference<glfw3_window_ui_slider_state> {
+    if(std::holds_alternative<glfw3_window_ui_slider_state>(state)) {
+        return &(std::get<glfw3_window_ui_slider_state>(state));
+    }
+    return {};
+}
+//------------------------------------------------------------------------------
+// glfw3_opengl_window
 //------------------------------------------------------------------------------
 class glfw3_opengl_provider;
 class glfw3_opengl_window
@@ -75,7 +263,7 @@ public:
       const video_options&,
       const span<GLFWmonitor* const>) -> bool;
 
-    void update(execution_context&);
+    void update(execution_context&, application&);
 
     void clean_up();
 
@@ -86,6 +274,9 @@ public:
     auto has_framebuffer() noexcept -> tribool final;
     auto surface_size() noexcept -> std::tuple<int, int> final;
     auto surface_aspect() noexcept -> float final;
+    auto egl_ref() noexcept -> eglplus::egl_api_reference final;
+    auto egl_display() noexcept -> eglplus::display_handle final;
+    auto imgui_ref() noexcept -> guiplus::imgui_api_reference final;
 
     void parent_context_changed(const video_context&) final;
     void video_begin(execution_context&) final;
@@ -144,6 +335,9 @@ private:
     glfw3_opengl_provider& _provider;
     identifier _instance_id;
     application_config_value<bool> _imgui_enabled;
+    guiplus::imgui_api _imgui_api;
+    guiplus::imgui_context _imgui_context;
+    std::string _format_buffer;
 
     GLFWwindow* _window{nullptr};
     optional_reference<input_sink> _input_sink{nullptr};
@@ -167,165 +361,20 @@ private:
     std::vector<key_state> _key_states;
     std::vector<key_state> _mouse_states;
 
-#if EAGINE_APP_HAS_IMGUI
-    struct ui_input_state;
-    struct ui_input_feedback {
-        message_id input_id;
-        std::variant<std::monostate, bool, float> threshold;
-        std::variant<std::monostate, bool, float> constant;
-        input_feedback_trigger trigger{input_feedback_trigger::change};
-        input_feedback_action action{input_feedback_action::copy};
+    friend struct glfw3_window_ui_input_feedback;
+    friend struct glfw3_window_ui_toggle_state;
+    friend struct glfw3_window_ui_slider_state;
 
-        auto is_under_threshold(const input_variable<bool>& inp) const noexcept
-          -> bool;
-        auto is_over_threshold(const input_variable<bool>& inp) const noexcept
-          -> bool;
-        auto is_under_threshold(const input_variable<float>& inp) const noexcept
-          -> bool;
-        auto is_over_threshold(const input_variable<float>& inp) const noexcept
-          -> bool;
-
-        template <typename T>
-        auto is_triggered(const input_variable<T>& inp) const noexcept -> bool;
-
-        void key_press_changed(
-          const execution_context& ctx,
-          glfw3_opengl_window& parent,
-          const input_variable<bool>& inp) const noexcept;
-
-        auto multiply(bool value) const noexcept -> bool;
-        auto multiply(float value) const noexcept -> float;
-
-        void copy_to(bool& dst, const input_value<bool>& inp) const noexcept {
-            dst = inp.get();
-        }
-        void copy_to(bool& dst, const input_value<float>& inp) const noexcept {
-            dst = std::abs(inp.get()) > 0.F;
-        }
-        void copy_to(float& dst, const input_value<bool>& inp) const noexcept {
-            dst = (inp.get() ? 1.F : 0.F);
-        }
-        void copy_to(float& dst, const input_value<float>& inp) const noexcept {
-            dst = inp.get();
-        }
-
-        void set_zero(bool& dst) const noexcept {
-            dst = false;
-        }
-        void set_zero(float& dst) const noexcept {
-            dst = 0.F;
-        }
-        void set_one(bool& dst) const noexcept {
-            dst = true;
-        }
-        void set_one(float& dst) const noexcept {
-            dst = 1.F;
-        }
-        void flip(bool& dst) const noexcept {
-            dst = not dst;
-        }
-        void flip(float&) const noexcept {
-            // TODO: what does this mean?
-        }
-
-        void add_to(bool& dst) const noexcept {
-            dst = dst or multiply(true);
-        }
-        void add_to(float& dst) const noexcept {
-            dst = dst + multiply(1.F);
-        }
-
-        void multiply_add_to(bool& dst, const input_value<bool>& inp)
-          const noexcept {
-            dst = dst or multiply(inp.get());
-        }
-        void multiply_add_to(bool& dst, const input_value<float>& inp)
-          const noexcept {
-            dst = dst or (std::abs(multiply(inp.get())) > 0.F);
-        }
-        void multiply_add_to(float& dst, const input_value<bool>& inp)
-          const noexcept {
-            dst = dst + (multiply(inp.get()) ? 1.F : 0.F);
-        }
-        void multiply_add_to(float& dst, const input_value<float>& inp)
-          const noexcept {
-            dst = dst + multiply(inp.get());
-        }
-
-        template <typename T, typename S>
-        void apply_to(T& dst, const input_value<S>& src) const noexcept;
-    };
-
-    friend struct ui_input_feedback;
-    struct ui_button_state {
-        input_variable<bool> pressed{false};
-        std::string label;
-
-        template <typename T>
-        void apply_feedback(
-          const execution_context& ctx,
-          glfw3_opengl_window&,
-          const ui_input_state&,
-          const ui_input_feedback&,
-          const input_value<T>&);
-    };
-
-    struct ui_toggle_state {
-        input_variable<bool> toggled_on{false};
-        std::string label;
-        bool value{false};
-
-        template <typename T>
-        void apply_feedback(
-          const execution_context& ctx,
-          glfw3_opengl_window&,
-          const ui_input_state&,
-          const ui_input_feedback&,
-          const input_value<T>&);
-    };
-
-    struct ui_slider_state {
-        input_variable<float> position{0.5F};
-        std::string label;
-        float min{0.F};
-        float max{1.F};
-        float value{0.5F};
-        input_value_kind kind{input_value_kind::absolute_norm};
-
-        template <typename T>
-        void apply_feedback(
-          const execution_context& ctx,
-          glfw3_opengl_window&,
-          const ui_input_state&,
-          const ui_input_feedback&,
-          const input_value<T>&);
-    };
-
-    using ui_state_variant =
-      std::variant<ui_button_state, ui_toggle_state, ui_slider_state>;
-
-    struct ui_input_state {
-        message_id input_id;
-        ui_state_variant state;
-
-        auto kind() const noexcept -> input_value_kind;
-
-        auto get_toggle() noexcept -> optional_reference<ui_toggle_state>;
-        auto get_slider() noexcept -> optional_reference<ui_slider_state>;
-
-        auto apply(const auto& func) noexcept {
-            std::visit(func, state);
-        }
-    };
-
-    auto _setup_ui_input(message_id input_id, ui_state_variant state) -> bool;
+    auto _setup_ui_input(
+      message_id input_id,
+      glfw3_window_ui_state_variant state) -> bool;
     auto _find_ui_input(message_id input_id) noexcept
-      -> optional_reference<ui_input_state>;
+      -> optional_reference<glfw3_window_ui_input_state>;
 
-    std::vector<ui_input_state> _ui_input_states;
+    std::vector<glfw3_window_ui_input_state> _ui_input_states;
 
     struct ui_feedback_targets {
-        std::vector<ui_input_feedback> targets;
+        std::vector<glfw3_window_ui_input_feedback> targets;
 
         auto key_press_changed(
           const execution_context& ctx,
@@ -336,12 +385,12 @@ private:
     template <typename T>
     void _forward_feedback(
       const execution_context& ctx,
-      const ui_input_state&,
+      const glfw3_window_ui_input_state&,
       const input_value<T>& value);
 
     void _ui_input_feedback(
       const execution_context& ctx,
-      const ui_input_feedback&,
+      const glfw3_window_ui_input_feedback&,
       const input_variable<bool>&) noexcept;
 
     void _feedback_key_press_change(
@@ -352,7 +401,6 @@ private:
 
     flat_map<std::tuple<identifier, message_id>, ui_feedback_targets>
       _ui_feedbacks;
-#endif
 
     input_variable<float> _mouse_x_pix{0};
     input_variable<float> _mouse_y_pix{0};
@@ -390,7 +438,7 @@ public:
     auto is_initialized() -> bool final;
     auto should_initialize(execution_context&) -> bool final;
     auto initialize(execution_context&) -> bool final;
-    void update(execution_context&) final;
+    void update(execution_context&, application&) final;
     void clean_up(execution_context&) final;
 
     void input_enumerate(
@@ -400,12 +448,10 @@ public:
     void audio_enumerate(
       callable_ref<void(std::shared_ptr<audio_provider>)>) final;
 
-#if EAGINE_APP_HAS_IMGUI
     auto activities() const noexcept
       -> span<const glfw3_activity_progress_info> {
         return view(_activities);
     }
-#endif
 
     void activity_begun(
       const activity_progress_id_t parent_id,
@@ -428,9 +474,7 @@ public:
 private:
 #if EAGINE_APP_HAS_GLFW3
     std::map<identifier, std::shared_ptr<glfw3_opengl_window>> _windows;
-#if EAGINE_APP_HAS_IMGUI
     std::vector<glfw3_activity_progress_info> _activities;
-#endif
 #endif
     auto _get_progress_callback() noexcept -> callable_ref<bool() noexcept>;
     auto _handle_progress() noexcept -> bool;
@@ -453,11 +497,7 @@ glfw3_opengl_window::glfw3_opengl_window(
   : main_ctx_object{"GLFW3Wndow", parent}
   , _provider{parent}
   , _instance_id{instance_id}
-  , _imgui_enabled{
-      c,
-      "application.imgui.enable",
-      instance,
-      EAGINE_APP_HAS_IMGUI != 0} {
+  , _imgui_enabled{c, "application.imgui.enable", instance, true} {
 
     // keyboard keys/buttons
     _key_states.emplace_back("Spacebar", GLFW_KEY_SPACE);
@@ -583,9 +623,7 @@ glfw3_opengl_window::glfw3_opengl_window(
 //------------------------------------------------------------------------------
 // ui input handling
 //------------------------------------------------------------------------------
-#if EAGINE_APP_HAS_IMGUI
-//------------------------------------------------------------------------------
-auto glfw3_opengl_window::ui_input_feedback::multiply(bool value) const noexcept
+auto glfw3_window_ui_input_feedback::multiply(bool value) const noexcept
   -> bool {
     return std::visit(
       overloaded(
@@ -595,7 +633,7 @@ auto glfw3_opengl_window::ui_input_feedback::multiply(bool value) const noexcept
       constant);
 }
 //------------------------------------------------------------------------------
-auto glfw3_opengl_window::ui_input_feedback::multiply(float value) const noexcept
+auto glfw3_window_ui_input_feedback::multiply(float value) const noexcept
   -> float {
     return std::visit(
       overloaded(
@@ -606,9 +644,8 @@ auto glfw3_opengl_window::ui_input_feedback::multiply(float value) const noexcep
 }
 //------------------------------------------------------------------------------
 template <typename T, typename S>
-void glfw3_opengl_window::ui_input_feedback::apply_to(
-  T& dst,
-  const input_value<S>& inp) const noexcept {
+void glfw3_window_ui_input_feedback::apply_to(T& dst, const input_value<S>& inp)
+  const noexcept {
     switch(action) {
         case input_feedback_action::copy:
             copy_to(dst, inp);
@@ -631,71 +668,16 @@ void glfw3_opengl_window::ui_input_feedback::apply_to(
     }
 }
 //------------------------------------------------------------------------------
-template <typename T>
-void glfw3_opengl_window::ui_button_state::apply_feedback(
-  const execution_context&,
-  glfw3_opengl_window& parent,
-  const ui_input_state&,
-  const ui_input_feedback&,
-  const input_value<T>&) {}
-//------------------------------------------------------------------------------
-template <typename T>
-void glfw3_opengl_window::ui_toggle_state::apply_feedback(
+void glfw3_window_ui_input_feedback::key_press_changed(
   const execution_context& ctx,
   glfw3_opengl_window& parent,
-  const ui_input_state& uis,
-  const ui_input_feedback& fbk,
-  const input_value<T>& inp) {
-    fbk.apply_to(value, inp);
-    if(toggled_on.assign(value)) {
-        parent._forward_feedback(ctx, uis, toggled_on);
+  const input_variable<bool>& inp) const noexcept {
+    if(is_triggered(inp)) {
+        parent._ui_input_feedback(ctx, *this, inp);
     }
 }
 //------------------------------------------------------------------------------
-template <typename T>
-void glfw3_opengl_window::ui_slider_state::apply_feedback(
-  const execution_context& ctx,
-  glfw3_opengl_window& parent,
-  const ui_input_state& uis,
-  const ui_input_feedback& fbk,
-  const input_value<T>& inp) {
-    fbk.apply_to(value, inp);
-    if(value < min) {
-        value = min;
-    }
-    if(value > max) {
-        value = max;
-    }
-    if(position.assign(value)) {
-        parent._forward_feedback(ctx, uis, position);
-    }
-}
-//------------------------------------------------------------------------------
-auto glfw3_opengl_window::ui_input_state::kind() const noexcept
-  -> input_value_kind {
-    if(std::holds_alternative<ui_slider_state>(state)) {
-        return std::get<ui_slider_state>(state).kind;
-    }
-    return input_value_kind::absolute_norm;
-}
-//------------------------------------------------------------------------------
-auto glfw3_opengl_window::ui_input_state::get_toggle() noexcept
-  -> optional_reference<glfw3_opengl_window::ui_toggle_state> {
-    if(std::holds_alternative<ui_toggle_state>(state)) {
-        return &(std::get<ui_toggle_state>(state));
-    }
-    return {};
-}
-//------------------------------------------------------------------------------
-auto glfw3_opengl_window::ui_input_state::get_slider() noexcept
-  -> optional_reference<glfw3_opengl_window::ui_slider_state> {
-    if(std::holds_alternative<ui_slider_state>(state)) {
-        return &(std::get<ui_slider_state>(state));
-    }
-    return {};
-}
-//------------------------------------------------------------------------------
-auto glfw3_opengl_window::ui_input_feedback::is_under_threshold(
+auto glfw3_window_ui_input_feedback::is_under_threshold(
   const input_variable<bool>& inp) const noexcept -> bool {
     return std::visit(
       overloaded(
@@ -705,7 +687,7 @@ auto glfw3_opengl_window::ui_input_feedback::is_under_threshold(
       threshold);
 }
 //------------------------------------------------------------------------------
-auto glfw3_opengl_window::ui_input_feedback::is_over_threshold(
+auto glfw3_window_ui_input_feedback::is_over_threshold(
   const input_variable<bool>& inp) const noexcept -> bool {
     return std::visit(
       overloaded(
@@ -715,7 +697,7 @@ auto glfw3_opengl_window::ui_input_feedback::is_over_threshold(
       threshold);
 }
 //------------------------------------------------------------------------------
-auto glfw3_opengl_window::ui_input_feedback::is_under_threshold(
+auto glfw3_window_ui_input_feedback::is_under_threshold(
   const input_variable<float>& inp) const noexcept -> bool {
     return std::visit(
       overloaded(
@@ -725,7 +707,7 @@ auto glfw3_opengl_window::ui_input_feedback::is_under_threshold(
       threshold);
 }
 //------------------------------------------------------------------------------
-auto glfw3_opengl_window::ui_input_feedback::is_over_threshold(
+auto glfw3_window_ui_input_feedback::is_over_threshold(
   const input_variable<float>& inp) const noexcept -> bool {
     return std::visit(
       overloaded(
@@ -736,7 +718,7 @@ auto glfw3_opengl_window::ui_input_feedback::is_over_threshold(
 }
 //------------------------------------------------------------------------------
 template <typename T>
-auto glfw3_opengl_window::ui_input_feedback::is_triggered(
+auto glfw3_window_ui_input_feedback::is_triggered(
   const input_variable<T>& inp) const noexcept -> bool {
     switch(trigger) {
         case input_feedback_trigger::change:
@@ -753,23 +735,46 @@ auto glfw3_opengl_window::ui_input_feedback::is_triggered(
 }
 //------------------------------------------------------------------------------
 template <typename T>
+void glfw3_window_ui_toggle_state::apply_feedback(
+  const execution_context& ctx,
+  glfw3_opengl_window& parent,
+  const glfw3_window_ui_input_state& uis,
+  const glfw3_window_ui_input_feedback& fbk,
+  const input_value<T>& inp) {
+    fbk.apply_to(value, inp);
+    if(toggled_on.assign(value)) {
+        parent._forward_feedback(ctx, uis, toggled_on);
+    }
+}
+//------------------------------------------------------------------------------
+template <typename T>
+void glfw3_window_ui_slider_state::apply_feedback(
+  const execution_context& ctx,
+  glfw3_opengl_window& parent,
+  const glfw3_window_ui_input_state& uis,
+  const glfw3_window_ui_input_feedback& fbk,
+  const input_value<T>& inp) {
+    fbk.apply_to(value, inp);
+    if(value < min) {
+        value = min;
+    }
+    if(value > max) {
+        value = max;
+    }
+    if(position.assign(value)) {
+        parent._forward_feedback(ctx, uis, position);
+    }
+}
+//------------------------------------------------------------------------------
+template <typename T>
 void glfw3_opengl_window::_forward_feedback(
   const execution_context& ctx,
-  const glfw3_opengl_window::ui_input_state& input,
+  const glfw3_window_ui_input_state& input,
   const input_value<T>& value) {
     if(_input_sink) {
         auto& sink = *_input_sink;
         sink.consume(
           {ctx.app_gui_device_id(), input.input_id, input.kind()}, value);
-    }
-}
-//------------------------------------------------------------------------------
-void glfw3_opengl_window::ui_input_feedback::key_press_changed(
-  const execution_context& ctx,
-  glfw3_opengl_window& parent,
-  const input_variable<bool>& inp) const noexcept {
-    if(is_triggered(inp)) {
-        parent._ui_input_feedback(ctx, *this, inp);
     }
 }
 //------------------------------------------------------------------------------
@@ -789,7 +794,7 @@ auto glfw3_opengl_window::ui_feedback_targets::key_press_changed(
 //------------------------------------------------------------------------------
 void glfw3_opengl_window::_ui_input_feedback(
   const execution_context& ctx,
-  const ui_input_feedback& fbk,
+  const glfw3_window_ui_input_feedback& fbk,
   const input_variable<bool>& inp) noexcept {
     if(const auto target{_find_ui_input(fbk.input_id)}) {
         target->apply([&](auto& ui_input) {
@@ -811,7 +816,6 @@ void glfw3_opengl_window::_feedback_key_press_change(
     }
 }
 //------------------------------------------------------------------------------
-#endif
 auto glfw3_opengl_window::add_ui_feedback(
   [[maybe_unused]] const identifier mapping_id, // TODO
   const identifier device_id,
@@ -821,29 +825,25 @@ auto glfw3_opengl_window::add_ui_feedback(
   input_feedback_action action,
   std::variant<std::monostate, bool, float> threshold,
   std::variant<std::monostate, bool, float> constant) noexcept -> bool {
-#if EAGINE_APP_HAS_IMGUI
     auto& info = _ui_feedbacks[std::make_tuple(device_id, signal_id)];
     auto pos{
       std::find_if(info.targets.begin(), info.targets.end(), [=](auto& entry) {
           return entry.input_id == input_id;
       })};
     if(pos == info.targets.end()) {
-        pos = info.targets.insert(pos, ui_input_feedback{.input_id = input_id});
+        pos = info.targets.insert(
+          pos, glfw3_window_ui_input_feedback{.input_id = input_id});
     }
     pos->threshold = threshold;
     pos->constant = constant;
     pos->trigger = trigger;
     pos->action = action;
     return true;
-#else
-    return false;
-#endif
 }
 //------------------------------------------------------------------------------
 auto glfw3_opengl_window::_setup_ui_input(
   message_id input_id,
-  ui_state_variant state) -> bool {
-#if EAGINE_APP_HAS_IMGUI
+  glfw3_window_ui_state_variant state) -> bool {
     const auto pos{std::find_if(
       _ui_input_states.begin(), _ui_input_states.end(), [=](const auto& entry) {
           return entry.input_id == input_id;
@@ -856,14 +856,10 @@ auto glfw3_opengl_window::_setup_ui_input(
           {.input_id = input_id, .state = std::move(state)});
         return true;
     }
-#else
-    return false;
-#endif
 }
 //------------------------------------------------------------------------------
 auto glfw3_opengl_window::_find_ui_input(message_id input_id) noexcept
-  -> optional_reference<ui_input_state> {
-#if EAGINE_APP_HAS_IMGUI
+  -> optional_reference<glfw3_window_ui_input_state> {
     const auto pos{std::find_if(
       _ui_input_states.begin(), _ui_input_states.end(), [=](const auto& entry) {
           return entry.input_id == input_id;
@@ -871,46 +867,35 @@ auto glfw3_opengl_window::_find_ui_input(message_id input_id) noexcept
     if(pos != _ui_input_states.end()) {
         return &(*pos);
     }
-#endif
     return {};
 }
 //------------------------------------------------------------------------------
 auto glfw3_opengl_window::add_ui_button(
   [[maybe_unused]] const message_id input_id,
   [[maybe_unused]] const string_view label) -> bool {
-#if EAGINE_APP_HAS_IMGUI
     return _setup_ui_input(
-      input_id, ui_button_state{.label = label.to_string()});
-#else
-    return false;
-#endif
+      input_id, glfw3_window_ui_button_state{.label = label.to_string()});
 }
 //------------------------------------------------------------------------------
 auto glfw3_opengl_window::add_ui_toggle(
   const message_id input_id,
   const string_view label,
   bool initial) -> bool {
-#if EAGINE_APP_HAS_IMGUI
     return _setup_ui_input(
       input_id,
-      ui_toggle_state{
+      glfw3_window_ui_toggle_state{
         .toggled_on = initial, .label = label.to_string(), .value = initial});
-#else
-    return false;
-#endif
 }
 //------------------------------------------------------------------------------
 auto glfw3_opengl_window::set_ui_toggle(
   const message_id input_id,
   bool value) noexcept -> bool {
-#if EAGINE_APP_HAS_IMGUI
     if(auto found{_find_ui_input(input_id)}) {
         if(auto toggle{found->get_toggle()}) {
             toggle->toggled_on = value;
             return true;
         }
     }
-#endif
     return false;
 }
 //------------------------------------------------------------------------------
@@ -921,32 +906,26 @@ auto glfw3_opengl_window::add_ui_slider(
   float max,
   float initial,
   input_value_kind kind) -> bool {
-#if EAGINE_APP_HAS_IMGUI
     return _setup_ui_input(
       input_id,
-      ui_slider_state{
+      glfw3_window_ui_slider_state{
         .position = initial,
         .label = label.to_string(),
         .min = min,
         .max = max,
         .value = initial,
         .kind = kind});
-#else
-    return false;
-#endif
 }
 //------------------------------------------------------------------------------
 auto glfw3_opengl_window::set_ui_slider(
   const message_id input_id,
   float value) noexcept -> bool {
-#if EAGINE_APP_HAS_IMGUI
     if(auto found{_find_ui_input(input_id)}) {
         if(auto slider{found->get_slider()}) {
             slider->value = value;
             return true;
         }
     }
-#endif
     return false;
 }
 //------------------------------------------------------------------------------
@@ -1045,20 +1024,14 @@ auto glfw3_opengl_window::initialize(
             _aspect = _norm_y_ndc / _norm_x_ndc;
         }
         if(_imgui_enabled) {
-#if EAGINE_APP_HAS_IMGUI
             glfwMakeContextCurrent(_window);
-            IMGUI_CHECKVERSION();
-            ImGui::CreateContext();
-            ImGuiIO& io = ImGui::GetIO();
-            // NOLINTNEXTLINE(hicpp-signed-bitwise)
-            io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+            _imgui_api.create_context() >> _imgui_context;
+            _imgui_api.set_config_flags(_imgui_api.config_nav_enable_keyboard);
+            _imgui_api.style_colors_dark();
 
-            ImGui::StyleColorsDark();
-
-            ImGui_ImplGlfw_InitForOpenGL(_window, true);
-            ImGui_ImplOpenGL3_Init("#version 150");
+            _imgui_api.glfw_init_for_opengl(_window, true);
+            _imgui_api.opengl3_init("#version 150");
             glfwMakeContextCurrent(nullptr);
-#endif
         }
         return true;
     } else {
@@ -1097,6 +1070,18 @@ auto glfw3_opengl_window::surface_aspect() noexcept -> float {
     return _aspect;
 }
 //------------------------------------------------------------------------------
+auto glfw3_opengl_window::egl_ref() noexcept -> eglplus::egl_api_reference {
+    return {};
+}
+//------------------------------------------------------------------------------
+auto glfw3_opengl_window::egl_display() noexcept -> eglplus::display_handle {
+    return {};
+}
+//------------------------------------------------------------------------------
+auto glfw3_opengl_window::imgui_ref() noexcept -> guiplus::imgui_api_reference {
+    return {_imgui_api};
+}
+//------------------------------------------------------------------------------
 void glfw3_opengl_window::parent_context_changed(const video_context& vctx) {
     _parent_context = &vctx;
 }
@@ -1112,15 +1097,13 @@ void glfw3_opengl_window::video_end(execution_context&) {
 //------------------------------------------------------------------------------
 void glfw3_opengl_window::video_commit(execution_context&) {
     assert(_window);
-#if EAGINE_APP_HAS_IMGUI
     if(_imgui_enabled) {
         if(_imgui_visible or not _provider.activities().empty()) {
-            if(const auto draw_data{ImGui::GetDrawData()}) {
-                ImGui_ImplOpenGL3_RenderDrawData(draw_data);
+            if(const ok draw_data{_imgui_api.get_draw_data()}) {
+                _imgui_api.opengl3_render_draw_data(draw_data);
             }
         }
     }
-#endif
     glfwSwapBuffers(_window);
 }
 //------------------------------------------------------------------------------
@@ -1165,13 +1148,11 @@ void glfw3_opengl_window::input_enumerate(
     callback(
       mouse_id, message_id{"Wheel", "ScrollY"}, input_value_kind::relative);
 
-#if EAGINE_APP_HAS_IMGUI
     // ui input
     const identifier gui_id{ctx.app_gui_device_id()};
     for(const auto& entry : _ui_input_states) {
         callback(gui_id, entry.input_id, entry.kind());
     }
-#endif
 }
 //------------------------------------------------------------------------------
 void glfw3_opengl_window::input_connect(input_sink& sink) {
@@ -1201,10 +1182,7 @@ void glfw3_opengl_window::mapping_commit(
     for(auto& ks : _key_states) {
         const auto key{std::make_tuple(kb_id, message_id{"Key", ks.key_id})};
         ks.enabled =
-#if EAGINE_APP_HAS_IMGUI
-          _ui_feedbacks.contains(key) or
-#endif
-          _enabled_signals.contains(key);
+          _ui_feedbacks.contains(key) or _enabled_signals.contains(key);
     }
 
     for(auto& ks : _mouse_states) {
@@ -1219,110 +1197,114 @@ void glfw3_opengl_window::mapping_commit(
       _enabled_signals.contains({mouse_id, {"Cursor", "MotionY"}});
 }
 //------------------------------------------------------------------------------
-void glfw3_opengl_window::update(execution_context& exec_ctx) {
+void glfw3_opengl_window::update(execution_context& exec_ctx, application& app) {
     if(_imgui_enabled) {
         assert(_parent_context);
-#if EAGINE_APP_HAS_IMGUI
         const auto activities{_provider.activities()};
         const auto& par_ctx = *_parent_context;
         const auto& state = exec_ctx.state();
         const auto frame_dur = state.frame_duration().value();
         const auto frames_per_second = state.frames_per_second();
 
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
+        _imgui_api.opengl3_new_frame();
+        _imgui_api.glfw_new_frame();
+        _imgui_api.new_frame();
 
-        ImGuiWindowFlags window_flags = 0;
         if(not activities.empty()) {
-            // NOLINTNEXTLINE(hicpp-signed-bitwise)
-            window_flags |= ImGuiWindowFlags_NoResize;
-            ImGui::SetNextWindowSize(ImVec2(float(_window_width) * 0.8F, 0.F));
-            ImGui::Begin("Activities", nullptr, window_flags);
-            for(const auto& info : activities) {
-                const auto progress =
-                  float(info.current_steps) / float(info.total_steps);
-                ImGui::TextUnformatted(info.title.c_str());
-                ImGui::ProgressBar(progress, ImVec2(-1.F, 0.F));
+            bool visible{true};
+            _imgui_api.set_next_window_size({float(_window_width) * 0.8F, 0.F});
+            if(_imgui_api.begin(
+                 "Activities", visible, _imgui_api.window_no_resize)) {
+                for(const auto& info : activities) {
+                    const auto progress =
+                      float(info.current_steps) / float(info.total_steps);
+                    _imgui_api.progress_bar(progress, info.title);
+                }
+                _imgui_api.end();
             }
-            ImGui::End();
         }
 
         if(_imgui_visible) {
-            window_flags = 0;
-            // NOLINTNEXTLINE(hicpp-signed-bitwise)
-            window_flags |= ImGuiWindowFlags_NoResize;
-            ImGui::Begin("Application", &_imgui_visible, window_flags);
-            // NOLINTNEXTLINE(hicpp-vararg)
-            ImGui::Text("Dimensions: %dx%d", _window_width, _window_height);
-            // NOLINTNEXTLINE(hicpp-vararg)
-            ImGui::Text("Frame number: %ld", long(par_ctx.frame_number()));
-            // NOLINTNEXTLINE(hicpp-vararg)
-            ImGui::Text("Frame time: %.1f [ms]", frame_dur * 1000.F);
-            // NOLINTNEXTLINE(hicpp-vararg)
-            ImGui::Text("Frames per second: %.0f", frames_per_second);
-            // NOLINTNEXTLINE(hicpp-vararg)
-            ImGui::Text(
-              "Activities in progress: %ld",
-              long(_provider.activities().size()));
+            if(_imgui_api.begin(
+                 "Application", &_imgui_visible, _imgui_api.window_no_resize)) {
+                _imgui_api.text_buffered(
+                  _format_buffer,
+                  "Dimensions: {}x{}",
+                  _window_width,
+                  _window_height);
 
-            if(_input_sink) {
-                auto& sink = *_input_sink;
-                const identifier gui_id{exec_ctx.app_gui_device_id()};
-                for(auto& entry : _ui_input_states) {
-                    entry.apply(overloaded(
-                      [&, this](ui_button_state& button) {
-                          if(button.pressed.assign(
-                               ImGui::Button(button.label.c_str()))) {
-                              sink.consume(
-                                {gui_id, entry.input_id, entry.kind()},
-                                button.pressed);
-                          }
-                      },
-                      [&, this](ui_toggle_state& toggle) {
-                          ImGui::Checkbox(toggle.label.c_str(), &toggle.value);
-                          if(toggle.toggled_on.assign(toggle.value)) {
-                              sink.consume(
-                                {gui_id, entry.input_id, entry.kind()},
-                                toggle.toggled_on);
-                          }
-                      },
-                      [&, this](ui_slider_state& slider) {
-                          if(ImGui::SliderFloat(
-                               slider.label.c_str(),
-                               &slider.value,
-                               slider.min,
-                               slider.max,
-                               "%0.2f")) {
-                              if(slider.position.assign(slider.value)) {
+                _imgui_api.text_buffered(
+                  _format_buffer, "Frame number: {}", par_ctx.frame_number());
+                _imgui_api.text_buffered(
+                  _format_buffer,
+                  "Frame time: {:.2f} [ms]",
+                  frame_dur * 1000.F);
+                _imgui_api.text_buffered(
+                  _format_buffer,
+                  "Frames per second: {:.1f}",
+                  frames_per_second);
+                _imgui_api.text_buffered(
+                  _format_buffer,
+                  "Activities in progress: {}",
+                  _provider.activities().size());
+
+                if(_input_sink) {
+                    auto& sink = *_input_sink;
+                    const identifier gui_id{exec_ctx.app_gui_device_id()};
+                    for(auto& entry : _ui_input_states) {
+                        entry.apply(overloaded(
+                          [&, this](glfw3_window_ui_button_state& button) {
+                              if(button.pressed.assign(
+                                   _imgui_api.button(button.label).or_false())) {
                                   sink.consume(
                                     {gui_id, entry.input_id, entry.kind()},
-                                    slider.position);
+                                    button.pressed);
                               }
-                          }
-                      }));
+                          },
+                          [&, this](glfw3_window_ui_toggle_state& toggle) {
+                              _imgui_api.checkbox(toggle.label, toggle.value);
+                              if(toggle.toggled_on.assign(toggle.value)) {
+                                  sink.consume(
+                                    {gui_id, entry.input_id, entry.kind()},
+                                    toggle.toggled_on);
+                              }
+                          },
+                          [&, this](glfw3_window_ui_slider_state& slider) {
+                              if(_imgui_api
+                                   .slider_float(
+                                     slider.label,
+                                     slider.value,
+                                     slider.min,
+                                     slider.max)
+                                   .or_false()) {
+                                  if(slider.position.assign(slider.value)) {
+                                      sink.consume(
+                                        {gui_id, entry.input_id, entry.kind()},
+                                        slider.position);
+                                  }
+                              }
+                          }));
+                    }
                 }
-            }
 
-            if(ImGui::Button("Hide")) {
-                _imgui_visible = false;
+                if(_imgui_api.button("Hide").or_false()) {
+                    _imgui_visible = false;
+                }
+                _imgui_api.same_line();
+                if(_imgui_api.button("Quit").or_false()) {
+                    glfwSetWindowShouldClose(_window, GLFW_TRUE);
+                }
+                if(_imgui_api.is_item_hovered().or_false()) {
+                    _imgui_api.begin_tooltip();
+                    _imgui_api.text_unformatted("Closes the application");
+                    _imgui_api.end_tooltip();
+                }
+                _imgui_api.end();
             }
-            ImGui::SameLine();
-            if(ImGui::Button("Quit")) {
-                glfwSetWindowShouldClose(_window, GLFW_TRUE);
-            }
-            if(ImGui::IsItemHovered()) {
-                ImGui::BeginTooltip();
-                // NOLINTNEXTLINE(hicpp-vararg)
-                ImGui::Text("Closes the application");
-                ImGui::EndTooltip();
-            }
-            ImGui::End();
+            app.update_gui(_imgui_api);
         }
-
-        ImGui::EndFrame();
-        ImGui::Render();
-#endif
+        _imgui_api.end_frame();
+        _imgui_api.render();
     }
 
     if(glfwWindowShouldClose(_window)) {
@@ -1452,11 +1434,9 @@ void glfw3_opengl_window::update(execution_context& exec_ctx) {
 void glfw3_opengl_window::clean_up() {
     if(_window) {
         if(_imgui_enabled) {
-#if EAGINE_APP_HAS_IMGUI
-            ImGui_ImplOpenGL3_Shutdown();
-            ImGui_ImplGlfw_Shutdown();
-            ImGui::DestroyContext();
-#endif
+            _imgui_api.opengl3_shutdown();
+            _imgui_api.glfw_shutdown();
+            _imgui_api.destroy_context(_imgui_context);
         }
         glfwDestroyWindow(_window);
     }
@@ -1569,11 +1549,12 @@ auto glfw3_opengl_provider::initialize(execution_context& exec_ctx) -> bool {
 }
 //------------------------------------------------------------------------------
 void glfw3_opengl_provider::update(
-  [[maybe_unused]] execution_context& exec_ctx) {
+  [[maybe_unused]] execution_context& exec_ctx,
+  [[maybe_unused]] application& app) {
 #if EAGINE_APP_HAS_GLFW3
     glfwPollEvents();
     for(auto& entry : _windows) {
-        entry.second->update(exec_ctx);
+        entry.second->update(exec_ctx, app);
     }
 #endif // EAGINE_APP_HAS_GLFW3
 }
@@ -1614,14 +1595,12 @@ void glfw3_opengl_provider::activity_begun(
   [[maybe_unused]] const string_view title,
   [[maybe_unused]] const span_size_t total_steps) noexcept {
 #if EAGINE_APP_HAS_GLFW3
-#if EAGINE_APP_HAS_IMGUI
     _activities.emplace_back();
     auto& info = _activities.back();
     info.activity_id = activity_id;
     info.parent_id = parent_id;
     info.total_steps = total_steps;
     info.title = to_string(title);
-#endif
 #endif
 }
 //------------------------------------------------------------------------------
@@ -1631,11 +1610,9 @@ void glfw3_opengl_provider::activity_finished(
   [[maybe_unused]] const string_view title,
   [[maybe_unused]] span_size_t total_steps) noexcept {
 #if EAGINE_APP_HAS_GLFW3
-#if EAGINE_APP_HAS_IMGUI
     std::erase_if(_activities, [activity_id](const auto& activity) -> bool {
         return activity.activity_id == activity_id;
     });
-#endif
 #endif
 }
 //------------------------------------------------------------------------------
@@ -1645,7 +1622,6 @@ void glfw3_opengl_provider::activity_updated(
   [[maybe_unused]] const span_size_t current_steps,
   [[maybe_unused]] const span_size_t total_steps) noexcept {
 #if EAGINE_APP_HAS_GLFW3
-#if EAGINE_APP_HAS_IMGUI
     const auto pos = std::find_if(
       _activities.begin(),
       _activities.end(),
@@ -1655,7 +1631,6 @@ void glfw3_opengl_provider::activity_updated(
     if(pos != _activities.end()) [[likely]] {
         pos->current_steps = current_steps;
     }
-#endif
 #endif
 }
 //------------------------------------------------------------------------------

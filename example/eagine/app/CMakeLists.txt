@@ -14,6 +14,7 @@ set_target_properties(
 
 add_subdirectory(001_basic_info)
 add_subdirectory(001_clear)
+add_subdirectory(002_clear_gui)
 add_subdirectory(002_spectrum)
 add_subdirectory(003_checker)
 add_subdirectory(004_triangle)
