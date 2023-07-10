@@ -170,6 +170,7 @@ export struct application : interface<application> {
     virtual auto is_done() noexcept -> bool = 0;
     virtual void on_video_resize() noexcept = 0;
     virtual void update() noexcept = 0;
+    virtual void update_overlays(guiplus::gui_utils&) noexcept {}
     virtual void update_gui(const guiplus::imgui_api&) noexcept {}
     virtual void clean_up() noexcept {}
 };

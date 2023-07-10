@@ -335,7 +335,7 @@ private:
     glfw3_opengl_provider& _provider;
     identifier _instance_id;
     application_config_value<bool> _imgui_enabled;
-    guiplus::imgui_api _imgui_api;
+    guiplus::gui_utils _gui;
     guiplus::imgui_context _imgui_context;
     std::string _format_buffer;
 
@@ -1025,12 +1025,12 @@ auto glfw3_opengl_window::initialize(
         }
         if(_imgui_enabled) {
             glfwMakeContextCurrent(_window);
-            _imgui_api.create_context() >> _imgui_context;
-            _imgui_api.set_config_flags(_imgui_api.config_nav_enable_keyboard);
-            _imgui_api.style_colors_dark();
+            _gui.imgui.create_context() >> _imgui_context;
+            _gui.imgui.set_config_flags(_gui.imgui.config_nav_enable_keyboard);
+            _gui.imgui.style_colors_dark();
 
-            _imgui_api.glfw_init_for_opengl(_window, true);
-            _imgui_api.opengl3_init("#version 150");
+            _gui.imgui.glfw_init_for_opengl(_window, true);
+            _gui.imgui.opengl3_init("#version 150");
             glfwMakeContextCurrent(nullptr);
         }
         return true;
@@ -1079,7 +1079,7 @@ auto glfw3_opengl_window::egl_display() noexcept -> eglplus::display_handle {
 }
 //------------------------------------------------------------------------------
 auto glfw3_opengl_window::imgui_ref() noexcept -> guiplus::imgui_api_reference {
-    return {_imgui_api};
+    return {_gui.imgui};
 }
 //------------------------------------------------------------------------------
 void glfw3_opengl_window::parent_context_changed(const video_context& vctx) {
@@ -1099,8 +1099,8 @@ void glfw3_opengl_window::video_commit(execution_context&) {
     assert(_window);
     if(_imgui_enabled) {
         if(_imgui_visible or not _provider.activities().empty()) {
-            if(const ok draw_data{_imgui_api.get_draw_data()}) {
-                _imgui_api.opengl3_render_draw_data(draw_data);
+            if(const ok draw_data{_gui.imgui.get_draw_data()}) {
+                _gui.imgui.opengl3_render_draw_data(draw_data);
             }
         }
     }
@@ -1206,44 +1206,45 @@ void glfw3_opengl_window::update(execution_context& exec_ctx, application& app) 
         const auto frame_dur = state.frame_duration().value();
         const auto frames_per_second = state.frames_per_second();
 
-        _imgui_api.opengl3_new_frame();
-        _imgui_api.glfw_new_frame();
-        _imgui_api.new_frame();
+        _gui.imgui.opengl3_new_frame();
+        _gui.imgui.glfw_new_frame();
+        _gui.imgui.new_frame();
 
         if(not activities.empty()) {
             bool visible{true};
-            _imgui_api.set_next_window_size({float(_window_width) * 0.8F, 0.F});
-            if(_imgui_api.begin(
-                 "Activities", visible, _imgui_api.window_no_resize)) {
+            _gui.imgui.set_next_window_size({float(_window_width) * 0.8F, 0.F});
+            if(_gui.imgui.begin(
+                 "Activities", visible, _gui.imgui.window_no_resize)) {
                 for(const auto& info : activities) {
                     const auto progress =
                       float(info.current_steps) / float(info.total_steps);
-                    _imgui_api.progress_bar(progress, info.title);
+                    _gui.imgui.progress_bar(progress, info.title);
                 }
-                _imgui_api.end();
+                _gui.imgui.end();
             }
         }
 
+        app.update_overlays(_gui);
         if(_imgui_visible) {
-            if(_imgui_api.begin(
-                 "Application", &_imgui_visible, _imgui_api.window_no_resize)) {
-                _imgui_api.text_buffered(
+            if(_gui.imgui.begin(
+                 "Application", &_imgui_visible, _gui.imgui.window_no_resize)) {
+                _gui.imgui.text_buffered(
                   _format_buffer,
                   "Dimensions: {}x{}",
                   _window_width,
                   _window_height);
 
-                _imgui_api.text_buffered(
+                _gui.imgui.text_buffered(
                   _format_buffer, "Frame number: {}", par_ctx.frame_number());
-                _imgui_api.text_buffered(
+                _gui.imgui.text_buffered(
                   _format_buffer,
                   "Frame time: {:.2f} [ms]",
                   frame_dur * 1000.F);
-                _imgui_api.text_buffered(
+                _gui.imgui.text_buffered(
                   _format_buffer,
                   "Frames per second: {:.1f}",
                   frames_per_second);
-                _imgui_api.text_buffered(
+                _gui.imgui.text_buffered(
                   _format_buffer,
                   "Activities in progress: {}",
                   _provider.activities().size());
@@ -1255,14 +1256,14 @@ void glfw3_opengl_window::update(execution_context& exec_ctx, application& app) 
                         entry.apply(overloaded(
                           [&, this](glfw3_window_ui_button_state& button) {
                               if(button.pressed.assign(
-                                   _imgui_api.button(button.label).or_false())) {
+                                   _gui.imgui.button(button.label).or_false())) {
                                   sink.consume(
                                     {gui_id, entry.input_id, entry.kind()},
                                     button.pressed);
                               }
                           },
                           [&, this](glfw3_window_ui_toggle_state& toggle) {
-                              _imgui_api.checkbox(toggle.label, toggle.value);
+                              _gui.imgui.checkbox(toggle.label, toggle.value);
                               if(toggle.toggled_on.assign(toggle.value)) {
                                   sink.consume(
                                     {gui_id, entry.input_id, entry.kind()},
@@ -1270,7 +1271,7 @@ void glfw3_opengl_window::update(execution_context& exec_ctx, application& app) 
                               }
                           },
                           [&, this](glfw3_window_ui_slider_state& slider) {
-                              if(_imgui_api
+                              if(_gui.imgui
                                    .slider_float(
                                      slider.label,
                                      slider.value,
@@ -1287,24 +1288,24 @@ void glfw3_opengl_window::update(execution_context& exec_ctx, application& app) 
                     }
                 }
 
-                if(_imgui_api.button("Hide").or_false()) {
+                if(_gui.imgui.button("Hide").or_false()) {
                     _imgui_visible = false;
                 }
-                _imgui_api.same_line();
-                if(_imgui_api.button("Quit").or_false()) {
+                _gui.imgui.same_line();
+                if(_gui.imgui.button("Quit").or_false()) {
                     glfwSetWindowShouldClose(_window, GLFW_TRUE);
                 }
-                if(_imgui_api.is_item_hovered().or_false()) {
-                    _imgui_api.begin_tooltip();
-                    _imgui_api.text_unformatted("Closes the application");
-                    _imgui_api.end_tooltip();
+                if(_gui.imgui.is_item_hovered().or_false()) {
+                    _gui.imgui.begin_tooltip();
+                    _gui.imgui.text_unformatted("Closes the application");
+                    _gui.imgui.end_tooltip();
                 }
-                _imgui_api.end();
+                _gui.imgui.end();
             }
-            app.update_gui(_imgui_api);
+            app.update_gui(_gui.imgui);
         }
-        _imgui_api.end_frame();
-        _imgui_api.render();
+        _gui.imgui.end_frame();
+        _gui.imgui.render();
     }
 
     if(glfwWindowShouldClose(_window)) {
@@ -1434,9 +1435,9 @@ void glfw3_opengl_window::update(execution_context& exec_ctx, application& app) 
 void glfw3_opengl_window::clean_up() {
     if(_window) {
         if(_imgui_enabled) {
-            _imgui_api.opengl3_shutdown();
-            _imgui_api.glfw_shutdown();
-            _imgui_api.destroy_context(_imgui_context);
+            _gui.imgui.opengl3_shutdown();
+            _gui.imgui.glfw_shutdown();
+            _gui.imgui.destroy_context(_imgui_context);
         }
         glfwDestroyWindow(_window);
     }
