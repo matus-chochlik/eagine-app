@@ -263,6 +263,8 @@ public:
       const video_options&,
       const span<GLFWmonitor* const>) -> bool;
 
+    void update_gui(execution_context&, application&);
+    void update_glfw(execution_context&, application&);
     void update(execution_context&, application&);
 
     void clean_up();
@@ -334,7 +336,6 @@ public:
 private:
     glfw3_opengl_provider& _provider;
     identifier _instance_id;
-    application_config_value<bool> _imgui_enabled;
     guiplus::gui_utils _gui;
     guiplus::imgui_context _imgui_context;
     std::string _format_buffer;
@@ -416,6 +417,7 @@ private:
     float _wheel_change_x{0};
     float _wheel_change_y{0};
     bool _imgui_visible{false};
+    bool _imgui_updated{false};
     bool _mouse_enabled{false};
     bool _backtick_was_pressed{false};
 };
@@ -496,8 +498,7 @@ glfw3_opengl_window::glfw3_opengl_window(
   glfw3_opengl_provider& parent)
   : main_ctx_object{"GLFW3Wndow", parent}
   , _provider{parent}
-  , _instance_id{instance_id}
-  , _imgui_enabled{c, "application.imgui.enable", instance, true} {
+  , _instance_id{instance_id} {
 
     // keyboard keys/buttons
     _key_states.emplace_back("Spacebar", GLFW_KEY_SPACE);
@@ -1023,7 +1024,7 @@ auto glfw3_opengl_window::initialize(
             _norm_y_ndc = 1.F / float(_window_height);
             _aspect = _norm_y_ndc / _norm_x_ndc;
         }
-        if(_imgui_enabled) {
+        if(_gui.imgui.create_context) {
             glfwMakeContextCurrent(_window);
             _gui.imgui.create_context() >> _imgui_context;
             _gui.imgui.set_config_flags(_gui.imgui.config_nav_enable_keyboard);
@@ -1097,11 +1098,9 @@ void glfw3_opengl_window::video_end(execution_context&) {
 //------------------------------------------------------------------------------
 void glfw3_opengl_window::video_commit(execution_context&) {
     assert(_window);
-    if(_imgui_enabled) {
-        if(_imgui_visible or not _provider.activities().empty()) {
-            if(const ok draw_data{_gui.imgui.get_draw_data()}) {
-                _gui.imgui.opengl3_render_draw_data(draw_data);
-            }
+    if(_imgui_updated) {
+        if(const ok draw_data{_gui.imgui.get_draw_data()}) {
+            _gui.imgui.opengl3_render_draw_data(draw_data);
         }
     }
     glfwSwapBuffers(_window);
@@ -1197,8 +1196,10 @@ void glfw3_opengl_window::mapping_commit(
       _enabled_signals.contains({mouse_id, {"Cursor", "MotionY"}});
 }
 //------------------------------------------------------------------------------
-void glfw3_opengl_window::update(execution_context& exec_ctx, application& app) {
-    if(_imgui_enabled) {
+void glfw3_opengl_window::update_gui(
+  execution_context& exec_ctx,
+  application& app) {
+    if(_gui.imgui.begin) {
         assert(_parent_context);
         const auto activities{_provider.activities()};
         const auto& par_ctx = *_parent_context;
@@ -1306,8 +1307,13 @@ void glfw3_opengl_window::update(execution_context& exec_ctx, application& app) 
         }
         _gui.imgui.end_frame();
         _gui.imgui.render();
+        _imgui_updated = true;
     }
-
+}
+//------------------------------------------------------------------------------
+void glfw3_opengl_window::update_glfw(
+  execution_context& exec_ctx,
+  application& app) {
     if(glfwWindowShouldClose(_window)) {
         exec_ctx.stop_running();
     } else {
@@ -1418,23 +1424,26 @@ void glfw3_opengl_window::update(execution_context& exec_ctx, application& app) 
                 }
             }
 
-            if(_imgui_enabled) {
-                const auto backtick_is_pressed =
-                  glfwGetKey(_window, GLFW_KEY_GRAVE_ACCENT) == GLFW_PRESS;
-                if(_backtick_was_pressed != backtick_is_pressed) {
-                    if(_backtick_was_pressed) {
-                        _imgui_visible = not _imgui_visible;
-                    }
-                    _backtick_was_pressed = backtick_is_pressed;
+            const auto backtick_is_pressed =
+              glfwGetKey(_window, GLFW_KEY_GRAVE_ACCENT) == GLFW_PRESS;
+            if(_backtick_was_pressed != backtick_is_pressed) {
+                if(_backtick_was_pressed) {
+                    _imgui_visible = not _imgui_visible;
                 }
+                _backtick_was_pressed = backtick_is_pressed;
             }
         }
     }
 }
 //------------------------------------------------------------------------------
+void glfw3_opengl_window::update(execution_context& exec_ctx, application& app) {
+    update_gui(exec_ctx, app);
+    update_glfw(exec_ctx, app);
+}
+//------------------------------------------------------------------------------
 void glfw3_opengl_window::clean_up() {
     if(_window) {
-        if(_imgui_enabled) {
+        if(_imgui_updated) {
             _gui.imgui.opengl3_shutdown();
             _gui.imgui.glfw_shutdown();
             _gui.imgui.destroy_context(_imgui_context);
