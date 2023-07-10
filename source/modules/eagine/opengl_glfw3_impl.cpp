@@ -1199,6 +1199,7 @@ void glfw3_opengl_window::mapping_commit(
 void glfw3_opengl_window::update_gui(
   execution_context& exec_ctx,
   application& app) {
+    _imgui_updated = false;
     if(_gui.imgui.begin) {
         assert(_parent_context);
         const auto activities{_provider.activities()};
