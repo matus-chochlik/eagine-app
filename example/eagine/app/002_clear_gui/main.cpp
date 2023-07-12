@@ -47,7 +47,7 @@ public:
         if(gui.begin("background", show_window).or_false()) {
             auto color_name{std::get<0>(_colors[_color_index])};
             if(gui.begin_combo("select color", color_name).or_false()) {
-                for(const auto i : integer_range(_colors.size())) {
+                for(const auto i : index_range(_colors)) {
                     const bool is_selected{i == _color_index};
                     color_name = std::get<0>(_colors[i]);
                     if(gui.selectable(color_name, is_selected).or_false()) {

@@ -192,7 +192,7 @@ auto valtree_vec3_vector_builder::_do_add(
                 }
             }
             if(path.ends_with("_")) {
-                for(const auto i : integer_range(data.size())) {
+                for(const auto i : index_range(data)) {
                     _temp._v[_offs] = data[i];
                     if(++_offs == 3) {
                         _offs = 0;
