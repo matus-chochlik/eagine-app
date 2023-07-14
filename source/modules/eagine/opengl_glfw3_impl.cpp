@@ -336,7 +336,7 @@ public:
 private:
     glfw3_opengl_provider& _provider;
     identifier _instance_id;
-    guiplus::gui_utils _gui;
+    guiplus::gui_utils _gui{*this};
     guiplus::imgui_context _imgui_context;
     std::string _format_buffer;
 
