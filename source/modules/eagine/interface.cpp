@@ -140,11 +140,11 @@ export struct hmi_provider : interface<hmi_provider> {
     virtual void clean_up(execution_context&) = 0;
 
     virtual void input_enumerate(
-      callable_ref<void(std::shared_ptr<input_provider>)>) = 0;
+      callable_ref<void(shared_holder<input_provider>)>) = 0;
     virtual void video_enumerate(
-      callable_ref<void(std::shared_ptr<video_provider>)>) = 0;
+      callable_ref<void(shared_holder<video_provider>)>) = 0;
     virtual void audio_enumerate(
-      callable_ref<void(std::shared_ptr<audio_provider>)>) = 0;
+      callable_ref<void(shared_holder<audio_provider>)>) = 0;
 };
 //------------------------------------------------------------------------------
 export struct framedump : interface<framedump> {

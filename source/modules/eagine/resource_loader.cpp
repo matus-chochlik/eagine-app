@@ -122,13 +122,12 @@ public:
         return is(resource_kind::finished);
     }
 
-    auto continuation() const noexcept
-      -> std::shared_ptr<pending_resource_info> {
+    auto continuation() const noexcept -> shared_holder<pending_resource_info> {
         return _continuation.lock();
     }
 
     void set_continuation(
-      const std::shared_ptr<pending_resource_info>& cont) noexcept {
+      const shared_holder<pending_resource_info>& cont) noexcept {
         _continuation = cont;
     }
 
@@ -351,7 +350,7 @@ private:
 
     resource_loader& _parent;
     const identifier_t _request_id;
-    std::weak_ptr<pending_resource_info> _continuation{};
+    weak_holder<pending_resource_info> _continuation{};
     const url _locator;
 
     std::variant<
@@ -374,7 +373,7 @@ private:
 class valtree_builder_common {
 public:
     valtree_builder_common(
-      const std::shared_ptr<pending_resource_info>& info) noexcept
+      const shared_holder<pending_resource_info>& info) noexcept
       : _parent{info} {}
 
     auto log(log_event_severity severity, const string_view format) noexcept
@@ -393,7 +392,7 @@ public:
     }
 
 protected:
-    std::weak_ptr<pending_resource_info> _parent;
+    weak_holder<pending_resource_info> _parent;
 };
 //------------------------------------------------------------------------------
 template <typename Derived>
@@ -421,33 +420,33 @@ public:
 };
 //------------------------------------------------------------------------------
 auto make_valtree_float_vector_builder(
-  const std::shared_ptr<pending_resource_info>& parent) noexcept
+  const shared_holder<pending_resource_info>& parent) noexcept
   -> unique_holder<valtree::object_builder>;
 auto make_valtree_vec3_vector_builder(
-  const std::shared_ptr<pending_resource_info>& parent) noexcept
+  const shared_holder<pending_resource_info>& parent) noexcept
   -> unique_holder<valtree::object_builder>;
 auto make_valtree_camera_parameters_builder(
-  const std::shared_ptr<pending_resource_info>& parent,
+  const shared_holder<pending_resource_info>& parent,
   orbiting_camera&) noexcept -> unique_holder<valtree::object_builder>;
 auto make_valtree_input_setup_builder(
-  const std::shared_ptr<pending_resource_info>& parent,
+  const shared_holder<pending_resource_info>& parent,
   execution_context&) noexcept -> unique_holder<valtree::object_builder>;
 //------------------------------------------------------------------------------
 auto make_valtree_gl_program_builder(
-  const std::shared_ptr<pending_resource_info>& parent,
+  const shared_holder<pending_resource_info>& parent,
   video_context& video) noexcept -> unique_holder<valtree::object_builder>;
 auto make_valtree_gl_texture_image_loader(
-  const std::shared_ptr<pending_resource_info>& parent,
+  const shared_holder<pending_resource_info>& parent,
   oglplus::texture_target,
   const resource_gl_texture_image_params& params) noexcept
   -> unique_holder<valtree::object_builder>;
 auto make_valtree_gl_texture_builder(
-  const std::shared_ptr<pending_resource_info>& parent,
+  const shared_holder<pending_resource_info>& parent,
   video_context& video,
   oglplus::texture_target,
   oglplus::texture_unit) noexcept -> unique_holder<valtree::object_builder>;
 auto make_valtree_gl_buffer_builder(
-  const std::shared_ptr<pending_resource_info>& parent,
+  const shared_holder<pending_resource_info>& parent,
   video_context& video,
   oglplus::buffer_target) noexcept -> unique_holder<valtree::object_builder>;
 //------------------------------------------------------------------------------
@@ -456,13 +455,13 @@ auto make_valtree_gl_buffer_builder(
 export class resource_request_result {
 public:
     resource_request_result(
-      std::shared_ptr<pending_resource_info> info,
+      shared_holder<pending_resource_info> info,
       bool cancelled) noexcept
       : _info{std::move(info)}
       , _was_cancelled{cancelled} {}
 
     resource_request_result(
-      const std::pair<identifier_t, std::shared_ptr<pending_resource_info>>& p,
+      const std::pair<identifier_t, shared_holder<pending_resource_info>>& p,
       bool cancelled) noexcept
       : resource_request_result{std::get<1>(p), cancelled} {}
 
@@ -473,7 +472,7 @@ public:
 
     auto info() const noexcept -> pending_resource_info&;
 
-    operator std::shared_ptr<pending_resource_info>() const noexcept {
+    operator shared_holder<pending_resource_info>() const noexcept {
         return _info;
     }
 
@@ -493,7 +492,7 @@ public:
     }
 
     /// @brief Sets the reference to the continuation request of this request.
-    auto set_continuation(const std::shared_ptr<pending_resource_info>& cont)
+    auto set_continuation(const shared_holder<pending_resource_info>& cont)
       const noexcept -> const resource_request_result& {
         info().set_continuation(cont);
         return *this;
@@ -507,7 +506,7 @@ public:
     }
 
 private:
-    std::shared_ptr<pending_resource_info> _info;
+    shared_holder<pending_resource_info> _info;
     bool _was_cancelled;
 };
 //------------------------------------------------------------------------------
@@ -1279,9 +1278,9 @@ private:
         return _new_resource(get_request_id(), std::move(locator), kind);
     }
 
-    flat_map<identifier_t, std::shared_ptr<pending_resource_info>> _pending;
-    flat_map<identifier_t, std::shared_ptr<pending_resource_info>> _finished;
-    flat_map<identifier_t, std::shared_ptr<pending_resource_info>> _cancelled;
+    flat_map<identifier_t, shared_holder<pending_resource_info>> _pending;
+    flat_map<identifier_t, shared_holder<pending_resource_info>> _finished;
+    flat_map<identifier_t, shared_holder<pending_resource_info>> _cancelled;
 };
 //------------------------------------------------------------------------------
 inline auto valtree_builder_common::log(

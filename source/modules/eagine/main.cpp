@@ -8,13 +8,14 @@
 export module eagine.app:main;
 
 import std;
+import eagine.core.types;
 import eagine.core.main_ctx;
 import :interface;
 import :context;
 
 namespace eagine::app {
 
-export auto default_main(main_ctx& ctx, std::unique_ptr<launchpad> launcher)
+export auto default_main(main_ctx& ctx, unique_holder<launchpad> launcher)
   -> int {
     return app::execution_context(ctx)
       .prepare(std::move(launcher))

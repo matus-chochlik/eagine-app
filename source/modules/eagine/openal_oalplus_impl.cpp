@@ -146,16 +146,16 @@ public:
     void clean_up(execution_context&) final;
 
     void input_enumerate(
-      callable_ref<void(std::shared_ptr<input_provider>)>) final;
+      callable_ref<void(shared_holder<input_provider>)>) final;
     void video_enumerate(
-      callable_ref<void(std::shared_ptr<video_provider>)>) final;
+      callable_ref<void(shared_holder<video_provider>)>) final;
     void audio_enumerate(
-      callable_ref<void(std::shared_ptr<audio_provider>)>) final;
+      callable_ref<void(shared_holder<audio_provider>)>) final;
 
 private:
     oalplus::alc_api _alc_api;
 
-    std::map<identifier, std::shared_ptr<oalplus_openal_player>> _players;
+    std::map<identifier, shared_holder<oalplus_openal_player>> _players;
 };
 //------------------------------------------------------------------------------
 auto oalplus_openal_provider::is_implemented() const noexcept -> bool {
@@ -223,20 +223,20 @@ void oalplus_openal_provider::clean_up(execution_context&) {
 }
 //------------------------------------------------------------------------------
 void oalplus_openal_provider::input_enumerate(
-  callable_ref<void(std::shared_ptr<input_provider>)>) {}
+  callable_ref<void(shared_holder<input_provider>)>) {}
 //------------------------------------------------------------------------------
 void oalplus_openal_provider::video_enumerate(
-  callable_ref<void(std::shared_ptr<video_provider>)>) {}
+  callable_ref<void(shared_holder<video_provider>)>) {}
 //------------------------------------------------------------------------------
 void oalplus_openal_provider::audio_enumerate(
-  callable_ref<void(std::shared_ptr<audio_provider>)> handler) {
+  callable_ref<void(shared_holder<audio_provider>)> handler) {
     for(auto& p : _players) {
         handler(p.second);
     }
 }
 //------------------------------------------------------------------------------
 auto make_oalplus_openal_provider(main_ctx_parent parent)
-  -> std::shared_ptr<hmi_provider> {
+  -> shared_holder<hmi_provider> {
     return {std::make_shared<oalplus_openal_provider>(parent)};
 }
 //------------------------------------------------------------------------------

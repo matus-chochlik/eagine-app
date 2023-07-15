@@ -444,11 +444,11 @@ public:
     void clean_up(execution_context&) final;
 
     void input_enumerate(
-      callable_ref<void(std::shared_ptr<input_provider>)>) final;
+      callable_ref<void(shared_holder<input_provider>)>) final;
     void video_enumerate(
-      callable_ref<void(std::shared_ptr<video_provider>)>) final;
+      callable_ref<void(shared_holder<video_provider>)>) final;
     void audio_enumerate(
-      callable_ref<void(std::shared_ptr<audio_provider>)>) final;
+      callable_ref<void(shared_holder<audio_provider>)>) final;
 
     auto activities() const noexcept
       -> span<const glfw3_activity_progress_info> {
@@ -475,7 +475,7 @@ public:
 
 private:
 #if EAGINE_APP_HAS_GLFW3
-    std::map<identifier, std::shared_ptr<glfw3_opengl_window>> _windows;
+    std::map<identifier, shared_holder<glfw3_opengl_window>> _windows;
     std::vector<glfw3_activity_progress_info> _activities;
 #endif
     auto _get_progress_callback() noexcept -> callable_ref<bool() noexcept>;
@@ -1580,7 +1580,7 @@ void glfw3_opengl_provider::clean_up(execution_context&) {
 }
 //------------------------------------------------------------------------------
 void glfw3_opengl_provider::input_enumerate(
-  [[maybe_unused]] callable_ref<void(std::shared_ptr<input_provider>)> handler) {
+  [[maybe_unused]] callable_ref<void(shared_holder<input_provider>)> handler) {
 #if EAGINE_APP_HAS_GLFW3
     for(auto& p : _windows) {
         handler(p.second);
@@ -1589,7 +1589,7 @@ void glfw3_opengl_provider::input_enumerate(
 }
 //------------------------------------------------------------------------------
 void glfw3_opengl_provider::video_enumerate(
-  [[maybe_unused]] callable_ref<void(std::shared_ptr<video_provider>)> handler) {
+  [[maybe_unused]] callable_ref<void(shared_holder<video_provider>)> handler) {
 #if EAGINE_APP_HAS_GLFW3
     for(auto& p : _windows) {
         handler(p.second);
@@ -1598,7 +1598,7 @@ void glfw3_opengl_provider::video_enumerate(
 }
 //------------------------------------------------------------------------------
 void glfw3_opengl_provider::audio_enumerate(
-  callable_ref<void(std::shared_ptr<audio_provider>)>) {}
+  callable_ref<void(shared_holder<audio_provider>)>) {}
 //------------------------------------------------------------------------------
 void glfw3_opengl_provider::activity_begun(
   [[maybe_unused]] const activity_progress_id_t parent_id,
@@ -1646,7 +1646,7 @@ void glfw3_opengl_provider::activity_updated(
 }
 //------------------------------------------------------------------------------
 auto make_glfw3_opengl_provider(main_ctx_parent parent)
-  -> std::shared_ptr<hmi_provider> {
+  -> shared_holder<hmi_provider> {
     return {std::make_shared<glfw3_opengl_provider>(parent)};
 }
 //------------------------------------------------------------------------------
