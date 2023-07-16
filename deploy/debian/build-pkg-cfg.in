@@ -1,2 +1,0 @@
-eagine_app_name="$<TARGET_FILE_NAME:eagine-app>"
-eagine_app_path="$<TARGET_FILE:eagine-app>"
