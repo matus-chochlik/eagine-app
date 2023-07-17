@@ -63,6 +63,7 @@ eagine_add_module(
 	eagine.app PARTITION implementation
 	IMPORTS
 		interface
+		eagine.core.types
 		eagine.core.main_ctx
 )
 
@@ -119,6 +120,7 @@ eagine_add_module(
 	eagine.app PARTITION main
 	IMPORTS
 		interface context
+		eagine.core.types
 		eagine.core.main_ctx
 )
 

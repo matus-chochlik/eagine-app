@@ -58,9 +58,9 @@ private:
     oglplus::owned_renderbuffer_name _depth_rbo;
     oglplus::owned_renderbuffer_name _stencil_rbo;
     oglplus::owned_framebuffer_name _offscreen_fbo;
-    std::shared_ptr<framedump> _framedump_color{};
-    std::shared_ptr<framedump> _framedump_depth{};
-    std::shared_ptr<framedump> _framedump_stencil{};
+    shared_holder<framedump> _framedump_color{};
+    shared_holder<framedump> _framedump_depth{};
+    shared_holder<framedump> _framedump_stencil{};
     std::vector<callable_ref<void(video_context&) noexcept>> _cleanup_ops;
 };
 //------------------------------------------------------------------------------
@@ -277,7 +277,7 @@ static void video_context_debug_callback(
 //------------------------------------------------------------------------------
 video_context::video_context(
   execution_context& parent,
-  std::shared_ptr<video_provider> provider) noexcept
+  shared_holder<video_provider> provider) noexcept
   : _parent{parent}
   , _provider{std::move(provider)} {
     assert(_provider);
@@ -286,7 +286,7 @@ video_context::video_context(
 //------------------------------------------------------------------------------
 auto video_context::init_gl_api() noexcept -> bool {
     try {
-        _gl_api = std::make_shared<oglplus::gl_api>();
+        _gl_api.emplace();
         const auto& [gl, GL] = *_gl_api;
 
         const auto pos =
@@ -317,7 +317,7 @@ auto video_context::init_gl_api() noexcept -> bool {
             }
         }
 
-        _state = std::make_shared<video_context_state>(_parent, opts);
+        _state.emplace(_parent, opts);
 
         if(not _provider->has_framebuffer()) {
             if(not _state->init_framebuffer(_parent, *_gl_api)) {
@@ -376,7 +376,7 @@ void video_context::clean_up() noexcept {
 //------------------------------------------------------------------------------
 audio_context::audio_context(
   execution_context& parent,
-  std::shared_ptr<audio_provider> provider) noexcept
+  shared_holder<audio_provider> provider) noexcept
   : _parent{parent}
   , _provider{std::move(provider)} {
     assert(_provider);
@@ -397,7 +397,7 @@ void audio_context::commit() {
 //------------------------------------------------------------------------------
 auto audio_context::init_al_api() noexcept -> bool {
     try {
-        _al_api = std::make_shared<oalplus::al_api>();
+        _al_api.emplace();
     } catch(...) {
     }
     return bool(_al_api);
@@ -408,7 +408,7 @@ void audio_context::clean_up() noexcept {}
 // providers
 //------------------------------------------------------------------------------
 inline auto make_all_hmi_providers(main_ctx_parent parent)
-  -> std::array<std::shared_ptr<hmi_provider>, 3> {
+  -> std::array<shared_holder<hmi_provider>, 3> {
     return {
       {make_glfw3_opengl_provider(parent),
        make_eglplus_opengl_provider(parent),
@@ -453,21 +453,21 @@ inline auto execution_context::_setup_providers() noexcept -> bool {
 
     for(auto& provider : _hmi_providers) {
         if(try_init(provider)) {
-            const auto add_input = [&](std::shared_ptr<input_provider> input) {
+            const auto add_input = [&](shared_holder<input_provider> input) {
                 input->input_connect(*this);
                 _input_providers.emplace_back(std::move(input));
             };
             provider->input_enumerate({construct_from, add_input});
 
-            const auto add_video = [&](std::shared_ptr<video_provider> video) {
+            const auto add_video = [&](shared_holder<video_provider> video) {
                 _video_contexts.emplace_back(
-                  std::make_unique<video_context>(*this, std::move(video)));
+                  default_selector, *this, std::move(video));
             };
             provider->video_enumerate({construct_from, add_video});
 
-            const auto add_audio = [&](std::shared_ptr<audio_provider> audio) {
+            const auto add_audio = [&](shared_holder<audio_provider> audio) {
                 _audio_contexts.emplace_back(
-                  std::make_unique<audio_context>(*this, std::move(audio)));
+                  default_selector, *this, std::move(audio));
             };
             provider->audio_enumerate({construct_from, add_audio});
         }
@@ -494,7 +494,7 @@ auto execution_context::enough_frames(const span_size_t frame_no) const noexcept
     return options().enough_frames(frame_no);
 }
 //------------------------------------------------------------------------------
-auto execution_context::prepare(std::unique_ptr<launchpad> pad)
+auto execution_context::prepare(unique_holder<launchpad> pad)
   -> execution_context& {
     if(pad) {
         if(pad->setup(main_context(), _options)) {

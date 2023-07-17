@@ -43,7 +43,7 @@ export class video_context {
 public:
     video_context(
       execution_context& parent,
-      std::shared_ptr<video_provider> provider) noexcept;
+      shared_holder<video_provider> provider) noexcept;
 
     /// @brief Returns a reference to the parent application execution context.
     auto parent() const noexcept -> execution_context& {
@@ -96,7 +96,7 @@ public:
     /// @see init_gl_api
     /// @see with_gl
     auto gl_ref() const noexcept -> oglplus::gl_api_reference {
-        return {_gl_api};
+        return _gl_api;
     }
 
     /// @brief Calls the specified function if the EGL API is available.
@@ -172,9 +172,9 @@ private:
 
     execution_context& _parent;
     long _frame_no{0};
-    std::shared_ptr<video_provider> _provider{};
-    std::shared_ptr<oglplus::gl_api> _gl_api{};
-    std::shared_ptr<video_context_state> _state{};
+    shared_holder<video_provider> _provider{};
+    shared_holder<oglplus::gl_api> _gl_api{};
+    shared_holder<video_context_state> _state{};
 };
 //------------------------------------------------------------------------------
 /// @brief Class holding audio playback and recording-related application support objects.
@@ -189,7 +189,7 @@ export class audio_context {
 public:
     audio_context(
       execution_context& parent,
-      std::shared_ptr<audio_provider> provider) noexcept;
+      shared_holder<audio_provider> provider) noexcept;
 
     /// @brief Start working in this audio context (make it current).
     /// @see end
@@ -213,7 +213,7 @@ public:
     /// @brief Returns a reference to the AL sound API in this context.
     /// @see with_al
     auto al_ref() const noexcept -> oalplus::al_api_reference {
-        return {_al_api};
+        return _al_api;
     }
 
     template <typename Function>
@@ -226,8 +226,8 @@ public:
 
 private:
     execution_context& _parent;
-    std::shared_ptr<audio_provider> _provider{};
-    std::shared_ptr<oalplus::al_api> _al_api{};
+    shared_holder<audio_provider> _provider{};
+    shared_holder<oalplus::al_api> _al_api{};
 };
 //------------------------------------------------------------------------------
 /// @brief Class holding shared video/audio rendering application support objects.
@@ -267,7 +267,7 @@ public:
     auto state() const noexcept -> const context_state_view&;
 
     /// @brief Prepares the application launch pad object.
-    auto prepare(std::unique_ptr<launchpad> pad) -> execution_context&;
+    auto prepare(unique_holder<launchpad> pad) -> execution_context&;
 
     /// @brief Indicates if the application is running its main loop.
     /// @see stop_running
@@ -622,10 +622,10 @@ private:
     unique_holder<application> _app;
 
     resource_loader& _loader;
-    std::vector<std::shared_ptr<hmi_provider>> _hmi_providers;
-    std::vector<std::shared_ptr<input_provider>> _input_providers;
-    std::vector<std::unique_ptr<video_context>> _video_contexts;
-    std::vector<std::unique_ptr<audio_context>> _audio_contexts;
+    std::vector<shared_holder<hmi_provider>> _hmi_providers;
+    std::vector<shared_holder<input_provider>> _input_providers;
+    std::vector<unique_holder<video_context>> _video_contexts;
+    std::vector<unique_holder<audio_context>> _audio_contexts;
 
     bool _keep_running{true};
 

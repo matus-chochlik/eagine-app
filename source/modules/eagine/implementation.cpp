@@ -8,19 +8,20 @@
 export module eagine.app:implementation;
 
 import std;
+import eagine.core.types;
 import eagine.core.main_ctx;
 import :interface;
 
 namespace eagine::app {
 
 export auto make_oalplus_openal_provider(main_ctx_parent)
-  -> std::shared_ptr<hmi_provider>;
+  -> shared_holder<hmi_provider>;
 
 export auto make_eglplus_opengl_provider(main_ctx_parent)
-  -> std::shared_ptr<hmi_provider>;
+  -> shared_holder<hmi_provider>;
 
 export auto make_glfw3_opengl_provider(main_ctx_parent)
-  -> std::shared_ptr<hmi_provider>;
+  -> shared_holder<hmi_provider>;
 
 } // namespace eagine::app
 

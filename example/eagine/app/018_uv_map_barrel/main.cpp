@@ -170,8 +170,8 @@ public:
     }
 };
 //------------------------------------------------------------------------------
-auto establish(main_ctx&) -> std::unique_ptr<launchpad> {
-    return {std::make_unique<example_launchpad>()};
+auto establish(main_ctx&) -> unique_holder<launchpad> {
+    return {hold<example_launchpad>};
 }
 //------------------------------------------------------------------------------
 auto example_main(main_ctx& ctx) -> int {

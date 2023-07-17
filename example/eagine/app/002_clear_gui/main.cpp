@@ -47,7 +47,7 @@ public:
         if(gui.begin("background", show_window).or_false()) {
             auto color_name{std::get<0>(_colors[_color_index])};
             if(gui.begin_combo("select color", color_name).or_false()) {
-                for(const auto i : integer_range(_colors.size())) {
+                for(const auto i : index_range(_colors)) {
                     const bool is_selected{i == _color_index};
                     color_name = std::get<0>(_colors[i]);
                     if(gui.selectable(color_name, is_selected).or_false()) {
@@ -109,8 +109,8 @@ public:
     }
 };
 //------------------------------------------------------------------------------
-auto establish(main_ctx&) -> std::unique_ptr<launchpad> {
-    return {std::make_unique<example_launchpad>()};
+auto establish(main_ctx&) -> unique_holder<launchpad> {
+    return {hold<example_launchpad>};
 }
 //------------------------------------------------------------------------------
 auto example_main(main_ctx& ctx) -> int {

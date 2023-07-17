@@ -110,7 +110,7 @@ auto valtree_float_vector_builder::finish() noexcept -> bool {
 }
 //------------------------------------------------------------------------------
 auto make_valtree_float_vector_builder(
-  const std::shared_ptr<pending_resource_info>& parent) noexcept
+  const shared_holder<pending_resource_info>& parent) noexcept
   -> unique_holder<valtree::object_builder> {
     return {hold<valtree_float_vector_builder>, parent};
 }
@@ -192,7 +192,7 @@ auto valtree_vec3_vector_builder::_do_add(
                 }
             }
             if(path.ends_with("_")) {
-                for(const auto i : integer_range(data.size())) {
+                for(const auto i : index_range(data)) {
                     _temp._v[_offs] = data[i];
                     if(++_offs == 3) {
                         _offs = 0;
@@ -208,7 +208,7 @@ auto valtree_vec3_vector_builder::_do_add(
 }
 //------------------------------------------------------------------------------
 auto make_valtree_vec3_vector_builder(
-  const std::shared_ptr<pending_resource_info>& parent) noexcept
+  const shared_holder<pending_resource_info>& parent) noexcept
   -> unique_holder<valtree::object_builder> {
     return {hold<valtree_vec3_vector_builder>, parent};
 }
@@ -222,7 +222,7 @@ class valtree_orbiting_camera_parameters_builder
 
 public:
     valtree_orbiting_camera_parameters_builder(
-      const std::shared_ptr<pending_resource_info>& parent,
+      const shared_holder<pending_resource_info>& parent,
       orbiting_camera& camera) noexcept
       : base{parent}
       , _camera{camera} {}
@@ -284,7 +284,7 @@ void valtree_orbiting_camera_parameters_builder::parse_param(
 }
 //------------------------------------------------------------------------------
 auto make_valtree_camera_parameters_builder(
-  const std::shared_ptr<pending_resource_info>& parent,
+  const shared_holder<pending_resource_info>& parent,
   orbiting_camera& camera) noexcept -> unique_holder<valtree::object_builder> {
     return {hold<valtree_orbiting_camera_parameters_builder>, parent, camera};
 }
@@ -297,7 +297,7 @@ class valtree_input_setup_builder
 
 public:
     valtree_input_setup_builder(
-      const std::shared_ptr<pending_resource_info>& parent,
+      const shared_holder<pending_resource_info>& parent,
       execution_context& ctx) noexcept
       : base{parent}
       , _ctx{ctx} {}
@@ -653,7 +653,7 @@ void valtree_input_setup_builder::reset() noexcept {
 }
 //------------------------------------------------------------------------------
 auto make_valtree_input_setup_builder(
-  const std::shared_ptr<pending_resource_info>& parent,
+  const shared_holder<pending_resource_info>& parent,
   execution_context& ctx) noexcept -> unique_holder<valtree::object_builder> {
     return {hold<valtree_input_setup_builder>, parent, ctx};
 }

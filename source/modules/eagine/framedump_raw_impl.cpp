@@ -101,8 +101,8 @@ auto raw_framedump::dump_frame(
     return _write_to_file(path.str(), data);
 }
 //------------------------------------------------------------------------------
-auto make_raw_framedump(main_ctx_parent parent) -> std::shared_ptr<framedump> {
-    return std::make_shared<raw_framedump>(parent);
+auto make_raw_framedump(main_ctx_parent parent) -> shared_holder<framedump> {
+    return {hold<raw_framedump>, parent};
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

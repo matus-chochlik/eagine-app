@@ -82,7 +82,7 @@ export template <typename... Resources>
 class basic_resource_manager {
     template <typename L>
     using _lr_transf =
-      std::vector<std::unique_ptr<std::tuple<L, resource_load_params<L>>>>;
+      std::vector<unique_holder<std::tuple<L, resource_load_params<L>>>>;
     template <typename R>
     using _r_transf = _lr_transf<loaded_resource<R>>;
 

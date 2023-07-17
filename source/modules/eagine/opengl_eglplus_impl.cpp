@@ -493,16 +493,16 @@ public:
     void clean_up(execution_context&) final;
 
     void input_enumerate(
-      callable_ref<void(std::shared_ptr<input_provider>)>) final;
+      callable_ref<void(shared_holder<input_provider>)>) final;
     void video_enumerate(
-      callable_ref<void(std::shared_ptr<video_provider>)>) final;
+      callable_ref<void(shared_holder<video_provider>)>) final;
     void audio_enumerate(
-      callable_ref<void(std::shared_ptr<audio_provider>)>) final;
+      callable_ref<void(shared_holder<audio_provider>)>) final;
 
 private:
     eglplus::egl_api _egl_api;
 
-    std::map<identifier, std::shared_ptr<eglplus_opengl_surface>> _surfaces;
+    std::map<identifier, shared_holder<eglplus_opengl_surface>> _surfaces;
 };
 //------------------------------------------------------------------------------
 auto eglplus_opengl_provider::is_implemented() const noexcept -> bool {
@@ -567,20 +567,20 @@ void eglplus_opengl_provider::clean_up(execution_context&) {
 }
 //------------------------------------------------------------------------------
 void eglplus_opengl_provider::input_enumerate(
-  callable_ref<void(std::shared_ptr<input_provider>)>) {}
+  callable_ref<void(shared_holder<input_provider>)>) {}
 //------------------------------------------------------------------------------
 void eglplus_opengl_provider::video_enumerate(
-  callable_ref<void(std::shared_ptr<video_provider>)> handler) {
+  callable_ref<void(shared_holder<video_provider>)> handler) {
     for(auto& p : _surfaces) {
         handler(p.second);
     }
 }
 //------------------------------------------------------------------------------
 void eglplus_opengl_provider::audio_enumerate(
-  callable_ref<void(std::shared_ptr<audio_provider>)>) {}
+  callable_ref<void(shared_holder<audio_provider>)>) {}
 //------------------------------------------------------------------------------
 auto make_eglplus_opengl_provider(main_ctx_parent parent)
-  -> std::shared_ptr<hmi_provider> {
+  -> shared_holder<hmi_provider> {
     return {std::make_shared<eglplus_opengl_provider>(parent)};
 }
 //------------------------------------------------------------------------------

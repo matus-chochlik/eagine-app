@@ -34,7 +34,7 @@ class valtree_gl_program_builder
 
 public:
     valtree_gl_program_builder(
-      const std::shared_ptr<pending_resource_info>& info,
+      const shared_holder<pending_resource_info>& info,
       video_context& video) noexcept
       : base{info}
       , _video{video} {}
@@ -142,7 +142,7 @@ private:
 };
 //------------------------------------------------------------------------------
 auto make_valtree_gl_program_builder(
-  const std::shared_ptr<pending_resource_info>& parent,
+  const shared_holder<pending_resource_info>& parent,
   video_context& video) noexcept -> unique_holder<valtree::object_builder> {
     return {hold<valtree_gl_program_builder>, parent, video};
 }
@@ -212,7 +212,7 @@ class valtree_gl_texture_image_loader
 
 public:
     valtree_gl_texture_image_loader(
-      std::shared_ptr<pending_resource_info> info,
+      shared_holder<pending_resource_info> info,
       oglplus::texture_target target,
       const resource_gl_texture_image_params& params) noexcept
       : base{std::move(info)}
@@ -361,7 +361,7 @@ private:
 };
 //------------------------------------------------------------------------------
 auto make_valtree_gl_texture_image_loader(
-  const std::shared_ptr<pending_resource_info>& parent,
+  const shared_holder<pending_resource_info>& parent,
   oglplus::texture_target target,
   const resource_gl_texture_image_params& params) noexcept
   -> unique_holder<valtree::object_builder> {
@@ -388,7 +388,7 @@ class valtree_gl_texture_builder
 
 public:
     valtree_gl_texture_builder(
-      const std::shared_ptr<pending_resource_info>& info,
+      const shared_holder<pending_resource_info>& info,
       video_context& video,
       oglplus::texture_target tex_target,
       oglplus::texture_unit tex_unit) noexcept
@@ -586,7 +586,7 @@ private:
 };
 //------------------------------------------------------------------------------
 auto make_valtree_gl_texture_builder(
-  const std::shared_ptr<pending_resource_info>& parent,
+  const shared_holder<pending_resource_info>& parent,
   video_context& video,
   oglplus::texture_target target,
   oglplus::texture_unit unit) noexcept
@@ -932,7 +932,7 @@ class valtree_gl_buffer_builder
 
 public:
     valtree_gl_buffer_builder(
-      const std::shared_ptr<pending_resource_info>& info,
+      const shared_holder<pending_resource_info>& info,
       video_context& video,
       oglplus::buffer_target buf_target) noexcept
       : base{info}
@@ -971,7 +971,7 @@ private:
 };
 //------------------------------------------------------------------------------
 auto make_valtree_gl_buffer_builder(
-  const std::shared_ptr<pending_resource_info>& parent,
+  const shared_holder<pending_resource_info>& parent,
   video_context& video,
   oglplus::buffer_target target) noexcept
   -> unique_holder<valtree::object_builder> {

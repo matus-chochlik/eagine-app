@@ -14,7 +14,7 @@ import :interface;
 
 namespace eagine::app {
 
-export auto make_raw_framedump(main_ctx_parent) -> std::shared_ptr<framedump>;
+export auto make_raw_framedump(main_ctx_parent) -> shared_holder<framedump>;
 
 } // namespace eagine::app
 

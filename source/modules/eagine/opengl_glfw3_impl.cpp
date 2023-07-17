@@ -263,6 +263,8 @@ public:
       const video_options&,
       const span<GLFWmonitor* const>) -> bool;
 
+    void update_gui(execution_context&, application&);
+    void update_glfw(execution_context&, application&);
     void update(execution_context&, application&);
 
     void clean_up();
@@ -334,8 +336,7 @@ public:
 private:
     glfw3_opengl_provider& _provider;
     identifier _instance_id;
-    application_config_value<bool> _imgui_enabled;
-    guiplus::imgui_api _imgui_api;
+    guiplus::gui_utils _gui{*this};
     guiplus::imgui_context _imgui_context;
     std::string _format_buffer;
 
@@ -416,6 +417,7 @@ private:
     float _wheel_change_x{0};
     float _wheel_change_y{0};
     bool _imgui_visible{false};
+    bool _imgui_updated{false};
     bool _mouse_enabled{false};
     bool _backtick_was_pressed{false};
 };
@@ -442,11 +444,11 @@ public:
     void clean_up(execution_context&) final;
 
     void input_enumerate(
-      callable_ref<void(std::shared_ptr<input_provider>)>) final;
+      callable_ref<void(shared_holder<input_provider>)>) final;
     void video_enumerate(
-      callable_ref<void(std::shared_ptr<video_provider>)>) final;
+      callable_ref<void(shared_holder<video_provider>)>) final;
     void audio_enumerate(
-      callable_ref<void(std::shared_ptr<audio_provider>)>) final;
+      callable_ref<void(shared_holder<audio_provider>)>) final;
 
     auto activities() const noexcept
       -> span<const glfw3_activity_progress_info> {
@@ -473,7 +475,7 @@ public:
 
 private:
 #if EAGINE_APP_HAS_GLFW3
-    std::map<identifier, std::shared_ptr<glfw3_opengl_window>> _windows;
+    std::map<identifier, shared_holder<glfw3_opengl_window>> _windows;
     std::vector<glfw3_activity_progress_info> _activities;
 #endif
     auto _get_progress_callback() noexcept -> callable_ref<bool() noexcept>;
@@ -496,8 +498,7 @@ glfw3_opengl_window::glfw3_opengl_window(
   glfw3_opengl_provider& parent)
   : main_ctx_object{"GLFW3Wndow", parent}
   , _provider{parent}
-  , _instance_id{instance_id}
-  , _imgui_enabled{c, "application.imgui.enable", instance, true} {
+  , _instance_id{instance_id} {
 
     // keyboard keys/buttons
     _key_states.emplace_back("Spacebar", GLFW_KEY_SPACE);
@@ -1023,14 +1024,14 @@ auto glfw3_opengl_window::initialize(
             _norm_y_ndc = 1.F / float(_window_height);
             _aspect = _norm_y_ndc / _norm_x_ndc;
         }
-        if(_imgui_enabled) {
+        if(_gui.imgui.create_context) {
             glfwMakeContextCurrent(_window);
-            _imgui_api.create_context() >> _imgui_context;
-            _imgui_api.set_config_flags(_imgui_api.config_nav_enable_keyboard);
-            _imgui_api.style_colors_dark();
+            _gui.imgui.create_context() >> _imgui_context;
+            _gui.imgui.set_config_flags(_gui.imgui.config_nav_enable_keyboard);
+            _gui.imgui.style_colors_dark();
 
-            _imgui_api.glfw_init_for_opengl(_window, true);
-            _imgui_api.opengl3_init("#version 150");
+            _gui.imgui.glfw_init_for_opengl(_window, true);
+            _gui.imgui.opengl3_init("#version 150");
             glfwMakeContextCurrent(nullptr);
         }
         return true;
@@ -1079,7 +1080,7 @@ auto glfw3_opengl_window::egl_display() noexcept -> eglplus::display_handle {
 }
 //------------------------------------------------------------------------------
 auto glfw3_opengl_window::imgui_ref() noexcept -> guiplus::imgui_api_reference {
-    return {_imgui_api};
+    return {_gui.imgui};
 }
 //------------------------------------------------------------------------------
 void glfw3_opengl_window::parent_context_changed(const video_context& vctx) {
@@ -1097,11 +1098,9 @@ void glfw3_opengl_window::video_end(execution_context&) {
 //------------------------------------------------------------------------------
 void glfw3_opengl_window::video_commit(execution_context&) {
     assert(_window);
-    if(_imgui_enabled) {
-        if(_imgui_visible or not _provider.activities().empty()) {
-            if(const ok draw_data{_imgui_api.get_draw_data()}) {
-                _imgui_api.opengl3_render_draw_data(draw_data);
-            }
+    if(_imgui_updated) {
+        if(const ok draw_data{_gui.imgui.get_draw_data()}) {
+            _gui.imgui.opengl3_render_draw_data(draw_data);
         }
     }
     glfwSwapBuffers(_window);
@@ -1197,8 +1196,11 @@ void glfw3_opengl_window::mapping_commit(
       _enabled_signals.contains({mouse_id, {"Cursor", "MotionY"}});
 }
 //------------------------------------------------------------------------------
-void glfw3_opengl_window::update(execution_context& exec_ctx, application& app) {
-    if(_imgui_enabled) {
+void glfw3_opengl_window::update_gui(
+  execution_context& exec_ctx,
+  application& app) {
+    _imgui_updated = false;
+    if(_gui.imgui.begin) {
         assert(_parent_context);
         const auto activities{_provider.activities()};
         const auto& par_ctx = *_parent_context;
@@ -1206,44 +1208,45 @@ void glfw3_opengl_window::update(execution_context& exec_ctx, application& app) 
         const auto frame_dur = state.frame_duration().value();
         const auto frames_per_second = state.frames_per_second();
 
-        _imgui_api.opengl3_new_frame();
-        _imgui_api.glfw_new_frame();
-        _imgui_api.new_frame();
+        _gui.imgui.opengl3_new_frame();
+        _gui.imgui.glfw_new_frame();
+        _gui.imgui.new_frame();
 
         if(not activities.empty()) {
             bool visible{true};
-            _imgui_api.set_next_window_size({float(_window_width) * 0.8F, 0.F});
-            if(_imgui_api.begin(
-                 "Activities", visible, _imgui_api.window_no_resize)) {
+            _gui.imgui.set_next_window_size({float(_window_width) * 0.8F, 0.F});
+            if(_gui.imgui.begin(
+                 "Activities", visible, _gui.imgui.window_no_resize)) {
                 for(const auto& info : activities) {
                     const auto progress =
                       float(info.current_steps) / float(info.total_steps);
-                    _imgui_api.progress_bar(progress, info.title);
+                    _gui.imgui.progress_bar(progress, info.title);
                 }
-                _imgui_api.end();
+                _gui.imgui.end();
             }
         }
 
+        app.update_overlays(_gui);
         if(_imgui_visible) {
-            if(_imgui_api.begin(
-                 "Application", &_imgui_visible, _imgui_api.window_no_resize)) {
-                _imgui_api.text_buffered(
+            if(_gui.imgui.begin(
+                 "Application", &_imgui_visible, _gui.imgui.window_no_resize)) {
+                _gui.imgui.text_buffered(
                   _format_buffer,
                   "Dimensions: {}x{}",
                   _window_width,
                   _window_height);
 
-                _imgui_api.text_buffered(
+                _gui.imgui.text_buffered(
                   _format_buffer, "Frame number: {}", par_ctx.frame_number());
-                _imgui_api.text_buffered(
+                _gui.imgui.text_buffered(
                   _format_buffer,
                   "Frame time: {:.2f} [ms]",
                   frame_dur * 1000.F);
-                _imgui_api.text_buffered(
+                _gui.imgui.text_buffered(
                   _format_buffer,
                   "Frames per second: {:.1f}",
                   frames_per_second);
-                _imgui_api.text_buffered(
+                _gui.imgui.text_buffered(
                   _format_buffer,
                   "Activities in progress: {}",
                   _provider.activities().size());
@@ -1255,14 +1258,14 @@ void glfw3_opengl_window::update(execution_context& exec_ctx, application& app) 
                         entry.apply(overloaded(
                           [&, this](glfw3_window_ui_button_state& button) {
                               if(button.pressed.assign(
-                                   _imgui_api.button(button.label).or_false())) {
+                                   _gui.imgui.button(button.label).or_false())) {
                                   sink.consume(
                                     {gui_id, entry.input_id, entry.kind()},
                                     button.pressed);
                               }
                           },
                           [&, this](glfw3_window_ui_toggle_state& toggle) {
-                              _imgui_api.checkbox(toggle.label, toggle.value);
+                              _gui.imgui.checkbox(toggle.label, toggle.value);
                               if(toggle.toggled_on.assign(toggle.value)) {
                                   sink.consume(
                                     {gui_id, entry.input_id, entry.kind()},
@@ -1270,7 +1273,7 @@ void glfw3_opengl_window::update(execution_context& exec_ctx, application& app) 
                               }
                           },
                           [&, this](glfw3_window_ui_slider_state& slider) {
-                              if(_imgui_api
+                              if(_gui.imgui
                                    .slider_float(
                                      slider.label,
                                      slider.value,
@@ -1287,26 +1290,31 @@ void glfw3_opengl_window::update(execution_context& exec_ctx, application& app) 
                     }
                 }
 
-                if(_imgui_api.button("Hide").or_false()) {
+                if(_gui.imgui.button("Hide").or_false()) {
                     _imgui_visible = false;
                 }
-                _imgui_api.same_line();
-                if(_imgui_api.button("Quit").or_false()) {
+                _gui.imgui.same_line();
+                if(_gui.imgui.button("Quit").or_false()) {
                     glfwSetWindowShouldClose(_window, GLFW_TRUE);
                 }
-                if(_imgui_api.is_item_hovered().or_false()) {
-                    _imgui_api.begin_tooltip();
-                    _imgui_api.text_unformatted("Closes the application");
-                    _imgui_api.end_tooltip();
+                if(_gui.imgui.is_item_hovered().or_false()) {
+                    _gui.imgui.begin_tooltip();
+                    _gui.imgui.text_unformatted("Closes the application");
+                    _gui.imgui.end_tooltip();
                 }
-                _imgui_api.end();
+                _gui.imgui.end();
             }
-            app.update_gui(_imgui_api);
+            app.update_gui(_gui.imgui);
         }
-        _imgui_api.end_frame();
-        _imgui_api.render();
+        _gui.imgui.end_frame();
+        _gui.imgui.render();
+        _imgui_updated = true;
     }
-
+}
+//------------------------------------------------------------------------------
+void glfw3_opengl_window::update_glfw(
+  execution_context& exec_ctx,
+  application& app) {
     if(glfwWindowShouldClose(_window)) {
         exec_ctx.stop_running();
     } else {
@@ -1417,26 +1425,29 @@ void glfw3_opengl_window::update(execution_context& exec_ctx, application& app) 
                 }
             }
 
-            if(_imgui_enabled) {
-                const auto backtick_is_pressed =
-                  glfwGetKey(_window, GLFW_KEY_GRAVE_ACCENT) == GLFW_PRESS;
-                if(_backtick_was_pressed != backtick_is_pressed) {
-                    if(_backtick_was_pressed) {
-                        _imgui_visible = not _imgui_visible;
-                    }
-                    _backtick_was_pressed = backtick_is_pressed;
+            const auto backtick_is_pressed =
+              glfwGetKey(_window, GLFW_KEY_GRAVE_ACCENT) == GLFW_PRESS;
+            if(_backtick_was_pressed != backtick_is_pressed) {
+                if(_backtick_was_pressed) {
+                    _imgui_visible = not _imgui_visible;
                 }
+                _backtick_was_pressed = backtick_is_pressed;
             }
         }
     }
 }
 //------------------------------------------------------------------------------
+void glfw3_opengl_window::update(execution_context& exec_ctx, application& app) {
+    update_gui(exec_ctx, app);
+    update_glfw(exec_ctx, app);
+}
+//------------------------------------------------------------------------------
 void glfw3_opengl_window::clean_up() {
     if(_window) {
-        if(_imgui_enabled) {
-            _imgui_api.opengl3_shutdown();
-            _imgui_api.glfw_shutdown();
-            _imgui_api.destroy_context(_imgui_context);
+        if(_imgui_updated) {
+            _gui.imgui.opengl3_shutdown();
+            _gui.imgui.glfw_shutdown();
+            _gui.imgui.destroy_context(_imgui_context);
         }
         glfwDestroyWindow(_window);
     }
@@ -1569,7 +1580,7 @@ void glfw3_opengl_provider::clean_up(execution_context&) {
 }
 //------------------------------------------------------------------------------
 void glfw3_opengl_provider::input_enumerate(
-  [[maybe_unused]] callable_ref<void(std::shared_ptr<input_provider>)> handler) {
+  [[maybe_unused]] callable_ref<void(shared_holder<input_provider>)> handler) {
 #if EAGINE_APP_HAS_GLFW3
     for(auto& p : _windows) {
         handler(p.second);
@@ -1578,7 +1589,7 @@ void glfw3_opengl_provider::input_enumerate(
 }
 //------------------------------------------------------------------------------
 void glfw3_opengl_provider::video_enumerate(
-  [[maybe_unused]] callable_ref<void(std::shared_ptr<video_provider>)> handler) {
+  [[maybe_unused]] callable_ref<void(shared_holder<video_provider>)> handler) {
 #if EAGINE_APP_HAS_GLFW3
     for(auto& p : _windows) {
         handler(p.second);
@@ -1587,7 +1598,7 @@ void glfw3_opengl_provider::video_enumerate(
 }
 //------------------------------------------------------------------------------
 void glfw3_opengl_provider::audio_enumerate(
-  callable_ref<void(std::shared_ptr<audio_provider>)>) {}
+  callable_ref<void(shared_holder<audio_provider>)>) {}
 //------------------------------------------------------------------------------
 void glfw3_opengl_provider::activity_begun(
   [[maybe_unused]] const activity_progress_id_t parent_id,
@@ -1635,7 +1646,7 @@ void glfw3_opengl_provider::activity_updated(
 }
 //------------------------------------------------------------------------------
 auto make_glfw3_opengl_provider(main_ctx_parent parent)
-  -> std::shared_ptr<hmi_provider> {
+  -> shared_holder<hmi_provider> {
     return {std::make_shared<glfw3_opengl_provider>(parent)};
 }
 //------------------------------------------------------------------------------
