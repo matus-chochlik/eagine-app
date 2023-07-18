@@ -10,8 +10,33 @@ export module eagine.app:types;
 import std;
 import eagine.core.types;
 import eagine.core.reflection;
+import eagine.oglplus;
 
 namespace eagine::app {
+//------------------------------------------------------------------------------
+/// @brief 2d floating-point vector type.
+/// @ingroup application
+export using vec2 = oglplus::tvec<float, 2, true>;
+
+/// @brief 3d floating-point vector type.
+/// @ingroup application
+export using vec3 = oglplus::tvec<float, 3, true>;
+
+/// @brief 4d floating-point vector type.
+/// @ingroup application
+export using vec4 = oglplus::tvec<float, 4, true>;
+
+/// @brief 3x3 floating-point matrix type.
+/// @ingroup application
+export using mat2 = oglplus::tmat<float, 2, 2, true>;
+
+/// @brief 3x3 floating-point matrix type.
+/// @ingroup application
+export using mat3 = oglplus::tmat<float, 3, 3, true>;
+
+/// @brief 4x4 floating-point matrix type.
+/// @ingroup application
+export using mat4 = oglplus::tmat<float, 4, 4, true>;
 //------------------------------------------------------------------------------
 /// @brief Video / graphics rendering context kind.
 /// @ingroup application

@@ -7,6 +7,7 @@ eagine_add_module(
 	IMPORTS
 		eagine.core.types
 		eagine.core.reflection
+		eagine.oglplus
 )
 
 eagine_add_module(
