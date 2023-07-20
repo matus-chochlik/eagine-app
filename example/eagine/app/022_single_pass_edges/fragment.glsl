@@ -1,6 +1,6 @@
 #version 140
 
-const float EdgeWidth = 1.2;
+const float EdgeWidth = 0.8;
 
 noperspective in vec3 geomDist;
 in vec3 geomNormal;

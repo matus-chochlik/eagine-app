@@ -47,8 +47,8 @@ example_cel::example_cel(execution_context& ec, video_context& vc)
 
     _camera.set_near(0.1F)
       .set_far(50.F)
-      .set_orbit_min(1.3F)
-      .set_orbit_max(6.0F)
+      .set_orbit_min(0.7F)
+      .set_orbit_max(3.0F)
       .set_fov(right_angle_());
 
     _camera.connect_inputs(context()).basic_input_mapping(context());
@@ -75,7 +75,7 @@ void example_cel::update() noexcept {
         reset_timeout();
     }
     if(state.user_idle_too_long()) {
-        _camera.idle_update(state);
+        _camera.idle_update(state, 3.F);
     }
 
     _bg.clear(_video, _camera);
