@@ -16,6 +16,7 @@ import eagine.core.units;
 import eagine.core.utility;
 import eagine.core.valid_if;
 import eagine.oglplus;
+import :types;
 import :state;
 import :input;
 import :context;
@@ -24,6 +25,7 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 /// @brief Extension of orbiting camera wrapper.
 /// @ingroup application
+/// @see camera_transforms
 export class orbiting_camera : public oglplus::orbiting_camera {
 
 public:
@@ -198,6 +200,67 @@ private:
     void _change_altitude(const input& i) noexcept;
     void _change_longitude(const input& i) noexcept;
     void _change_latitude(const input& i) noexcept;
+};
+//------------------------------------------------------------------------------
+/// @brief Class doing various transforms using camera matrix and video context.
+/// @ingroup application
+/// @see orbiting_camera
+export class camera_transforms {
+public:
+    ///@brief Construction from reference to camera and a video context.
+    constexpr camera_transforms(
+      orbiting_camera& camera,
+      video_context& video) noexcept
+      : _video{video}
+      , _camera_matrix{camera.matrix(video)} {}
+
+    /// @brief Returns the underlying camera matrix.
+    [[nodiscard]] constexpr auto matrix() const noexcept -> const mat4& {
+        return _camera_matrix;
+    }
+
+    /// @brief Returns the underlying camera matrix.
+    /// @see matrix
+    operator const mat4&() const noexcept {
+        return _camera_matrix;
+    }
+
+    /// @brief Multiples the given homogeneous vector with the camera matrix and
+    /// does perspective correction.
+    [[nodiscard]] auto world_to_ndc(const vec4& v) noexcept -> vec3 {
+        auto temp{multiply(_camera_matrix, v)};
+        temp = temp / temp.w();
+        return vec3{temp};
+    }
+
+    /// @brief Converts the given vector in world coordinates to NDC.
+    [[nodiscard]] auto world_position_to_ndc(const vec3& p) noexcept {
+        return world_to_ndc(vec4{p, 1.F});
+    }
+
+    /// @brief Converts NDC to screen coordinates.
+    [[nodiscard]] auto ndc_to_screen(const vec3& ndc, const vec2& scr) noexcept {
+        vec2 temp{ndc};
+        temp = temp * 0.5F;
+        temp = temp + vec2(0.5F);
+        temp = temp * scr;
+        temp = vec2{temp.x(), scr.y() - temp.y()};
+        return temp;
+    }
+
+    /// @brief Converts NDC to screen coordinates.
+    [[nodiscard]] auto ndc_to_screen(const vec3& ndc) noexcept {
+        return ndc_to_screen(ndc, _video.surface_size_vec2());
+    }
+
+    /// @brief Converts the given vector in world coordinates to screen coordinates.
+    [[nodiscard]] auto world_position_to_screen(const vec3& p) noexcept {
+        return ndc_to_screen(world_position_to_ndc(p));
+    }
+
+private:
+    video_context& _video;
+    const mat4 _camera_matrix;
 };
 //------------------------------------------------------------------------------
 } // namespace eagine::app

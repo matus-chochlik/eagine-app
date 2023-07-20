@@ -102,7 +102,7 @@ eagine_add_module(
 eagine_add_module(
 	eagine.app PARTITION context
 	IMPORTS
-		interface options
+		interface options types
 		state input
 		resource_loader
 		eagine.core.types
@@ -147,7 +147,7 @@ eagine_add_module(
 eagine_add_module(
 	eagine.app PARTITION camera
 	IMPORTS
-		state input context
+		state input context types
 		eagine.core.types
 		eagine.core.memory
 		eagine.core.identifier

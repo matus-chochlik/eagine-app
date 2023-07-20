@@ -22,6 +22,7 @@ import eagine.eglplus;
 import eagine.oglplus;
 import eagine.oalplus;
 import eagine.msgbus;
+import :types;
 import :interface;
 import :options;
 import :state;
@@ -142,6 +143,12 @@ public:
             return _provider->surface_size();
         }
         return {1, 1};
+    }
+
+    /// @brief Returns the rendering surface's dimensions (in pixels) as vec2.
+    auto surface_size_vec2() noexcept -> vec2 {
+        const auto [x, y] = surface_size();
+        return vec2{float(x), float(y)};
     }
 
     /// @brief Returns the rendering surface's aspect ratio.
