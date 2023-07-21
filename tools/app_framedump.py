@@ -59,6 +59,13 @@ class FramedumpArgumentParser(argparse.ArgumentParser):
             raise argparse.ArgumentTypeError(msg)
 
         self.add_argument(
+            "--print-bash-completion",
+            metavar='FILE|-',
+            dest='print_bash_completion',
+            default=None
+        )
+
+        self.add_argument(
             "--work-dir", "-w",
             metavar='DIR-PATH',
             dest='work_dir_path',
@@ -266,6 +273,9 @@ class FramedumpArgumentParser(argparse.ArgumentParser):
 
     # -------------------------------------------------------------------------
     def parseArgs(self):
+        options = argparse.ArgumentParser.parse_args(self)
+        if options.print_bash_completion:
+            return options
         # ----------------------------------------------------------------------
         class _Options(object):
             # ------------------------------------------------------------------
@@ -333,7 +343,7 @@ class FramedumpArgumentParser(argparse.ArgumentParser):
                 if self.temp_dir:
                     shutil.rmtree(self.temp_dir)
 
-        return _Options(argparse.ArgumentParser.parse_args(self))
+        return _Options(options)
 # ------------------------------------------------------------------------------
 def getArgumentParser():
     return FramedumpArgumentParser(
@@ -603,11 +613,35 @@ def handleInterrupt(sig, frame):
     global keepRunning
     keepRunning = False
 # ------------------------------------------------------------------------------
+#  Argparse utilities
+# ------------------------------------------------------------------------------
+def printBashCompletion(argparser, options):
+    from eagine.argparseUtil import printBashComplete
+    def _printIt(fd):
+        printBashComplete(
+            argparser,
+            "_eagine_app_framedump",
+            "eagine-app-framedump",
+            ["--print-bash-completion"],
+            fd)
+    if options.print_bash_completion == "-":
+        _printIt(sys.stdout)
+    else:
+        with open(options.print_bash_completion, "wt") as fd:
+            _printIt(fd)
+
+# ------------------------------------------------------------------------------
 def main():
+    argparser = getArgumentParser()
+    options = argparser.parseArgs()
+    if options.print_bash_completion:
+        printBashCompletion(argparser, options)
+        return 0
+
     try:
         signal.signal(signal.SIGINT, handleInterrupt)
         signal.signal(signal.SIGTERM, handleInterrupt)
-        framedump = Framedump(getArgumentParser().parseArgs())
+        framedump = Framedump(options)
         framedump.run()
     except KeyboardInterrupt:
         return 0
