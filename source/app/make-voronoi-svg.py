@@ -371,6 +371,13 @@ class VoronoiArgumentParser(argparse.ArgumentParser):
         argparse.ArgumentParser.__init__(self, **kw)
 
         self.add_argument(
+            "--print-bash-completion",
+            metavar='FILE|-',
+            dest='print_bash_completion',
+            default=None
+        )
+
+        self.add_argument(
             'output',
             nargs='?',
             type=argparse.FileType('w'),
@@ -422,6 +429,7 @@ class VoronoiArgumentParser(argparse.ArgumentParser):
         self.add_argument(
             '--units', '-U',
             action="store",
+            choices=["px", "mm", "cm", "in", "pt"],
             default="px"
         )
 
@@ -573,7 +581,7 @@ class VoronoiArgumentParser(argparse.ArgumentParser):
         )
 
 # ------------------------------------------------------------------------------
-def make_argument_parser():
+def getArgumentParser():
     return VoronoiArgumentParser(
             prog="voronoi-svg",
             description="""
@@ -704,9 +712,7 @@ class Renderer(object):
             }
 
     # --------------------------------------------------------------------------
-    def __init__(self):
-
-        useropts = make_argument_parser().parse_args()
+    def __init__(self, useropts):
 
         for k, v in useropts.__dict__.items():
             self.__dict__[k] = v
@@ -1069,8 +1075,34 @@ def print_svg(renderer):
     return 0
 
 # ------------------------------------------------------------------------------
+#  bash completion
+# ------------------------------------------------------------------------------
+def printBashCompletion(argparser, options):
+    from eagine.argparseUtil import printBashComplete
+    def _printIt(fd):
+        printBashComplete(
+            argparser,
+            "_eagine_make_voronoi_svg",
+            "eagine-make-voronoi-svg",
+            ["--print-bash-completion"],
+            fd)
+    if options.print_bash_completion == "-":
+        _printIt(sys.stdout)
+    else:
+        with open(options.print_bash_completion, "wt") as fd:
+            _printIt(fd)
+
+# ------------------------------------------------------------------------------
+#  Main
+# ------------------------------------------------------------------------------
 def main():
-    renderer = Renderer()
+    argparser = getArgumentParser()
+    options = argparser.parse_args()
+    if options.print_bash_completion:
+        printBashCompletion(argparser, options)
+        return 0
+    else:
+        renderer = Renderer(options)
     sys.exit(print_svg(renderer))
     
 # ------------------------------------------------------------------------------
