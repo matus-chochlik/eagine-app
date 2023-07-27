@@ -502,7 +502,7 @@ class VoronoiArgumentParser(argparse.ArgumentParser):
             choices=[
                 "full",
                 "scaled",
-                "flagstone"
+                "flagstone",
                 "pebble",
                 "worley-nmap",
                 "worley-hmap",
@@ -660,14 +660,14 @@ class Renderer(object):
     def scaled_cell_element_str(self, x, y, center, corners, offs):
         m = set_center(corners)
         newcorners = [segment_point(m, c, self.cell_scale(x, y)) for c in corners]
-        yield self.full_cell_element_str(x, y, center, newcorners);
+        return self.full_cell_element_str(x, y, center, newcorners, offs);
 
     # --------------------------------------------------------------------------
     def flagstone_cell_element_str(self, x, y, center, corners, offs):
         zcorners = zip(corners, corners[1:] + [corners[0]])
         c = self.cell_value(x, y)
         newcorners = [segment_point(a, b, c) for (a, b) in zcorners]
-        yield self.scaled_cell_element_str(x, y, center, newcorners);
+        return self.scaled_cell_element_str(x, y, center, newcorners, offs);
 
     # --------------------------------------------------------------------------
     def pebble_cell_element_str(self, x, y, center, corners, offs):
