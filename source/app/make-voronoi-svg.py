@@ -499,7 +499,7 @@ class VoronoiArgumentParser(argparse.ArgumentParser):
         self.add_argument(
             '--color-mode', '-M',
             type=str,
-            choices=["grayscale", "cell-coord", "image-rgb"],
+            choices=["grayscale", "cell-coord", "cell-coord-value", "image-rgb"],
             action="store",
             default="grayscale"
         )
@@ -626,6 +626,19 @@ class Renderer(object):
         return "#%02x%02x%02x" % (r, g, b)
 
     # --------------------------------------------------------------------------
+    def cell_coord_color_value(self, x, y):
+        cv = self.cell_value(x, y)
+        v = self.value_low + cv*(self.value_high-self.value_low)
+        x = (x + self.x_cells) % self.x_cells
+        y = (y + self.y_cells) % self.y_cells
+
+        r = int((256*x)/self.x_cells)
+        g = int((256*y)/self.y_cells)
+        b = int(255*v)
+
+        return "#%02x%02x%02x" % (r, g, b)
+
+    # --------------------------------------------------------------------------
     def cell_image_color(self, x, y):
         r, g, b = self.image.get_pixel(x, y)
 
@@ -721,6 +734,8 @@ class Renderer(object):
             self.cell_color = lambda x, y: self.cell_grayscale_color(x, y)
         elif self.color_mode == "cell-coord":
             self.cell_color = lambda x, y: self.cell_coord_color(x, y)
+        elif self.color_mode == "cell-coord-value":
+            self.cell_color = lambda x, y: self.cell_coord_color_value(x, y)
         elif self.color_mode == "image-rgb":
             self.cell_color = lambda x, y: self.cell_image_color(x, y)
 
