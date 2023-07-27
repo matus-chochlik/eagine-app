@@ -3,6 +3,7 @@
 # See accompanying file LICENSE_1_0.txt or copy at
 #  http://www.boost.org/LICENSE_1_0.txt
 add_subdirectory(modules)
+add_subdirectory(app)
 
 set(EAGINE_APP_EXPORT_TARGETS)
 
