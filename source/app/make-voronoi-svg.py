@@ -64,6 +64,10 @@ def line_intersect_param(l1, l2):
     return None
 
 # ------------------------------------------------------------------------------
+def is_rim(x, y, w, h, rw):
+    return x < rw or y < rw or x+rw >= w or y+rw >= h
+
+# ------------------------------------------------------------------------------
 class ImageSampler(object):
     # --------------------------------------------------------------------------
     def __init__(self, image, width, height):
@@ -176,7 +180,7 @@ class Randomized(object):
 # ------------------------------------------------------------------------------
 class RandomCellValues(Randomized):
     # --------------------------------------------------------------------------
-    def _gen_values(self, w, h, transformable):
+    def _gen_values(self, w, h, transformable, rw):
 
         rc = self.get_rng()
 
@@ -184,8 +188,7 @@ class RandomCellValues(Randomized):
         for y in range(h):
             r = list()
             for x in range(w):
-                rim = x <= 0 or y <= 0 or x+1 >= w or y+1 >= h
-                r.append(rc.get(rim))
+                r.append(rc.get(is_rim(x, y, w, h, rw)))
             cell_data.append(r)
 
         if transformable:
@@ -207,7 +210,8 @@ class RandomCellValues(Randomized):
     # --------------------------------------------------------------------------
     def __init__(self, options, w, h):
         Randomized.__init__(self, options)
-        self._values = self._gen_values(w, h, options.transformable)
+        self._values = self._gen_values(
+            w, h, options.transformable, options.rim_width)
 
     # --------------------------------------------------------------------------
     def get(self, x, y):
@@ -216,7 +220,7 @@ class RandomCellValues(Randomized):
 # ------------------------------------------------------------------------------
 class RandomCellOffsets(Randomized):
     # --------------------------------------------------------------------------
-    def _gen_offsets(self, w, h, transformable):
+    def _gen_offsets(self, w, h, transformable, rw):
 
         rx = self.get_rng()
         ry = self.get_rng()
@@ -225,7 +229,7 @@ class RandomCellOffsets(Randomized):
         for y in range(h):
             row = list()
             for x in range(w):
-                rim = x <= 0 or y <= 0 or x+1 >= w or y+1 >= h
+                rim = is_rim(x, y, w, h, rw)
                 row.append((rx.get(rim), ry.get(rim)))
             cell_data.append(row)
 
@@ -247,7 +251,8 @@ class RandomCellOffsets(Randomized):
     # --------------------------------------------------------------------------
     def __init__(self, options, w, h):
         Randomized.__init__(self, options)
-        self._offsets = self._gen_offsets(w, h, options.transformable)
+        self._offsets = self._gen_offsets(
+            w, h, options.transformable, options.rim_width)
 
     # --------------------------------------------------------------------------
     def get(self, x, y):
@@ -359,7 +364,7 @@ class HoneycombYCellOffsets(object):
 # ------------------------------------------------------------------------------
 class VoronoiArgumentParser(argparse.ArgumentParser):
     # --------------------------------------------------------------------------
-    def _nonnegative_int(self, x):
+    def _positive_int(self, x):
         try:
             i = int(x)
             assert i > 0
@@ -393,35 +398,35 @@ class VoronoiArgumentParser(argparse.ArgumentParser):
         self.add_argument(
             '--jobs', '-j',
             dest="job_count",
-            type=self._nonnegative_int,
+            type=self._positive_int,
             action="store",
             default=multiprocessing.cpu_count()
         )
 
         self.add_argument(
             '--x-cells', '-X',
-            type=self._nonnegative_int,
+            type=self._positive_int,
             action="store",
             default=None
         )
 
         self.add_argument(
             '--y-cells', '-Y',
-            type=self._nonnegative_int,
+            type=self._positive_int,
             action="store",
             default=None
         )
 
         self.add_argument(
             '--width', '-W',
-            type=self._nonnegative_int,
+            type=self._positive_int,
             action="store",
             default=512
         )
 
         self.add_argument(
             '--height', '-H',
-            type=self._nonnegative_int,
+            type=self._positive_int,
             action="store",
             default=512
         )
@@ -488,6 +493,27 @@ class VoronoiArgumentParser(argparse.ArgumentParser):
             type=float,
             action="store",
             default=None
+        )
+
+        self.add_argument(
+            '--rim-width', '-Rw',
+            type=self._positive_int,
+            action="store",
+            default=2
+        )
+
+        rimmug = self.add_mutually_exclusive_group()
+
+        rimmug.add_argument(
+            '--only-rim',
+            action="store_true",
+            default=False
+        )
+
+        rimmug.add_argument(
+            '--skip-rim',
+            action="store_true",
+            default=False
         )
 
         self.add_argument(
@@ -894,7 +920,7 @@ def make_cell(renderer, x, y):
     return owc, corners, neighbors
     
 # ------------------------------------------------------------------------------
-def do_make_cell(renderer, job, output_lock):
+def do_make_cell(renderer, options, job, output_lock):
     w = renderer.x_cells + 2
     h = renderer.y_cells + 2
     k = job
@@ -921,9 +947,18 @@ def do_make_cell(renderer, job, output_lock):
             y = int(k / w) - 1
             x = int(k % w) - 1
 
-            center, corners, offs = make_cell(renderer, x, y)
-            for svg_str in renderer.cell_element_str(x, y, center, corners, offs):
-                res.append(svg_str)
+            skip = False
+            if is_rim(x, y, renderer.x_cells, renderer.y_cells, options.rim_width-1):
+                if options.skip_rim:
+                    skip = True
+            else:
+                if options.only_rim:
+                    skip = True
+
+            if not skip:
+                center, corners, offs = make_cell(renderer, x, y)
+                for svg_str in renderer.cell_element_str(x, y, center, corners, offs):
+                    res.append(svg_str)
             if renderer.verbose:
                 log.append(renderer.cell_fmt % (x, y))
             else:
@@ -1034,7 +1069,7 @@ def make_gradients(renderer):
                     })
                 renderer.output.write("""</linearGradient>\n""")
 # ------------------------------------------------------------------------------
-def print_svg(renderer):
+def print_svg(renderer, options):
     renderer.output.write("""<?xml version="1.0" encoding="utf8"?>\n""")
     renderer.output.write("""<svg xmlns="http://www.w3.org/2000/svg"
     xmlns:svg="http://www.w3.org/2000/svg"
@@ -1060,7 +1095,7 @@ def print_svg(renderer):
 
         def call_do_make_cell(renderer, job, output_lock):
             try:
-                do_make_cell(renderer, job, output_lock)
+                do_make_cell(renderer, options, job, output_lock)
             except AssertionError:
                 sys.stderr.write("failed to generate SVG, please retry\n")
                 raise SystemExit(1)
@@ -1118,7 +1153,7 @@ def main():
         return 0
     else:
         renderer = Renderer(options)
-    sys.exit(print_svg(renderer))
+    sys.exit(print_svg(renderer, options))
     
 # ------------------------------------------------------------------------------
 if __name__ == "__main__": main()
