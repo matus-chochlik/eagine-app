@@ -14,8 +14,8 @@ import argparse
 import multiprocessing
 
 # ------------------------------------------------------------------------------
-def mix(b, i, f):
-    return (1.0-f)*b + f*i
+def mix(a, b, f):
+    return (1.0-f)*a + f*b
 # ------------------------------------------------------------------------------
 def inverse_logistic(x):
     eps = 0.001
@@ -694,7 +694,37 @@ class Renderer(object):
         return self.scale * coef
 
     # --------------------------------------------------------------------------
+    def add_viewbox_intersections(self, corners):
+        assert len(corners) >= 3
+        def _find_intersections(a, b):
+            w = self.width
+            h = self.height
+            wb = [((0,0),(w,0)), ((w,0),(0,h)), ((w,h),(-w,0)), ((0,h),(0,-h))]
+            v = (b - a)
+            it = []
+            for ed in wb:
+                t1 = line_intersect_param((a, v), ed)
+                if t1 is not None:
+                    if t1 > 0.0 and t1 < 1.0:
+                        t2 = line_intersect_param(ed, (a, v))
+                        if t2 > 0.0 and t2 < 1.0:
+                            it.append((t1, (mix(a[0], b[0], t1), mix(a[1], b[1], t1))))
+            for t, i in sorted(it, key=lambda x: x[0]):
+                yield numpy.array(i)
+
+        a = corners[0]
+        for b in corners[1:]:
+            yield a
+            for i in _find_intersections(a, b):
+                yield i
+            a = b
+        yield b
+        for i in _find_intersections(b, corners[0]):
+            yield i
+
+    # --------------------------------------------------------------------------
     def full_cell_element_str(self, x, y, unused, corners, offs):
+        corners = self.add_viewbox_intersections(corners)
         clist = ["%.3f %.3f" % (c[0], c[1]) for c in corners]
         pathstr = "M"+" L".join(clist)+" Z"
         yield """
