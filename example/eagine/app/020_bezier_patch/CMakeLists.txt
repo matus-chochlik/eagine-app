@@ -20,6 +20,7 @@ eagine_add_exe_analysis(app-020_bezier_patch)
 
 eagine_target_modules(
 	app-020_bezier_patch
+	std
 	eagine.core
 	eagine.shapes
 	eagine.oglplus

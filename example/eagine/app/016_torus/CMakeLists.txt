@@ -20,6 +20,7 @@ eagine_add_exe_analysis(app-016_torus)
 
 eagine_target_modules(
 	app-016_torus
+	std
 	eagine.core
 	eagine.shapes
 	eagine.oglplus

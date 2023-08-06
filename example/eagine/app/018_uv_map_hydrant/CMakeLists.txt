@@ -24,6 +24,7 @@ eagine_add_exe_analysis(app-018_uv_map_hydrant)
 
 eagine_target_modules(
 	app-018_uv_map_hydrant
+	std
 	eagine.core
 	eagine.shapes
 	eagine.oglplus

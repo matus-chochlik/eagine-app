@@ -23,6 +23,7 @@ eagine_add_exe_analysis(app-028_compute_particles)
 
 eagine_target_modules(
 	app-028_compute_particles
+	std
 	eagine.core
 	eagine.shapes
 	eagine.oglplus

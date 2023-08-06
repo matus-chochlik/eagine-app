@@ -11,6 +11,7 @@ eagine_add_exe_analysis(app-002_spectrum)
 
 eagine_target_modules(
 	app-002_spectrum
+	std
 	eagine.core
 	eagine.oglplus
 	eagine.app

@@ -28,6 +28,7 @@ eagine_add_exe_analysis(app-034_shape_tessellation)
 
 eagine_target_modules(
 	app-034_shape_tessellation
+	std
 	eagine.core
 	eagine.shapes
 	eagine.oglplus

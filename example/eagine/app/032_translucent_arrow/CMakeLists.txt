@@ -25,6 +25,7 @@ eagine_add_exe_analysis(app-032_translucent_arrow)
 
 eagine_target_modules(
 	app-032_translucent_arrow
+	std
 	eagine.core
 	eagine.shapes
 	eagine.oglplus

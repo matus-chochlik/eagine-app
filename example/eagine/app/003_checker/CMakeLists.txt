@@ -12,6 +12,7 @@ eagine_add_exe_analysis(app-003_checker)
 
 eagine_target_modules(
 	app-003_checker
+	std
 	eagine.core
 	eagine.oglplus
 	eagine.app

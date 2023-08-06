@@ -19,6 +19,7 @@ eagine_add_exe_analysis(app-025_recursive_cube)
 
 eagine_target_modules(
 	app-025_recursive_cube
+	std
 	eagine.core
 	eagine.shapes
 	eagine.oglplus

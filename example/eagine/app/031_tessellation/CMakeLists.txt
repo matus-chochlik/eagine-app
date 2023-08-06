@@ -22,6 +22,7 @@ eagine_add_exe_analysis(app-031_tessellation)
 
 eagine_target_modules(
 	app-031_tessellation
+	std
 	eagine.core
 	eagine.shapes
 	eagine.oglplus

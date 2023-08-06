@@ -12,6 +12,7 @@ eagine_add_exe_analysis(app-015_worley)
 
 eagine_target_modules(
 	app-015_worley
+	std
 	eagine.core
 	eagine.oglplus
 	eagine.app

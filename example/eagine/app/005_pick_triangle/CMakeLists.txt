@@ -12,6 +12,7 @@ eagine_add_exe_analysis(app-005_pick_triangle)
 
 eagine_target_modules(
 	app-005_pick_triangle
+	std
 	eagine.core
 	eagine.oglplus
 	eagine.app

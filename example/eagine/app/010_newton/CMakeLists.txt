@@ -12,6 +12,7 @@ eagine_add_exe_analysis(app-010_newton)
 
 eagine_target_modules(
 	app-010_newton
+	std
 	eagine.core
 	eagine.oglplus
 	eagine.app

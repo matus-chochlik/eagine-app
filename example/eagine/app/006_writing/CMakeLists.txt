@@ -12,6 +12,7 @@ eagine_add_exe_analysis(app-006_writing)
 
 eagine_target_modules(
 	app-006_writing
+	std
 	eagine.core
 	eagine.oglplus
 	eagine.app

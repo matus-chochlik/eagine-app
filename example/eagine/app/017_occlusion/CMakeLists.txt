@@ -16,6 +16,7 @@ eagine_add_exe_analysis(app-017_occlusion)
 
 eagine_target_modules(
 	app-017_occlusion
+	std
 	eagine.core
 	eagine.shapes
 	eagine.oglplus

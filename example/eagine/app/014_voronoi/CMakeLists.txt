@@ -12,6 +12,7 @@ eagine_add_exe_analysis(app-014_voronoi)
 
 eagine_target_modules(
 	app-014_voronoi
+	std
 	eagine.core
 	eagine.oglplus
 	eagine.app

@@ -24,6 +24,7 @@ eagine_add_exe_analysis(app-026_halo)
 
 eagine_target_modules(
 	app-026_halo
+	std
 	eagine.core
 	eagine.shapes
 	eagine.oglplus
