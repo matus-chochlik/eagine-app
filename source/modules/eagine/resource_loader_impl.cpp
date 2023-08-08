@@ -53,18 +53,15 @@ auto resource_loader_signals::gl_buffer_load_info::gl_api() const noexcept
 // pending_resource_info
 //------------------------------------------------------------------------------
 void pending_resource_info::mark_loaded() noexcept {
-    if(std::holds_alternative<_pending_gl_program_state>(_state)) {
-        auto& pgps = std::get<_pending_gl_program_state>(_state);
-        pgps.loaded = true;
-        _finish_gl_program(pgps);
-    } else if(std::holds_alternative<_pending_gl_texture_state>(_state)) {
-        auto& pgts = std::get<_pending_gl_texture_state>(_state);
-        pgts.loaded = true;
-        _finish_gl_texture(pgts);
-    } else if(std::holds_alternative<_pending_gl_buffer_state>(_state)) {
-        auto& pgbs = std::get<_pending_gl_buffer_state>(_state);
-        pgbs.loaded = true;
-        _finish_gl_buffer(pgbs);
+    if(auto pgps{get_if<_pending_gl_program_state>(_state)}) {
+        pgps->loaded = true;
+        _finish_gl_program(*pgps);
+    } else if(auto pgts{get_if<_pending_gl_texture_state>(_state)}) {
+        pgts->loaded = true;
+        _finish_gl_texture(*pgts);
+    } else if(auto pgbs{get_if<_pending_gl_buffer_state>(_state)}) {
+        pgbs->loaded = true;
+        _finish_gl_buffer(*pgbs);
     } else if(_kind == resource_kind::camera_parameters) {
         _parent.resource_loaded(_request_id, _kind, _locator);
     } else if(_kind == resource_kind::input_setup) {
@@ -81,15 +78,12 @@ auto pending_resource_info::is_done() const noexcept -> bool {
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::add_label(const string_view label) noexcept {
-    if(std::holds_alternative<_pending_gl_program_state>(_state)) {
-        auto& pgps = std::get<_pending_gl_program_state>(_state);
-        pgps.video.get().gl_api().object_label(pgps.prog, label);
-    } else if(std::holds_alternative<_pending_gl_texture_state>(_state)) {
-        auto& pgts = std::get<_pending_gl_texture_state>(_state);
-        pgts.video.get().gl_api().object_label(pgts.tex, label);
-    } else if(std::holds_alternative<_pending_gl_buffer_state>(_state)) {
-        auto& pgts = std::get<_pending_gl_buffer_state>(_state);
-        pgts.video.get().gl_api().object_label(pgts.buf, label);
+    if(auto pgps{get_if<_pending_gl_program_state>(_state)}) {
+        pgps->video.get().gl_api().object_label(pgps->prog, label);
+    } else if(auto pgts{get_if<_pending_gl_texture_state>(_state)}) {
+        pgts->video.get().gl_api().object_label(pgts->tex, label);
+    } else if(auto pgbs{get_if<_pending_gl_buffer_state>(_state)}) {
+        pgbs->video.get().gl_api().object_label(pgbs->buf, label);
     }
 }
 //------------------------------------------------------------------------------
@@ -132,23 +126,23 @@ void pending_resource_info::add_gl_program_context(
 //------------------------------------------------------------------------------
 auto pending_resource_info::add_gl_program_shader_request(
   identifier_t request_id) noexcept -> bool {
-    if(std::holds_alternative<_pending_gl_program_state>(_state)) {
-        auto& pgps = std::get<_pending_gl_program_state>(_state);
-        pgps.pending_requests.insert(request_id);
-        return true;
-    }
-    return false;
+    return get_if<_pending_gl_program_state>(_state)
+      .and_then([request_id](auto& pgps) -> tribool {
+          pgps.pending_requests.insert(request_id);
+          return true;
+      })
+      .or_false();
 }
 //------------------------------------------------------------------------------
 auto pending_resource_info::add_gl_program_input_binding(
   std::string name,
   shapes::vertex_attrib_variant vav) noexcept -> bool {
-    if(std::holds_alternative<_pending_gl_program_state>(_state)) {
-        auto& pgps = std::get<_pending_gl_program_state>(_state);
-        pgps.input_bindings.add(std::move(name), vav);
-        return true;
-    }
-    return false;
+    return get_if<_pending_gl_program_state>(_state)
+      .and_then([&](auto& pgps) -> tribool {
+          pgps.input_bindings.add(std::move(name), vav);
+          return true;
+      })
+      .or_false();
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::handle_gl_texture_image(
@@ -162,12 +156,12 @@ void pending_resource_info::handle_gl_texture_image(
 //------------------------------------------------------------------------------
 auto pending_resource_info::add_gl_texture_image_request(
   identifier_t request_id) noexcept -> bool {
-    if(std::holds_alternative<_pending_gl_texture_state>(_state)) {
-        auto& pgts = std::get<_pending_gl_texture_state>(_state);
-        pgts.pending_requests.insert(request_id);
-        return true;
-    }
-    return false;
+    return get_if<_pending_gl_texture_state>(_state)
+      .and_then([&](auto& pgts) -> tribool {
+          pgts.pending_requests.insert(request_id);
+          return true;
+      })
+      .or_false();
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::add_gl_texture_update_context(
@@ -212,36 +206,34 @@ void pending_resource_info::add_gl_buffer_context(
 //------------------------------------------------------------------------------
 auto pending_resource_info::update() noexcept -> work_done {
     some_true something_done;
-    if(std::holds_alternative<_pending_shape_generator_state>(_state)) {
-        if(const auto shape_gen{
-             std::get<_pending_shape_generator_state>(_state).generator}) {
-            if(const auto cont{continuation()}) {
-                cont->_handle_shape_generator(*this, shape_gen);
-            }
-            _parent.shape_generator_loaded(
-              {.request_id = _request_id,
-               .locator = _locator,
-               .generator = shape_gen});
-            _parent.resource_loaded(_request_id, _kind, _locator);
-            something_done();
-        }
-        _state = std::monostate{};
-        mark_finished();
-    }
+    get_if<_pending_shape_generator_state>(_state).and_then(
+      [&, this](auto& psgs) {
+          if(const auto shape_gen{psgs.generator}) {
+              if(const auto cont{continuation()}) {
+                  cont->_handle_shape_generator(*this, shape_gen);
+              }
+              _parent.shape_generator_loaded(
+                {.request_id = _request_id,
+                 .locator = _locator,
+                 .generator = shape_gen});
+              _parent.resource_loaded(_request_id, _kind, _locator);
+              something_done();
+          }
+          _state = std::monostate{};
+          mark_finished();
+      });
     return something_done;
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::cleanup() noexcept {
-    if(std::holds_alternative<_pending_gl_program_state>(_state)) {
-        auto& pgps = std::get<_pending_gl_program_state>(_state);
-        if(pgps.prog) {
-            pgps.video.get().gl_api().delete_program(std::move(pgps.prog));
+    if(const auto pgps{get_if<_pending_gl_program_state>(_state)}) {
+        if(pgps->prog) {
+            pgps->video.get().gl_api().delete_program(std::move(pgps->prog));
         }
         _state = std::monostate{};
-    } else if(std::holds_alternative<_pending_gl_texture_state>(_state)) {
-        auto& pgts = std::get<_pending_gl_texture_state>(_state);
-        if(pgts.tex) {
-            pgts.video.get().gl_api().delete_textures(std::move(pgts.tex));
+    } else if(const auto pgts{get_if<_pending_gl_texture_state>(_state)}) {
+        if(pgts->tex) {
+            pgts->video.get().gl_api().delete_textures(std::move(pgts->tex));
         }
         _state = std::monostate{};
     }
@@ -266,12 +258,11 @@ void pending_resource_info::_handle_json_text(
           {.request_id = _request_id, .locator = _locator, .tree = tree});
         _parent.resource_loaded(_request_id, _kind, _locator);
     } else if(is(resource_kind::value_tree_traversal)) {
-        if(std::holds_alternative<_pending_valtree_traversal_state>(_state)) {
-            auto& pvts = std::get<_pending_valtree_traversal_state>(_state);
+        if(const auto pvts{get_if<_pending_valtree_traversal_state>(_state)}) {
             bool should_continue{true};
             for(auto chunk : data) {
-                if(not pvts.input.consume_data(chunk)) {
-                    pvts.input.finish();
+                if(not pvts->input.consume_data(chunk)) {
+                    pvts->input.finish();
                     should_continue = false;
                     break;
                 }
@@ -382,10 +373,9 @@ void pending_resource_info::_handle_shape_generator(
       .arg("locator", _locator.str());
 
     if(is(resource_kind::gl_shape)) {
-        if(std::holds_alternative<_pending_gl_shape_state>(_state)) {
-            auto& pgss = std::get<_pending_gl_shape_state>(_state);
+        if(const auto pgss{get_if<_pending_gl_shape_state>(_state)}) {
             const oglplus::shape_generator shape{
-              pgss.video.get().gl_api(), _apply_shape_modifiers(gen)};
+              pgss->video.get().gl_api(), _apply_shape_modifiers(gen)};
             if(const auto cont{continuation()}) {
                 cont->_handle_gl_shape(*this, shape);
             }
@@ -405,20 +395,18 @@ void pending_resource_info::_handle_gl_shape(
       .arg("locator", _locator.str());
 
     if(is(resource_kind::gl_geometry_and_bindings)) {
-        if(std::holds_alternative<_pending_gl_geometry_and_bindings_state>(
-             _state)) {
+        if(const auto pggbs{
+             get_if<_pending_gl_geometry_and_bindings_state>(_state)}) {
             auto temp{_parent.buffers().get()};
             const auto cleanup_temp{_parent.buffers().eat_later(temp)};
-            auto& pggbs =
-              std::get<_pending_gl_geometry_and_bindings_state>(_state);
-            if(not pggbs.bindings) {
-                pggbs.bindings = oglplus::vertex_attrib_bindings{shape};
+            if(not pggbs->bindings) {
+                pggbs->bindings = oglplus::vertex_attrib_bindings{shape};
             }
             gl_geometry_and_bindings geom{
               shape,
-              pggbs.bindings,
-              shape.draw_variant(pggbs.draw_var_idx),
-              pggbs.video,
+              pggbs->bindings,
+              shape.draw_variant(pggbs->draw_var_idx),
+              pggbs->video,
               temp};
             _parent.gl_geometry_and_bindings_loaded(
               {.request_id = _request_id,
@@ -427,7 +415,7 @@ void pending_resource_info::_handle_gl_shape(
                .ref = geom});
             _parent.resource_loaded(_request_id, _kind, _locator);
             if(geom) {
-                geom.clean_up(pggbs.video);
+                geom.clean_up(pggbs->video);
             }
         }
     }
@@ -476,12 +464,11 @@ void pending_resource_info::_handle_glsl_source(
       .arg("locator", _locator.str());
 
     if(is(resource_kind::gl_shader)) {
-        if(std::holds_alternative<_pending_gl_shader_state>(_state)) {
-            auto& pgss = std::get<_pending_gl_shader_state>(_state);
-            const auto& [gl, GL] = pgss.video.get().gl_api();
+        if(const auto pgss{get_if<_pending_gl_shader_state>(_state)}) {
+            const auto& [gl, GL] = pgss->video.get().gl_api();
 
             oglplus::owned_shader_name shdr;
-            gl.create_shader(pgss.shdr_type) >> shdr;
+            gl.create_shader(pgss->shdr_type) >> shdr;
             gl.shader_source(shdr, glsl_src);
             gl.compile_shader(shdr);
             if(const auto cont{continuation()}) {
@@ -490,8 +477,8 @@ void pending_resource_info::_handle_glsl_source(
             _parent.gl_shader_loaded(
               {.request_id = _request_id,
                .locator = _locator,
-               .video = pgss.video,
-               .type = pgss.shdr_type,
+               .video = pgss->video,
+               .type = pgss->shdr_type,
                .name = shdr,
                .ref = shdr});
             _parent.resource_loaded(_request_id, _kind, _locator);
@@ -540,18 +527,17 @@ void pending_resource_info::_handle_gl_shader(
       .arg("locator", source.locator().str());
 
     if(is(resource_kind::gl_program)) {
-        if(std::holds_alternative<_pending_gl_program_state>(_state)) {
-            auto& pgps = std::get<_pending_gl_program_state>(_state);
-            if(pgps.prog) [[likely]] {
-                const auto& gl = pgps.video.get().gl_api().operations();
+        if(const auto pgps{get_if<_pending_gl_program_state>(_state)}) {
+            if(pgps->prog) [[likely]] {
+                const auto& gl = pgps->video.get().gl_api().operations();
 
                 if(const auto pos{
-                     pgps.pending_requests.find(source.request_id())};
-                   pos != pgps.pending_requests.end()) {
-                    gl.attach_shader(pgps.prog, shdr);
+                     pgps->pending_requests.find(source.request_id())};
+                   pos != pgps->pending_requests.end()) {
+                    gl.attach_shader(pgps->prog, shdr);
 
-                    pgps.pending_requests.erase(pos);
-                    if(not _finish_gl_program(pgps)) {
+                    pgps->pending_requests.erase(pos);
+                    if(not _finish_gl_program(*pgps)) {
                         return;
                     }
                 }

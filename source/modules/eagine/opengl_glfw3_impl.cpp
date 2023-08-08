@@ -217,26 +217,19 @@ struct glfw3_window_ui_input_state {
 };
 //------------------------------------------------------------------------------
 auto glfw3_window_ui_input_state::kind() const noexcept -> input_value_kind {
-    if(std::holds_alternative<glfw3_window_ui_slider_state>(state)) {
-        return std::get<glfw3_window_ui_slider_state>(state).kind;
-    }
-    return input_value_kind::absolute_norm;
+    return get_if<glfw3_window_ui_slider_state>(state)
+      .member(&glfw3_window_ui_slider_state::kind)
+      .value_or(input_value_kind::absolute_norm);
 }
 //------------------------------------------------------------------------------
 auto glfw3_window_ui_input_state::get_toggle() noexcept
   -> optional_reference<glfw3_window_ui_toggle_state> {
-    if(std::holds_alternative<glfw3_window_ui_toggle_state>(state)) {
-        return &(std::get<glfw3_window_ui_toggle_state>(state));
-    }
-    return {};
+    return get_if<glfw3_window_ui_toggle_state>(state);
 }
 //------------------------------------------------------------------------------
 auto glfw3_window_ui_input_state::get_slider() noexcept
   -> optional_reference<glfw3_window_ui_slider_state> {
-    if(std::holds_alternative<glfw3_window_ui_slider_state>(state)) {
-        return &(std::get<glfw3_window_ui_slider_state>(state));
-    }
-    return {};
+    return get_if<glfw3_window_ui_slider_state>(state);
 }
 //------------------------------------------------------------------------------
 // glfw3_opengl_window
