@@ -19,6 +19,7 @@ import eagine.core.string;
 import eagine.core.reflection;
 import eagine.core.runtime;
 import eagine.core.utility;
+import eagine.core.container;
 import eagine.core.value_tree;
 import eagine.core.c_api;
 import eagine.oglplus;
@@ -887,13 +888,12 @@ void pending_resource_info::_handle_gl_texture_image(
     if(is(resource_kind::gl_texture)) {
         if(const auto pgts{get_if<_pending_gl_texture_state>(_state)}) {
             if(pgts->tex) [[likely]] {
-                if(const auto pos{
-                     pgts->pending_requests.find(source.request_id())};
-                   pos != pgts->pending_requests.end()) {
+                if(const auto found{eagine::find(
+                     pgts->pending_requests, source.request_id())}) {
                     pgts->level_images_done.set(std_size(params.level), true);
                     add_image_data(pgts->video.get().gl_api(), *pgts);
 
-                    pgts->pending_requests.erase(pos);
+                    pgts->pending_requests.erase(found.position());
                     if(not _finish_gl_texture(*pgts)) {
                         return;
                     }

@@ -16,6 +16,7 @@ import eagine.core.types;
 import eagine.core.memory;
 import eagine.core.identifier;
 import eagine.core.reflection;
+import eagine.core.container;
 import eagine.core.valid_if;
 import eagine.core.utility;
 import eagine.core.runtime;
@@ -289,10 +290,10 @@ auto video_context::init_gl_api() noexcept -> bool {
         _gl_api.emplace();
         const auto& [gl, GL] = *_gl_api;
 
-        const auto pos =
-          _parent.options().video_requirements().find(_provider->instance_id());
-        assert(pos != _parent.options().video_requirements().end());
-        const auto& opts = pos->second;
+        const auto found{eagine::find(
+          _parent.options().video_requirements(), _provider->instance_id())};
+        assert(found);
+        const auto& opts = *found;
 
         if(opts.gl_debug_context()) {
             if(gl.ARB_debug_output) {
@@ -706,10 +707,9 @@ auto execution_context::switch_input_mapping(const identifier mapping_id)
         _mapped_inputs.clear();
         const auto& mapping = _input_mappings[mapping_id];
         for(auto& [dev_sig_id, slot] : mapping) {
-            const auto pos = _connected_inputs.find(std::get<0>(slot));
-            if(pos != _connected_inputs.end()) {
-                _mapped_inputs.emplace(
-                  dev_sig_id, std::get<1>(slot), std::get<1>(*pos));
+            if(const auto found{
+                 eagine::find(_connected_inputs, std::get<0>(slot))}) {
+                _mapped_inputs.emplace(dev_sig_id, std::get<1>(slot), *found);
             }
         }
 

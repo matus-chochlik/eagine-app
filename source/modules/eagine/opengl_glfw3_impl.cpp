@@ -802,10 +802,10 @@ void glfw3_opengl_window::_feedback_key_press_change(
   const identifier device_id,
   const message_id key_id,
   const input_variable<bool>& inp) noexcept {
-    if(const auto pos{_ui_feedbacks.find(std::make_tuple(device_id, key_id))};
-       pos != _ui_feedbacks.end()) {
-        if(not pos->second.key_press_changed(ctx, *this, inp)) [[unlikely]] {
-            _ui_feedbacks.erase(pos);
+    if(const auto found{
+         find(_ui_feedbacks, std::make_tuple(device_id, key_id))}) {
+        if(not found->key_press_changed(ctx, *this, inp)) [[unlikely]] {
+            _ui_feedbacks.erase(found.position());
         }
     }
 }

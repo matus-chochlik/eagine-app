@@ -531,12 +531,11 @@ void pending_resource_info::_handle_gl_shader(
             if(pgps->prog) [[likely]] {
                 const auto& gl = pgps->video.get().gl_api().operations();
 
-                if(const auto pos{
-                     pgps->pending_requests.find(source.request_id())};
-                   pos != pgps->pending_requests.end()) {
+                if(const auto found{eagine::find(
+                     pgps->pending_requests, source.request_id())}) {
                     gl.attach_shader(pgps->prog, shdr);
 
-                    pgps->pending_requests.erase(pos);
+                    pgps->pending_requests.erase(found.position());
                     if(not _finish_gl_program(*pgps)) {
                         return;
                     }
@@ -640,8 +639,8 @@ void resource_loader::_handle_stream_data_appended(
   const span_size_t offset,
   const memory::span<const memory::const_block> data,
   const msgbus::blob_info& binfo) noexcept {
-    if(const auto pos{_pending.find(request_id)}; pos != _pending.end()) {
-        if(const auto& prinfo{std::get<1>(*pos)}) {
+    if(const auto found{find(_pending, request_id)}) {
+        if(const auto& prinfo{*found}) {
             if(const auto continuation{prinfo->continuation()}) {
                 continuation->handle_source_data(binfo, *prinfo, offset, data);
             }
@@ -650,8 +649,8 @@ void resource_loader::_handle_stream_data_appended(
 }
 //------------------------------------------------------------------------------
 void resource_loader::_handle_stream_finished(identifier_t request_id) noexcept {
-    if(const auto pos{_pending.find(request_id)}; pos != _pending.end()) {
-        if(const auto& prinfo{std::get<1>(*pos)}) {
+    if(const auto found{find(_pending, request_id)}) {
+        if(const auto& prinfo{*found}) {
             auto& rinfo{*prinfo};
             if(const auto continuation{rinfo.continuation()}) {
                 continuation->handle_source_finished(rinfo);
@@ -663,8 +662,8 @@ void resource_loader::_handle_stream_finished(identifier_t request_id) noexcept 
 //------------------------------------------------------------------------------
 void resource_loader::_handle_stream_cancelled(
   identifier_t request_id) noexcept {
-    if(const auto pos{_pending.find(request_id)}; pos != _pending.end()) {
-        if(const auto& prinfo{std::get<1>(*pos)}) {
+    if(const auto found{find(_pending, request_id)}) {
+        if(const auto& prinfo{*found}) {
             auto& rinfo{*prinfo};
             if(const auto continuation{rinfo.continuation()}) {
                 continuation->handle_source_cancelled(rinfo);

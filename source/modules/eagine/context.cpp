@@ -667,10 +667,10 @@ private:
     void _forward_input(
       const input_info& info,
       const input_value<T>& value) noexcept {
-        const auto slot_pos =
-          _mapped_inputs.find(std::make_tuple(info.device_id, info.signal_id));
-        if(slot_pos != _mapped_inputs.end()) {
-            const auto& [setup, handler] = slot_pos->second;
+        if(const auto found{eagine::find(
+             _mapped_inputs,
+             std::make_tuple(info.device_id, info.signal_id))}) {
+            const auto& [setup, handler] = *found;
             if(setup.is_applicable() and setup.has(info.value_kind)) {
                 handler(input(value, info, setup));
             }
