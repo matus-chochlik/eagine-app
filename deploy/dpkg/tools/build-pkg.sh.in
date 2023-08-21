@@ -22,6 +22,12 @@ cp "${src_dir}/tools/app_framedump.py" \
 "${src_dir}/tools/app_framedump.py" \
 	--print-bash-completion "${bco_prefix}/eagine-app-framedump"
 
+cp "${src_dir}/source/app/blender-export-mesh.py" \
+   "${bin_prefix}/eagine-blender-export-mesh"
+
+cp "${src_dir}/source/app/blender-render-cubemap.py" \
+   "${bin_prefix}/eagine-blender-render-cubemap"
+
 # ------------------------------------------------------------------------------
 mkdir -p "${pkg_dir}/DEBIAN"
 cat << CONTROL > "${pkg_dir}/DEBIAN/control"

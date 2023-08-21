@@ -9,3 +9,15 @@ install(
 	DESTINATION bin
 )
 
+install(
+	PROGRAMS blender-export-mesh.py
+	RENAME eagine-blender-export-mesh
+	DESTINATION bin
+)
+
+install(
+	PROGRAMS blender-render-cubemap.py
+	RENAME eagine-blender-render-cubemap
+	DESTINATION bin
+)
+
