@@ -10,6 +10,12 @@ install(
 )
 
 install(
+	PROGRAMS blender-bake-light.py
+	RENAME eagine-blender-bake-light
+	DESTINATION bin
+)
+
+install(
 	PROGRAMS blender-export-mesh.py
 	RENAME eagine-blender-export-mesh
 	DESTINATION bin

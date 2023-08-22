@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env -S blender --python /usr/bin/eagine-blender-bake-light --
 # coding=utf-8
 # Copyright Matus Chochlik.
 # Distributed under the Boost Software License, Version 1.0.
