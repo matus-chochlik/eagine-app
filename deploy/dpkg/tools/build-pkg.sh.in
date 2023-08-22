@@ -25,6 +25,9 @@ cp "${src_dir}/tools/app_framedump.py" \
 cp "${src_dir}/source/app/blender-bake-light.py" \
    "${bin_prefix}/eagine-blender-bake-light"
 
+cp "${src_dir}/source/app/blender-bake-to-vertex.py" \
+   "${bin_prefix}/eagine-blender-bake-to-vertex"
+
 cp "${src_dir}/source/app/blender-export-mesh.py" \
    "${bin_prefix}/eagine-blender-export-mesh"
 
