@@ -8,6 +8,7 @@
 #ifndef EAGINE_APP_MODEL_VIEWER_MAIN_HPP
 #define EAGINE_APP_MODEL_VIEWER_MAIN_HPP
 
+#include "geometry.hpp"
 #include "gpu_program.hpp"
 
 import eagine.core;

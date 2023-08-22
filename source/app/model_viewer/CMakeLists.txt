@@ -6,6 +6,7 @@
 
 add_executable(
 	eagine-app-model-viewer
+	geometry.cpp
 	gpu_program.cpp
 	main.cpp)
 add_dependencies(eagine-app-model-viewer eagine-apps)
