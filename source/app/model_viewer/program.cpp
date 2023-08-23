@@ -5,7 +5,7 @@
 /// See accompanying file LICENSE_1_0.txt or copy at
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
-#include "gpu_program.hpp"
+#include "program.hpp"
 #include <cassert>
 
 namespace eagine::app {

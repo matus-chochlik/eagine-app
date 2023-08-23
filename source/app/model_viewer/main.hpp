@@ -9,7 +9,7 @@
 #define EAGINE_APP_MODEL_VIEWER_MAIN_HPP
 
 #include "geometry.hpp"
-#include "gpu_program.hpp"
+#include "program.hpp"
 
 import eagine.core;
 import eagine.oglplus;
