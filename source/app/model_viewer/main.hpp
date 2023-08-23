@@ -24,17 +24,21 @@ public:
     model_viewer(execution_context&, video_context&);
 
     auto is_done() noexcept -> bool final;
+    void view_model() noexcept;
     void update() noexcept final;
     void clean_up() noexcept final;
 
 private:
-    auto _initial_program(execution_context&, video_context&)
-      -> unique_holder<model_viewer_program_intf>;
+    auto _initial_geometry() -> model_viewer_geometry_holder;
+    auto _initial_program() -> model_viewer_program_holder;
+
+    void on_loaded(model_viewer_resource_intf&) noexcept;
 
     video_context& _video;
-    model_viewer_program _prog;
+    model_viewer_geometry _geometry;
+    model_viewer_program _program;
 
-    orbiting_camera camera;
+    orbiting_camera _camera;
 };
 //------------------------------------------------------------------------------
 } // namespace eagine::app

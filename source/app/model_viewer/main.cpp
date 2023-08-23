@@ -11,22 +11,29 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 //  Application
 //------------------------------------------------------------------------------
-auto model_viewer::_initial_program(execution_context& ctx, video_context& video)
-  -> unique_holder<model_viewer_program_intf> {
-    return make_default_program(ctx, video);
+auto model_viewer::_initial_geometry() -> model_viewer_geometry_holder {
+    return make_default_geometry(context(), _video);
+}
+//------------------------------------------------------------------------------
+auto model_viewer::_initial_program() -> model_viewer_program_holder {
+    return make_default_program(context(), _video);
 }
 //------------------------------------------------------------------------------
 model_viewer::model_viewer(execution_context& ec, video_context& vc)
   : common_application{ec}
   , _video{vc}
-  , _prog{_initial_program(ec, vc)} {
+  , _geometry{_initial_geometry()}
+  , _program{_initial_program()} {
+    _geometry.loaded.connect(make_callable_ref<&model_viewer::on_loaded>(this));
+    _program.loaded.connect(make_callable_ref<&model_viewer::on_loaded>(this));
+
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
 
     // camera
     // TODO
     const auto sr = 10.F;
-    camera.set_fov(right_angle_())
+    _camera.set_fov(right_angle_())
       .set_near(sr * 0.1F)
       .set_far(sr * 10.0F)
       .set_orbit_min(sr * 2.0F)
@@ -37,29 +44,42 @@ model_viewer::model_viewer(execution_context& ec, video_context& vc)
     gl.enable(GL.cull_face);
     gl.cull_face(GL.back);
 
-    camera.connect_inputs(ec).basic_input_mapping(ec);
+    _camera.connect_inputs(ec).basic_input_mapping(ec);
     ec.setup_inputs().switch_input_mapping();
+}
+//------------------------------------------------------------------------------
+void model_viewer::on_loaded(model_viewer_resource_intf&) noexcept {
+    // TODO
+    std::cout << "LOADED" << std::endl;
 }
 //------------------------------------------------------------------------------
 auto model_viewer::is_done() noexcept -> bool {
     return false;
 }
 //------------------------------------------------------------------------------
-void model_viewer::update() noexcept {
+void model_viewer::view_model() noexcept {
     auto& state = context().state();
-    camera.idle_update(state);
+    _camera.idle_update(state);
 
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
 
     gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
-
+}
+//------------------------------------------------------------------------------
+void model_viewer::update() noexcept {
+    if(_geometry and _program) {
+        view_model();
+    } else {
+        _geometry.load_if_needed(context());
+        _program.load_if_needed(context());
+    }
     _video.commit();
 }
 //------------------------------------------------------------------------------
 void model_viewer::clean_up() noexcept {
-    _prog.clean_up(context(), _video);
-
+    _program.clean_up(context(), _video);
+    _geometry.clean_up(context(), _video);
     _video.end();
 }
 //------------------------------------------------------------------------------

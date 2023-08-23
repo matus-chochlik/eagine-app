@@ -6,6 +6,7 @@
 
 add_executable(
 	eagine-app-model-viewer
+	resource.cpp
 	geometry.cpp
 	program.cpp
 	launchpad.cpp
@@ -18,7 +19,7 @@ eagine_embed_target_resources(
 		DfaultVert "glsl/default_vert.glsl"
 		DfaultFrag "glsl/default_frag.glsl"
 		DfaultProg "glsl/default_prog.json"
-		GitarModel "models/guitar.json"
+		Guitar     "models/guitar.json"
 	PACKED
 	ENABLE_SEARCH)
 eagine_add_exe_analysis(eagine-app-model-viewer)

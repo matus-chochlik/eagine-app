@@ -7,44 +7,33 @@
 ///
 #ifndef EAGINE_APP_MODEL_VIEWER_GEOMETRY_HPP
 #define EAGINE_APP_MODEL_VIEWER_GEOMETRY_HPP
+#include "resource.hpp"
 
-import eagine.core;
 import eagine.shapes;
 import eagine.oglplus;
-import eagine.app;
-import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-struct model_viewer_geometry_intf : interface<model_viewer_geometry_intf> {
-    virtual void use(video_context&) = 0;
-
+struct model_viewer_geometry_intf : model_viewer_resource_intf {
+    virtual void draw(video_context&) = 0;
     virtual auto bounding_sphere() noexcept -> oglplus::sphere = 0;
-    virtual void clean_up(execution_context&, video_context&) = 0;
 };
+using model_viewer_geometry_holder = unique_holder<model_viewer_geometry_intf>;
 //------------------------------------------------------------------------------
-class model_viewer_geometry {
+class model_viewer_geometry
+  : public model_viewer_resource_wrapper<model_viewer_geometry_intf> {
+    using base = model_viewer_resource_wrapper<model_viewer_geometry_intf>;
+
 public:
-    model_viewer_geometry(
-      unique_holder<model_viewer_geometry_intf> impl) noexcept
-      : _impl{std::move(impl)} {}
-
-    explicit operator bool() const noexcept {
-        return bool(_impl);
-    }
-
-    auto use(video_context&) -> model_viewer_geometry&;
+    using base::base;
 
     auto bounding_sphere() noexcept -> oglplus::sphere;
 
-    auto clean_up(execution_context&, video_context&) -> model_viewer_geometry&;
-
-private:
-    unique_holder<model_viewer_geometry_intf> _impl;
+    auto draw(video_context&) -> model_viewer_geometry&;
 };
 //------------------------------------------------------------------------------
 auto make_default_geometry(execution_context&, video_context&)
-  -> unique_holder<model_viewer_geometry_intf>;
+  -> model_viewer_geometry_holder;
 //------------------------------------------------------------------------------
 } // namespace eagine::app
 #endif
