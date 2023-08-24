@@ -55,7 +55,7 @@ public:
 
     auto use(video_context& video) -> model_viewer_resource_wrapper& {
         if(_impl) [[likely]] {
-            _impl->load_if_needed(video);
+            _impl->use(video);
         }
         return *this;
     }

@@ -31,8 +31,12 @@ public:
 private:
     auto _initial_geometry() -> model_viewer_geometry_holder;
     auto _initial_program() -> model_viewer_program_holder;
+    void _init_camera(const oglplus::sphere bs);
 
-    void on_loaded(model_viewer_resource_intf&) noexcept;
+    void _on_loaded(model_viewer_resource_intf&) noexcept;
+    auto _load_handler() noexcept {
+        return make_callable_ref<&model_viewer::_on_loaded>(this);
+    }
 
     video_context& _video;
     model_viewer_geometry _geometry;

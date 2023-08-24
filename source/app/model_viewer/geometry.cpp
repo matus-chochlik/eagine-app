@@ -24,6 +24,12 @@ auto model_viewer_geometry::bounding_sphere() noexcept -> oglplus::sphere {
     return _impl->bounding_sphere();
 }
 //------------------------------------------------------------------------------
+auto model_viewer_geometry::attrib_bindings() noexcept
+  -> const oglplus::vertex_attrib_bindings& {
+    assert(_impl);
+    return _impl->attrib_bindings();
+}
+//------------------------------------------------------------------------------
 //  Geometry
 //------------------------------------------------------------------------------
 class model_viewer_geometry_resource
@@ -41,6 +47,8 @@ public:
     void draw(video_context&) final;
 
     auto bounding_sphere() noexcept -> oglplus::sphere final;
+    auto attrib_bindings() noexcept
+      -> const oglplus::vertex_attrib_bindings& final;
     void clean_up(execution_context&, video_context&) final;
 
 private:
@@ -75,6 +83,11 @@ void model_viewer_geometry_resource::load_if_needed(execution_context& ctx) {
 auto model_viewer_geometry_resource::bounding_sphere() noexcept
   -> oglplus::sphere {
     return _bounding_sphere;
+}
+//------------------------------------------------------------------------------
+auto model_viewer_geometry_resource::attrib_bindings() noexcept
+  -> const oglplus::vertex_attrib_bindings& {
+    return *this;
 }
 //------------------------------------------------------------------------------
 void model_viewer_geometry_resource::use(video_context& video) {

@@ -14,6 +14,9 @@ import eagine.oglplus;
 namespace eagine::app {
 //------------------------------------------------------------------------------
 struct model_viewer_program_intf : model_viewer_resource_intf {
+    virtual void apply_bindings(
+      video_context&,
+      const oglplus::vertex_attrib_bindings&) = 0;
     virtual void set_camera(video_context&, const mat4&) = 0;
 };
 using model_viewer_program_holder = unique_holder<model_viewer_program_intf>;
@@ -24,6 +27,11 @@ class model_viewer_program
 
 public:
     using base::base;
+
+    auto apply_bindings(
+      video_context&,
+      const oglplus::vertex_attrib_bindings& attrib_bindings)
+      -> model_viewer_program&;
 
     auto set_camera(video_context&, orbiting_camera& projection)
       -> model_viewer_program&;

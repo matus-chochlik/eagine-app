@@ -17,6 +17,8 @@ namespace eagine::app {
 struct model_viewer_geometry_intf : model_viewer_resource_intf {
     virtual void draw(video_context&) = 0;
     virtual auto bounding_sphere() noexcept -> oglplus::sphere = 0;
+    virtual auto attrib_bindings() noexcept
+      -> const oglplus::vertex_attrib_bindings& = 0;
 };
 using model_viewer_geometry_holder = unique_holder<model_viewer_geometry_intf>;
 //------------------------------------------------------------------------------
@@ -28,6 +30,7 @@ public:
     using base::base;
 
     auto bounding_sphere() noexcept -> oglplus::sphere;
+    auto attrib_bindings() noexcept -> const oglplus::vertex_attrib_bindings&;
 
     auto draw(video_context&) -> model_viewer_geometry&;
 };

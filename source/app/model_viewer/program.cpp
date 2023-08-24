@@ -12,9 +12,19 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 //  Wrapper
 //------------------------------------------------------------------------------
+auto model_viewer_program::apply_bindings(
+  video_context& video,
+  const oglplus::vertex_attrib_bindings& attrib_bindings)
+  -> model_viewer_program& {
+    assert(_impl);
+    _impl->apply_bindings(video, attrib_bindings);
+    return *this;
+}
+//------------------------------------------------------------------------------
 auto model_viewer_program::set_camera(
   video_context& video,
   orbiting_camera& camera) -> model_viewer_program& {
+    assert(_impl);
     _impl->set_camera(video, camera.matrix(video));
     return *this;
 }
@@ -32,6 +42,8 @@ public:
     auto is_loaded() noexcept -> bool final;
     void load_if_needed(execution_context&) final;
     void use(video_context&) final;
+    void apply_bindings(video_context&, const oglplus::vertex_attrib_bindings&)
+      final;
     void set_camera(video_context&, const mat4&) final;
     void clean_up(execution_context&, video_context&) final;
 
@@ -65,6 +77,12 @@ void model_viewer_program_resource::load_if_needed(execution_context& ctx) {
 //------------------------------------------------------------------------------
 void model_viewer_program_resource::use(video_context& video) {
     gl_program_resource::use(video);
+}
+//------------------------------------------------------------------------------
+void model_viewer_program_resource::apply_bindings(
+  video_context& video,
+  const oglplus::vertex_attrib_bindings& attrib_bindings) {
+    gl_program_resource::apply_input_bindings(video, attrib_bindings);
 }
 //------------------------------------------------------------------------------
 void model_viewer_program_resource::set_camera(

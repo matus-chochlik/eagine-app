@@ -19,38 +19,41 @@ auto model_viewer::_initial_program() -> model_viewer_program_holder {
     return make_default_program(context(), _video);
 }
 //------------------------------------------------------------------------------
+void model_viewer::_init_camera(const oglplus::sphere bs) {
+    const auto sr{bs.radius()};
+    _camera.set_fov(right_angle_())
+      .set_target(bs.center())
+      .set_near(sr * 0.01F)
+      .set_far(sr * 10.0F)
+      .set_orbit_min(sr * 1.2F)
+      .set_orbit_max(sr * 4.0F);
+}
+//------------------------------------------------------------------------------
 model_viewer::model_viewer(execution_context& ec, video_context& vc)
   : common_application{ec}
   , _video{vc}
   , _geometry{_initial_geometry()}
   , _program{_initial_program()} {
-    _geometry.loaded.connect(make_callable_ref<&model_viewer::on_loaded>(this));
-    _program.loaded.connect(make_callable_ref<&model_viewer::on_loaded>(this));
+    _geometry.loaded.connect(_load_handler());
+    _program.loaded.connect(_load_handler());
 
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
 
-    // camera
-    // TODO
-    const auto sr = 10.F;
-    _camera.set_fov(right_angle_())
-      .set_near(sr * 0.1F)
-      .set_far(sr * 10.0F)
-      .set_orbit_min(sr * 2.0F)
-      .set_orbit_max(sr * 4.0F);
-
     gl.clear_color(0.45F, 0.45F, 0.45F, 0.0F);
     gl.enable(GL.depth_test);
-    gl.enable(GL.cull_face);
-    gl.cull_face(GL.back);
 
     _camera.connect_inputs(ec).basic_input_mapping(ec);
     ec.setup_inputs().switch_input_mapping();
 }
 //------------------------------------------------------------------------------
-void model_viewer::on_loaded(model_viewer_resource_intf&) noexcept {
-    // TODO
-    std::cout << "LOADED" << std::endl;
+void model_viewer::_on_loaded(model_viewer_resource_intf&) noexcept {
+    if(_geometry and _program) {
+        _init_camera(_geometry.bounding_sphere());
+        _geometry.use(_video);
+        _program.use(_video);
+        _program.apply_bindings(_video, _geometry.attrib_bindings());
+    }
 }
 //------------------------------------------------------------------------------
 auto model_viewer::is_done() noexcept -> bool {
@@ -59,12 +62,17 @@ auto model_viewer::is_done() noexcept -> bool {
 //------------------------------------------------------------------------------
 void model_viewer::view_model() noexcept {
     auto& state = context().state();
-    _camera.idle_update(state);
+    if(state.user_idle_too_long()) {
+        _camera.idle_update(state);
+    }
 
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;
 
     gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
+
+    _program.set_camera(_video, _camera);
+    _geometry.draw(_video);
 }
 //------------------------------------------------------------------------------
 void model_viewer::update() noexcept {
