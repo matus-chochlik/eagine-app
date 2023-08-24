@@ -165,7 +165,7 @@ eagine_add_module(
 eagine_add_module(
 	eagine.app PARTITION background
 	IMPORTS
-		std camera context
+		std camera context types
 		eagine.core.types
 		eagine.core.memory
 		eagine.core.c_api

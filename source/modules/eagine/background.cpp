@@ -15,6 +15,7 @@ import eagine.shapes;
 import eagine.oglplus;
 import :context;
 import :camera;
+import :types;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
@@ -122,6 +123,8 @@ public:
 
     auto clean_up(video_context& vc) noexcept -> background_icosahedron&;
 
+    auto clear(video_context& vc, const mat4&, const float) noexcept
+      -> background_icosahedron&;
     auto clear(video_context& vc, const orbiting_camera& camera) noexcept
       -> background_icosahedron&;
 
@@ -154,6 +157,8 @@ public:
 
     auto clean_up(video_context& vc) noexcept -> background_skybox&;
 
+    auto clear(video_context& vc, const mat4&, const float) noexcept
+      -> background_skybox&;
     auto clear(video_context& vc, const orbiting_camera& camera) noexcept
       -> background_skybox&;
 
