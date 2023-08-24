@@ -35,3 +35,9 @@ install(
 	DESTINATION bin
 )
 
+install(
+	PROGRAMS blender-make-vertex-pivots
+	RENAME eagine-blender-make-vertex-pivots
+	DESTINATION bin
+)
+
