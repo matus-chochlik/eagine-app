@@ -11,6 +11,10 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 //  Application
 //------------------------------------------------------------------------------
+auto model_viewer::_initial_background() -> model_viewer_background_holder {
+    return make_default_background(context(), _video);
+}
+//------------------------------------------------------------------------------
 auto model_viewer::_initial_geometry() -> model_viewer_geometry_holder {
     return make_default_geometry(context(), _video);
 }
@@ -32,8 +36,10 @@ void model_viewer::_init_camera(const oglplus::sphere bs) {
 model_viewer::model_viewer(execution_context& ec, video_context& vc)
   : common_application{ec}
   , _video{vc}
+  , _background{_initial_background()}
   , _geometry{_initial_geometry()}
   , _program{_initial_program()} {
+    _background.loaded.connect(_load_handler());
     _geometry.loaded.connect(_load_handler());
     _program.loaded.connect(_load_handler());
 
@@ -48,9 +54,8 @@ model_viewer::model_viewer(execution_context& ec, video_context& vc)
 }
 //------------------------------------------------------------------------------
 void model_viewer::_on_loaded(model_viewer_resource_intf&) noexcept {
-    if(_geometry and _program) {
+    if(_background and _geometry and _program) {
         _init_camera(_geometry.bounding_sphere());
-        _geometry.use(_video);
         _program.use(_video);
         _program.apply_bindings(_video, _geometry.attrib_bindings());
     }
@@ -60,22 +65,31 @@ auto model_viewer::is_done() noexcept -> bool {
     return false;
 }
 //------------------------------------------------------------------------------
+void model_viewer::clear_background() noexcept {
+    _background.use(_video);
+    _background.clear(_video, _camera);
+}
+//------------------------------------------------------------------------------
 void model_viewer::view_model() noexcept {
+    _program.use(_video);
+    _program.set_camera(_video, _camera);
+
+    _geometry.use(_video);
+    _geometry.draw(_video);
+}
+//------------------------------------------------------------------------------
+void model_viewer::update() noexcept {
     auto& state = context().state();
     if(state.user_idle_too_long()) {
         _camera.idle_update(state);
     }
 
-    const auto& glapi = _video.gl_api();
-    const auto& [gl, GL] = glapi;
+    if(_background) {
+        clear_background();
+    } else {
+        _background.load_if_needed(context());
+    }
 
-    gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
-
-    _program.set_camera(_video, _camera);
-    _geometry.draw(_video);
-}
-//------------------------------------------------------------------------------
-void model_viewer::update() noexcept {
     if(_geometry and _program) {
         view_model();
     } else {
