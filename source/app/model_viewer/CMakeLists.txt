@@ -20,6 +20,7 @@ eagine_embed_target_resources(
 		DfaultFrag "glsl/default_frag.glsl"
 		DfaultProg "glsl/default_prog.json"
 		Guitar     "models/guitar.json"
+		TraficCone "models/traffic_cone.json"
 	PACKED
 	ENABLE_SEARCH)
 eagine_add_exe_analysis(eagine-app-model-viewer)
