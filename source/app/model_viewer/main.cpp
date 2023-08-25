@@ -11,6 +11,14 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 //  Application
 //------------------------------------------------------------------------------
+auto model_viewer::_load_handler() noexcept {
+    return make_callable_ref<&model_viewer::_on_loaded>(this);
+}
+//------------------------------------------------------------------------------
+auto model_viewer::_show_settings_handler() noexcept {
+    return make_callable_ref<&model_viewer::_show_settings>(this);
+}
+//------------------------------------------------------------------------------
 auto model_viewer::_initial_background() -> model_viewer_background_holder {
     return make_default_background(context(), _video);
 }
@@ -80,12 +88,12 @@ auto model_viewer::is_done() noexcept -> bool {
     return false;
 }
 //------------------------------------------------------------------------------
-void model_viewer::clear_background() noexcept {
+void model_viewer::_clear_background() noexcept {
     _background.use(_video);
     _background.clear(_video, _camera);
 }
 //------------------------------------------------------------------------------
-void model_viewer::view_model() noexcept {
+void model_viewer::_view_model() noexcept {
     _program.use(_video);
     _program.set_camera(_video, _camera);
 
@@ -95,7 +103,7 @@ void model_viewer::view_model() noexcept {
 //------------------------------------------------------------------------------
 void model_viewer::_setting_window(const guiplus::imgui_api& gui) noexcept {
     if(gui.begin("Settings", _show_setting_window).or_false()) {
-        if(gui.slider_float("FOV", _fov, 30.F, 90.F)) {
+        if(gui.slider_float("FOV", _fov, 20.F, 120.F)) {
             _camera.set_fov(degrees_(_fov));
         }
         gui.same_line();
@@ -123,13 +131,13 @@ void model_viewer::update() noexcept {
     }
 
     if(_background) {
-        clear_background();
+        _clear_background();
     } else {
         _background.load_if_needed(context());
     }
 
     if(_geometry and _program) {
-        view_model();
+        _view_model();
     } else {
         _geometry.load_if_needed(context());
         _program.load_if_needed(context());
@@ -155,3 +163,4 @@ auto example_main(main_ctx& ctx) -> int {
 auto main(int argc, const char** argv) -> int {
     return eagine::default_main(argc, argv, eagine::app::example_main);
 }
+//------------------------------------------------------------------------------
