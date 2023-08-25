@@ -23,12 +23,28 @@ auto model_viewer::_initial_program() -> model_viewer_program_holder {
     return make_default_program(context(), _video);
 }
 //------------------------------------------------------------------------------
+void model_viewer::_init_inputs() {
+    _camera.connect_inputs(context()).basic_input_mapping(context());
+    context()
+      .connect_inputs()
+      .add_ui_button({"Button", "ShowSeting"}, "Settings")
+      .connect_input({"Viewer", "ShowSeting"}, _show_settings_handler())
+      .map_key({"Viewer", "ShowSeting"}, {"Q"})
+      .map_input(
+        {"Viewer", "ShowSeting"},
+        {"AppGUI"},
+        {"Button", "ShowSeting"},
+        input_setup().any_value_kind())
+      .map_inputs();
+    context().setup_inputs().switch_input_mapping();
+}
+//------------------------------------------------------------------------------
 void model_viewer::_init_camera(const oglplus::sphere bs) {
     const auto sr{bs.radius()};
-    _camera.set_fov(right_angle_())
+    _camera.set_fov(degrees_(_fov))
       .set_target(bs.center())
       .set_near(sr * 0.01F)
-      .set_far(sr * 10.0F)
+      .set_far(sr * 100.0F)
       .set_orbit_min(sr * 1.2F)
       .set_orbit_max(sr * 4.0F);
 }
@@ -43,14 +59,7 @@ model_viewer::model_viewer(execution_context& ec, video_context& vc)
     _geometry.loaded.connect(_load_handler());
     _program.loaded.connect(_load_handler());
 
-    const auto& glapi = _video.gl_api();
-    const auto& [gl, GL] = glapi;
-
-    gl.clear_color(0.45F, 0.45F, 0.45F, 0.0F);
-    gl.enable(GL.depth_test);
-
-    _camera.connect_inputs(ec).basic_input_mapping(ec);
-    ec.setup_inputs().switch_input_mapping();
+    _init_inputs();
 }
 //------------------------------------------------------------------------------
 void model_viewer::_on_loaded(model_viewer_resource_intf&) noexcept {
@@ -58,6 +67,12 @@ void model_viewer::_on_loaded(model_viewer_resource_intf&) noexcept {
         _init_camera(_geometry.bounding_sphere());
         _program.use(_video);
         _program.apply_bindings(_video, _geometry.attrib_bindings());
+    }
+}
+//------------------------------------------------------------------------------
+void model_viewer::_show_settings(const input& i) noexcept {
+    if(not i) {
+        _show_setting_window = true;
     }
 }
 //------------------------------------------------------------------------------
@@ -76,6 +91,29 @@ void model_viewer::view_model() noexcept {
 
     _geometry.use(_video);
     _geometry.draw(_video);
+}
+//------------------------------------------------------------------------------
+void model_viewer::_setting_window(const guiplus::imgui_api& gui) noexcept {
+    if(gui.begin("Settings", _show_setting_window).or_false()) {
+        if(gui.slider_float("FOV", _fov, 30.F, 90.F)) {
+            _camera.set_fov(degrees_(_fov));
+        }
+        gui.same_line();
+        gui.help_marker("changes the field of view of the camera");
+        gui.new_line();
+        if(gui.button("Close").or_true()) {
+            _show_setting_window = false;
+        }
+        gui.same_line();
+        gui.help_marker("closes this settings window");
+        gui.end();
+    }
+}
+//------------------------------------------------------------------------------
+void model_viewer::update_overlays(guiplus::gui_utils& utils) noexcept {
+    if(_show_setting_window) {
+        _setting_window(utils.imgui);
+    }
 }
 //------------------------------------------------------------------------------
 void model_viewer::update() noexcept {

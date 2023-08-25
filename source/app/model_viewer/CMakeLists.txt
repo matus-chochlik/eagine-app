@@ -32,6 +32,7 @@ eagine_target_modules(
 	eagine.core
 	eagine.shapes
 	eagine.oglplus
+	eagine.guiplus
 	eagine.app)
 
 set_target_properties(
