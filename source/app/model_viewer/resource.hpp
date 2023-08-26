@@ -19,8 +19,10 @@ struct model_viewer_resource_signals {
     signal<void() noexcept> loaded;
 };
 //------------------------------------------------------------------------------
-struct model_viewer_resource_intf : abstract<model_viewer_resource_intf> {
-    void setup(model_viewer_resource_signals&) noexcept;
+struct model_viewer_resource_intf
+  : abstract<model_viewer_resource_intf>
+  , model_viewer_resource_signals {
+
     virtual auto is_loaded() noexcept -> bool = 0;
     virtual void load_if_needed(execution_context&, video_context&) = 0;
     virtual void use(video_context&) = 0;
@@ -28,21 +30,20 @@ struct model_viewer_resource_intf : abstract<model_viewer_resource_intf> {
 
 protected:
     void signal_loaded();
-
-private:
-    optional_reference<model_viewer_resource_signals> _signals;
 };
 //------------------------------------------------------------------------------
 template <typename Intf>
-class model_viewer_resource_wrapper : public model_viewer_resource_signals {
+class model_viewer_resource_wrapper {
 public:
     model_viewer_resource_wrapper(unique_holder<Intf> impl) noexcept
-      : _impl{std::move(impl)} {
-        _impl->setup(*this);
-    }
+      : _impl{std::move(impl)} {}
 
     explicit operator bool() const noexcept {
         return is_loaded();
+    }
+
+    auto signals() const noexcept -> model_viewer_resource_signals& {
+        return *_impl;
     }
 
     auto is_loaded() const noexcept -> bool {

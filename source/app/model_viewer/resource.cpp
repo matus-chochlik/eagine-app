@@ -10,14 +10,8 @@
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-void model_viewer_resource_intf::setup(
-  model_viewer_resource_signals& signals) noexcept {
-    _signals = signals;
-}
-//------------------------------------------------------------------------------
 void model_viewer_resource_intf::signal_loaded() {
-    assert(_signals);
-    _signals->loaded();
+    model_viewer_resource_signals::loaded();
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

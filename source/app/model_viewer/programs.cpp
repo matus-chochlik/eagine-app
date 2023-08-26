@@ -14,7 +14,7 @@ model_viewer_programs::model_viewer_programs(
   execution_context& ctx,
   video_context& video) {
     load(url{"json:///DfaultProg"}, ctx, video);
-    // load(url{"json:///Nml2ClrPrg"}, ctx, video);
+    load(url{"json:///Nml2ClrPrg"}, ctx, video);
 }
 //------------------------------------------------------------------------------
 void model_viewer_programs::_on_loaded() noexcept {
@@ -48,7 +48,7 @@ auto model_viewer_programs::load(
   execution_context& ctx,
   video_context& video) -> model_viewer_programs& {
     _loaded.emplace_back(make_viewer_program(std::move(locator), ctx, video));
-    _loaded.back().loaded.connect(_load_handler());
+    _loaded.back().signals().loaded.connect(_load_handler());
     return *this;
 }
 //------------------------------------------------------------------------------

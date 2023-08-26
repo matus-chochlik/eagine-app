@@ -29,7 +29,7 @@ auto model_viewer_program::set_camera(
     return *this;
 }
 //------------------------------------------------------------------------------
-//  Default program
+//  Program resource
 //------------------------------------------------------------------------------
 class model_viewer_program_resource
   : public model_viewer_program_intf
@@ -57,7 +57,7 @@ model_viewer_program_resource::model_viewer_program_resource(
   execution_context& ctx,
   video_context&)
   : gl_program_resource{std::move(locator), ctx} {
-    loaded.connect(
+    gl_program_resource::loaded.connect(
       make_callable_ref<&model_viewer_program_resource::_on_loaded>(this));
 }
 //------------------------------------------------------------------------------

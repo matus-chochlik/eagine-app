@@ -59,8 +59,8 @@ model_viewer::model_viewer(execution_context& ec, video_context& video)
   , _background{_initial_background()}
   , _geometry{_initial_geometry()}
   , _programs{ec, video} {
-    _background.loaded.connect(_load_handler());
-    _geometry.loaded.connect(_load_handler());
+    _background.signals().loaded.connect(_load_handler());
+    _geometry.signals().loaded.connect(_load_handler());
     _programs.loaded.connect(_load_handler());
 
     _init_inputs();

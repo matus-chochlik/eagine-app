@@ -62,7 +62,7 @@ model_viewer_geometry_resource::model_viewer_geometry_resource(
   execution_context& ctx,
   video_context&)
   : gl_geometry_and_bindings_resource{std::move(locator), ctx} {
-    loaded.connect(
+    gl_geometry_and_bindings_resource::loaded.connect(
       make_callable_ref<&model_viewer_geometry_resource::_on_loaded>(this));
 }
 //------------------------------------------------------------------------------
