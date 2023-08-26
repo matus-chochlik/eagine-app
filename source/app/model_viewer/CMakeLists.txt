@@ -8,6 +8,7 @@ add_executable(
 	eagine-app-model-viewer
 	resource.cpp
 	background.cpp
+	backgrounds.cpp
 	geometry.cpp
 	models.cpp
 	program.cpp

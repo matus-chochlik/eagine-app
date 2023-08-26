@@ -8,7 +8,7 @@
 #ifndef EAGINE_APP_MODEL_VIEWER_MAIN_HPP
 #define EAGINE_APP_MODEL_VIEWER_MAIN_HPP
 
-#include "background.hpp"
+#include "backgrounds.hpp"
 #include "models.hpp"
 #include "programs.hpp"
 
@@ -31,7 +31,6 @@ public:
     void clean_up() noexcept final;
 
 private:
-    auto _initial_background() -> model_viewer_background_holder;
     void _init_inputs();
     void _init_camera(const oglplus::sphere bs);
 
@@ -44,7 +43,7 @@ private:
     void _setting_window(const guiplus::imgui_api&) noexcept;
 
     video_context& _video;
-    model_viewer_background _background;
+    model_viewer_backgrounds _backgrounds;
     model_viewer_models _models;
     model_viewer_programs _programs;
 

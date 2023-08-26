@@ -19,10 +19,6 @@ auto model_viewer::_show_settings_handler() noexcept {
     return make_callable_ref<&model_viewer::_show_settings>(this);
 }
 //------------------------------------------------------------------------------
-auto model_viewer::_initial_background() -> model_viewer_background_holder {
-    return make_default_background(context(), _video);
-}
-//------------------------------------------------------------------------------
 void model_viewer::_init_inputs() {
     _camera.connect_inputs(context()).basic_input_mapping(context());
     context()
@@ -52,10 +48,10 @@ void model_viewer::_init_camera(const oglplus::sphere bs) {
 model_viewer::model_viewer(execution_context& ctx, video_context& video)
   : common_application{ctx}
   , _video{video}
-  , _background{_initial_background()}
+  , _backgrounds{ctx, video}
   , _models{ctx, video}
   , _programs{ctx, video} {
-    _background.signals().loaded.connect(_load_handler());
+    _backgrounds.loaded.connect(_load_handler());
     _models.loaded.connect(_load_handler());
     _programs.loaded.connect(_load_handler());
 
@@ -64,7 +60,7 @@ model_viewer::model_viewer(execution_context& ctx, video_context& video)
 }
 //------------------------------------------------------------------------------
 void model_viewer::_on_loaded() noexcept {
-    if(_background and _models and _programs) {
+    if(_backgrounds and _models and _programs) {
         _init_camera(_models.bounding_sphere());
         _programs.use(_video);
         _programs.apply_bindings(_video, _models.attrib_bindings());
@@ -82,8 +78,8 @@ auto model_viewer::is_done() noexcept -> bool {
 }
 //------------------------------------------------------------------------------
 void model_viewer::_clear_background() noexcept {
-    _background.use(_video);
-    _background.clear(_video, _camera);
+    _backgrounds.use(_video);
+    _backgrounds.clear(_video, _camera);
 }
 //------------------------------------------------------------------------------
 void model_viewer::_view_model() noexcept {
@@ -123,10 +119,10 @@ void model_viewer::update() noexcept {
         _camera.idle_update(state);
     }
 
-    if(_background) {
+    if(_backgrounds) {
         _clear_background();
     } else {
-        _background.load_if_needed(context(), _video);
+        _backgrounds.load_if_needed(context(), _video);
     }
 
     if(_models and _programs) {
@@ -139,7 +135,7 @@ void model_viewer::update() noexcept {
 }
 //------------------------------------------------------------------------------
 void model_viewer::clean_up() noexcept {
-    _background.clean_up(context(), _video);
+    _backgrounds.clean_up(context(), _video);
     _programs.clean_up(context(), _video);
     _models.clean_up(context(), _video);
     _video.end();

@@ -66,8 +66,11 @@ void model_viewer_default_background::clean_up(
 //------------------------------------------------------------------------------
 //  Default background
 //------------------------------------------------------------------------------
-auto make_default_background(execution_context& ctx, video_context& video)
-  -> model_viewer_background_holder {
+auto make_viewer_resource(
+  std::type_identity<model_viewer_background>,
+  url,
+  execution_context& ctx,
+  video_context& video) -> model_viewer_background_holder {
     return {hold<model_viewer_default_background>, ctx, video};
 }
 //------------------------------------------------------------------------------

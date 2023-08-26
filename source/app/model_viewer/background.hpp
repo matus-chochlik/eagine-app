@@ -30,8 +30,11 @@ public:
     auto clear(video_context&, orbiting_camera&) -> model_viewer_background&;
 };
 //------------------------------------------------------------------------------
-auto make_default_background(execution_context&, video_context&)
-  -> model_viewer_background_holder;
+auto make_viewer_resource(
+  std::type_identity<model_viewer_background>,
+  url,
+  execution_context&,
+  video_context&) -> model_viewer_background_holder;
 //------------------------------------------------------------------------------
 } // namespace eagine::app
 #endif
