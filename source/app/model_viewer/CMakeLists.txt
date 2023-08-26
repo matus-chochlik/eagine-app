@@ -26,8 +26,9 @@ eagine_embed_target_resources(
 		Nml2ClrVrt "glsl/normal_to_color_vert.glsl"
 		Nml2ClrFrg "glsl/normal_to_color_frag.glsl"
 		Nml2ClrPrg "glsl/normal_to_color_prog.json"
-		Guitar     "models/guitar.json"
 		TraficCone "models/traffic_cone.json"
+		Guitar     "models/guitar.json"
+		Crate      "models/crate.json"
 	PACKED
 	ENABLE_SEARCH)
 eagine_add_exe_analysis(eagine-app-model-viewer)

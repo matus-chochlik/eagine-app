@@ -15,6 +15,7 @@ model_viewer_models::model_viewer_models(
   video_context& video) {
     load("Traffic cone", url{"json:///TraficCone"}, ctx, video);
     load("Guitar", url{"json:///Guitar"}, ctx, video);
+    load("Crate", url{"json:///Crate"}, ctx, video);
 }
 //------------------------------------------------------------------------------
 auto model_viewer_models::bounding_sphere() noexcept -> oglplus::sphere {
