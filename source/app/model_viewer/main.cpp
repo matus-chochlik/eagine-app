@@ -27,10 +27,6 @@ auto model_viewer::_initial_geometry() -> model_viewer_geometry_holder {
     return make_default_geometry(context(), _video);
 }
 //------------------------------------------------------------------------------
-auto model_viewer::_initial_program() -> model_viewer_program_holder {
-    return make_default_program(context(), _video);
-}
-//------------------------------------------------------------------------------
 void model_viewer::_init_inputs() {
     _camera.connect_inputs(context()).basic_input_mapping(context());
     context()
@@ -57,24 +53,24 @@ void model_viewer::_init_camera(const oglplus::sphere bs) {
       .set_orbit_max(sr * 4.0F);
 }
 //------------------------------------------------------------------------------
-model_viewer::model_viewer(execution_context& ec, video_context& vc)
+model_viewer::model_viewer(execution_context& ec, video_context& video)
   : common_application{ec}
-  , _video{vc}
+  , _video{video}
   , _background{_initial_background()}
   , _geometry{_initial_geometry()}
-  , _program{_initial_program()} {
+  , _programs{ec, video} {
     _background.loaded.connect(_load_handler());
     _geometry.loaded.connect(_load_handler());
-    _program.loaded.connect(_load_handler());
+    _programs.loaded.connect(_load_handler());
 
     _init_inputs();
 }
 //------------------------------------------------------------------------------
-void model_viewer::_on_loaded(model_viewer_resource_intf&) noexcept {
-    if(_background and _geometry and _program) {
+void model_viewer::_on_loaded() noexcept {
+    if(_background and _geometry and _programs) {
         _init_camera(_geometry.bounding_sphere());
-        _program.use(_video);
-        _program.apply_bindings(_video, _geometry.attrib_bindings());
+        _programs.use(_video);
+        _programs.apply_bindings(_video, _geometry.attrib_bindings());
     }
 }
 //------------------------------------------------------------------------------
@@ -94,8 +90,8 @@ void model_viewer::_clear_background() noexcept {
 }
 //------------------------------------------------------------------------------
 void model_viewer::_view_model() noexcept {
-    _program.use(_video);
-    _program.set_camera(_video, _camera);
+    _programs.use(_video);
+    _programs.set_camera(_video, _camera);
 
     _geometry.use(_video);
     _geometry.draw(_video);
@@ -133,20 +129,21 @@ void model_viewer::update() noexcept {
     if(_background) {
         _clear_background();
     } else {
-        _background.load_if_needed(context());
+        _background.load_if_needed(context(), _video);
     }
 
-    if(_geometry and _program) {
+    if(_geometry and _programs) {
         _view_model();
     } else {
-        _geometry.load_if_needed(context());
-        _program.load_if_needed(context());
+        _geometry.load_if_needed(context(), _video);
+        _programs.load_if_needed(context(), _video);
     }
     _video.commit();
 }
 //------------------------------------------------------------------------------
 void model_viewer::clean_up() noexcept {
-    _program.clean_up(context(), _video);
+    _background.clean_up(context(), _video);
+    _programs.clean_up(context(), _video);
     _geometry.clean_up(context(), _video);
     _video.end();
 }

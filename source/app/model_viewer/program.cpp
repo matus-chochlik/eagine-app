@@ -40,7 +40,7 @@ public:
       execution_context&,
       video_context&);
     auto is_loaded() noexcept -> bool final;
-    void load_if_needed(execution_context&) final;
+    void load_if_needed(execution_context&, video_context&) final;
     void use(video_context&) final;
     void apply_bindings(video_context&, const oglplus::vertex_attrib_bindings&)
       final;
@@ -71,7 +71,9 @@ auto model_viewer_program_resource::is_loaded() noexcept -> bool {
     return gl_program_resource::is_loaded();
 }
 //------------------------------------------------------------------------------
-void model_viewer_program_resource::load_if_needed(execution_context& ctx) {
+void model_viewer_program_resource::load_if_needed(
+  execution_context& ctx,
+  video_context&) {
     gl_program_resource::load_if_needed(ctx);
 }
 //------------------------------------------------------------------------------
@@ -97,13 +99,11 @@ void model_viewer_program_resource::clean_up(
     gl_program_resource::clean_up(ctx.loader(), video);
 }
 //------------------------------------------------------------------------------
-auto make_default_program(execution_context& ctx, video_context& video)
-  -> model_viewer_program_holder {
-    return {
-      hold<model_viewer_program_resource>,
-      url{"json:///DfaultProg"},
-      ctx,
-      video};
+auto make_viewer_program(
+  url locator,
+  execution_context& ctx,
+  video_context& video) -> model_viewer_program_holder {
+    return {hold<model_viewer_program_resource>, locator, ctx, video};
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

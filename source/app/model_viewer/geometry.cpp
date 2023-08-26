@@ -42,7 +42,7 @@ public:
       video_context&);
 
     auto is_loaded() noexcept -> bool final;
-    void load_if_needed(execution_context&) final;
+    void load_if_needed(execution_context&, video_context&) final;
     void use(video_context&) final;
     void draw(video_context&) final;
 
@@ -76,7 +76,9 @@ auto model_viewer_geometry_resource::is_loaded() noexcept -> bool {
     return gl_geometry_and_bindings_resource::is_loaded();
 }
 //------------------------------------------------------------------------------
-void model_viewer_geometry_resource::load_if_needed(execution_context& ctx) {
+void model_viewer_geometry_resource::load_if_needed(
+  execution_context& ctx,
+  video_context&) {
     gl_geometry_and_bindings_resource::load_if_needed(ctx);
 }
 //------------------------------------------------------------------------------

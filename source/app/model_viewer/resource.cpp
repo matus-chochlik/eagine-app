@@ -17,7 +17,7 @@ void model_viewer_resource_intf::setup(
 //------------------------------------------------------------------------------
 void model_viewer_resource_intf::signal_loaded() {
     assert(_signals);
-    _signals->loaded(*this);
+    _signals->loaded();
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

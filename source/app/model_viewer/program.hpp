@@ -33,11 +33,11 @@ public:
       const oglplus::vertex_attrib_bindings& attrib_bindings)
       -> model_viewer_program&;
 
-    auto set_camera(video_context&, orbiting_camera& projection)
+    auto set_camera(video_context&, orbiting_camera& camera)
       -> model_viewer_program&;
 };
 //------------------------------------------------------------------------------
-auto make_default_program(execution_context&, video_context&)
+auto make_viewer_program(url, execution_context&, video_context&)
   -> model_viewer_program_holder;
 //------------------------------------------------------------------------------
 } // namespace eagine::app

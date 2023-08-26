@@ -27,7 +27,7 @@ public:
     model_viewer_default_background(execution_context&, video_context&);
 
     auto is_loaded() noexcept -> bool final;
-    void load_if_needed(execution_context&) final;
+    void load_if_needed(execution_context&, video_context&) final;
     void use(video_context&) final;
     void clear(video_context&, const mat4& camera, const float distance) final;
     void clean_up(execution_context&, video_context&) final;
@@ -45,7 +45,9 @@ auto model_viewer_default_background::is_loaded() noexcept -> bool {
     return true;
 }
 //------------------------------------------------------------------------------
-void model_viewer_default_background::load_if_needed(execution_context&) {}
+void model_viewer_default_background::load_if_needed(
+  execution_context&,
+  video_context&) {}
 //------------------------------------------------------------------------------
 void model_viewer_default_background::use(video_context&) {}
 //------------------------------------------------------------------------------

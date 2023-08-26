@@ -10,6 +10,7 @@ add_executable(
 	background.cpp
 	geometry.cpp
 	program.cpp
+	programs.cpp
 	launchpad.cpp
 	main.cpp)
 add_dependencies(eagine-app-model-viewer eagine-apps)
@@ -20,6 +21,9 @@ eagine_embed_target_resources(
 		DfaultVert "glsl/default_vert.glsl"
 		DfaultFrag "glsl/default_frag.glsl"
 		DfaultProg "glsl/default_prog.json"
+		Nml2ClrVrt "glsl/normal_to_color_vert.glsl"
+		Nml2ClrFrg "glsl/normal_to_color_frag.glsl"
+		Nml2ClrPrg "glsl/normal_to_color_prog.json"
 		Guitar     "models/guitar.json"
 		TraficCone "models/traffic_cone.json"
 	PACKED

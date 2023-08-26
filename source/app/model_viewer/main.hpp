@@ -10,7 +10,7 @@
 
 #include "background.hpp"
 #include "geometry.hpp"
-#include "program.hpp"
+#include "programs.hpp"
 
 import eagine.core;
 import eagine.oglplus;
@@ -33,11 +33,10 @@ public:
 private:
     auto _initial_background() -> model_viewer_background_holder;
     auto _initial_geometry() -> model_viewer_geometry_holder;
-    auto _initial_program() -> model_viewer_program_holder;
     void _init_inputs();
     void _init_camera(const oglplus::sphere bs);
 
-    void _on_loaded(model_viewer_resource_intf&) noexcept;
+    void _on_loaded() noexcept;
     auto _load_handler() noexcept;
     void _clear_background() noexcept;
     void _view_model() noexcept;
@@ -48,7 +47,7 @@ private:
     video_context& _video;
     model_viewer_background _background;
     model_viewer_geometry _geometry;
-    model_viewer_program _program;
+    model_viewer_programs _programs;
 
     orbiting_camera _camera;
     float _fov{70.F};

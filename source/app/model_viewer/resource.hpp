@@ -16,13 +16,13 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 struct model_viewer_resource_intf;
 struct model_viewer_resource_signals {
-    signal<void(model_viewer_resource_intf&) noexcept> loaded;
+    signal<void() noexcept> loaded;
 };
 //------------------------------------------------------------------------------
 struct model_viewer_resource_intf : abstract<model_viewer_resource_intf> {
     void setup(model_viewer_resource_signals&) noexcept;
     virtual auto is_loaded() noexcept -> bool = 0;
-    virtual void load_if_needed(execution_context&) = 0;
+    virtual void load_if_needed(execution_context&, video_context&) = 0;
     virtual void use(video_context&) = 0;
     virtual void clean_up(execution_context&, video_context&) = 0;
 
@@ -42,13 +42,17 @@ public:
     }
 
     explicit operator bool() const noexcept {
+        return is_loaded();
+    }
+
+    auto is_loaded() const noexcept -> bool {
         return _impl and _impl->is_loaded();
     }
 
-    auto load_if_needed(execution_context& ctx)
+    auto load_if_needed(execution_context& ctx, video_context& video)
       -> model_viewer_resource_wrapper& {
         if(_impl) [[likely]] {
-            _impl->load_if_needed(ctx);
+            _impl->load_if_needed(ctx, video);
         }
         return *this;
     }
