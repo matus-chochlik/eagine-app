@@ -9,6 +9,7 @@ add_executable(
 	resource.cpp
 	background.cpp
 	geometry.cpp
+	models.cpp
 	program.cpp
 	programs.cpp
 	launchpad.cpp

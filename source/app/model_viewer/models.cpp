@@ -5,82 +5,80 @@
 /// See accompanying file LICENSE_1_0.txt or copy at
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
-#include "programs.hpp"
+#include "models.hpp"
 #include <cassert>
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-model_viewer_programs::model_viewer_programs(
+model_viewer_models::model_viewer_models(
   execution_context& ctx,
   video_context& video) {
-    load(url{"json:///DfaultProg"}, ctx, video);
-    load(url{"json:///Nml2ClrPrg"}, ctx, video);
+    load(url{"json:///TraficCone"}, ctx, video);
+    load(url{"json:///Guitar"}, ctx, video);
 }
 //------------------------------------------------------------------------------
-void model_viewer_programs::_on_loaded() noexcept {
+void model_viewer_models::_on_loaded() noexcept {
     loaded();
 }
 //------------------------------------------------------------------------------
-auto model_viewer_programs::_load_handler() noexcept {
-    return make_callable_ref<&model_viewer_programs::_on_loaded>(this);
+auto model_viewer_models::_load_handler() noexcept {
+    return make_callable_ref<&model_viewer_models::_on_loaded>(this);
 }
 //------------------------------------------------------------------------------
-auto model_viewer_programs::are_all_loaded() const noexcept -> bool {
-    for(auto& program : _loaded) {
-        if(not program.is_loaded()) {
+auto model_viewer_models::are_all_loaded() const noexcept -> bool {
+    for(auto& geometry : _loaded) {
+        if(not geometry.is_loaded()) {
             return false;
         }
     }
     return true;
 }
 //------------------------------------------------------------------------------
-auto model_viewer_programs::load_if_needed(
+auto model_viewer_models::load_if_needed(
   execution_context& ctx,
-  video_context& video) noexcept -> model_viewer_programs& {
-    for(auto& program : _loaded) {
-        program.load_if_needed(ctx, video);
+  video_context& video) noexcept -> model_viewer_models& {
+    for(auto& geometry : _loaded) {
+        geometry.load_if_needed(ctx, video);
     }
     return *this;
 }
 //------------------------------------------------------------------------------
-auto model_viewer_programs::load(
+auto model_viewer_models::load(
   url locator,
   execution_context& ctx,
-  video_context& video) -> model_viewer_programs& {
-    _loaded.emplace_back(make_viewer_program(std::move(locator), ctx, video));
+  video_context& video) -> model_viewer_models& {
+    _loaded.emplace_back(make_viewer_geometry(std::move(locator), ctx, video));
     _loaded.back().signals().loaded.connect(_load_handler());
     return *this;
 }
 //------------------------------------------------------------------------------
-auto model_viewer_programs::use(video_context& video)
-  -> model_viewer_programs& {
+auto model_viewer_models::use(video_context& video) -> model_viewer_models& {
     assert(_selected < _loaded.size());
     _loaded[_selected].use(video);
     return *this;
 }
 //------------------------------------------------------------------------------
-auto model_viewer_programs::apply_bindings(
-  video_context& video,
-  const oglplus::vertex_attrib_bindings& attrib_bindings)
-  -> model_viewer_programs& {
+auto model_viewer_models::bounding_sphere() noexcept -> oglplus::sphere {
     assert(_selected < _loaded.size());
-    _loaded[_selected].apply_bindings(video, attrib_bindings);
+    return _loaded[_selected].bounding_sphere();
+}
+//------------------------------------------------------------------------------
+auto model_viewer_models::attrib_bindings() noexcept
+  -> const oglplus::vertex_attrib_bindings& {
+    assert(_selected < _loaded.size());
+    return _loaded[_selected].attrib_bindings();
+}
+//------------------------------------------------------------------------------
+auto model_viewer_models::draw(video_context& video) -> model_viewer_models& {
+    assert(_selected < _loaded.size());
+    _loaded[_selected].draw(video);
     return *this;
 }
 //------------------------------------------------------------------------------
-auto model_viewer_programs::set_camera(
-  video_context& video,
-  orbiting_camera& camera) -> model_viewer_programs& {
-    assert(_selected < _loaded.size());
-    _loaded[_selected].set_camera(video, camera);
-    return *this;
-}
-//------------------------------------------------------------------------------
-auto model_viewer_programs::clean_up(
-  execution_context& ctx,
-  video_context& video) -> model_viewer_programs& {
-    for(auto& program : _loaded) {
-        program.clean_up(ctx, video);
+auto model_viewer_models::clean_up(execution_context& ctx, video_context& video)
+  -> model_viewer_models& {
+    for(auto& geometry : _loaded) {
+        geometry.clean_up(ctx, video);
     }
     return *this;
 }

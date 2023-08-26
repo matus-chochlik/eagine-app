@@ -31,11 +31,10 @@ public:
 
     auto bounding_sphere() noexcept -> oglplus::sphere;
     auto attrib_bindings() noexcept -> const oglplus::vertex_attrib_bindings&;
-
     auto draw(video_context&) -> model_viewer_geometry&;
 };
 //------------------------------------------------------------------------------
-auto make_default_geometry(execution_context&, video_context&)
+auto make_viewer_geometry(url, execution_context&, video_context&)
   -> model_viewer_geometry_holder;
 //------------------------------------------------------------------------------
 } // namespace eagine::app

@@ -108,13 +108,12 @@ void model_viewer_geometry_resource::clean_up(
 //------------------------------------------------------------------------------
 //  Default geometry
 //------------------------------------------------------------------------------
-auto make_default_geometry(execution_context& ctx, video_context& video)
-  -> model_viewer_geometry_holder {
+auto make_viewer_geometry(
+  url locator,
+  execution_context& ctx,
+  video_context& video) -> model_viewer_geometry_holder {
     return {
-      hold<model_viewer_geometry_resource>,
-      url{"json:///TraficCone"},
-      ctx,
-      video};
+      hold<model_viewer_geometry_resource>, std::move(locator), ctx, video};
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

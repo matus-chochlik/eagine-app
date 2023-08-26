@@ -103,7 +103,8 @@ auto make_viewer_program(
   url locator,
   execution_context& ctx,
   video_context& video) -> model_viewer_program_holder {
-    return {hold<model_viewer_program_resource>, locator, ctx, video};
+    return {
+      hold<model_viewer_program_resource>, std::move(locator), ctx, video};
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

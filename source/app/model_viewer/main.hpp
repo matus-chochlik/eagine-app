@@ -9,7 +9,7 @@
 #define EAGINE_APP_MODEL_VIEWER_MAIN_HPP
 
 #include "background.hpp"
-#include "geometry.hpp"
+#include "models.hpp"
 #include "programs.hpp"
 
 import eagine.core;
@@ -32,7 +32,6 @@ public:
 
 private:
     auto _initial_background() -> model_viewer_background_holder;
-    auto _initial_geometry() -> model_viewer_geometry_holder;
     void _init_inputs();
     void _init_camera(const oglplus::sphere bs);
 
@@ -46,7 +45,7 @@ private:
 
     video_context& _video;
     model_viewer_background _background;
-    model_viewer_geometry _geometry;
+    model_viewer_models _models;
     model_viewer_programs _programs;
 
     orbiting_camera _camera;
