@@ -37,8 +37,11 @@ public:
       -> model_viewer_program&;
 };
 //------------------------------------------------------------------------------
-auto make_viewer_program(url, execution_context&, video_context&)
-  -> model_viewer_program_holder;
+auto make_viewer_resource(
+  std::type_identity<model_viewer_program>,
+  url,
+  execution_context&,
+  video_context&) -> model_viewer_program_holder;
 //------------------------------------------------------------------------------
 } // namespace eagine::app
 #endif

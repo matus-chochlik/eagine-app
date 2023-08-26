@@ -99,7 +99,8 @@ void model_viewer_program_resource::clean_up(
     gl_program_resource::clean_up(ctx.loader(), video);
 }
 //------------------------------------------------------------------------------
-auto make_viewer_program(
+auto make_viewer_resource(
+  std::type_identity<model_viewer_program>,
   url locator,
   execution_context& ctx,
   video_context& video) -> model_viewer_program_holder {

@@ -108,7 +108,8 @@ void model_viewer_geometry_resource::clean_up(
 //------------------------------------------------------------------------------
 //  Default geometry
 //------------------------------------------------------------------------------
-auto make_viewer_geometry(
+auto make_viewer_resource(
+  std::type_identity<model_viewer_geometry>,
   url locator,
   execution_context& ctx,
   video_context& video) -> model_viewer_geometry_holder {

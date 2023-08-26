@@ -34,8 +34,11 @@ public:
     auto draw(video_context&) -> model_viewer_geometry&;
 };
 //------------------------------------------------------------------------------
-auto make_viewer_geometry(url, execution_context&, video_context&)
-  -> model_viewer_geometry_holder;
+auto make_viewer_resource(
+  std::type_identity<model_viewer_geometry>,
+  url,
+  execution_context&,
+  video_context&) -> model_viewer_geometry_holder;
 //------------------------------------------------------------------------------
 } // namespace eagine::app
 #endif
