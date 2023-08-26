@@ -78,11 +78,31 @@ protected:
     unique_holder<Intf> _impl;
 };
 //------------------------------------------------------------------------------
-template <typename Wrapper>
-class model_viewer_resources {
+class model_viewer_resources_base {
 public:
     signal<void() noexcept> loaded;
 
+protected:
+    auto _load_handler() noexcept {
+        return make_callable_ref<&model_viewer_resources_base::_on_loaded>(
+          this);
+    }
+
+    auto _selected(auto& items) const noexcept -> auto& {
+        assert(_selected_index < items.size());
+        return items[_selected_index];
+    }
+
+private:
+    void _on_loaded() noexcept {
+        loaded();
+    }
+    std::size_t _selected_index{0U};
+};
+//------------------------------------------------------------------------------
+template <typename Wrapper>
+class model_viewer_resources : public model_viewer_resources_base {
+public:
     explicit operator bool() const noexcept {
         return are_all_loaded();
     }
@@ -97,16 +117,14 @@ public:
     }
 
     auto selected() noexcept -> Wrapper& {
-        assert(_selected < _loaded.size());
-        return _loaded[_selected];
+        return _selected(_loaded);
     }
 
     auto load(url locator, execution_context& ctx, video_context& video)
       -> model_viewer_resources& {
         _loaded.emplace_back(make_viewer_resource(
           std::type_identity<Wrapper>{}, std::move(locator), ctx, video));
-        _loaded.back().signals().loaded.connect(
-          make_callable_ref<&model_viewer_resources::_on_loaded>(this));
+        _loaded.back().signals().loaded.connect(this->_load_handler());
         return *this;
     }
 
@@ -132,12 +150,7 @@ public:
     }
 
 private:
-    void _on_loaded() noexcept {
-        loaded();
-    }
-
     std::vector<Wrapper> _loaded;
-    std::size_t _selected{0U};
 };
 //------------------------------------------------------------------------------
 } // namespace eagine::app
