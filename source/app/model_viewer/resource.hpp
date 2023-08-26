@@ -10,6 +10,7 @@
 #include <cassert>
 
 import eagine.core;
+import eagine.guiplus;
 import eagine.app;
 import std;
 
@@ -82,10 +83,17 @@ class model_viewer_resources_base {
 public:
     signal<void() noexcept> loaded;
 
+    void settings(const guiplus::imgui_api& gui) noexcept;
+    void update() noexcept;
+
 protected:
     auto _load_handler() noexcept {
         return make_callable_ref<&model_viewer_resources_base::_on_loaded>(
           this);
+    }
+
+    auto _add_name(std::string name) {
+        _names.emplace_back(std::move(name));
     }
 
     auto _selected(auto& items) const noexcept -> auto& {
@@ -97,7 +105,9 @@ private:
     void _on_loaded() noexcept {
         loaded();
     }
+    std::size_t _previous_index{0U};
     std::size_t _selected_index{0U};
+    std::vector<std::string> _names;
 };
 //------------------------------------------------------------------------------
 template <typename Wrapper>
@@ -120,8 +130,12 @@ public:
         return _selected(_loaded);
     }
 
-    auto load(url locator, execution_context& ctx, video_context& video)
-      -> model_viewer_resources& {
+    auto load(
+      std::string name,
+      url locator,
+      execution_context& ctx,
+      video_context& video) -> model_viewer_resources& {
+        this->_add_name(std::move(name));
         _loaded.emplace_back(make_viewer_resource(
           std::type_identity<Wrapper>{}, std::move(locator), ctx, video));
         _loaded.back().signals().loaded.connect(this->_load_handler());

@@ -13,8 +13,8 @@ namespace eagine::app {
 model_viewer_programs::model_viewer_programs(
   execution_context& ctx,
   video_context& video) {
-    load(url{"json:///DfaultProg"}, ctx, video);
-    load(url{"json:///Nml2ClrPrg"}, ctx, video);
+    load("Default", url{"json:///DfaultProg"}, ctx, video);
+    load("Normal to Color", url{"json:///Nml2ClrPrg"}, ctx, video);
 }
 //------------------------------------------------------------------------------
 auto model_viewer_programs::apply_bindings(

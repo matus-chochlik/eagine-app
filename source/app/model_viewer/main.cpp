@@ -91,13 +91,18 @@ void model_viewer::_view_model() noexcept {
 }
 //------------------------------------------------------------------------------
 void model_viewer::_setting_window(const guiplus::imgui_api& gui) noexcept {
+    gui.set_next_window_size({350, 240});
     if(gui.begin("Settings", _show_setting_window).or_false()) {
         if(gui.slider_float("FOV", _fov, 20.F, 120.F)) {
             _camera.set_fov(degrees_(_fov));
         }
         gui.same_line();
         gui.help_marker("changes the field of view of the camera");
-        gui.new_line();
+
+        gui.separator_text("Model");
+        _models.settings(gui);
+
+        gui.separator();
         if(gui.button("Close").or_true()) {
             _show_setting_window = false;
         }
@@ -119,12 +124,15 @@ void model_viewer::update() noexcept {
         _camera.idle_update(state);
     }
 
+    _backgrounds.update();
     if(_backgrounds) {
         _clear_background();
     } else {
         _backgrounds.load_if_needed(context(), _video);
     }
 
+    _models.update();
+    _programs.update();
     if(_models and _programs) {
         _view_model();
     } else {

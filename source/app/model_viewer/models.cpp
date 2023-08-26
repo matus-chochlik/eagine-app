@@ -13,8 +13,8 @@ namespace eagine::app {
 model_viewer_models::model_viewer_models(
   execution_context& ctx,
   video_context& video) {
-    load(url{"json:///TraficCone"}, ctx, video);
-    load(url{"json:///Guitar"}, ctx, video);
+    load("Traffic cone", url{"json:///TraficCone"}, ctx, video);
+    load("Guitar", url{"json:///Guitar"}, ctx, video);
 }
 //------------------------------------------------------------------------------
 auto model_viewer_models::bounding_sphere() noexcept -> oglplus::sphere {
