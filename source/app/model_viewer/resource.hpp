@@ -105,7 +105,7 @@ private:
     void _on_loaded() noexcept {
         loaded();
     }
-    std::size_t _previous_index{0U};
+    std::size_t _next_index{0U};
     std::size_t _selected_index{0U};
     std::vector<std::string> _names;
 };

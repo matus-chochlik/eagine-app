@@ -16,14 +16,13 @@ void model_viewer_resource_intf::signal_loaded() {
 //------------------------------------------------------------------------------
 void model_viewer_resources_base::settings(
   const guiplus::imgui_api& gui) noexcept {
-    assert(_selected_index < _names.size());
-    if(gui.begin_combo("Current", _names[_selected_index]).or_false()) {
+    assert(_next_index < _names.size());
+    if(gui.begin_combo("Current", _names[_next_index]).or_false()) {
         for(const auto i : index_range(_names)) {
-            const bool is_selected{i == _selected_index};
+            const bool is_selected{i == _next_index};
             const auto name{_names[i]};
             if(gui.selectable(name, is_selected).or_false()) {
-                _previous_index = _selected_index;
-                _selected_index = i;
+                _next_index = i;
             }
             if(is_selected) {
                 gui.set_item_default_focus();
@@ -34,8 +33,8 @@ void model_viewer_resources_base::settings(
 }
 //------------------------------------------------------------------------------
 void model_viewer_resources_base::update() noexcept {
-    if(_previous_index != _selected_index) {
-        _previous_index = _selected_index;
+    if(_selected_index != _next_index) {
+        _selected_index = _next_index;
         _on_loaded();
     }
 }
