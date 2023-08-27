@@ -77,7 +77,19 @@ class BakeLightArgParser(argparse.ArgumentParser):
             default=False
         )
 
-        self.add_argument(
+        typmug = self.add_mutually_exclusive_group()
+
+        typmug.add_argument(
+            '--existing', '-e',
+            type=str,
+            dest="existing_texture",
+            action="store",
+            default=None
+        )
+
+
+        btgrp = typmug.add_argument_group()
+        btgrp.add_argument(
             '--bake-type', '-T',
             dest="bake_type",
             type=str,
@@ -97,82 +109,104 @@ class BakeLightArgParser(argparse.ArgumentParser):
             ]
         )
 
-        self.add_argument(
+        btgrp.add_argument(
             '--combined',
             dest="bake_type",
             action="store_const",
             const="COMBINED"
         )
 
-        self.add_argument(
+        btgrp.add_argument(
             '--ao',
             dest="bake_type",
             action="store_const",
             const="AO"
         )
 
-        self.add_argument(
+        btgrp.add_argument(
             '--uv',
             dest="bake_type",
             action="store_const",
             const="UV"
         )
 
-        self.add_argument(
+        btgrp.add_argument(
             '--shadow',
             dest="bake_type",
             action="store_const",
             const="SHADOW"
         )
 
-        self.add_argument(
+        btgrp.add_argument(
             '--emit',
             dest="bake_type",
             action="store_const",
             const="EMIT"
         )
 
-        self.add_argument(
+        btgrp.add_argument(
             '--diffuse',
             dest="bake_type",
             action="store_const",
             const="DIFFUSE"
         )
 
-        self.add_argument(
+        btgrp.add_argument(
             '--roughness',
             dest="bake_type",
             action="store_const",
             const="ROUGHNESS"
         )
 
-        self.add_argument(
+        btgrp.add_argument(
             '--glossy',
             dest="bake_type",
             action="store_const",
             const="GLOSSY"
         )
 
-        self.add_argument(
+        btgrp.add_argument(
             '--environment',
             dest="bake_type",
             action="store_const",
             const="ENVIRONMENT"
         )
 
-        self.add_argument(
+        btgrp.add_argument(
             '--transmission',
             dest="bake_type",
             action="store_const",
             const="TRANSMISSION"
         )
 
-        self.add_argument(
+        engrp = self.add_argument_group()
+        engrp.add_argument(
             '--engine', '-E',
             type=str,
             action="store",
             default=None,
             choices=["CYCLES", "BLENDER_EEVEE", "BLENDER_WORKBENCH"]
+        )
+
+        engrp.add_argument(
+            '--cycles',
+            dest="engine",
+            action="store_const",
+            const="CYCLES"
+        )
+
+        engrp.add_argument(
+            '--eevee',
+            dest="engine",
+            action="store_const",
+            const="BLENDER_EEVEE"
+        )
+
+        engrp.add_argument(
+            '--workbench',
+            dest="engine",
+            action="store_const",
+            const="BLENDER_WORKBENCH"
         )
 
         self.add_argument(
@@ -205,120 +239,158 @@ def make_argument_parser():
         """
     )
 # ------------------------------------------------------------------------------
-def do_bake(options):
+def do_apply(options, target, mat_info):
+    mesh = target.data
+    if options.as_weights:
+        vgroup = None
+        if target.vertex_groups:
+            try:
+                vgroup = target.vertex_groups[options.bake_type]
+            except KeyError:
+                pass
+
+        if not vgroup:
+            vgroup = target.vertex_groups.new(
+                name=options.bake_type
+            )
+
+        def _store_vertex_color(vertex_index, loop_index, c):
+            weight = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]
+            vgroup.add([vertex_index], weight, "REPLACE")
+
+    else:
+        vcolors = None
+        if mesh.vertex_colors:
+            try:
+                vcolors = mesh.vertex_colors[options.bake_type]
+            except KeyError:
+                pass
+
+        if not vcolors:
+            vcolors = mesh.vertex_colors.new(
+                name=options.bake_type
+            )
+
+        def _store_vertex_color(vertex_index, loop_index, color):
+            vcolors.data[loop_index].color = color
+
+    uvcoords = mesh.uv_layers.active
+
+    if options.only_image:
+        for src_mat, src_node, src_image in mat_info:
+            for meshface in mesh.polygons:
+                face_mat = target.material_slots[meshface.material_index].material
+                if src_mat == face_mat:
+                    nc = src_image.channels
+                    for loop_index in meshface.loop_indices:
+                        print(loop_index)
+                        meshloop = mesh.loops[loop_index]
+                        vertex_index = meshloop.vertex_index
+                        try:
+                            uv = uvcoords.data[loop_index].uv
+                            w, h = uv * options.size
+                        except IndexError:
+                            w = 0.5
+                            h = 0.5
+                        idx = (options.size * int(h) + int(w)) * nc
+                        pixel = tuple(
+                            src_image.pixels[idx + c] if c < nc else 1.0
+                            for c in range(4)
+                        )
+                        _store_vertex_color(vertex_index, loop_index, pixel)
+
+# ------------------------------------------------------------------------------
+def do_apply_existing(bpy, options):
+    assert options.existing_texture is not None
+
+    for obj in bpy.context.scene.objects:
+            obj.select_set(False)
+
+    bpy.ops.object.mode_set(mode = "OBJECT")
+    target = bpy.data.objects[options.target]
+    bpy.context.view_layer.objects.active = target
+    target.select_set(True)
+
+    mat_info = [
+        (mat, None, bpy.data.images[options.existing_texture])
+        for mat in target.data.materials
+    ]
+
+    do_apply(options, target, mat_info)
+
+    bpy.ops.wm.save_as_mainfile()
+
+# ------------------------------------------------------------------------------
+def do_bake(bpy, options):
+    assert options.existing_texture is None
+
+    if options.prefix and not os.path.isdir(options.prefix):
+        pathlib.Path(options.prefix).mkdir(parents=True, exist_ok=True)
+
+    scene = bpy.context.scene
+    if options.engine:
+        scene.render.engine = options.engine
+    if options.samples:
+        scene.render.bake_samples = options.samples
+        scene.cycles.samples = options.samples
+
+    for obj in bpy.context.scene.objects:
+            obj.select_set(False)
+
+    bpy.ops.object.mode_set(mode = "OBJECT")
+    target = bpy.data.objects[options.target]
+    bpy.context.view_layer.objects.active = target
+    target.select_set(True)
+
+    mat_info = [
+        (
+            mat,
+            mat.node_tree.nodes.new("ShaderNodeTexImage"),
+            bpy.data.images.new(
+                "%s-BakeImage" % mat.name,
+                alpha=True,
+                width=options.size,
+                height=options.size
+            )
+        ) for mat in target.data.materials
+    ]
+    for bake_mat, bake_node, bake_image in mat_info:
+        bake_mat.use_nodes = True
+        bake_mat.node_tree.nodes.active = bake_node
+        bake_node.image = bake_image
+        bake_node.select = True
+        if options.keep_image:
+            bake_image.file_format = 'PNG'
+            bake_image.filepath = os.path.join(
+                options.prefix,
+                "%s-%s.png" % (bake_mat.name, os.path.basename(options.bake_type))
+            )
+
+    bpy.ops.object.bake(
+        type=options.bake_type,
+        use_clear=True
+    )
+
+    do_apply(options, target, mat_info)
+
+    for bake_mat, bake_node, bake_image in mat_info:
+        if options.keep_image:
+            bake_image.save()
+            print("saved image to %s" % bake_image.filepath)
+        bpy.data.images.remove(bake_image)
+        bake_mat.node_tree.nodes.remove(bake_node)
+
+    bpy.ops.wm.save_as_mainfile()
+
+# ------------------------------------------------------------------------------
+def do_blender_op(options):
     try:
         import bpy
 
-        if options.prefix and not os.path.isdir(options.prefix):
-            pathlib.Path(options.prefix).mkdir(parents=True, exist_ok=True)
-
-        scene = bpy.context.scene
-        if options.engine:
-            scene.render.engine = options.engine
-        if options.samples:
-            scene.render.bake_samples = options.samples
-            scene.cycles.samples = options.samples
-
-        bpy.ops.object.mode_set(mode = "OBJECT")
-        target = bpy.data.objects[options.target]
-        target.select_set(True)
-
-        mat_info = [
-            (
-                mat,
-                mat.node_tree.nodes.new("ShaderNodeTexImage"),
-                bpy.data.images.new(
-                    "%s-BakeImage" % mat.name,
-                    alpha=True,
-                    width=options.size,
-                    height=options.size
-                )
-            ) for mat in target.data.materials
-        ]
-        for bake_mat, bake_node, bake_image in mat_info:
-            bake_mat.use_nodes = True
-            bake_mat.node_tree.nodes.active = bake_node
-            bake_node.image = bake_image
-            bake_node.select = True
-            if options.keep_image:
-                bake_image.file_format = 'PNG'
-                bake_image.filepath = os.path.join(
-                    options.prefix,
-                    "%s-%s.png" % (bake_mat.name, os.path.basename(options.bake_type))
-                )
-
-        bpy.ops.object.bake(
-            type=options.bake_type,
-            use_clear=True
-        )
-
-        mesh = target.data
-        if options.as_weights:
-            vgroup = None
-            if target.vertex_groups:
-                try:
-                    vgroup = target.vertex_groups[options.bake_type]
-                except KeyError:
-                    pass
-
-            if not vgroup:
-                vgroup = target.vertex_groups.new(
-                    name=options.bake_type
-                )
-
-            def _store_vertex_color(vertex_index, loop_index, c):
-                weight = 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]
-                vgroup.add([vertex_index], weight, "REPLACE")
-
+        if options.existing_texture is not None:
+            do_apply_existing(bpy, options)
         else:
-            vcolors = None
-            if mesh.vertex_colors:
-                try:
-                    vcolors = mesh.vertex_colors[options.bake_type]
-                except KeyError:
-                    pass
-
-            if not vcolors:
-                vcolors = mesh.vertex_colors.new(
-                    name=options.bake_type
-                )
-
-            def _store_vertex_color(vertex_index, loop_index, color):
-                vcolors.data[loop_index].color = color
-
-        uvcoords = mesh.uv_layers.active
-
-        if options.only_image:
-            for bake_mat, bake_node, bake_image in mat_info:
-                for meshface in mesh.polygons:
-                    face_mat = target.material_slots[meshface.material_index].material
-                    if bake_mat == face_mat:
-                        nc = bake_image.channels
-                        for loop_index in meshface.loop_indices:
-                            meshloop = mesh.loops[loop_index]
-                            vertex_index = meshloop.vertex_index
-                            try:
-                                uv = uvcoords.data[loop_index].uv
-                                w, h = uv * options.size
-                            except IndexError:
-                                w = 0.5
-                                h = 0.5
-                            idx = (options.size * int(h) + int(w)) * nc
-                            pixel = tuple(
-                                bake_image.pixels[idx + c] if c < nc else 1.0
-                                for c in range(4)
-                            )
-                            _store_vertex_color(vertex_index, loop_index, pixel)
-
-        for bake_mat, bake_node, bake_image in mat_info:
-            if options.keep_image:
-                bake_image.save()
-                print("saved image to %s" % bake_image.filepath)
-            bpy.data.images.remove(bake_image)
-            bake_mat.node_tree.nodes.remove(bake_node)
-
-        bpy.ops.wm.save_as_mainfile()
-
+            do_bake(bpy, options)
     except ModuleNotFoundError:
         sys.stderr.write("must be run from blender!\n")
 # ------------------------------------------------------------------------------
@@ -331,7 +403,7 @@ def main():
         if options.debug:
             print(options)
         else:
-            do_bake(options)
+            do_blender_op(options)
     finally:
         try:
             import bpy
