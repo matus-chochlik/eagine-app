@@ -1,4 +1,4 @@
-#!/usr/bin/env -S blender --python /usr/bin/eagine-blender-bake-to-vertex --
+#!/usr/bin/env -S blender --python /usr/bin/eagine-blender-bake-to-vertex
 # coding=utf-8
 # Copyright Matus Chochlik.
 # Distributed under the Boost Software License, Version 1.0.
