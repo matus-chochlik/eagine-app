@@ -83,7 +83,9 @@ class model_viewer_resources_base {
 public:
     signal<void() noexcept> loaded;
 
-    void settings(const guiplus::imgui_api& gui) noexcept;
+    void settings(
+      const string_view head,
+      const guiplus::imgui_api& gui) noexcept;
     void update() noexcept;
 
 protected:

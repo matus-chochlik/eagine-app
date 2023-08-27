@@ -99,8 +99,9 @@ void model_viewer::_setting_window(const guiplus::imgui_api& gui) noexcept {
         gui.same_line();
         gui.help_marker("changes the field of view of the camera");
 
-        gui.separator_text("Models");
-        _models.settings(gui);
+        _backgrounds.settings("Backgrounds", gui);
+        _models.settings("Models", gui);
+        _programs.settings("Programs", gui);
 
         gui.separator();
         if(gui.button("Close").or_true()) {

@@ -15,7 +15,10 @@ void model_viewer_resource_intf::signal_loaded() {
 }
 //------------------------------------------------------------------------------
 void model_viewer_resources_base::settings(
+  const string_view head,
   const guiplus::imgui_api& gui) noexcept {
+    gui.separator_text(head);
+    gui.push_id(head);
     assert(_next_index < _names.size());
     if(gui.begin_combo("Current", _names[_next_index]).or_false()) {
         for(const auto i : index_range(_names)) {
@@ -30,6 +33,7 @@ void model_viewer_resources_base::settings(
         }
         gui.end_combo();
     }
+    gui.pop_id();
 }
 //------------------------------------------------------------------------------
 void model_viewer_resources_base::update() noexcept {
