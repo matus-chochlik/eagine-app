@@ -88,6 +88,8 @@ public:
       const guiplus::imgui_api& gui) noexcept;
     void update() noexcept;
 
+    auto all_resource_count() noexcept -> span_size_t;
+
 protected:
     auto _load_handler() noexcept {
         return make_callable_ref<&model_viewer_resources_base::_on_loaded>(
@@ -126,6 +128,16 @@ public:
             }
         }
         return true;
+    }
+
+    auto loaded_resource_count() noexcept -> span_size_t {
+        span_size_t result{0};
+        for(auto& resource : _loaded) {
+            if(resource.is_loaded()) {
+                ++result;
+            }
+        }
+        return result;
     }
 
     auto selected() noexcept -> Wrapper& {

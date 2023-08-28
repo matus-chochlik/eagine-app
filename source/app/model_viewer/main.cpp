@@ -45,18 +45,14 @@ void model_viewer::_init_camera(const oglplus::sphere bs) {
       .set_orbit_max(sr * 4.0F);
 }
 //------------------------------------------------------------------------------
-model_viewer::model_viewer(execution_context& ctx, video_context& video)
-  : common_application{ctx}
-  , _video{video}
-  , _backgrounds{ctx, video}
-  , _models{ctx, video}
-  , _programs{ctx, video} {
-    _backgrounds.loaded.connect(_load_handler());
-    _models.loaded.connect(_load_handler());
-    _programs.loaded.connect(_load_handler());
-
-    _init_camera({{0.F, 0.F, 0.F}, 1.F});
-    _init_inputs();
+auto model_viewer::_all_resource_count() noexcept -> span_size_t {
+    return _backgrounds.all_resource_count() + _models.all_resource_count() +
+           _programs.all_resource_count();
+}
+//------------------------------------------------------------------------------
+auto model_viewer::_loaded_resource_count() noexcept -> span_size_t {
+    return _backgrounds.loaded_resource_count() +
+           _models.loaded_resource_count() + _programs.loaded_resource_count();
 }
 //------------------------------------------------------------------------------
 void model_viewer::_on_loaded() noexcept {
@@ -65,6 +61,25 @@ void model_viewer::_on_loaded() noexcept {
         _programs.use(_video);
         _programs.apply_bindings(_video, _models.attrib_bindings());
     }
+    _load_progress.update_progress(_loaded_resource_count());
+    if(_loaded_resource_count() == _all_resource_count()) {
+        _load_progress.finish();
+    }
+}
+//------------------------------------------------------------------------------
+model_viewer::model_viewer(execution_context& ctx, video_context& video)
+  : common_application{ctx}
+  , _video{video}
+  , _backgrounds{ctx, video}
+  , _models{ctx, video}
+  , _programs{ctx, video}
+  , _load_progress{ctx.progress(), "Loading resources", _all_resource_count()} {
+    _backgrounds.loaded.connect(_load_handler());
+    _models.loaded.connect(_load_handler());
+    _programs.loaded.connect(_load_handler());
+
+    _init_camera({{0.F, 0.F, 0.F}, 1.F});
+    _init_inputs();
 }
 //------------------------------------------------------------------------------
 void model_viewer::_show_settings(const input& i) noexcept {

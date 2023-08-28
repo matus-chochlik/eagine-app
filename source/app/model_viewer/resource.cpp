@@ -43,4 +43,8 @@ void model_viewer_resources_base::update() noexcept {
     }
 }
 //------------------------------------------------------------------------------
+auto model_viewer_resources_base::all_resource_count() noexcept -> span_size_t {
+    return span_size(_names.size());
+}
+//------------------------------------------------------------------------------
 } // namespace eagine::app

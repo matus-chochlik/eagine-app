@@ -34,6 +34,8 @@ private:
     void _init_inputs();
     void _init_camera(const oglplus::sphere bs);
 
+    auto _all_resource_count() noexcept -> span_size_t;
+    auto _loaded_resource_count() noexcept -> span_size_t;
     void _on_loaded() noexcept;
     auto _load_handler() noexcept;
     void _clear_background() noexcept;
@@ -46,6 +48,7 @@ private:
     model_viewer_backgrounds _backgrounds;
     model_viewer_models _models;
     model_viewer_programs _programs;
+    activity_progress _load_progress;
 
     orbiting_camera _camera;
     float _fov{70.F};
