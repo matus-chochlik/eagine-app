@@ -10,7 +10,7 @@ const vec3 LightDir = vec3(1.0, 1.0, 1.0);
 
 void main() {
     gl_Position = Camera * vec4(Position, 1.0);
-	vertNormal = Normal;
+    vertNormal = Normal;
     vertColor = Color;
-	vertLightDir = LightDir;
+    vertLightDir = LightDir;
 }

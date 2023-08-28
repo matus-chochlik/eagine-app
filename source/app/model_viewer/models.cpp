@@ -18,13 +18,15 @@ model_viewer_models::model_viewer_models(
     load("Stool", url{"json:///Stool"}, ctx, video);
     load(
       "Twisted torus",
-      url{"shape:///unit_twisted_torus?position=true+normal=true"},
+      url{"shape:///unit_twisted_torus"
+          "?position=true+normal=true+wrap_coord=true"},
       ctx,
       video);
     load(
       "Torus",
       url{"shape:///unit_torus"
-          "?position=true+normal=true+tangent=true+bitangent=true"},
+          "?position=true+normal=true+tangent=true+bitangent=true"
+          "+wrap_coord=true"},
       ctx,
       video);
     load(

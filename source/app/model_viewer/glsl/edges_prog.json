@@ -1,8 +1,0 @@
-{"inputs":
-{"Position": {"attrib":"position"}
-,"Normal": {"attrib":"normal"}}
-,"shaders":
-[{"url":"glsl:///EdgesVert","type":"vertex_shader"}
-,{"url":"glsl:///EdgesGeom","type":"geometry_shader"}
-,{"url":"glsl:///EdgesFrag","type":"fragment_shader"}]
-}

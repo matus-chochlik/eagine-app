@@ -1,0 +1,9 @@
+{"inputs":
+{"Position": {"attrib":"position"}
+,"Normal": {"attrib":"normal"}
+,"WrapCoord": {"attrib":"wrap_coord"}}
+,"shaders":
+[{"url":"glsl:///EdgeUVVert","type":"vertex_shader"}
+,{"url":"glsl:///EdgeUVGeom","type":"geometry_shader"}
+,{"url":"glsl:///EdgeUVFrag","type":"fragment_shader"}]
+}

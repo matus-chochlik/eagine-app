@@ -3,15 +3,16 @@
 layout(triangles) in;
 layout(triangle_strip, max_vertices = 3) out;
 
-const vec2 ViewportDimensions = vec2(512, 512);
+const vec2 ViewportDimensions = vec2(1024, 1024);
 
 in vec3 vertNormal[3];
+in vec3 vertWrapCoord[3];
 
 noperspective out vec3 geomDist;
 out vec3 geomNormal;
+out vec3 geomWrapCoord;
 
 void main() {
-    geomNormal = normalize(vertNormal[0] + vertNormal[1] + vertNormal[2]);
 
     vec2 ScreenPos[3];
     for(int i = 0; i != 3; ++i) {
@@ -35,6 +36,8 @@ void main() {
                        TmpVect[(v + 1) % 3].y * TmpVect[(v + 2) % 3].x) /
                      length(TmpVect[v]);
         vec3 DistVect = vec3(Dist, Dist, Dist);
+        geomNormal = vertNormal[v];
+        geomWrapCoord = vertWrapCoord[v];
         geomDist = EdgeMask[v] * DistVect;
 
         EmitVertex();
