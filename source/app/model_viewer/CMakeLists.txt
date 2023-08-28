@@ -28,6 +28,7 @@ eagine_embed_target_resources(
 		Nml2ClrPrg "glsl/normal_to_color_prog.json"
 		TraficCone "models/traffic_cone.json"
 		Guitar     "models/guitar.json"
+		Stool      "models/stool.json"
 	PACKED
 	ENABLE_SEARCH)
 eagine_add_exe_analysis(eagine-app-model-viewer)
