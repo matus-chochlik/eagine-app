@@ -1,6 +1,6 @@
 {"inputs":
 {"Position": {"attrib":"position"}
-,"Attrib": {"attrib":"normal"}}
+,"Attrib": {"attrib":"bitangent"}}
 ,"shaders":
 [{"url":"glsl:///Atr2ClrVrt","type":"vertex_shader"}
 ,{"url":"glsl:///Atr2ClrFrg","type":"fragment_shader"}]
