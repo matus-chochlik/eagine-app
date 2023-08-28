@@ -15,6 +15,7 @@ model_viewer_programs::model_viewer_programs(
   video_context& video) {
     load("Default", url{"json:///DfaultProg"}, ctx, video);
     load("Normal to Color", url{"json:///Nml2ClrPrg"}, ctx, video);
+    load("Normals and Edges", url{"json:///EdgesProg"}, ctx, video);
 }
 //------------------------------------------------------------------------------
 auto model_viewer_programs::apply_bindings(

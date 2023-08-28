@@ -26,6 +26,10 @@ eagine_embed_target_resources(
 		Nml2ClrVrt "glsl/normal_to_color_vert.glsl"
 		Nml2ClrFrg "glsl/normal_to_color_frag.glsl"
 		Nml2ClrPrg "glsl/normal_to_color_prog.json"
+		EdgesVert  "glsl/edges_vert.glsl"
+		EdgesGeom  "glsl/edges_geom.glsl"
+		EdgesFrag  "glsl/edges_frag.glsl"
+		EdgesProg  "glsl/edges_prog.json"
 		TraficCone "models/traffic_cone.json"
 		Guitar     "models/guitar.json"
 		Stool      "models/stool.json"
@@ -44,10 +48,8 @@ eagine_target_modules(
 
 set_target_properties(
 	eagine-app-model-viewer
-	PROPERTIES FOLDER "App"
-)
+	PROPERTIES FOLDER "App")
 
 install(
 	TARGETS eagine-app-model-viewer
-	DESTINATION bin
-)
+	DESTINATION bin)
