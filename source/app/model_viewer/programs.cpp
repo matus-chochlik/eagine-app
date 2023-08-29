@@ -16,7 +16,8 @@ model_viewer_programs::model_viewer_programs(
     load("Default", url{"json:///DfaultProg"}, ctx, video);
     load("Normal to Color", url{"json:///Nml2ClrPrg"}, ctx, video);
     load("Tangent to Color", url{"json:///Tgt2ClrPrg"}, ctx, video);
-    load("Bitangent to Color", url{"json:///Btg2ClrPrg"}, ctx, video);
+    load("Bi-tangent to Color", url{"json:///Btg2ClrPrg"}, ctx, video);
+    load("UV to Color", url{"json:///Wrp2ClrPrg"}, ctx, video);
     load("Edges (normal)", url{"json:///EdgeNProg"}, ctx, video);
     load("Edges (UV)", url{"json:///EdgeUVProg"}, ctx, video);
 }

@@ -1,5 +1,5 @@
 #version 140
-in vec3 Position;
+in vec4 Position;
 in vec3 Normal;
 in vec3 Color;
 out vec3 vertNormal;
@@ -9,7 +9,7 @@ uniform mat4 Camera;
 const vec3 LightDir = vec3(1.0, 1.0, 1.0);
 
 void main() {
-    gl_Position = Camera * vec4(Position, 1.0);
+    gl_Position = Camera * Position;
     vertNormal = Normal;
     vertColor = Color;
     vertLightDir = LightDir;

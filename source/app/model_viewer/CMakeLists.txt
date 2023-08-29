@@ -28,6 +28,7 @@ eagine_embed_target_resources(
 		Nml2ClrPrg "glsl/normal_to_color_prog.json"
 		Tgt2ClrPrg "glsl/tangent_to_color_prog.json"
 		Btg2ClrPrg "glsl/bitangent_to_color_prog.json"
+		Wrp2ClrPrg "glsl/wrap_to_color_prog.json"
 		EdgeNVert  "glsl/edges_normal_vert.glsl"
 		EdgeNGeom  "glsl/edges_normal_geom.glsl"
 		EdgeNFrag  "glsl/edges_normal_frag.glsl"
