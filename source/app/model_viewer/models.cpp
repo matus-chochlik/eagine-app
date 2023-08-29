@@ -43,16 +43,16 @@ model_viewer_models::model_viewer_models(
 }
 //------------------------------------------------------------------------------
 auto model_viewer_models::bounding_sphere() noexcept -> oglplus::sphere {
-    return selected().bounding_sphere();
+    return current().bounding_sphere();
 }
 //------------------------------------------------------------------------------
 auto model_viewer_models::attrib_bindings() noexcept
   -> const oglplus::vertex_attrib_bindings& {
-    return selected().attrib_bindings();
+    return current().attrib_bindings();
 }
 //------------------------------------------------------------------------------
 auto model_viewer_models::draw(video_context& video) -> model_viewer_models& {
-    selected().draw(video);
+    current().draw(video);
     return *this;
 }
 //------------------------------------------------------------------------------

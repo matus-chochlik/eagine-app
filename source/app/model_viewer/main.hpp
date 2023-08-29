@@ -38,6 +38,8 @@ private:
     auto _loaded_resource_count() noexcept -> span_size_t;
     void _on_loaded() noexcept;
     auto _load_handler() noexcept;
+    void _on_selected() noexcept;
+    auto _select_handler() noexcept;
     void _clear_background() noexcept;
     void _view_model() noexcept;
     void _show_settings(const input& i) noexcept;

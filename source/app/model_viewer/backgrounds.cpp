@@ -19,7 +19,7 @@ model_viewer_backgrounds::model_viewer_backgrounds(
 auto model_viewer_backgrounds::clear(
   video_context& video,
   orbiting_camera& camera) -> model_viewer_backgrounds& {
-    selected().clear(video, camera);
+    current().clear(video, camera);
     return *this;
 }
 //------------------------------------------------------------------------------

@@ -26,14 +26,14 @@ auto model_viewer_programs::apply_bindings(
   video_context& video,
   const oglplus::vertex_attrib_bindings& attrib_bindings)
   -> model_viewer_programs& {
-    selected().apply_bindings(video, attrib_bindings);
+    current().apply_bindings(video, attrib_bindings);
     return *this;
 }
 //------------------------------------------------------------------------------
 auto model_viewer_programs::set_camera(
   video_context& video,
   orbiting_camera& camera) -> model_viewer_programs& {
-    selected().set_camera(video, camera);
+    current().set_camera(video, camera);
     return *this;
 }
 //------------------------------------------------------------------------------

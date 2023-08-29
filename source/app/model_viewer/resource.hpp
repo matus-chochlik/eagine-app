@@ -19,6 +19,7 @@ namespace eagine::app {
 struct model_viewer_resource_intf;
 struct model_viewer_resource_signals {
     signal<void() noexcept> loaded;
+    signal<void() noexcept> selected;
 };
 //------------------------------------------------------------------------------
 struct model_viewer_resource_intf
@@ -82,6 +83,7 @@ protected:
 class model_viewer_resources_base {
 public:
     signal<void() noexcept> loaded;
+    signal<void() noexcept> selected;
 
     void settings(
       const string_view head,
@@ -95,20 +97,22 @@ protected:
         return make_callable_ref<&model_viewer_resources_base::_on_loaded>(
           this);
     }
-
-    auto _add_name(std::string name) {
-        _names.emplace_back(std::move(name));
+    auto _select_handler() noexcept {
+        return make_callable_ref<&model_viewer_resources_base::_on_selected>(
+          this);
     }
 
-    auto _selected(auto& items) const noexcept -> auto& {
+    void _add_name(std::string name);
+
+    auto _current(auto& items) const noexcept -> auto& {
         assert(_selected_index < items.size());
         return items[_selected_index];
     }
 
 private:
-    void _on_loaded() noexcept {
-        loaded();
-    }
+    void _on_loaded() noexcept;
+    void _on_selected() noexcept;
+
     std::size_t _next_index{0U};
     std::size_t _selected_index{0U};
     std::vector<std::string> _names;
@@ -140,8 +144,8 @@ public:
         return result;
     }
 
-    auto selected() noexcept -> Wrapper& {
-        return _selected(_loaded);
+    auto current() noexcept -> Wrapper& {
+        return _current(_loaded);
     }
 
     auto load(
@@ -153,11 +157,12 @@ public:
         _loaded.emplace_back(make_viewer_resource(
           std::type_identity<Wrapper>{}, std::move(locator), ctx, video));
         _loaded.back().signals().loaded.connect(this->_load_handler());
+        _loaded.back().signals().selected.connect(this->_select_handler());
         return *this;
     }
 
     auto use(video_context& video) noexcept -> model_viewer_resources& {
-        selected().use(video);
+        current().use(video);
         return *this;
     }
 

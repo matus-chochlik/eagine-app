@@ -15,6 +15,10 @@ auto model_viewer::_load_handler() noexcept {
     return make_callable_ref<&model_viewer::_on_loaded>(this);
 }
 //------------------------------------------------------------------------------
+auto model_viewer::_select_handler() noexcept {
+    return make_callable_ref<&model_viewer::_on_selected>(this);
+}
+//------------------------------------------------------------------------------
 auto model_viewer::_show_settings_handler() noexcept {
     return make_callable_ref<&model_viewer::_show_settings>(this);
 }
@@ -56,14 +60,17 @@ auto model_viewer::_loaded_resource_count() noexcept -> span_size_t {
 }
 //------------------------------------------------------------------------------
 void model_viewer::_on_loaded() noexcept {
+    _load_progress.update_progress(_loaded_resource_count());
+    if(_loaded_resource_count() == _all_resource_count()) {
+        _load_progress.finish();
+    }
+}
+//------------------------------------------------------------------------------
+void model_viewer::_on_selected() noexcept {
     if(_backgrounds and _models and _programs) {
         _init_camera(_models.bounding_sphere());
         _programs.use(_video);
         _programs.apply_bindings(_video, _models.attrib_bindings());
-    }
-    _load_progress.update_progress(_loaded_resource_count());
-    if(_loaded_resource_count() == _all_resource_count()) {
-        _load_progress.finish();
     }
 }
 //------------------------------------------------------------------------------
@@ -75,8 +82,11 @@ model_viewer::model_viewer(execution_context& ctx, video_context& video)
   , _programs{ctx, video}
   , _load_progress{ctx.progress(), "Loading resources", _all_resource_count()} {
     _backgrounds.loaded.connect(_load_handler());
+    _backgrounds.selected.connect(_select_handler());
     _models.loaded.connect(_load_handler());
+    _models.selected.connect(_select_handler());
     _programs.loaded.connect(_load_handler());
+    _programs.selected.connect(_select_handler());
 
     _init_camera({{0.F, 0.F, 0.F}, 1.F});
     _init_inputs();

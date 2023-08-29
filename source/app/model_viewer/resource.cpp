@@ -39,12 +39,25 @@ void model_viewer_resources_base::settings(
 void model_viewer_resources_base::update() noexcept {
     if(_selected_index != _next_index) {
         _selected_index = _next_index;
-        _on_loaded();
+        _on_selected();
     }
 }
 //------------------------------------------------------------------------------
 auto model_viewer_resources_base::all_resource_count() noexcept -> span_size_t {
     return span_size(_names.size());
+}
+//------------------------------------------------------------------------------
+void model_viewer_resources_base::_add_name(std::string name) {
+    _names.emplace_back(std::move(name));
+}
+//------------------------------------------------------------------------------
+void model_viewer_resources_base::_on_loaded() noexcept {
+    loaded();
+    selected();
+}
+//------------------------------------------------------------------------------
+void model_viewer_resources_base::_on_selected() noexcept {
+    selected();
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app
