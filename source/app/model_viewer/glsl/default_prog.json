@@ -1,7 +1,8 @@
 {"inputs":
 {"Position": {"attrib":"position"}
 ,"Normal": {"attrib":"normal"}
-,"Color": {"attrib":"color"}}
+,"Color": {"attrib":"color"}
+,"Occlusion": {"attrib":"occlusion"}}
 ,"shaders":
 [{"url":"glsl:///DfaultVert","type":"vertex_shader"}
 ,{"url":"glsl:///DfaultFrag","type":"fragment_shader"}]

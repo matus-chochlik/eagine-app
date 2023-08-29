@@ -7,7 +7,7 @@ in vec3 geomNormal;
 in vec3 geomWrapCoord;
 out vec3 fragColor;
 
-const vec3 LightDir = vec3(1.0, 1.0, 1.0);
+const vec3 LightDir = normalize(vec3(1.0, 1.0, 1.0));
 
 void main() {
     float MinDist = min(min(geomDist.x, geomDist.y), geomDist.z);
