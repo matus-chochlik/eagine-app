@@ -55,6 +55,7 @@ auto model_viewer_models::attrib_bindings() noexcept
 }
 //------------------------------------------------------------------------------
 auto model_viewer_models::draw(video_context& video) -> model_viewer_models& {
+    video.with_gl([](auto& gl, auto& GL) { gl.disable(GL.cull_face); });
     current().draw(video);
     return *this;
 }
