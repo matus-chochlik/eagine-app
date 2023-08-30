@@ -43,6 +43,7 @@ eagine_embed_target_resources(
 		Pumpkin    "models/pumpkin.json"
 		Guitar     "models/guitar.json"
 		Stool      "models/stool.json"
+		Arrow      "models/arrow.json"
 	PACKED
 	ENABLE_SEARCH)
 eagine_add_exe_analysis(eagine-app-model-viewer)
