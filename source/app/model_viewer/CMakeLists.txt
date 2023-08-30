@@ -39,6 +39,7 @@ eagine_embed_target_resources(
 		EdgeUVProg "glsl/edges_wrap_prog.json"
 		TraficCone "models/traffic_cone.json"
 		Jerrycan   "models/jerrycan.json"
+		Hydrant    "models/hydrant.json"
 		Pumpkin    "models/pumpkin.json"
 		Guitar     "models/guitar.json"
 		Stool      "models/stool.json"

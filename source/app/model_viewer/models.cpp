@@ -15,6 +15,7 @@ model_viewer_models::model_viewer_models(
   video_context& video) {
     load("Traffic cone", url{"json:///TraficCone"}, ctx, video);
     load("Jerrycan", url{"json:///Jerrycan"}, ctx, video);
+    load("Hydrant", url{"json:///Hydrant"}, ctx, video);
     load("Pumpkin", url{"json:///Pumpkin"}, ctx, video);
     load("Guitar", url{"json:///Guitar"}, ctx, video);
     load("Stool", url{"json:///Stool"}, ctx, video);
