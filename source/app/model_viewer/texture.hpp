@@ -33,7 +33,8 @@ auto make_viewer_resource(
   std::type_identity<model_viewer_texture>,
   url,
   execution_context&,
-  video_context&) -> model_viewer_texture_holder;
+  video_context&,
+  oglplus::texture_unit::value_type) -> model_viewer_texture_holder;
 //------------------------------------------------------------------------------
 } // namespace eagine::app
 #endif

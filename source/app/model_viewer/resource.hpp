@@ -148,14 +148,20 @@ public:
         return _current(_loaded);
     }
 
+    template <typename... Args>
     auto load(
       std::string name,
       url locator,
       execution_context& ctx,
-      video_context& video) -> model_viewer_resources& {
+      video_context& video,
+      Args&&... args) -> model_viewer_resources& {
         this->_add_name(std::move(name));
         _loaded.emplace_back(make_viewer_resource(
-          std::type_identity<Wrapper>{}, std::move(locator), ctx, video));
+          std::type_identity<Wrapper>{},
+          std::move(locator),
+          ctx,
+          video,
+          std::forward<Args>(args)...));
         _loaded.back().signals().loaded.connect(this->_load_handler());
         _loaded.back().signals().selected.connect(this->_select_handler());
         return *this;

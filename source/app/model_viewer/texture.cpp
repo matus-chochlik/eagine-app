@@ -84,7 +84,8 @@ auto make_viewer_resource(
   std::type_identity<model_viewer_texture>,
   url locator,
   execution_context& ctx,
-  video_context& video) -> model_viewer_texture_holder {
+  video_context& video,
+  oglplus::texture_unit::value_type) -> model_viewer_texture_holder {
     return {
       hold<model_viewer_texture_resource>, std::move(locator), ctx, video};
 }

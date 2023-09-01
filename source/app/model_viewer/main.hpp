@@ -11,6 +11,7 @@
 #include "backgrounds.hpp"
 #include "models.hpp"
 #include "programs.hpp"
+#include "textures.hpp"
 
 import eagine.core;
 import eagine.oglplus;
@@ -50,6 +51,7 @@ private:
     model_viewer_backgrounds _backgrounds;
     model_viewer_models _models;
     model_viewer_programs _programs;
+    model_viewer_textures _textures;
     activity_progress _load_progress;
 
     orbiting_camera _camera;

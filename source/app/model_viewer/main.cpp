@@ -51,12 +51,13 @@ void model_viewer::_init_camera(const oglplus::sphere bs) {
 //------------------------------------------------------------------------------
 auto model_viewer::_all_resource_count() noexcept -> span_size_t {
     return _backgrounds.all_resource_count() + _models.all_resource_count() +
-           _programs.all_resource_count();
+           _programs.all_resource_count() + _textures.all_resource_count();
 }
 //------------------------------------------------------------------------------
 auto model_viewer::_loaded_resource_count() noexcept -> span_size_t {
     return _backgrounds.loaded_resource_count() +
-           _models.loaded_resource_count() + _programs.loaded_resource_count();
+           _models.loaded_resource_count() + _programs.loaded_resource_count() +
+           _textures.loaded_resource_count();
 }
 //------------------------------------------------------------------------------
 void model_viewer::_on_loaded() noexcept {
@@ -67,7 +68,7 @@ void model_viewer::_on_loaded() noexcept {
 }
 //------------------------------------------------------------------------------
 void model_viewer::_on_selected() noexcept {
-    if(_backgrounds and _models and _programs) {
+    if(_backgrounds and _models and _programs and _textures) {
         _init_camera(_models.bounding_sphere());
         _programs.use(_video);
         _programs.apply_bindings(_video, _models.attrib_bindings());
@@ -80,6 +81,7 @@ model_viewer::model_viewer(execution_context& ctx, video_context& video)
   , _backgrounds{ctx, video}
   , _models{ctx, video}
   , _programs{ctx, video}
+  , _textures{ctx, video}
   , _load_progress{ctx.progress(), "Loading resources", _all_resource_count()} {
     _backgrounds.loaded.connect(_load_handler());
     _backgrounds.selected.connect(_select_handler());
@@ -87,6 +89,8 @@ model_viewer::model_viewer(execution_context& ctx, video_context& video)
     _models.selected.connect(_select_handler());
     _programs.loaded.connect(_load_handler());
     _programs.selected.connect(_select_handler());
+    _textures.loaded.connect(_load_handler());
+    _textures.selected.connect(_select_handler());
 
     _init_camera({{0.F, 0.F, 0.F}, 1.F});
     _init_inputs();
@@ -111,6 +115,7 @@ void model_viewer::_view_model() noexcept {
     _programs.use(_video);
     _programs.set_camera(_video, _camera);
 
+    _textures.use(_video);
     _models.use(_video);
     _models.draw(_video);
 }
@@ -127,6 +132,7 @@ void model_viewer::_setting_window(const guiplus::imgui_api& gui) noexcept {
         _backgrounds.settings("Backgrounds", gui);
         _models.settings("Models", gui);
         _programs.settings("Programs", gui);
+        _textures.settings("Textures", gui);
 
         gui.separator();
         if(gui.button("Close").or_true()) {
@@ -159,19 +165,22 @@ void model_viewer::update() noexcept {
 
     _models.update();
     _programs.update();
-    if(_models and _programs) {
+    _textures.update();
+    if(_models and _programs and _textures) {
         _view_model();
     } else {
         _models.load_if_needed(context(), _video);
         _programs.load_if_needed(context(), _video);
+        _textures.load_if_needed(context(), _video);
     }
     _video.commit();
 }
 //------------------------------------------------------------------------------
 void model_viewer::clean_up() noexcept {
-    _backgrounds.clean_up(context(), _video);
+    _textures.clean_up(context(), _video);
     _programs.clean_up(context(), _video);
     _models.clean_up(context(), _video);
+    _backgrounds.clean_up(context(), _video);
     _video.end();
 }
 //------------------------------------------------------------------------------

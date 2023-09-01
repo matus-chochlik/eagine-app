@@ -14,6 +14,7 @@ add_executable(
 	program.cpp
 	programs.cpp
 	texture.cpp
+	textures.cpp
 	launchpad.cpp
 	main.cpp)
 add_dependencies(eagine-app-model-viewer eagine-apps)
@@ -45,6 +46,8 @@ eagine_embed_target_resources(
 		Guitar     "models/guitar.json"
 		Stool      "models/stool.json"
 		Arrow      "models/arrow.json"
+		CheckerImg "textures/checker.eagitexi"
+		CheckerTex "textures/checker.eagitex"
 	PACKED
 	ENABLE_SEARCH)
 eagine_add_exe_analysis(eagine-app-model-viewer)

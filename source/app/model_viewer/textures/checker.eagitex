@@ -1,0 +1,11 @@
+{"levels":1
+,"width":1024
+,"height":1024
+,"depth":1
+,"channels":1
+,"data_type":"unsigned_byte"
+,"format":"red"
+,"iformat":"r8"
+,"label":"pumpkin"
+,"images":[{"url":"eagires:///CheckerImg","target":"texture_2d_array"}]
+}
