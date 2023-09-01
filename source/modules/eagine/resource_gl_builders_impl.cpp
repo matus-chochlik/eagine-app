@@ -277,14 +277,10 @@ public:
                 _params.dimensions = std::max(_params.dimensions, 1);
             } else if(path.starts_with("height")) {
                 _success &= assign_if_fits(data, _params.height);
-                if(_params.height > 1) {
-                    _params.dimensions = std::max(_params.dimensions, 2);
-                }
+                _params.dimensions = std::max(_params.dimensions, 2);
             } else if(path.starts_with("depth")) {
                 _success &= assign_if_fits(data, _params.depth);
-                if(_params.depth > 1) {
-                    _params.dimensions = std::max(_params.dimensions, 3);
-                }
+                _params.dimensions = std::max(_params.dimensions, 3);
             } else if(path.starts_with("data_type")) {
                 _success &= assign_if_fits(data, _params.data_type);
             } else if(path.starts_with("format")) {
@@ -416,14 +412,10 @@ public:
                 _params.dimensions = std::max(_params.dimensions, 1);
             } else if(path.starts_with("height")) {
                 _success &= assign_if_fits(data, _params.height);
-                if(_params.height > 1) {
-                    _params.dimensions = std::max(_params.dimensions, 2);
-                }
+                _params.dimensions = std::max(_params.dimensions, 2);
             } else if(path.starts_with("depth")) {
                 _success &= assign_if_fits(data, _params.depth);
-                if(_params.depth > 1) {
-                    _params.dimensions = std::max(_params.dimensions, 3);
-                }
+                _params.dimensions = std::max(_params.dimensions, 3);
             } else if(path.starts_with("data_type")) {
                 _success &= assign_if_fits(data, _params.data_type);
             } else if(path.starts_with("format")) {
