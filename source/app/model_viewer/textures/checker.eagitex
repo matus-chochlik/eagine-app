@@ -6,6 +6,12 @@
 ,"data_type":"unsigned_byte"
 ,"format":"red"
 ,"iformat":"r8"
-,"label":"pumpkin"
+,"swizzle_g":"red"
+,"swizzle_b":"red"
+,"min_filter":"linear"
+,"mag_filter":"linear"
+,"wrap_s":"clamp_to_border"
+,"wrap_t":"clamp_to_border"
+,"label":"gray checker"
 ,"images":[{"url":"eagires:///CheckerImg","target":"texture_2d_array"}]
 }

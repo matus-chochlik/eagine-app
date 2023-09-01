@@ -121,7 +121,7 @@ void model_viewer::_view_model() noexcept {
 }
 //------------------------------------------------------------------------------
 void model_viewer::_setting_window(const guiplus::imgui_api& gui) noexcept {
-    gui.set_next_window_size({350, 240});
+    gui.set_next_window_size({350, 265});
     if(gui.begin("Settings", _show_setting_window).or_false()) {
         if(gui.slider_float("FOV", _fov, 20.F, 120.F)) {
             _camera.set_fov(degrees_(_fov));

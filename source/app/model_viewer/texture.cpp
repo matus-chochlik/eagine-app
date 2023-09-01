@@ -27,7 +27,8 @@ public:
     model_viewer_texture_resource(
       url locator,
       execution_context&,
-      video_context&);
+      video_context&,
+      oglplus::texture_unit::value_type);
     auto is_loaded() noexcept -> bool final;
     void load_if_needed(execution_context&, video_context&) final;
     void use(video_context&) final;
@@ -37,13 +38,16 @@ public:
 
 private:
     void _on_loaded(const gl_texture_resource::load_info&) noexcept;
+    oglplus::texture_unit::value_type _tex_unit{0};
 };
 //------------------------------------------------------------------------------
 model_viewer_texture_resource::model_viewer_texture_resource(
   url locator,
   execution_context& ctx,
-  video_context&)
-  : gl_texture_resource{std::move(locator), ctx} {
+  video_context&,
+  oglplus::texture_unit::value_type tex_unit)
+  : gl_texture_resource{std::move(locator), ctx}
+  , _tex_unit{tex_unit} {
     gl_texture_resource::loaded.connect(
       make_callable_ref<&model_viewer_texture_resource::_on_loaded>(this));
 }
@@ -70,8 +74,7 @@ void model_viewer_texture_resource::use(video_context&) {}
 //------------------------------------------------------------------------------
 auto model_viewer_texture_resource::texture_unit(video_context&)
   -> oglplus::texture_unit::value_type {
-    // TODO
-    return 0;
+    return _tex_unit;
 }
 //------------------------------------------------------------------------------
 void model_viewer_texture_resource::clean_up(
@@ -85,9 +88,9 @@ auto make_viewer_resource(
   url locator,
   execution_context& ctx,
   video_context& video,
-  oglplus::texture_unit::value_type) -> model_viewer_texture_holder {
+  oglplus::texture_unit::value_type tu) -> model_viewer_texture_holder {
     return {
-      hold<model_viewer_texture_resource>, std::move(locator), ctx, video};
+      hold<model_viewer_texture_resource>, std::move(locator), ctx, video, tu};
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

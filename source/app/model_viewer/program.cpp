@@ -64,6 +64,7 @@ model_viewer_program_resource::model_viewer_program_resource(
 void model_viewer_program_resource::_on_loaded(
   const gl_program_resource::load_info& info) noexcept {
     info.get_uniform_location("Camera") >> _camera_loc;
+    info.set_uniform("Checker", 0);
     signal_loaded();
 }
 //------------------------------------------------------------------------------

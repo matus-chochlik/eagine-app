@@ -13,7 +13,7 @@ namespace eagine::app {
 model_viewer_textures::model_viewer_textures(
   execution_context& ctx,
   video_context& video) {
-    load("Checker", url{"json:///CheckerTex"}, ctx, video, 0);
+    load("Checker", url{"eagitex:///CheckerTex"}, ctx, video, 0);
 }
 //------------------------------------------------------------------------------
 auto model_viewer_textures::texture_unit(video_context& video)
