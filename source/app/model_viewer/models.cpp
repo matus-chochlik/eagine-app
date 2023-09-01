@@ -44,6 +44,12 @@ model_viewer_models::model_viewer_models(
       url{"shape:///unit_icosahedron?position=true+normal=true"},
       ctx,
       video);
+    load(
+      "Cube",
+      url{"shape:///unit_cube"
+          "?position=true+normal=true+tangent=true+bitangent=true"},
+      ctx,
+      video);
 }
 //------------------------------------------------------------------------------
 auto model_viewer_models::bounding_sphere() noexcept -> oglplus::sphere {
