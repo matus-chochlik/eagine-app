@@ -13,6 +13,7 @@ add_executable(
 	models.cpp
 	program.cpp
 	programs.cpp
+	texture.cpp
 	launchpad.cpp
 	main.cpp)
 add_dependencies(eagine-app-model-viewer eagine-apps)
