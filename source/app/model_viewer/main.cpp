@@ -121,7 +121,10 @@ void model_viewer::_view_model() noexcept {
 }
 //------------------------------------------------------------------------------
 void model_viewer::_setting_window(const guiplus::imgui_api& gui) noexcept {
-    gui.set_next_window_size({350, 265});
+    const auto height{
+      _backgrounds.settings_height() + _programs.settings_height() +
+      _models.settings_height() + _textures.settings_height() + 85.F};
+    gui.set_next_window_size({350, height});
     if(gui.begin("Settings", _show_setting_window).or_false()) {
         if(gui.slider_float("FOV", _fov, 20.F, 120.F)) {
             _camera.set_fov(degrees_(_fov));
@@ -130,8 +133,8 @@ void model_viewer::_setting_window(const guiplus::imgui_api& gui) noexcept {
         gui.help_marker("changes the field of view of the camera");
 
         _backgrounds.settings("Backgrounds", gui);
-        _models.settings("Models", gui);
         _programs.settings("Programs", gui);
+        _models.settings("Models", gui);
         _textures.settings("Textures", gui);
 
         gui.separator();

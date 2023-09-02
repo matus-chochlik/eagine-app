@@ -30,6 +30,10 @@ struct model_viewer_resource_intf
     virtual void load_if_needed(execution_context&, video_context&) = 0;
     virtual void use(video_context&) = 0;
     virtual void clean_up(execution_context&, video_context&) = 0;
+    virtual auto settings_height() -> float {
+        return 0.F;
+    }
+    virtual void settings(const guiplus::imgui_api&) noexcept {}
 
 protected:
     void signal_loaded();
@@ -40,6 +44,10 @@ class model_viewer_resource_wrapper {
 public:
     model_viewer_resource_wrapper(unique_holder<Intf> impl) noexcept
       : _impl{std::move(impl)} {}
+
+    auto implementation() noexcept -> optional_reference<Intf> {
+        return {_impl};
+    }
 
     explicit operator bool() const noexcept {
         return is_loaded();
@@ -85,14 +93,18 @@ public:
     signal<void() noexcept> loaded;
     signal<void() noexcept> selected;
 
-    void settings(
-      const string_view head,
-      const guiplus::imgui_api& gui) noexcept;
     void update() noexcept;
-
     auto all_resource_count() noexcept -> span_size_t;
 
 protected:
+    auto _settings_height(
+      optional_reference<model_viewer_resource_intf>) noexcept -> float;
+
+    void _settings(
+      const string_view head,
+      optional_reference<model_viewer_resource_intf>,
+      const guiplus::imgui_api& gui) noexcept;
+
     auto _load_handler() noexcept {
         return make_callable_ref<&model_viewer_resources_base::_on_loaded>(
           this);
@@ -186,6 +198,16 @@ public:
             resource.clean_up(ctx, video);
         }
         return *this;
+    }
+
+    auto settings_height() noexcept -> float {
+        return this->_settings_height(current().implementation());
+    }
+
+    void settings(
+      const string_view head,
+      const guiplus::imgui_api& gui) noexcept {
+        return this->_settings(head, current().implementation(), gui);
     }
 
 private:

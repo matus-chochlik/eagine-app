@@ -31,6 +31,8 @@ public:
     void use(video_context&) final;
     void clear(video_context&, const mat4& camera, const float distance) final;
     void clean_up(execution_context&, video_context&) final;
+    auto settings_height() -> float final;
+    void settings(const guiplus::imgui_api&) noexcept final;
 
 private:
     background_icosahedron _bg;
@@ -62,6 +64,22 @@ void model_viewer_default_background::clean_up(
   execution_context&,
   video_context& video) {
     _bg.clean_up(video);
+}
+//------------------------------------------------------------------------------
+auto model_viewer_default_background::settings_height() -> float {
+    return 45.F;
+}
+//------------------------------------------------------------------------------
+void model_viewer_default_background::settings(
+  const guiplus::imgui_api& gui) noexcept {
+    auto color = _bg.edge_color();
+    if(gui.color_edit("Edge", color)) {
+        _bg.edge_color(color);
+    }
+    color = _bg.edge_color();
+    if(gui.color_edit("Face", color)) {
+        _bg.face_color(color);
+    }
 }
 //------------------------------------------------------------------------------
 //  Default background

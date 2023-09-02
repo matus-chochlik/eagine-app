@@ -128,6 +128,17 @@ public:
     auto clear(video_context& vc, const orbiting_camera& camera) noexcept
       -> background_icosahedron&;
 
+    auto edge_color() const noexcept -> oglplus::vec4 {
+        return _ecolor;
+    }
+
+    auto face_color() const noexcept -> oglplus::vec4 {
+        return _fcolor;
+    }
+
+    auto edge_color(oglplus::vec4) noexcept -> background_icosahedron&;
+    auto face_color(oglplus::vec4) noexcept -> background_icosahedron&;
+
 private:
     void _init(auto&, auto&, auto&) noexcept;
     void _clean_up(auto&) noexcept;

@@ -187,6 +187,18 @@ auto background_icosahedron::clear(
     return clear(video, camera.matrix(video), camera.skybox_distance());
 }
 //------------------------------------------------------------------------------
+auto background_icosahedron::edge_color(oglplus::vec4 c) noexcept
+  -> background_icosahedron& {
+    _ecolor = c;
+    return *this;
+}
+//------------------------------------------------------------------------------
+auto background_icosahedron::face_color(oglplus::vec4 c) noexcept
+  -> background_icosahedron& {
+    _fcolor = c;
+    return *this;
+}
+//------------------------------------------------------------------------------
 // background_skybox
 //------------------------------------------------------------------------------
 void background_skybox::_init(auto& gl, auto& GL, auto& api) noexcept {

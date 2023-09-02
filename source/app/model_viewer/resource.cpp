@@ -14,8 +14,15 @@ void model_viewer_resource_intf::signal_loaded() {
     model_viewer_resource_signals::loaded();
 }
 //------------------------------------------------------------------------------
-void model_viewer_resources_base::settings(
+auto model_viewer_resources_base::_settings_height(
+  optional_reference<model_viewer_resource_intf> impl) noexcept -> float {
+    return 45.F + impl.member(&model_viewer_resource_intf::settings_height)
+                    .value_or(0.F);
+}
+//------------------------------------------------------------------------------
+void model_viewer_resources_base::_settings(
   const string_view head,
+  optional_reference<model_viewer_resource_intf> impl,
   const guiplus::imgui_api& gui) noexcept {
     gui.separator_text(head);
     gui.push_id(head);
@@ -32,6 +39,9 @@ void model_viewer_resources_base::settings(
             }
         }
         gui.end_combo();
+    }
+    if(impl) {
+        impl->settings(gui);
     }
     gui.pop_id();
 }
