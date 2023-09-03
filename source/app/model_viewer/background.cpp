@@ -35,14 +35,19 @@ public:
     void settings(const guiplus::imgui_api&) noexcept final;
 
 private:
-    std::array<std::tuple<oglplus::vec4, oglplus::vec4, string_view>, 6>
+    static constexpr auto clr(const char (&c)[8]) noexcept -> oglplus::vec3 {
+        return math::hex_to_rgb<float>(c);
+    }
+
+    std::array<std::tuple<oglplus::vec3, oglplus::vec3, string_view>, 7>
       _color_presets{
-        {{{0.5F, 0.5F, 0.5F, 1.F}, {0.3F, 0.3F, 0.3F, 1.F}, {"Custom"}},
-         {{0.5F, 0.5F, 0.5F, 1.F}, {0.3F, 0.3F, 0.3F, 1.F}, {"Gray"}},
-         {{0.2F, 0.2F, 0.2F, 1.F}, {0.1F, 0.1F, 0.1F, 1.F}, {"Dark"}},
-         {{0.8F, 0.8F, 0.8F, 1.F}, {0.9F, 0.9F, 0.9F, 1.F}, {"Light"}},
-         {{0.0F, 0.0F, 0.0F, 1.F}, {1.0F, 1.0F, 0.1F, 1.F}, {"Black/Yellow"}},
-         {{0.0F, 0.0F, 0.0F, 1.F}, {1.0F, 0.5F, 1.0F, 1.F}, {"Black/Pink"}}}};
+        {{clr("#808080"), clr("#505050"), {"Custom"}},
+         {clr("#808080"), clr("#505050"), {"Gray"}},
+         {clr("#303030"), clr("#202020"), {"Dark"}},
+         {clr("#c0c0c0"), clr("#e0e0e0"), {"Light"}},
+         {clr("#bdb76b"), clr("#c3b091"), {"Khaki"}},
+         {clr("#000000"), clr("#ffff20"), {"Black/Yellow"}},
+         {clr("#000000"), clr("#ff80ff"), {"Black/Pink"}}}};
     std::size_t _selected_color{1U};
 
     auto _selected_custom_color() const noexcept -> bool {
