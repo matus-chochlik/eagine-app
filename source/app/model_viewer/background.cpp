@@ -35,19 +35,22 @@ public:
     void settings(const guiplus::imgui_api&) noexcept final;
 
 private:
-    static constexpr auto clr(const char (&c)[8]) noexcept -> oglplus::vec3 {
-        return math::hex_to_rgb<float>(c);
+    template <std::size_t L>
+    static constexpr auto clr(const char (&c)[L]) noexcept -> oglplus::vec3 {
+        return math::string_to_rgb(c).or_default();
     }
 
-    std::array<std::tuple<oglplus::vec3, oglplus::vec3, string_view>, 7>
+    std::array<std::tuple<oglplus::vec3, oglplus::vec3, string_view>, 9>
       _color_presets{
-        {{clr("#808080"), clr("#505050"), {"Custom"}},
-         {clr("#808080"), clr("#505050"), {"Gray"}},
+        {{clr("DarkGray"), clr("DimGray"), {"Custom"}},
+         {clr("DarkGray"), clr("DimGray"), {"Gray"}},
          {clr("#303030"), clr("#202020"), {"Dark"}},
          {clr("#c0c0c0"), clr("#e0e0e0"), {"Light"}},
-         {clr("#bdb76b"), clr("#c3b091"), {"Khaki"}},
-         {clr("#000000"), clr("#ffff20"), {"Black/Yellow"}},
-         {clr("#000000"), clr("#ff80ff"), {"Black/Pink"}}}};
+         {clr("DarkGray"), clr("Silver"), {"Silver"}},
+         {clr("DarkSlateGray"), clr("SlateGray"), {"Slate"}},
+         {clr("DarkKhaki"), clr("Khaki"), {"Khaki"}},
+         {clr("Black"), clr("Yellow"), {"Black/Yellow"}},
+         {clr("Black"), clr("HotPink"), {"Black/Pink"}}}};
     std::size_t _selected_color{1U};
 
     auto _selected_custom_color() const noexcept -> bool {
