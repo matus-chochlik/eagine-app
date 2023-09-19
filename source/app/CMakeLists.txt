@@ -12,6 +12,12 @@ install(
 )
 
 install(
+	PROGRAMS obj-to-eagimesh.py
+	RENAME eagine-obj-to-eagimesh
+	DESTINATION bin
+)
+
+install(
 	PROGRAMS blender-bake-light.py
 	RENAME eagine-blender-bake-light
 	DESTINATION bin
