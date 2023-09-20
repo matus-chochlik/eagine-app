@@ -18,7 +18,8 @@ model_viewer_models::model_viewer_models(
     load("Hydrant", url{"json:///Hydrant"}, ctx, video);
     load("Pumpkin", url{"json:///Pumpkin"}, ctx, video);
     load("Guitar", url{"json:///Guitar"}, ctx, video);
-    load("Crate1", url{"json:///Crate1"}, ctx, video);
+    load("Magnet", url{"json:///Magnet"}, ctx, video);
+    load("Crate 1", url{"json:///Crate1"}, ctx, video);
     load("Stool", url{"json:///Stool"}, ctx, video);
     load("Arrow", url{"json:///Arrow"}, ctx, video);
     load(

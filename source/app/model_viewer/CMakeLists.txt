@@ -44,6 +44,7 @@ eagine_embed_target_resources(
 		Hydrant    "models/hydrant.json"
 		Pumpkin    "models/pumpkin.json"
 		Guitar     "models/guitar.json"
+		Magnet     "models/magnet.json"
 		Crate1     "models/crate1.json"
 		Stool      "models/stool.json"
 		Arrow      "models/arrow.json"
