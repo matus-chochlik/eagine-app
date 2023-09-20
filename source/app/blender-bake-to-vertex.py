@@ -282,16 +282,19 @@ def do_apply(options, target, mat_info):
                 face_mat = target.material_slots[meshface.material_index].material
                 if src_mat == face_mat:
                     nc = src_image.channels
+                    ms = options.size - 1
                     for loop_index in meshface.loop_indices:
                         print(loop_index)
                         meshloop = mesh.loops[loop_index]
                         vertex_index = meshloop.vertex_index
                         try:
                             uv = uvcoords.data[loop_index].uv
-                            w, h = uv * options.size
+                            w, h = uv * ms
                         except IndexError:
-                            w = 0.5
-                            h = 0.5
+                            w = int(ms * 0.5)
+                            h = int(ms * 0.5)
+                        w = min(max(0.0, w), ms)
+                        h = min(max(0.0, h), ms)
                         idx = (options.size * int(h) + int(w)) * nc
                         pixel = tuple(
                             src_image.pixels[idx + c] if c < nc else 1.0
