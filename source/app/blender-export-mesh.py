@@ -577,7 +577,7 @@ def export_single(options, bdata, names, objs, meshes):
                 _vert_groups()[name] = value
 
             def _vert_occls():
-                return vert_subinfo("occls")
+                return _vert_subinfo("occls")
 
             def _set_vert_occls(name, value):
                 _vert_occls()[name] = value
