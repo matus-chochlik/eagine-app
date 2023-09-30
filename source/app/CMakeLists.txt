@@ -4,6 +4,7 @@
 #  http://www.boost.org/LICENSE_1_0.txt
 add_custom_target(eagine-apps ALL)
 add_subdirectory(model_viewer)
+add_subdirectory(resource_provider)
 
 install(
 	PROGRAMS make-voronoi-svg.py
