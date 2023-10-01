@@ -6,13 +6,13 @@
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
 import eagine.core;
-import eagine.sslplus;
 import eagine.msgbus;
 import eagine.app;
 import std;
 
+#include "driver.hpp"
+
 namespace eagine {
-//------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 auto main(main_ctx& ctx) -> int {
     signal_switch interrupted;
@@ -29,22 +29,25 @@ auto main(main_ctx& ctx) -> int {
 
     msgbus::endpoint bus{main_ctx_object{"ResSvrEndp", ctx}};
 
-    msgbus::resource_data_server_node resource_server{bus};
+    app::resource_provider_driver driver{ctx};
+    msgbus::resource_data_server_node resource_server{bus, driver};
     conn_setup.setup_connectors(resource_server, address);
 
     const auto is_done{[&] {
         return interrupted or resource_server.is_done();
     }};
 
+    const auto sleep_interval{[](work_done wd) -> std::chrono::microseconds {
+        return wd ? std::chrono::microseconds{25}
+                  : std::chrono::microseconds{10000};
+    }};
+
     auto& wd = ctx.watchdog();
     wd.declare_initialized();
     while(not is_done()) {
         wd.notify_alive();
-        if(resource_server.update_message_age().update_and_process_all()) {
-            std::this_thread::sleep_for(std::chrono::microseconds(125));
-        } else {
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        }
+        std::this_thread::sleep_for(sleep_interval(
+          resource_server.update_message_age().update_and_process_all()));
     }
     wd.announce_shutdown();
     return 0;

@@ -5,6 +5,7 @@
 
 add_executable(
 	eagine-app-resource-provider
+	driver.cpp
 	main.cpp)
 
 eagine_target_modules(
