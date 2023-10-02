@@ -30,6 +30,7 @@ eagine_add_exe_analysis(app-029_furry_torus)
 
 eagine_target_modules(
 	app-029_furry_torus
+	std
 	eagine.core
 	eagine.shapes
 	eagine.oglplus

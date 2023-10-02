@@ -22,6 +22,7 @@ import eagine.eglplus;
 import eagine.oglplus;
 import eagine.oalplus;
 import eagine.msgbus;
+import :types;
 import :interface;
 import :options;
 import :state;
@@ -142,6 +143,12 @@ public:
             return _provider->surface_size();
         }
         return {1, 1};
+    }
+
+    /// @brief Returns the rendering surface's dimensions (in pixels) as vec2.
+    auto surface_size_vec2() noexcept -> vec2 {
+        const auto [x, y] = surface_size();
+        return vec2{float(x), float(y)};
     }
 
     /// @brief Returns the rendering surface's aspect ratio.
@@ -660,10 +667,10 @@ private:
     void _forward_input(
       const input_info& info,
       const input_value<T>& value) noexcept {
-        const auto slot_pos =
-          _mapped_inputs.find(std::make_tuple(info.device_id, info.signal_id));
-        if(slot_pos != _mapped_inputs.end()) {
-            const auto& [setup, handler] = slot_pos->second;
+        if(const auto found{eagine::find(
+             _mapped_inputs,
+             std::make_tuple(info.device_id, info.signal_id))}) {
+            const auto& [setup, handler] = *found;
             if(setup.is_applicable() and setup.has(info.value_kind)) {
                 handler(input(value, info, setup));
             }

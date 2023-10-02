@@ -25,6 +25,7 @@ eagine_add_exe_analysis(app-037_lantern)
 
 eagine_target_modules(
 	app-037_lantern
+	std
 	eagine.core
 	eagine.shapes
 	eagine.oglplus

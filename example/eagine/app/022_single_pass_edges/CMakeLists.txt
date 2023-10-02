@@ -20,6 +20,7 @@ eagine_add_exe_analysis(app-022_single_pass_edges)
 
 eagine_target_modules(
 	app-022_single_pass_edges
+	std
 	eagine.core
 	eagine.shapes
 	eagine.oglplus

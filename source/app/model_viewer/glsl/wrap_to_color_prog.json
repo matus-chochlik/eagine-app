@@ -1,0 +1,7 @@
+{"inputs":
+{"Position": {"attrib":"position"}
+,"Attrib": {"attrib":"wrap_coord"}}
+,"shaders":
+[{"url":"glsl:///Atr2ClrVrt","type":"vertex_shader"}
+,{"url":"glsl:///Atr2ClrFrg","type":"fragment_shader"}]
+}

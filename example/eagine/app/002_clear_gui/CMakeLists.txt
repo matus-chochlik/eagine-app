@@ -11,6 +11,7 @@ eagine_add_exe_analysis(app-002_clear_gui)
 
 eagine_target_modules(
 	app-002_clear_gui
+	std
 	eagine.core
 	eagine.oglplus
 	eagine.guiplus

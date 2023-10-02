@@ -200,13 +200,13 @@ public:
         init(ctx);
     }
 
-    /// @brief Clean's up this resource.
+    /// @brief Cleans up this resource.
     void clean_up(resource_loader& loader) {
         this->resource().clear();
         _disconnect(loader);
     }
 
-    /// @brief Clean's up this resource.
+    /// @brief Cleans up this resource.
     void clean_up(execution_context& ctx) {
         clean_up(ctx.loader());
     }
@@ -436,13 +436,13 @@ class loaded_resource<std::vector<T>>
 public:
     using common::common;
 
-    /// @brief Clean's up this resource.
+    /// @brief Cleans up this resource.
     void clean_up(resource_loader& loader) {
         this->resource().clear();
         common::_disconnect(loader);
     }
 
-    /// @brief Clean's up this resource.
+    /// @brief Cleans up this resource.
     void clean_up(execution_context& ctx) {
         clean_up(ctx.loader());
     }
@@ -471,13 +471,13 @@ class loaded_resource<math::bezier_curves<T, P, O>>
 public:
     using common::common;
 
-    /// @brief Clean's up this resource.
+    /// @brief Cleans up this resource.
     void clean_up(resource_loader& loader) {
         this->clear();
         common::_disconnect(loader);
     }
 
-    /// @brief Clean's up this resource.
+    /// @brief Cleans up this resource.
     void clean_up(execution_context& ctx) {
         clean_up(ctx.loader());
     }
@@ -505,13 +505,13 @@ class loaded_resource<shared_holder<shapes::generator>>
 public:
     using common::common;
 
-    /// @brief Clean's up this resource.
+    /// @brief Cleans up this resource.
     void clean_up(resource_loader& loader) {
         resource().reset();
         common::_disconnect(loader);
     }
 
-    /// @brief Clean's up this resource.
+    /// @brief Cleans up this resource.
     void clean_up(execution_context& ctx) {
         clean_up(ctx.loader());
     }
@@ -542,13 +542,13 @@ class loaded_resource<gl_geometry_and_bindings>
 public:
     using common::common;
 
-    /// @brief Clean's up this resource.
+    /// @brief Cleans up this resource.
     void clean_up(resource_loader& loader, video_context& video) {
         resource().clean_up(video);
         common::_disconnect(loader);
     }
 
-    /// @brief Clean's up this resource.
+    /// @brief Cleans up this resource.
     void clean_up(execution_context& ctx) {
         clean_up(ctx.loader(), ctx.main_video());
     }
@@ -609,12 +609,12 @@ class loaded_resource<valtree::compound>
 public:
     using common::common;
 
-    /// @brief Clean's up this resource.
+    /// @brief Cleans up this resource.
     void clean_up(resource_loader& loader) {
         common::_disconnect(loader);
     }
 
-    /// @brief Clean's up this resource.
+    /// @brief Cleans up this resource.
     void clean_up(execution_context& ctx) {
         clean_up(ctx.loader());
     }
@@ -644,13 +644,13 @@ class loaded_resource<oglplus::owned_shader_name>
 public:
     using common::common;
 
-    /// @brief Clean's up this resource.
+    /// @brief Cleans up this resource.
     void clean_up(resource_loader& loader, video_context& video) {
         video.gl_api().clean_up(std::move(resource()));
         common::_disconnect(loader);
     }
 
-    /// @brief Clean's up this resource.
+    /// @brief Cleans up this resource.
     void clean_up(execution_context& ctx) {
         clean_up(ctx.loader(), ctx.main_video());
     }
@@ -686,7 +686,7 @@ struct resource_load_info<oglplus::owned_program_name> {
       : base{info}
       , resource{parent} {}
 
-    /// @brief Applies the vertex attrib bindings to the loaded program.
+    /// @brief Applies the vertex attribute bindings to the loaded program.
     auto apply_input_bindings(
       const oglplus::vertex_attrib_bindings& attrib_bindings) const noexcept
       -> bool {
@@ -830,7 +830,7 @@ public:
         return bind(video.gl_api(), loc, var_name);
     }
 
-    /// @brief Applies the vertex attrib bindings to the loaded program.
+    /// @brief Applies the vertex attribute bindings to the loaded program.
     auto apply_input_bindings(
       video_context& video,
       const oglplus::vertex_attrib_bindings& attrib_bindings) const noexcept
@@ -838,13 +838,13 @@ public:
         return _inputs.apply(video.gl_api(), *this, attrib_bindings);
     }
 
-    /// @brief Clean's up this resource.
+    /// @brief Cleans up this resource.
     void clean_up(resource_loader& loader, video_context& video) {
         video.gl_api().clean_up(std::move(resource()));
         common::_disconnect(loader);
     }
 
-    /// @brief Clean's up this resource.
+    /// @brief Cleans up this resource.
     void clean_up(execution_context& ctx) {
         return clean_up(ctx.loader(), ctx.main_video());
     }
@@ -917,13 +917,13 @@ class loaded_resource<oglplus::owned_texture_name>
 public:
     using common::common;
 
-    /// @brief Clean's up this resource.
+    /// @brief Cleans up this resource.
     void clean_up(resource_loader& loader, video_context& video) {
         video.gl_api().clean_up(std::move(resource()));
         common::_disconnect(loader);
     }
 
-    /// @brief Clean's up this resource.
+    /// @brief Cleans up this resource.
     void clean_up(execution_context& ctx) {
         clean_up(ctx.loader(), ctx.main_video());
     }
@@ -951,13 +951,13 @@ class loaded_resource<oglplus::owned_buffer_name>
       loaded_resource_common<loaded_resource<oglplus::owned_buffer_name>>;
 
 public:
-    /// @brief Clean's up this resource.
+    /// @brief Cleans up this resource.
     void clean_up(resource_loader& loader, video_context& video) {
         video.gl_api().clean_up(std::move(resource()));
         common::_disconnect(loader);
     }
 
-    /// @brief Clean's up this resource.
+    /// @brief Cleans up this resource.
     void clean_up(execution_context& ctx) {
         clean_up(ctx.loader(), ctx.main_video());
     }

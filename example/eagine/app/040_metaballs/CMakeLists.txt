@@ -25,6 +25,7 @@ eagine_add_exe_analysis(app-040_metaballs)
 
 eagine_target_modules(
 	app-040_metaballs
+	std
 	eagine.core
 	eagine.shapes
 	eagine.oglplus

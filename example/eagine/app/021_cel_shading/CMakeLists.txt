@@ -20,6 +20,7 @@ eagine_add_exe_analysis(app-021_cel_shading)
 
 eagine_target_modules(
 	app-021_cel_shading
+	std
 	eagine.core
 	eagine.shapes
 	eagine.oglplus

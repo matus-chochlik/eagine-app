@@ -5,14 +5,16 @@
 eagine_add_module(
 	eagine.app PARTITION types
 	IMPORTS
+		std
 		eagine.core.types
 		eagine.core.reflection
+		eagine.oglplus
 )
 
 eagine_add_module(
 	eagine.app PARTITION options
 	IMPORTS
-		types
+		std types
 		eagine.core.types
 		eagine.core.memory
 		eagine.core.string
@@ -25,6 +27,7 @@ eagine_add_module(
 eagine_add_module(
 	eagine.app PARTITION input
 	IMPORTS
+		std
 		eagine.core.types
 		eagine.core.memory
 		eagine.core.identifier
@@ -37,6 +40,7 @@ eagine_add_module(
 eagine_add_module(
 	eagine.app PARTITION state
 	IMPORTS
+		std
 		eagine.core.types
 		eagine.core.memory
 		eagine.core.valid_if
@@ -49,7 +53,7 @@ eagine_add_module(
 eagine_add_module(
 	eagine.app PARTITION interface
 	IMPORTS
-		types options input
+		std types options input
 		eagine.core.types
 		eagine.core.memory
 		eagine.core.identifier
@@ -62,7 +66,7 @@ eagine_add_module(
 eagine_add_module(
 	eagine.app PARTITION implementation
 	IMPORTS
-		interface
+		std interface
 		eagine.core.types
 		eagine.core.main_ctx
 )
@@ -70,7 +74,7 @@ eagine_add_module(
 eagine_add_module(
 	eagine.app PARTITION framedump_raw
 	IMPORTS
-		interface
+		std interface
 		eagine.core.types
 		eagine.core.memory
 		eagine.core.reflection
@@ -81,6 +85,7 @@ eagine_add_module(
 eagine_add_module(
 	eagine.app PARTITION resource_loader
 	IMPORTS
+		std
 		eagine.core.types
 		eagine.core.math
 		eagine.core.memory
@@ -101,8 +106,8 @@ eagine_add_module(
 eagine_add_module(
 	eagine.app PARTITION context
 	IMPORTS
-		interface options
-		state input
+		std interface options
+		types state input
 		resource_loader
 		eagine.core.types
 		eagine.core.memory
@@ -119,7 +124,7 @@ eagine_add_module(
 eagine_add_module(
 	eagine.app PARTITION main
 	IMPORTS
-		interface context
+		std interface context
 		eagine.core.types
 		eagine.core.main_ctx
 )
@@ -127,7 +132,7 @@ eagine_add_module(
 eagine_add_module(
 	eagine.app PARTITION framebuffer
 	IMPORTS
-		context
+		std context
 		eagine.core.types
 		eagine.core.memory
 		eagine.oglplus
@@ -136,7 +141,7 @@ eagine_add_module(
 eagine_add_module(
 	eagine.app PARTITION geometry
 	IMPORTS
-		context
+		std context
 		eagine.core.types
 		eagine.core.memory
 		eagine.shapes
@@ -146,7 +151,7 @@ eagine_add_module(
 eagine_add_module(
 	eagine.app PARTITION camera
 	IMPORTS
-		state input context
+		std state input context types
 		eagine.core.types
 		eagine.core.memory
 		eagine.core.identifier
@@ -160,7 +165,7 @@ eagine_add_module(
 eagine_add_module(
 	eagine.app PARTITION background
 	IMPORTS
-		camera context
+		std camera context types
 		eagine.core.types
 		eagine.core.memory
 		eagine.core.c_api
@@ -171,7 +176,7 @@ eagine_add_module(
 eagine_add_module(
 	eagine.app PARTITION loaded_resource
 	IMPORTS
-		context geometry
+		std context geometry
 		resource_loader
 		eagine.core.types
 		eagine.core.math
@@ -188,7 +193,7 @@ eagine_add_module(
 eagine_add_module(
 	eagine.app PARTITION resource_manager
 	IMPORTS
-		loaded_resource geometry
+		std loaded_resource geometry
 		context resource_loader
 		eagine.core.types
 		eagine.core.math
@@ -214,6 +219,7 @@ eagine_add_module(
 		camera
 		background
 	IMPORTS
+		std
 		eagine.core.types
 		eagine.core.memory
 		eagine.core.math

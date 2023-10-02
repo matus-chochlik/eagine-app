@@ -20,6 +20,7 @@ eagine_add_exe_analysis(app-007_cube)
 
 eagine_target_modules(
 	app-007_cube
+	std
 	eagine.core
 	eagine.shapes
 	eagine.oglplus

@@ -12,6 +12,7 @@ eagine_add_exe_analysis(app-011_mandelbrot)
 
 eagine_target_modules(
 	app-011_mandelbrot
+	std
 	eagine.core
 	eagine.oglplus
 	eagine.app

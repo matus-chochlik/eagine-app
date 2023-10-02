@@ -20,6 +20,7 @@ eagine_add_exe_analysis(app-023_sketch)
 
 eagine_target_modules(
 	app-023_sketch
+	std
 	eagine.core
 	eagine.shapes
 	eagine.oglplus

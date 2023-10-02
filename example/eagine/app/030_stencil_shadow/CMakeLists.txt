@@ -30,6 +30,7 @@ eagine_add_exe_analysis(app-030_stencil_shadow)
 
 eagine_target_modules(
 	app-030_stencil_shadow
+	std
 	eagine.core
 	eagine.shapes
 	eagine.oglplus

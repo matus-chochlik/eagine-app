@@ -12,6 +12,7 @@ eagine_add_exe_analysis(app-012_atomic_counters)
 
 eagine_target_modules(
 	app-012_atomic_counters
+	std
 	eagine.core
 	eagine.oglplus
 	eagine.app

@@ -157,13 +157,12 @@ auto background_icosahedron::clean_up(video_context& video) noexcept
 //------------------------------------------------------------------------------
 auto background_icosahedron::clear(
   video_context& video,
-  const orbiting_camera& camera) noexcept -> background_icosahedron& {
+  const mat4& cam_mat,
+  const float radius) noexcept -> background_icosahedron& {
     video.with_gl([&, this](auto& gl, auto& GL, auto& api) {
-        const auto radius{(camera.skybox_distance())};
-
         gl.clear(GL.color_buffer_bit);
         gl.use_program(_prog);
-        api.set_uniform(_prog, _camera_loc, camera.matrix(video));
+        api.set_uniform(_prog, _camera_loc, cam_mat);
         api.set_uniform(_prog, _scale_loc, radius);
         gl.disable(GL.depth_test);
         gl.disable(GL.cull_face);
@@ -179,6 +178,24 @@ auto background_icosahedron::clear(
         gl.enable(GL.depth_test);
         gl.clear(GL.depth_buffer_bit);
     });
+    return *this;
+}
+//------------------------------------------------------------------------------
+auto background_icosahedron::clear(
+  video_context& video,
+  const orbiting_camera& camera) noexcept -> background_icosahedron& {
+    return clear(video, camera.matrix(video), camera.skybox_distance());
+}
+//------------------------------------------------------------------------------
+auto background_icosahedron::edge_color(oglplus::vec4 c) noexcept
+  -> background_icosahedron& {
+    _ecolor = c;
+    return *this;
+}
+//------------------------------------------------------------------------------
+auto background_icosahedron::face_color(oglplus::vec4 c) noexcept
+  -> background_icosahedron& {
+    _fcolor = c;
     return *this;
 }
 //------------------------------------------------------------------------------
@@ -368,11 +385,12 @@ auto background_skybox::clean_up(video_context& video) noexcept
 //------------------------------------------------------------------------------
 auto background_skybox::clear(
   video_context& video,
-  const orbiting_camera& camera) noexcept -> background_skybox& {
+  const mat4& cam_mat,
+  const float distance) noexcept -> background_skybox& {
     video.with_gl([&, this](auto& gl, auto& GL, auto& api) {
         gl.use_program(_prog);
-        api.set_uniform(_prog, _camera_loc, camera.matrix(video));
-        api.set_uniform(_prog, _scale_loc, camera.skybox_distance());
+        api.set_uniform(_prog, _camera_loc, cam_mat);
+        api.set_uniform(_prog, _scale_loc, distance);
         gl.bind_vertex_array(_vao);
         gl.disable(GL.depth_test);
         gl.disable(GL.cull_face);
@@ -384,6 +402,12 @@ auto background_skybox::clear(
         gl.clear(GL.depth_buffer_bit | GL.stencil_buffer_bit);
     });
     return *this;
+}
+//------------------------------------------------------------------------------
+auto background_skybox::clear(
+  video_context& video,
+  const orbiting_camera& camera) noexcept -> background_skybox& {
+    return clear(video, camera.matrix(video), camera.skybox_distance());
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

@@ -93,25 +93,21 @@ auto launch_options::application_title() const noexcept -> string_view {
 auto launch_options::require_video(
   const video_context_kind kind,
   const identifier instance) -> video_options& {
-    auto pos = _video_opts.find(instance);
-    if(pos == _video_opts.end()) {
-        pos = _video_opts
-                .try_emplace(instance, video_options(*this, kind, instance))
-                .first;
+    auto found{eagine::find(_video_opts, instance)};
+    if(not found) {
+        found.try_emplace(instance, video_options(*this, kind, instance));
     }
-    return pos->second;
+    return *found;
 }
 //------------------------------------------------------------------------------
 auto launch_options::require_audio(
   const audio_context_kind kind,
   const identifier instance) -> audio_options& {
-    auto pos = _audio_opts.find(instance);
-    if(pos == _audio_opts.end()) {
-        pos = _audio_opts
-                .try_emplace(instance, audio_options(*this, kind, instance))
-                .first;
+    auto found{eagine::find(_audio_opts, instance)};
+    if(not found) {
+        found.try_emplace(instance, audio_options(*this, kind, instance));
     }
-    return pos->second;
+    return *found;
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

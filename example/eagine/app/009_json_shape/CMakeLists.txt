@@ -12,6 +12,7 @@ eagine_add_exe_analysis(app-009_json_shape)
 
 eagine_target_modules(
 	app-009_json_shape
+	std
 	eagine.core
 	eagine.shapes
 	eagine.oglplus

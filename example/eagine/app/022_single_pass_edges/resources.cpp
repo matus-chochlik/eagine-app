@@ -37,9 +37,7 @@ void edges_program::set_projection(
 void icosahedron_geometry::init(execution_context& ec) {
     gl_geometry_and_bindings::init(
       {shapes::center(eagine::shapes::ortho_array_xyz(
-         shapes::scale(
-           shapes::unit_icosahedron(shapes::vertex_attrib_kind::position),
-           {0.5F, 0.5F, 0.5F}),
+         shapes::unit_icosahedron(shapes::vertex_attrib_kind::position),
          {1.F, 1.F, 1.F},
          {3, 3, 3})),
        ec.main_video()});

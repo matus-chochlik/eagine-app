@@ -31,6 +31,7 @@ eagine_add_exe_analysis(app-013_tiling)
 
 eagine_target_modules(
 	app-013_tiling
+	std
 	eagine.core
 	eagine.shapes
 	eagine.oglplus

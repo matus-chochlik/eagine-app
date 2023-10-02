@@ -44,8 +44,8 @@ example_edges::example_edges(execution_context& ec, video_context& vc)
 
     _camera.set_near(0.1F)
       .set_far(50.F)
-      .set_orbit_min(2.6F)
-      .set_orbit_max(9.0F)
+      .set_orbit_min(1.3F)
+      .set_orbit_max(7.0F)
       .set_fov(right_angle_());
 
     _camera.connect_inputs(ec).basic_input_mapping(ec);

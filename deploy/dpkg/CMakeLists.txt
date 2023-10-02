@@ -20,6 +20,8 @@ set(BIN_DIR "${CMAKE_CURRENT_BINARY_DIR}/../..")
 
 add_custom_target(eagine-app-deb)
 
+add_subdirectory(tools)
+
 if(TARGET eagine.app)
 	add_subdirectory(dev)
 endif()

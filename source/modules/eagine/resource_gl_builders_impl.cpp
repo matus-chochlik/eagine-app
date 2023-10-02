@@ -19,6 +19,7 @@ import eagine.core.string;
 import eagine.core.reflection;
 import eagine.core.runtime;
 import eagine.core.utility;
+import eagine.core.container;
 import eagine.core.value_tree;
 import eagine.core.c_api;
 import eagine.oglplus;
@@ -276,14 +277,10 @@ public:
                 _params.dimensions = std::max(_params.dimensions, 1);
             } else if(path.starts_with("height")) {
                 _success &= assign_if_fits(data, _params.height);
-                if(_params.height > 1) {
-                    _params.dimensions = std::max(_params.dimensions, 2);
-                }
+                _params.dimensions = std::max(_params.dimensions, 2);
             } else if(path.starts_with("depth")) {
                 _success &= assign_if_fits(data, _params.depth);
-                if(_params.depth > 1) {
-                    _params.dimensions = std::max(_params.dimensions, 3);
-                }
+                _params.dimensions = std::max(_params.dimensions, 3);
             } else if(path.starts_with("data_type")) {
                 _success &= assign_if_fits(data, _params.data_type);
             } else if(path.starts_with("format")) {
@@ -415,14 +412,10 @@ public:
                 _params.dimensions = std::max(_params.dimensions, 1);
             } else if(path.starts_with("height")) {
                 _success &= assign_if_fits(data, _params.height);
-                if(_params.height > 1) {
-                    _params.dimensions = std::max(_params.dimensions, 2);
-                }
+                _params.dimensions = std::max(_params.dimensions, 2);
             } else if(path.starts_with("depth")) {
                 _success &= assign_if_fits(data, _params.depth);
-                if(_params.depth > 1) {
-                    _params.dimensions = std::max(_params.dimensions, 3);
-                }
+                _params.dimensions = std::max(_params.dimensions, 3);
             } else if(path.starts_with("data_type")) {
                 _success &= assign_if_fits(data, _params.data_type);
             } else if(path.starts_with("format")) {
@@ -716,7 +709,7 @@ auto pending_resource_info::_handle_pending_gl_texture_state(
 //------------------------------------------------------------------------------
 auto pending_resource_info::handle_gl_texture_params(
   const resource_gl_texture_params& params) noexcept -> bool {
-    if(std::holds_alternative<_pending_gl_texture_state>(_state)) {
+    if(const auto pgts{get_if<_pending_gl_texture_state>(_state)}) {
         _parent.log_info("loaded GL texture storage parameters")
           .arg("levels", params.levels)
           .arg("width", params.width)
@@ -725,14 +718,13 @@ auto pending_resource_info::handle_gl_texture_params(
           .arg("dimensions", params.dimensions)
           .arg("iformat", params.iformat);
 
-        auto& pgts = std::get<_pending_gl_texture_state>(_state);
-        pgts.pparams = &params;
-        pgts.levels = span_size(params.levels);
+        pgts->pparams = &params;
+        pgts->levels = span_size(params.levels);
 
-        return pgts.video.get()
+        return pgts->video.get()
           .with_gl([&, this](auto& gl, auto& GL, auto& glapi) {
               return _handle_pending_gl_texture_state(
-                gl, GL, glapi, pgts, params);
+                gl, GL, glapi, *pgts, params);
           })
           .or_false();
     }
@@ -747,14 +739,13 @@ void pending_resource_info::handle_gl_texture_i_param(
       .arg("locator", locator().str());
 
     if(is(resource_kind::gl_texture)) {
-        if(std::holds_alternative<_pending_gl_texture_state>(_state)) {
-            auto& pgts = std::get<_pending_gl_texture_state>(_state);
-            if(pgts.tex) [[likely]] {
-                pgts.video.get().with_gl([&](auto& gl) {
+        if(const auto pgts{get_if<_pending_gl_texture_state>(_state)}) {
+            if(pgts->tex) [[likely]] {
+                pgts->video.get().with_gl([&](auto& gl) {
                     if(gl.texture_parameter_i) {
-                        gl.texture_parameter_i(pgts.tex, param, value);
+                        gl.texture_parameter_i(pgts->tex, param, value);
                     } else if(gl.tex_parameter_i) {
-                        gl.tex_parameter_i(pgts.tex_target, param, value);
+                        gl.tex_parameter_i(pgts->tex_target, param, value);
                     }
                 });
             }
@@ -887,26 +878,23 @@ void pending_resource_info::_handle_gl_texture_image(
     };
 
     if(is(resource_kind::gl_texture)) {
-        if(std::holds_alternative<_pending_gl_texture_state>(_state)) {
-            auto& pgts = std::get<_pending_gl_texture_state>(_state);
-            if(pgts.tex) [[likely]] {
-                if(const auto pos{
-                     pgts.pending_requests.find(source.request_id())};
-                   pos != pgts.pending_requests.end()) {
-                    pgts.level_images_done.set(std_size(params.level), true);
-                    add_image_data(pgts.video.get().gl_api(), pgts);
+        if(const auto pgts{get_if<_pending_gl_texture_state>(_state)}) {
+            if(pgts->tex) [[likely]] {
+                if(const auto found{eagine::find(
+                     pgts->pending_requests, source.request_id())}) {
+                    pgts->level_images_done.set(std_size(params.level), true);
+                    add_image_data(pgts->video.get().gl_api(), *pgts);
 
-                    pgts.pending_requests.erase(pos);
-                    if(not _finish_gl_texture(pgts)) {
+                    pgts->pending_requests.erase(found.position());
+                    if(not _finish_gl_texture(*pgts)) {
                         return;
                     }
                 }
             }
         }
     } else if(is(resource_kind::gl_texture_update)) {
-        if(std::holds_alternative<_pending_gl_texture_update_state>(_state)) {
-            auto& pgts = std::get<_pending_gl_texture_update_state>(_state);
-            add_image_data(pgts.video.get().gl_api(), pgts);
+        if(const auto pgts{get_if<_pending_gl_texture_update_state>(_state)}) {
+            add_image_data(pgts->video.get().gl_api(), *pgts);
         }
     }
     mark_finished();
@@ -980,10 +968,11 @@ auto make_valtree_gl_buffer_builder(
 //------------------------------------------------------------------------------
 auto pending_resource_info::handle_gl_buffer_params(
   const resource_gl_buffer_params& params) noexcept -> bool {
-    if(std::holds_alternative<_pending_gl_buffer_state>(_state)) {
+    if(const auto pgbs{get_if<_pending_gl_buffer_state>(_state)}) {
         _parent.log_info("loaded GL buffer storage parameters")
           .arg("dataSize", params.data_size);
         // TODO
+        (void)pgbs;
         return true;
     }
     return false;

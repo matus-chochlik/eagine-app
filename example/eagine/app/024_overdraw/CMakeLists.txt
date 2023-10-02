@@ -22,6 +22,7 @@ eagine_add_exe_analysis(app-024_overdraw)
 
 eagine_target_modules(
 	app-024_overdraw
+	std
 	eagine.core
 	eagine.shapes
 	eagine.oglplus
