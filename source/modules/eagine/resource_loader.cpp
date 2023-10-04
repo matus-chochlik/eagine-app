@@ -305,6 +305,10 @@ private:
       const pending_resource_info& source,
       const valtree::compound& tree) noexcept;
 
+    void _handle_string_list(
+      const pending_resource_info& source,
+      const std::vector<std::string>& strings) noexcept;
+
     void _handle_vec3_vector(
       const pending_resource_info& source,
       const std::vector<math::vector<float, 3, true>>& values) noexcept;
@@ -648,11 +652,31 @@ export struct resource_loader_signals {
     struct get_load_info<std::string>
       : std::type_identity<plain_text_load_info> {};
 
-    /// @brief Emitted when plain text string is loaded.
+    /// @brief Emitted when plain text is loaded.
     signal<void(const plain_text_load_info&) noexcept> plain_text_loaded;
 
     auto load_signal(std::type_identity<std::string>) noexcept -> auto& {
         return plain_text_loaded;
+    }
+
+    /// @brief Type of parameter of the string_list_loaded signal.
+    /// @see string_list_loaded
+    struct string_list_load_info {
+        const identifier_t request_id;
+        const url& locator;
+        const std::vector<std::string>& strings;
+    };
+
+    template <>
+    struct get_load_info<std::vector<std::string>>
+      : std::type_identity<string_list_load_info> {};
+
+    /// @brief Emitted when plain text string is loaded.
+    signal<void(const string_list_load_info&) noexcept> string_list_loaded;
+
+    auto load_signal(std::type_identity<std::vector<std::string>>) noexcept
+      -> auto& {
+        return string_list_loaded;
     }
 
     /// @brief Type of parameter of the float_vector_loaded signal.
@@ -660,7 +684,7 @@ export struct resource_loader_signals {
     struct float_vector_load_info {
         const identifier_t request_id;
         const url& locator;
-        std::vector<float> values;
+        std::vector<float>& values;
     };
 
     template <>
@@ -1058,6 +1082,9 @@ public:
 
     /// @brief Requests plain text resource.
     auto request_plain_text(url locator) noexcept -> resource_request_result;
+
+    /// @brief Requests string-list resource.
+    auto request_string_list(url locator) noexcept -> resource_request_result;
 
     /// @brief Requests a float vector resource.
     auto request_float_vector(url locator) noexcept -> resource_request_result;
