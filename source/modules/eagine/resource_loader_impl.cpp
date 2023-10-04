@@ -239,6 +239,37 @@ void pending_resource_info::cleanup() noexcept {
     }
 }
 //------------------------------------------------------------------------------
+void pending_resource_info::_handle_plain_text(
+  const msgbus::blob_info&,
+  const pending_resource_info&,
+  const span_size_t offset,
+  const memory::span<const memory::const_block> data) noexcept {
+    _parent.log_debug("loaded plain-text data")
+      .arg("requestId", _request_id)
+      .arg("offset", offset)
+      .arg("locator", _locator.str());
+
+    std::string text;
+    span_size_t total_size{0};
+    for(const auto chunk : data) {
+        total_size = safe_add(total_size, chunk.size());
+    }
+    text.reserve(std_size(total_size));
+    for(const auto chunk : data) {
+        append_to(as_chars(chunk), text);
+    }
+
+    if(is(resource_kind::string_list)) {
+        if(const auto cont{continuation()}) {
+        }
+        // TODO
+    }
+    _parent.plain_text_loaded(
+      {.request_id = _request_id, .locator = _locator, .text = std::move(text)});
+    _parent.resource_loaded(_request_id, _kind, _locator);
+    mark_finished();
+}
+//------------------------------------------------------------------------------
 void pending_resource_info::_handle_json_text(
   const msgbus::blob_info&,
   const pending_resource_info&,
@@ -595,11 +626,14 @@ void pending_resource_info::handle_source_data(
   const span_size_t offset,
   const memory::span<const memory::const_block> data) noexcept {
     switch(rinfo._kind) {
+        case resource_kind::plain_text:
+            _handle_plain_text(binfo, rinfo, offset, data);
+            break;
         case resource_kind::json_text:
             _handle_json_text(binfo, rinfo, offset, data);
             break;
         case resource_kind::yaml_text:
-            _handle_json_text(binfo, rinfo, offset, data);
+            _handle_yaml_text(binfo, rinfo, offset, data);
             break;
         case resource_kind::glsl_text:
             _handle_glsl_strings(binfo, rinfo, offset, data);
@@ -703,6 +737,20 @@ void resource_loader::_init() noexcept {
       this, blob_stream_finished);
     connect<&resource_loader::_handle_stream_cancelled>(
       this, blob_stream_cancelled);
+}
+//------------------------------------------------------------------------------
+auto resource_loader::request_plain_text(url locator) noexcept
+  -> resource_request_result {
+    if(locator.has_path_suffix(".txt") or locator.has_scheme("txt")) {
+        return _new_resource(
+          fetch_resource_chunks(
+            locator,
+            16 * 1024,
+            msgbus::message_priority::normal,
+            std::chrono::seconds{15}),
+          resource_kind::plain_text);
+    }
+    return _cancelled_resource(locator, resource_kind::plain_text);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request_float_vector(url locator) noexcept
