@@ -14,8 +14,9 @@ tlg_prefix="${pkg_prefix}/share/eagine/tilings"
 # ------------------------------------------------------------------------------
 mkdir -p "${tlg_prefix}"
 
-cp "${src_dir}/assets/tilings/"r4_s256_??.txt "${tlg_prefix}/"
-cp "${src_dir}/assets/tilings/"r4_s512_??.txt "${tlg_prefix}/"
+cp "${src_dir}/assets/tilings/"r4_s256_??.txt  "${tlg_prefix}/"
+cp "${src_dir}/assets/tilings/"r4_s512_??.txt  "${tlg_prefix}/"
+cp "${src_dir}/assets/tilings/"r4_s1024_??.txt "${tlg_prefix}/"
 # ------------------------------------------------------------------------------
 mkdir -p "${pkg_dir}/DEBIAN"
 cat << CONTROL > "${pkg_dir}/DEBIAN/control"

@@ -15,13 +15,20 @@ struct test_request_plain_text : eagitest::app_case {
     using launcher = eagitest::launcher<test_request_plain_text>;
 
     test_request_plain_text(auto& s, auto& ec)
-      : eagitest::app_case{s, ec, 1, "plain text"} {}
+      : eagitest::app_case{s, ec, 1, "plain text"}
+      , text{url{"txt:///Test"}, ec} {}
 
     auto is_done() noexcept -> bool final {
-        return true;
+        return text;
     }
 
-    void update() noexcept final {}
+    void update() noexcept final {
+        if(not text) {
+            text.load_if_needed(context());
+        }
+    }
+
+    loaded_resource<std::string> text;
 };
 //------------------------------------------------------------------------------
 // main
