@@ -257,5 +257,11 @@ eagine_add_module_tests(
 		eagine-app-testing-headers
 		EAGine::Deps::GLFW3
 )
+eagine_embed_target_resources(
+	TARGET test.eagine.app.resource_loader
+	RESOURCES
+		TestText "${CMAKE_CURRENT_SOURCE_DIR}/resource_loader.txt"
+	PACKED ENABLE_SEARCH
+)
 set_tests_properties(execute-test.eagine.app.resource_loader PROPERTIES COST 10)
 

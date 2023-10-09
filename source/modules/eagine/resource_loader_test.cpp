@@ -16,10 +16,24 @@ struct test_request_plain_text : eagitest::app_case {
 
     test_request_plain_text(auto& s, auto& ec)
       : eagitest::app_case{s, ec, 1, "plain text"}
-      , text{url{"txt:///Test"}, ec} {}
+      , text{eagine::url{"txt:///TestText"}, ec} {
+        text.loaded.connect(
+          make_callable_ref<&test_request_plain_text::on_loaded>(this));
+        too_long.reset();
+    }
+
+    void on_loaded(
+      const eagine::app::plain_text_resource::load_info& info) noexcept {
+        load_signal_received = true;
+        locator_is_ok = (info.base.locator.has_scheme("txt"));
+    }
+
+    auto is_loaded() const noexcept {
+        return text and load_signal_received and locator_is_ok;
+    }
 
     auto is_done() noexcept -> bool final {
-        return text;
+        return too_long or is_loaded();
     }
 
     void update() noexcept final {
@@ -28,7 +42,18 @@ struct test_request_plain_text : eagitest::app_case {
         }
     }
 
-    loaded_resource<std::string> text;
+    void clean_up() noexcept final {
+        check(text.is_loaded(), "text is loaded");
+        check(load_signal_received, "load signal received");
+        check(locator_is_ok, "locator is ok");
+
+        text.clean_up(context());
+    }
+
+    eagine::timeout too_long{std::chrono::seconds{10}};
+    eagine::app::plain_text_resource text;
+    bool load_signal_received{false};
+    bool locator_is_ok{false};
 };
 //------------------------------------------------------------------------------
 // main

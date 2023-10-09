@@ -1083,6 +1083,10 @@ public:
     /// @brief Requests plain text resource.
     auto request_plain_text(url locator) noexcept -> resource_request_result;
 
+    auto request(std::type_identity<std::string>, url locator) noexcept {
+        return request_plain_text(std::move(locator));
+    }
+
     /// @brief Requests string-list resource.
     auto request_string_list(url locator) noexcept -> resource_request_result;
 
