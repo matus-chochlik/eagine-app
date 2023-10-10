@@ -122,12 +122,66 @@ struct test_request_float_vector : eagitest::app_case {
     bool content_is_ok{false};
 };
 //------------------------------------------------------------------------------
+// vec3 vector
+//------------------------------------------------------------------------------
+struct test_request_vec3_vector : eagitest::app_case {
+    using launcher = eagitest::launcher<test_request_vec3_vector>;
+
+    test_request_vec3_vector(auto& s, auto& ec)
+      : eagitest::app_case{s, ec, 3, "vec3 vector"}
+      , vecs{eagine::url{"json:///TestVec3"}, ec} {
+        vecs.loaded.connect(
+          make_callable_ref<&test_request_vec3_vector::on_loaded>(this));
+        too_long.reset();
+    }
+
+    void on_loaded(
+      const eagine::app::vec3_vector_resource::load_info& info) noexcept {
+        load_signal_received = true;
+        locator_is_ok = info.base.locator.has_scheme("json") and
+                        info.base.locator.has_path("/TestVec3");
+        if(info.base.values.size() == 3 and vecs.size() == 3) {
+            content_is_ok = false;
+        }
+    }
+
+    auto is_loaded() const noexcept {
+        return load_signal_received and locator_is_ok and content_is_ok;
+    }
+
+    auto is_done() noexcept -> bool final {
+        return too_long or is_loaded();
+    }
+
+    void update() noexcept final {
+        if(not vecs) {
+            vecs.load_if_needed(context());
+        }
+    }
+
+    void clean_up() noexcept final {
+        check(vecs.is_loaded(), "values are loaded");
+        check(load_signal_received, "load signal received");
+        check(locator_is_ok, "locator is ok");
+        check(content_is_ok, "content is ok");
+
+        vecs.clean_up(context());
+    }
+
+    eagine::timeout too_long{std::chrono::seconds{10}};
+    eagine::app::vec3_vector_resource vecs;
+    bool load_signal_received{false};
+    bool locator_is_ok{false};
+    bool content_is_ok{false};
+};
+//------------------------------------------------------------------------------
 // main
 //------------------------------------------------------------------------------
 auto test_main(eagine::test_ctx& ctx) -> int {
-    eagitest::app_suite test{ctx, "resource loader", 2};
+    eagitest::app_suite test{ctx, "resource loader", 3};
     test.once<test_request_plain_text>();
     test.once<test_request_float_vector>();
+    test.once<test_request_vec3_vector>();
     return test.exit_code();
 }
 //------------------------------------------------------------------------------
