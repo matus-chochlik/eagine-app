@@ -25,11 +25,15 @@ struct test_request_plain_text : eagitest::app_case {
     void on_loaded(
       const eagine::app::plain_text_resource::load_info& info) noexcept {
         load_signal_received = true;
-        locator_is_ok = (info.base.locator.has_scheme("txt"));
+        locator_is_ok = info.base.locator.has_scheme("txt") and
+                        info.base.locator.has_path("/TestText");
+        content_is_ok = info.base.text.starts_with("Lorem ipsum") and
+                        info.base.text.ends_with("est laborum.") and
+                        text.starts_with("Lorem ipsum dolor sit amet");
     }
 
     auto is_loaded() const noexcept {
-        return text and load_signal_received and locator_is_ok;
+        return load_signal_received and locator_is_ok and content_is_ok;
     }
 
     auto is_done() noexcept -> bool final {
@@ -46,6 +50,7 @@ struct test_request_plain_text : eagitest::app_case {
         check(text.is_loaded(), "text is loaded");
         check(load_signal_received, "load signal received");
         check(locator_is_ok, "locator is ok");
+        check(content_is_ok, "content is ok");
 
         text.clean_up(context());
     }
@@ -54,6 +59,7 @@ struct test_request_plain_text : eagitest::app_case {
     eagine::app::plain_text_resource text;
     bool load_signal_received{false};
     bool locator_is_ok{false};
+    bool content_is_ok{false};
 };
 //------------------------------------------------------------------------------
 // main

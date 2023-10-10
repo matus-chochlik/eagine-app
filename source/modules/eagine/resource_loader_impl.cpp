@@ -759,13 +759,18 @@ void resource_loader::_init() noexcept {
 auto resource_loader::request_plain_text(url locator) noexcept
   -> resource_request_result {
     if(locator.has_path_suffix(".txt") or locator.has_scheme("txt")) {
-        return _new_resource(
-          fetch_resource_chunks(
-            locator,
-            16 * 1024,
-            msgbus::message_priority::normal,
-            std::chrono::seconds{15}),
-          resource_kind::plain_text);
+        if(const auto src_request{_new_resource(
+             fetch_resource_chunks(
+               locator,
+               16 * 1024,
+               msgbus::message_priority::normal,
+               std::chrono::seconds{15}),
+             resource_kind::plain_text)}) {
+            auto new_request{
+              _new_resource(std::move(locator), resource_kind::glsl_source)};
+            src_request.set_continuation(new_request);
+            return new_request;
+        }
     }
     return _cancelled_resource(locator, resource_kind::plain_text);
 }
