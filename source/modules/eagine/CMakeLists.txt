@@ -261,6 +261,7 @@ eagine_embed_target_resources(
 	TARGET test.eagine.app.resource_loader
 	RESOURCES
 		TestText "${CMAKE_CURRENT_SOURCE_DIR}/resource_loader_text.txt"
+		TestInts "${CMAKE_CURRENT_SOURCE_DIR}/resource_loader_ints.json"
 	PACKED ENABLE_SEARCH
 )
 set_tests_properties(execute-test.eagine.app.resource_loader PROPERTIES COST 10)
