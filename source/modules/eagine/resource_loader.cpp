@@ -942,14 +942,10 @@ concept resource_cancelled_observer = requires(
 };
 
 template <typename T>
-concept resource_blob_stream_data_appended_observer = requires(
-  T v,
-  identifier_t request_id,
-  const span_size_t offset,
-  const memory::span<const memory::const_block> data,
-  const msgbus::blob_info& binfo) {
-    v.handle_blob_stream_data_appended(request_id, offset, data, binfo);
-};
+concept resource_blob_stream_data_appended_observer =
+  requires(T v, const msgbus::blob_stream_chunk& chunk) {
+      v.handle_blob_stream_data_appended(chunk);
+  };
 
 template <typename T>
 concept resource_shape_generator_loaded_observer = requires(
@@ -1301,12 +1297,7 @@ private:
 
     void _init() noexcept;
 
-    void _handle_stream_data_appended(
-      const identifier_t blob_id,
-      const span_size_t offset,
-      const memory::span<const memory::const_block>,
-      const msgbus::blob_info& info) noexcept;
-
+    void _handle_stream_data_appended(const msgbus::blob_stream_chunk&) noexcept;
     void _handle_stream_finished(identifier_t blob_id) noexcept;
     void _handle_stream_cancelled(identifier_t blob_id) noexcept;
 

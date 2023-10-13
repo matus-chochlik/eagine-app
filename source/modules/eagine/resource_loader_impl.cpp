@@ -686,14 +686,12 @@ auto resource_loader::_is_json_resource(const url& locator) const noexcept
 }
 //------------------------------------------------------------------------------
 void resource_loader::_handle_stream_data_appended(
-  identifier_t request_id,
-  const span_size_t offset,
-  const memory::span<const memory::const_block> data,
-  const msgbus::blob_info& binfo) noexcept {
-    if(const auto found{find(_pending, request_id)}) {
+  const msgbus::blob_stream_chunk& chunk) noexcept {
+    if(const auto found{find(_pending, chunk.request_id)}) {
         if(const auto& prinfo{*found}) {
             if(const auto continuation{prinfo->continuation()}) {
-                continuation->handle_source_data(binfo, *prinfo, offset, data);
+                continuation->handle_source_data(
+                  chunk.info, *prinfo, chunk.offset, chunk.data);
             }
         }
     }
