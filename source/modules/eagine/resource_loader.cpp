@@ -45,10 +45,14 @@ struct resource_gl_buffer_params;
 export enum class resource_kind {
     /// @brief Unknown resource type.
     unknown,
+    /// @brief Plain text.
+    plain_text,
     /// @brief JSON text.
     json_text,
     /// @brief YAML text.
     yaml_text,
+    /// @brief Vector of string values.
+    string_list,
     /// @brief Vector of floating-point values.
     float_vector,
     /// @brief Vector of vec3 values.
@@ -279,6 +283,12 @@ private:
     };
 
     // resource loaded handlers
+    void _handle_plain_text(
+      const msgbus::blob_info&,
+      const pending_resource_info& source,
+      const span_size_t offset,
+      const memory::span<const memory::const_block> data) noexcept;
+
     void _handle_json_text(
       const msgbus::blob_info&,
       const pending_resource_info& source,
@@ -294,6 +304,10 @@ private:
     void _handle_value_tree(
       const pending_resource_info& source,
       const valtree::compound& tree) noexcept;
+
+    void _handle_string_list(
+      const pending_resource_info& source,
+      const std::vector<std::string>& strings) noexcept;
 
     void _handle_vec3_vector(
       const pending_resource_info& source,
@@ -626,12 +640,51 @@ export struct resource_loader_signals {
         return value_tree_loaded;
     }
 
+    /// @brief Type of parameter of the plain_text_loaded signal.
+    /// @see plain_text_loaded
+    struct plain_text_load_info {
+        const identifier_t request_id;
+        const url& locator;
+        std::string text;
+    };
+
+    template <>
+    struct get_load_info<std::string>
+      : std::type_identity<plain_text_load_info> {};
+
+    /// @brief Emitted when plain text is loaded.
+    signal<void(const plain_text_load_info&) noexcept> plain_text_loaded;
+
+    auto load_signal(std::type_identity<std::string>) noexcept -> auto& {
+        return plain_text_loaded;
+    }
+
+    /// @brief Type of parameter of the string_list_loaded signal.
+    /// @see string_list_loaded
+    struct string_list_load_info {
+        const identifier_t request_id;
+        const url& locator;
+        const std::vector<std::string>& strings;
+    };
+
+    template <>
+    struct get_load_info<std::vector<std::string>>
+      : std::type_identity<string_list_load_info> {};
+
+    /// @brief Emitted when plain text string is loaded.
+    signal<void(const string_list_load_info&) noexcept> string_list_loaded;
+
+    auto load_signal(std::type_identity<std::vector<std::string>>) noexcept
+      -> auto& {
+        return string_list_loaded;
+    }
+
     /// @brief Type of parameter of the float_vector_loaded signal.
     /// @see float_vector_loaded
     struct float_vector_load_info {
         const identifier_t request_id;
         const url& locator;
-        std::vector<float> values;
+        std::vector<float>& values;
     };
 
     template <>
@@ -889,14 +942,10 @@ concept resource_cancelled_observer = requires(
 };
 
 template <typename T>
-concept resource_blob_stream_data_appended_observer = requires(
-  T v,
-  identifier_t request_id,
-  const span_size_t offset,
-  const memory::span<const memory::const_block> data,
-  const msgbus::blob_info& binfo) {
-    v.handle_blob_stream_data_appended(request_id, offset, data, binfo);
-};
+concept resource_blob_stream_data_appended_observer =
+  requires(T v, const msgbus::blob_stream_chunk& chunk) {
+      v.handle_blob_stream_data_appended(chunk);
+  };
 
 template <typename T>
 concept resource_shape_generator_loaded_observer = requires(
@@ -1026,6 +1075,16 @@ public:
 
     /// @brief Does some work and updates internal state (should be called periodically).
     auto update() noexcept -> work_done;
+
+    /// @brief Requests plain text resource.
+    auto request_plain_text(url locator) noexcept -> resource_request_result;
+
+    auto request(std::type_identity<std::string>, url locator) noexcept {
+        return request_plain_text(std::move(locator));
+    }
+
+    /// @brief Requests string-list resource.
+    auto request_string_list(url locator) noexcept -> resource_request_result;
 
     /// @brief Requests a float vector resource.
     auto request_float_vector(url locator) noexcept -> resource_request_result;
@@ -1238,12 +1297,7 @@ private:
 
     void _init() noexcept;
 
-    void _handle_stream_data_appended(
-      const identifier_t blob_id,
-      const span_size_t offset,
-      const memory::span<const memory::const_block>,
-      const msgbus::blob_info& info) noexcept;
-
+    void _handle_stream_data_appended(const msgbus::blob_stream_chunk&) noexcept;
     void _handle_stream_finished(identifier_t blob_id) noexcept;
     void _handle_stream_cancelled(identifier_t blob_id) noexcept;
 

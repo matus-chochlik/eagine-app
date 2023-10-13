@@ -245,3 +245,25 @@ eagine_add_module(
 	PRIVATE_LINK_LIBRARIES
 		EAGine::Deps::GLFW3
 )
+
+eagine_add_module_tests(
+	eagine.app
+	UNITS
+		resource_loader
+	IMPORTS
+		eagine.core
+		eagine.app
+	PRIVATE_LINK_LIBRARIES
+		eagine-app-testing-headers
+		EAGine::Deps::GLFW3
+)
+eagine_embed_target_resources(
+	TARGET test.eagine.app.resource_loader
+	RESOURCES
+		TestText "${CMAKE_CURRENT_SOURCE_DIR}/resource_loader_text.txt"
+		TestInts "${CMAKE_CURRENT_SOURCE_DIR}/resource_loader_ints.json"
+		TestVec3 "${CMAKE_CURRENT_SOURCE_DIR}/resource_loader_vec3.json"
+	PACKED ENABLE_SEARCH
+)
+set_tests_properties(execute-test.eagine.app.resource_loader PROPERTIES COST 10)
+

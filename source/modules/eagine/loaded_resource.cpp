@@ -427,6 +427,36 @@ private:
     signal_binding_key _sig_key{};
 };
 //------------------------------------------------------------------------------
+export template <>
+class loaded_resource<std::string>
+  : public loaded_resource_common<loaded_resource<std::string>> {
+    using common = loaded_resource_common<loaded_resource<std::string>>;
+
+public:
+    using common::common;
+
+    /// @brief Cleans up this resource.
+    void clean_up(resource_loader& loader) {
+        this->resource().clear();
+        common::_disconnect(loader);
+    }
+
+    /// @brief Cleans up this resource.
+    void clean_up(execution_context& ctx) {
+        clean_up(ctx.loader());
+    }
+
+    /// @brief Indicates if this resource is loaded.
+    auto is_loaded() const noexcept -> bool {
+        return not this->empty();
+    }
+
+    auto assign(const typename common::base_load_info& info) noexcept -> bool {
+        return this->_assign(info.text);
+    }
+};
+export using plain_text_resource = loaded_resource<std::string>;
+//------------------------------------------------------------------------------
 export template <typename T>
 class loaded_resource<std::vector<T>>
   : public loaded_resource_common<loaded_resource<std::vector<T>>> {

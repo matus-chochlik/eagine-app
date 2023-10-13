@@ -1,0 +1,30 @@
+#!/bin/bash
+# Copyright Matus Chochlik.
+# Distributed under the Boost Software License, Version 1.0.
+# See accompanying file LICENSE_1_0.txt or copy at
+#  http://www.boost.org/LICENSE_1_0.txt
+#
+src_dir=$(realpath "@SRC_DIR@")
+pkg_dir=$(realpath "@PKG_DIR@")
+
+mkdir -p "${pkg_dir}/usr"
+pkg_prefix=$(realpath "@PKG_DIR@/usr")
+tlg_prefix="${pkg_prefix}/share/eagine/tilings"
+
+# ------------------------------------------------------------------------------
+mkdir -p "${tlg_prefix}"
+
+cp "${src_dir}/assets/tilings/"r4_s256_??.txt  "${tlg_prefix}/"
+cp "${src_dir}/assets/tilings/"r4_s512_??.txt  "${tlg_prefix}/"
+cp "${src_dir}/assets/tilings/"r4_s1024_??.txt "${tlg_prefix}/"
+# ------------------------------------------------------------------------------
+mkdir -p "${pkg_dir}/DEBIAN"
+cat << CONTROL > "${pkg_dir}/DEBIAN/control"
+Package: eagine-app-assets
+Version: @PKG_VERSION@
+Architecture: all
+Installed-Size: $(du -k -s "${pkg_dir:-.}" | cut -f 1)
+Maintainer: Matus Chochlik <matus.chochlik@proton.me>
+Description: Collection of assets usable with the EAGine applications.
+CONTROL
+# ------------------------------------------------------------------------------

@@ -101,10 +101,8 @@ void valtree_float_vector_builder::do_add(
 //------------------------------------------------------------------------------
 auto valtree_float_vector_builder::finish() noexcept -> bool {
     if(auto parent{_parent.lock()}) {
-        if(const auto cont{parent->continuation()}) {
-            cont->handle_float_vector(*parent, _values);
-            return true;
-        }
+        parent->handle_float_vector(*parent, _values);
+        return true;
     }
     return false;
 }

@@ -31,6 +31,7 @@ include(EAGineCoreCommon)
 find_package(EAGineGLFW3)
 
 add_subdirectory(assets)
+add_subdirectory(include)
 add_subdirectory(source)
 add_subdirectory(example)
 add_subdirectory(deploy)

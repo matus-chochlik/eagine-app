@@ -239,6 +239,38 @@ void pending_resource_info::cleanup() noexcept {
     }
 }
 //------------------------------------------------------------------------------
+void pending_resource_info::_handle_plain_text(
+  const msgbus::blob_info&,
+  const pending_resource_info&,
+  const span_size_t offset,
+  const memory::span<const memory::const_block> data) noexcept {
+    _parent.log_debug("loaded plain-text data")
+      .arg("requestId", _request_id)
+      .arg("offset", offset)
+      .arg("locator", _locator.str());
+
+    std::string text;
+    span_size_t total_size{0};
+    for(const auto chunk : data) {
+        total_size = safe_add(total_size, chunk.size());
+    }
+    text.reserve(std_size(total_size));
+    for(const auto chunk : data) {
+        append_to(as_chars(chunk), text);
+    }
+
+    if(is(resource_kind::string_list)) {
+        std::vector<std::string> strings;
+        if(const auto cont{continuation()}) {
+            cont->_handle_string_list(*this, strings);
+        }
+    }
+    _parent.plain_text_loaded(
+      {.request_id = _request_id, .locator = _locator, .text = std::move(text)});
+    _parent.resource_loaded(_request_id, _kind, _locator);
+    mark_finished();
+}
+//------------------------------------------------------------------------------
 void pending_resource_info::_handle_json_text(
   const msgbus::blob_info&,
   const pending_resource_info&,
@@ -301,6 +333,22 @@ void pending_resource_info::_handle_value_tree(
             add_shape_generator(std::move(gen));
         }
     }
+}
+//------------------------------------------------------------------------------
+void pending_resource_info::_handle_string_list(
+  const pending_resource_info& source,
+  const std::vector<std::string>& strings) noexcept {
+    _parent.log_info("loaded string list")
+      .arg("requestId", _request_id)
+      .arg("size", strings.size())
+      .arg("locator", _locator.str());
+
+    if(is(resource_kind::string_list)) {
+        _parent.string_list_loaded(
+          {.request_id = _request_id, .locator = _locator, .strings = strings});
+        _parent.resource_loaded(_request_id, _kind, _locator);
+    }
+    mark_finished();
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::handle_float_vector(
@@ -595,11 +643,14 @@ void pending_resource_info::handle_source_data(
   const span_size_t offset,
   const memory::span<const memory::const_block> data) noexcept {
     switch(rinfo._kind) {
+        case resource_kind::plain_text:
+            _handle_plain_text(binfo, rinfo, offset, data);
+            break;
         case resource_kind::json_text:
             _handle_json_text(binfo, rinfo, offset, data);
             break;
         case resource_kind::yaml_text:
-            _handle_json_text(binfo, rinfo, offset, data);
+            _handle_yaml_text(binfo, rinfo, offset, data);
             break;
         case resource_kind::glsl_text:
             _handle_glsl_strings(binfo, rinfo, offset, data);
@@ -635,14 +686,12 @@ auto resource_loader::_is_json_resource(const url& locator) const noexcept
 }
 //------------------------------------------------------------------------------
 void resource_loader::_handle_stream_data_appended(
-  identifier_t request_id,
-  const span_size_t offset,
-  const memory::span<const memory::const_block> data,
-  const msgbus::blob_info& binfo) noexcept {
-    if(const auto found{find(_pending, request_id)}) {
+  const msgbus::blob_stream_chunk& chunk) noexcept {
+    if(const auto found{find(_pending, chunk.request_id)}) {
         if(const auto& prinfo{*found}) {
             if(const auto continuation{prinfo->continuation()}) {
-                continuation->handle_source_data(binfo, *prinfo, offset, data);
+                continuation->handle_source_data(
+                  chunk.info, *prinfo, chunk.offset, chunk.data);
             }
         }
     }
@@ -703,6 +752,37 @@ void resource_loader::_init() noexcept {
       this, blob_stream_finished);
     connect<&resource_loader::_handle_stream_cancelled>(
       this, blob_stream_cancelled);
+}
+//------------------------------------------------------------------------------
+auto resource_loader::request_plain_text(url locator) noexcept
+  -> resource_request_result {
+    if(locator.has_path_suffix(".txt") or locator.has_scheme("txt")) {
+        if(const auto src_request{_new_resource(
+             fetch_resource_chunks(
+               locator,
+               16 * 1024,
+               msgbus::message_priority::normal,
+               std::chrono::seconds{15}),
+             resource_kind::plain_text)}) {
+            auto new_request{
+              _new_resource(std::move(locator), resource_kind::glsl_source)};
+            src_request.set_continuation(new_request);
+            return new_request;
+        }
+    }
+    return _cancelled_resource(locator, resource_kind::plain_text);
+}
+//------------------------------------------------------------------------------
+auto resource_loader::request_string_list(url locator) noexcept
+  -> resource_request_result {
+    if(const auto src_request{request_plain_text(locator)}) {
+        auto new_request{
+          _new_resource(std::move(locator), resource_kind::string_list)};
+        src_request.set_continuation(new_request);
+
+        return new_request;
+    }
+    return _cancelled_resource(locator, resource_kind::string_list);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request_float_vector(url locator) noexcept
