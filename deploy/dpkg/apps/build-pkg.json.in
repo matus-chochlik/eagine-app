@@ -1,0 +1,2 @@
+{"resource-provider":"$<TARGET_FILE:eagine-app-resource-provider>"
+}
