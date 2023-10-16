@@ -7,7 +7,7 @@
 {"variables":{
 	"min_log_severity": "stat",
 	"log_args": ["--min-log-severity", "${min_log_severity}"],
-	"conn_type": "local",
+	"conn_type": "posixmq",
 	"port": 34910,
 	"router_addr_args_posixmq": ["/$(uid posixmq)"],
 	"router_addr_args_local": ["$(in_work_dir router.socket)"],
@@ -19,7 +19,8 @@
 	"conn_type_arg_tcpip4": "asio-tcp-ipv4",
 	"conn_type_arg_udpip4": "asio-udp-ipv4",
 	"conn_type_arg": "--msgbus-${conn_type_arg_${conn_type}}",
-	"conn_args": ["${conn_type_arg}", "--msgbus-router-address", "$[router_addr_args...]"]
+	"conn_args": ["${conn_type_arg}", "--msgbus-router-address", "$[router_addr_args...]"],
+	"url": "eagires:///sequence?count=1048576"
 },"pipelines":[{
 	"identity": "router",
 	"required_by": ["provider"],
@@ -32,11 +33,19 @@
 		"$[log_args...]"]
 },{
 	"identity": "provider",
-	"required_by": ["client"],
+	"required_by": ["hexdump"],
 	"command": [
 		"$(eagiapp app-resource-provider)", "$<identity provider>",
+		"--app-resource-provider-max-idle-time", "15s",
+		"$[conn_args...]",
+		"$[log_args...]"]
+},{
+	"identity": "hexdump",
+	"command": [
+		"$(eagiapp msgbus-resource-hexdump)", "$<identity hexdump>",
+		"--url", "${url}",
 		"$[conn_args...]",
 		"$[log_args...]"]
 }],"expect":{
-	"clean_shutdown": ["router", "provider"]
+	"clean_shutdown": ["router", "provider", "hexdump"]
 }}
