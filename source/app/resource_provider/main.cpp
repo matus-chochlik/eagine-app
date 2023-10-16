@@ -33,20 +33,31 @@ auto main(main_ctx& ctx) -> int {
     msgbus::resource_data_server_node resource_server{bus, driver};
     conn_setup.setup_connectors(resource_server, address);
 
+    auto idle_too_long =
+      ctx.config()
+        .get<std::chrono::seconds>("app.resource_provider.max_idle_time")
+        .and_then([&](auto max_idle_time) {
+            return std::optional<timeout>{{max_idle_time}};
+        });
+
     const auto is_done{[&] {
-        return interrupted or resource_server.is_done();
+        return interrupted or resource_server.is_done() or
+               (idle_too_long and idle_too_long->is_expired());
     }};
 
-    const auto sleep_interval{[](work_done wd) -> std::chrono::microseconds {
+    const auto handle_work_done{[&](work_done wd) -> std::chrono::microseconds {
+        if(wd and idle_too_long) {
+            idle_too_long->reset();
+        }
         return wd ? std::chrono::microseconds{25}
-                  : std::chrono::microseconds{10000};
+                  : std::chrono::microseconds{1000};
     }};
 
     auto& wd = ctx.watchdog();
     wd.declare_initialized();
     while(not is_done()) {
         wd.notify_alive();
-        std::this_thread::sleep_for(sleep_interval(
+        std::this_thread::sleep_for(handle_work_done(
           resource_server.update_message_age().update_and_process_all()));
     }
     wd.announce_shutdown();
