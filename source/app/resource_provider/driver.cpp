@@ -10,9 +10,15 @@
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
+static inline auto get_default_blob_timeout(const span_size_t size) noexcept
+  -> std::chrono::seconds {
+    return std::max(
+      std::chrono::seconds{size / 1024}, std::chrono::seconds{15});
+}
+//------------------------------------------------------------------------------
 auto resource_provider_interface::get_blob_timeout(
   const span_size_t size) noexcept -> std::chrono::seconds {
-    return std::chrono::seconds{size / 1024};
+    return get_default_blob_timeout(size);
 }
 //------------------------------------------------------------------------------
 auto resource_provider_interface::get_blob_priority(
@@ -67,7 +73,7 @@ auto resource_provider_driver::get_blob_timeout(
   const span_size_t size) noexcept -> std::chrono::seconds {
     return find_provider_of(locator)
       .member(&resource_provider_interface::get_blob_timeout, size)
-      .value_or(std::chrono::seconds{size / 1024});
+      .value_or(get_default_blob_timeout(size));
 }
 //------------------------------------------------------------------------------
 auto resource_provider_driver::get_blob_priority(

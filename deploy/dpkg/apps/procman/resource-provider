@@ -7,7 +7,7 @@
 {"variables":{
 	"min_log_severity": "stat",
 	"log_args": ["--min-log-severity", "${min_log_severity}"],
-	"conn_type": "posixmq",
+	"conn_type": "local",
 	"port": 34910,
 	"router_addr_args_posixmq": ["/$(uid posixmq)"],
 	"router_addr_args_local": ["$(in_work_dir router.socket)"],
