@@ -37,7 +37,8 @@ void resource_provider_driver::_add(
 //------------------------------------------------------------------------------
 resource_provider_driver::resource_provider_driver(main_ctx_parent parent)
   : main_ctx_object{"RsrcPrDrvr", parent} {
-    _add(provider_lorem_ipsum());
+    _add(provider_eagitexi_2d_single_rgb(*this));
+    _add(provider_text_lorem_ipsum(*this));
 }
 //------------------------------------------------------------------------------
 auto resource_provider_driver::find_provider_of(const url& locator) noexcept

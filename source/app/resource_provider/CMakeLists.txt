@@ -6,7 +6,8 @@
 add_executable(
 	eagine-app-resource-provider
 	driver.cpp
-	provider_lorem_ipsum.cpp
+	eagitexi_single_color.cpp
+	text_lorem_ipsum.cpp
 	main.cpp)
 
 eagine_target_modules(

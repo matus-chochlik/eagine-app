@@ -12,7 +12,11 @@
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-auto provider_lorem_ipsum() -> unique_holder<resource_provider_interface>;
+auto provider_eagitexi_2d_single_rgb(main_ctx_parent)
+  -> unique_holder<resource_provider_interface>;
+//------------------------------------------------------------------------------
+auto provider_text_lorem_ipsum(main_ctx_parent)
+  -> unique_holder<resource_provider_interface>;
 //------------------------------------------------------------------------------
 } // namespace eagine::app
 
