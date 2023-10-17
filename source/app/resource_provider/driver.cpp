@@ -46,7 +46,10 @@ auto resource_provider_driver::find_provider_of(const url& locator) noexcept
 //------------------------------------------------------------------------------
 auto resource_provider_driver::has_resource(const url& locator) noexcept
   -> tribool {
-    return find_provider_of(locator).has_value();
+    if(find_provider_of(locator)) {
+        return true;
+    }
+    return indeterminate;
 }
 //------------------------------------------------------------------------------
 auto resource_provider_driver::get_resource_io(
