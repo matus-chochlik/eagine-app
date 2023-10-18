@@ -35,10 +35,15 @@ void resource_provider_driver::_add(
     _providers.emplace_back(std::move(provider));
 }
 //------------------------------------------------------------------------------
-resource_provider_driver::resource_provider_driver(main_ctx_parent parent)
-  : main_ctx_object{"RsrcPrDrvr", parent} {
+void resource_provider_driver::_populate() {
+    _add(provider_eagitexi_random(*this));
     _add(provider_eagitexi_2d_single_rgb8(*this));
     _add(provider_text_lorem_ipsum(*this));
+}
+//------------------------------------------------------------------------------
+resource_provider_driver::resource_provider_driver(main_ctx_parent parent)
+  : main_ctx_object{"RsrcPrDrvr", parent} {
+    _populate();
 }
 //------------------------------------------------------------------------------
 auto resource_provider_driver::find_provider_of(const url& locator) noexcept

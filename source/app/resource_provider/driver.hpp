@@ -55,6 +55,7 @@ public:
 
 private:
     void _add(unique_holder<resource_provider_interface>);
+    void _populate();
 
     std::vector<unique_holder<resource_provider_interface>> _providers;
 };
