@@ -9,7 +9,7 @@
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-struct eagitexi_2d_single_rgb_io final
+struct eagitexi_2d_single_rgb8_io final
   : main_ctx_object
   , msgbus::source_blob_io {
     auto make_header(const int w, const int h, const int l) {
@@ -46,7 +46,7 @@ struct eagitexi_2d_single_rgb_io final
         cmp.finish();
     }
 
-    eagitexi_2d_single_rgb_io(
+    eagitexi_2d_single_rgb8_io(
       int r,
       int g,
       int b,
@@ -54,7 +54,7 @@ struct eagitexi_2d_single_rgb_io final
       int h,
       int l,
       main_ctx_parent parent)
-      : main_ctx_object{"IT2dRGB", parent}
+      : main_ctx_object{"IT2dRGB10", parent}
       , _width{w}
       , _height{h}
       , _data{make_header(w, h, l)} {
@@ -62,7 +62,7 @@ struct eagitexi_2d_single_rgb_io final
           limit_cast<byte>(r), limit_cast<byte>(g), limit_cast<byte>(b), w * h);
     }
 
-    ~eagitexi_2d_single_rgb_io() noexcept {
+    ~eagitexi_2d_single_rgb8_io() noexcept {
         main_context().buffers().eat(std::move(_data));
     }
 
@@ -80,12 +80,12 @@ struct eagitexi_2d_single_rgb_io final
     memory::buffer _data;
 };
 //------------------------------------------------------------------------------
-struct eagitexi_2d_single_rgb_provider final
+struct eagitexi_2d_single_rgb8_provider final
   : main_ctx_object
   , resource_provider_interface {
 
-    eagitexi_2d_single_rgb_provider(main_ctx_parent parent) noexcept
-      : main_ctx_object{"GT2dRGB", parent} {}
+    eagitexi_2d_single_rgb8_provider(main_ctx_parent parent) noexcept
+      : main_ctx_object{"GT2dRGB8", parent} {}
 
     static auto valid_clr(int c) noexcept -> bool {
         return (c >= 0) and (c <= 255);
@@ -100,7 +100,7 @@ struct eagitexi_2d_single_rgb_provider final
     }
 
     auto has_resource(const url& locator) noexcept -> bool final {
-        if(locator.has_scheme("eagitexi") and locator.has_path("/2d_single_rgb")) {
+        if(locator.has_scheme("eagitexi") and locator.has_path("/2d_single_rgb8")) {
             const auto& q{locator.query()};
             const bool args_ok =
               valid_lvl(q.arg_value_as<int>("r").value_or(0)) and
@@ -118,7 +118,7 @@ struct eagitexi_2d_single_rgb_provider final
       -> unique_holder<msgbus::source_blob_io> final {
         const auto& q{locator.query()};
         return {
-          hold<eagitexi_2d_single_rgb_io>,
+          hold<eagitexi_2d_single_rgb8_io>,
           q.arg_value_as<int>("r").value_or(0),
           q.arg_value_as<int>("g").value_or(0),
           q.arg_value_as<int>("b").value_or(0),
@@ -129,9 +129,9 @@ struct eagitexi_2d_single_rgb_provider final
     }
 };
 //------------------------------------------------------------------------------
-auto provider_eagitexi_2d_single_rgb(main_ctx_parent parent)
+auto provider_eagitexi_2d_single_rgb8(main_ctx_parent parent)
   -> unique_holder<resource_provider_interface> {
-    return {hold<eagitexi_2d_single_rgb_provider>, parent};
+    return {hold<eagitexi_2d_single_rgb8_provider>, parent};
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app
