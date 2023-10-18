@@ -39,6 +39,12 @@ struct pixel_provider_factory_interface
       -> unique_holder<pixel_provider_interface> = 0;
 };
 //------------------------------------------------------------------------------
+auto provider_eagitexi_2d_r8(
+  main_ctx_parent,
+  std::string path,
+  shared_holder<pixel_provider_factory_interface>)
+  -> unique_holder<resource_provider_interface>;
+//------------------------------------------------------------------------------
 auto provider_eagitexi_2d_rgb8(
   main_ctx_parent,
   std::string path,
