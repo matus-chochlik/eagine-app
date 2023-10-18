@@ -5,133 +5,60 @@
 /// See accompanying file LICENSE_1_0.txt or copy at
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
+#include "eagitexi_provider.hpp"
 #include "providers.hpp"
+#include <cassert>
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-struct eagitexi_2d_single_rgb8_io final
-  : main_ctx_object
-  , msgbus::source_blob_io {
-    auto make_header(const int w, const int h, const int l) {
-        std::stringstream hdr;
-        hdr << R"({"level":)" << l;
-        hdr << R"(,"width":)" << w;
-        hdr << R"(,"height":)" << h;
-        hdr << R"(,"channels":3)";
-        hdr << R"(,"data_type":"unsigned_byte")";
-        hdr << R"(,"format":"rgb")";
-        hdr << R"(,"iformat":"rgb8")";
-        hdr << R"(,"tag":["generated"])";
-        hdr << R"(,"data_filer":"zlib")";
-        hdr << '}';
-        auto buf{main_context().buffers().get(1024)};
-        memory::copy_into(as_bytes(string_view{hdr.str()}), buf);
-        return buf;
+struct single_rgb8_pixel_provider : pixel_provider_interface {
+    std::array<byte, 3> rgb;
+
+    single_rgb8_pixel_provider(int r, int g, int b) noexcept
+      : rgb{{limit_cast<byte>(r), limit_cast<byte>(g), limit_cast<byte>(b)}} {}
+
+    auto pixel_byte_count() noexcept -> int final {
+        return 3;
     }
 
-    void make_data(byte r, byte g, byte b, int n) {
-        const auto append{[this](memory::const_block packed) {
-            memory::append_to(packed, _data);
-            return true;
-        }};
-        stream_compression cmp{
-          main_context().compressor(),
-          {construct_from, append},
-          default_data_compression_method()};
-
-        const std::array<byte, 3> rgb{{r, g, b}};
-        for(int i = 0; i < n; ++i) {
-            cmp.next(view(rgb), data_compression_level::highest);
-        }
-        cmp.finish();
+    auto estimated_data_size(int, int, int) noexcept -> span_size_t final {
+        return 1024;
     }
 
-    eagitexi_2d_single_rgb8_io(
-      int r,
-      int g,
-      int b,
-      int w,
-      int h,
-      int l,
-      main_ctx_parent parent)
-      : main_ctx_object{"IT2dRGB10", parent}
-      , _width{w}
-      , _height{h}
-      , _data{make_header(w, h, l)} {
-        make_data(
-          limit_cast<byte>(r), limit_cast<byte>(g), limit_cast<byte>(b), w * h);
+    auto pixel_byte(int, int, int, int, int, int, int c) noexcept
+      -> byte final {
+        assert(c >= 0 and c <= 3);
+        return rgb[std_size(c)];
     }
-
-    ~eagitexi_2d_single_rgb8_io() noexcept {
-        main_context().buffers().eat(std::move(_data));
-    }
-
-    auto total_size() noexcept -> span_size_t final {
-        return span_size(_data.size());
-    }
-
-    auto fetch_fragment(const span_size_t offs, memory::block dst) noexcept
-      -> span_size_t final {
-        return copy(head(view(_data), dst.size()), dst).size();
-    }
-
-    int _width;
-    int _height;
-    memory::buffer _data;
 };
 //------------------------------------------------------------------------------
-struct eagitexi_2d_single_rgb8_provider final
-  : main_ctx_object
-  , resource_provider_interface {
-
-    eagitexi_2d_single_rgb8_provider(main_ctx_parent parent) noexcept
-      : main_ctx_object{"GT2dRGB8", parent} {}
-
+struct single_rgb8_pixel_provider_factory : pixel_provider_factory_interface {
     static auto valid_clr(int c) noexcept -> bool {
         return (c >= 0) and (c <= 255);
     }
 
-    static auto valid_dim(int d) noexcept -> bool {
-        return (d > 0) and (d <= 64 * 1024);
-    }
-
-    static auto valid_lvl(int l) noexcept -> bool {
-        return (l >= 0);
-    }
-
     auto has_resource(const url& locator) noexcept -> bool final {
-        if(locator.has_scheme("eagitexi") and locator.has_path("/2d_single_rgb8")) {
-            const auto& q{locator.query()};
-            const bool args_ok =
-              valid_lvl(q.arg_value_as<int>("r").value_or(0)) and
-              valid_lvl(q.arg_value_as<int>("g").value_or(0)) and
-              valid_lvl(q.arg_value_as<int>("b").value_or(0)) and
-              valid_dim(q.arg_value_as<int>("width").value_or(1)) and
-              valid_dim(q.arg_value_as<int>("height").value_or(1)) and
-              valid_lvl(q.arg_value_as<int>("level").value_or(1));
-            return args_ok;
-        }
-        return false;
+        const auto& q{locator.query()};
+        return valid_clr(q.arg_value_as<int>("r").value_or(0)) and
+               valid_clr(q.arg_value_as<int>("g").value_or(0)) and
+               valid_clr(q.arg_value_as<int>("b").value_or(0));
     }
 
-    auto get_resource_io(const url& locator)
-      -> unique_holder<msgbus::source_blob_io> final {
+    auto make_provider(const url& locator)
+      -> unique_holder<pixel_provider_interface> final {
         const auto& q{locator.query()};
         return {
-          hold<eagitexi_2d_single_rgb8_io>,
-          q.arg_value_as<int>("r").value_or(0),
-          q.arg_value_as<int>("g").value_or(0),
-          q.arg_value_as<int>("b").value_or(0),
-          q.arg_value_as<int>("width").value_or(2),
-          q.arg_value_as<int>("height").value_or(2),
-          q.arg_value_as<int>("length").value_or(0),
-          as_parent()};
+          hold<single_rgb8_pixel_provider>,
+          q.arg_value_as<int>("r").value_or(1),
+          q.arg_value_as<int>("g").value_or(1),
+          q.arg_value_as<int>("b").value_or(1)};
     }
 };
 //------------------------------------------------------------------------------
 auto provider_eagitexi_2d_single_rgb8(main_ctx_parent parent)
   -> unique_holder<resource_provider_interface> {
-    return {hold<eagitexi_2d_single_rgb8_provider>, parent};
+    return provider_eagitexi_2d_rgb8(
+      parent, "/2d_single_rgb8", {hold<single_rgb8_pixel_provider_factory>});
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app
