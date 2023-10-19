@@ -6,6 +6,10 @@
 add_executable(
 	eagine-app-resource-provider
 	driver.cpp
+	eagitexi_random.cpp
+	eagitexi_provider.cpp
+	eagitexi_single_color.cpp
+	text_lorem_ipsum.cpp
 	main.cpp)
 
 eagine_target_modules(

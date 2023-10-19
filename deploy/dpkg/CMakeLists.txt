@@ -24,6 +24,7 @@ add_subdirectory(assets)
 add_subdirectory(tools)
 
 if(TARGET eagine.app)
+	add_subdirectory(apps)
 	add_subdirectory(dev)
 endif()
 

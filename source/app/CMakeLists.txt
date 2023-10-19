@@ -43,7 +43,7 @@ install(
 )
 
 install(
-	PROGRAMS blender-make-vertex-pivots
+	PROGRAMS blender-make-vertex-pivots.py
 	RENAME eagine-blender-make-vertex-pivots
 	DESTINATION bin
 )
