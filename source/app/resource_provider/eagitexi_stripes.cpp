@@ -11,8 +11,8 @@
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-struct checks_r8_pixel_provider : pixel_provider_interface {
-    checks_r8_pixel_provider(int s) noexcept
+struct stripes_r8_pixel_provider : pixel_provider_interface {
+    stripes_r8_pixel_provider(int s) noexcept
       : size{s} {
         assert(size > 0);
     }
@@ -31,13 +31,13 @@ struct checks_r8_pixel_provider : pixel_provider_interface {
         y /= size;
         z /= size;
         assert(c == 0);
-        return ((x % 2 + y % 2 + z % 2) % 2 == 0) ? 0x00U : 0xFFU;
+        return ((x + y + z) % 2 == 0) ? 0x00U : 0xFFU;
     }
 
     int size;
 };
 //------------------------------------------------------------------------------
-struct checks_r8_pixel_provider_factory : pixel_provider_factory_interface {
+struct stripes_r8_pixel_provider_factory : pixel_provider_factory_interface {
     static auto valid_size(int s) noexcept -> bool {
         return s > 0;
     }
@@ -51,15 +51,15 @@ struct checks_r8_pixel_provider_factory : pixel_provider_factory_interface {
       -> unique_holder<pixel_provider_interface> final {
         const auto& q{locator.query()};
         return {
-          hold<checks_r8_pixel_provider>,
+          hold<stripes_r8_pixel_provider>,
           q.arg_value_as<int>("size").value_or(8)};
     }
 };
 //------------------------------------------------------------------------------
-auto provider_eagitexi_2d_checks_r8(main_ctx_parent parent)
+auto provider_eagitexi_2d_stripes_r8(main_ctx_parent parent)
   -> unique_holder<resource_provider_interface> {
     return provider_eagitexi_2d_r8(
-      parent, "/2d_checks_r8", {hold<checks_r8_pixel_provider_factory>});
+      parent, "/2d_stripes_r8", {hold<stripes_r8_pixel_provider_factory>});
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app
