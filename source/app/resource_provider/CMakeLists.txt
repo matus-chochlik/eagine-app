@@ -9,6 +9,7 @@ add_executable(
 	eagitexi_random.cpp
 	eagitexi_provider.cpp
 	eagitexi_single_color.cpp
+	eagitexi_checks.cpp
 	text_lorem_ipsum.cpp
 	main.cpp)
 
