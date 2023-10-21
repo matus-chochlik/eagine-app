@@ -32,7 +32,9 @@ class resource_provider_driver final
   : public main_ctx_object
   , public msgbus::resource_server_driver {
 public:
-    resource_provider_driver(main_ctx_parent);
+    resource_provider_driver(
+      main_ctx_parent,
+      msgbus::resource_data_consumer_node&);
 
     auto find_provider_of(const url&) noexcept
       -> optional_reference<resource_provider_interface>;
@@ -55,7 +57,7 @@ public:
 
 private:
     void _add(unique_holder<resource_provider_interface>);
-    void _populate();
+    void _populate(msgbus::resource_data_consumer_node&);
 
     std::vector<unique_holder<resource_provider_interface>> _providers;
 };
