@@ -6,6 +6,7 @@
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
 import eagine.core;
+import eagine.sslplus;
 import eagine.msgbus;
 import eagine.app;
 import std;
@@ -26,6 +27,16 @@ auto main(main_ctx& ctx) -> int {
 
     msgbus::router_address address{ctx};
     msgbus::connection_setup conn_setup(ctx);
+
+    std::optional<msgbus::router> router(ctx);
+    if(ctx.config().is_set("app.resource_provider.with_router")) {
+        log.info("starting with message bus router");
+
+        router.emplace(ctx);
+        router->add_ca_certificate_pem(ca_certificate_pem(ctx));
+        router->add_certificate_pem(msgbus::router_certificate_pem(ctx));
+        msgbus::setup_acceptors(ctx, *router);
+    }
 
     msgbus::endpoint bus_consumer{main_ctx_object{"ResConEndp", ctx}};
     msgbus::resource_data_consumer_node resource_consumer{bus_consumer};
@@ -59,14 +70,21 @@ auto main(main_ctx& ctx) -> int {
     wd.declare_initialized();
 
     while(not is_done()) {
+        some_true something_done;
         wd.notify_alive();
 
-        some_true something_done{
-          resource_provider.update_message_age().update_and_process_all()};
+        resource_provider.update_message_age();
+        something_done(resource_provider.update_and_process_all());
         something_done(resource_consumer.update_and_process_all());
+        if(router) {
+            something_done(router->update(8));
+        }
         std::this_thread::sleep_for(handle_work_done(something_done));
     }
     wd.announce_shutdown();
+    if(router) {
+        router->finish();
+    }
     return 0;
 }
 //------------------------------------------------------------------------------
