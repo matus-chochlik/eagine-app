@@ -28,7 +28,7 @@
 		"$(eagiapp app-resource-provider)", "$<identity provider>",
 		"--app-resource-provider-with-router",
 		"--app-resource-provider-only-if-busy",
-		"--app-resource-provider-max-idle-time", "10s",
+		"--app-resource-provider-max-idle-time", "20s",
 		"$[conn_args...]",
 		"$[log_args...]"]
 },{

@@ -33,21 +33,26 @@ private:
     app::resource_provider_driver _driver{as_parent(), _resource_consumer};
     msgbus::resource_data_server_node _resource_server{_provider_bus, _driver};
 
+    auto _get_timeout() noexcept -> std::optional<timeout>;
+
     std::optional<msgbus::router> _router;
     std::optional<timeout> _idle_too_long;
-    bool _only_if_busy;
 };
+//------------------------------------------------------------------------------
+auto resource_provider::_get_timeout() noexcept -> std::optional<timeout> {
+    if(app_config().is_set("app.resource_provider.only_if_busy")) {
+        return app_config()
+          .get<std::chrono::seconds>("app.resource_provider.max_idle_time")
+          .and_then([&](auto max_idle_time) -> std::optional<timeout> {
+              return {{max_idle_time}};
+          });
+    }
+    return {};
+}
 //------------------------------------------------------------------------------
 resource_provider::resource_provider(main_ctx_parent parent) noexcept
   : main_ctx_object{"ResrcPrvdr", parent}
-  , _idle_too_long{app_config()
-                     .get<std::chrono::seconds>(
-                       "app.resource_provider.max_idle_time")
-                     .and_then(
-                       [&](auto max_idle_time) -> std::optional<timeout> {
-                           return {{max_idle_time}};
-                       })}
-  , _only_if_busy{app_config().is_set("app.resource_provider.only_if_busy")} {
+  , _idle_too_long{_get_timeout()} {
 
     auto& ctx{main_context()};
 
@@ -80,7 +85,7 @@ void resource_provider::update() {
         something_done(_router->update(8));
     }
     if(something_done) {
-        if(not _only_if_busy or _resource_server.has_pending_blobs()) {
+        if(_idle_too_long and _resource_server.has_pending_blobs()) {
             _idle_too_long->reset();
         }
         std::this_thread::yield();
