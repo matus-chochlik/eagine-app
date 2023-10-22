@@ -38,13 +38,17 @@ auto main(main_ctx& ctx) -> int {
         msgbus::setup_acceptors(ctx, *router);
     }
 
-    msgbus::endpoint bus_consumer{main_ctx_object{"ResConEndp", ctx}};
-    msgbus::resource_data_consumer_node resource_consumer{bus_consumer};
+    msgbus::endpoint consumer_bus{main_ctx_object{"ResConEndp", ctx}};
+    msgbus::resource_data_consumer_node resource_consumer{consumer_bus};
+    conn_setup.setup_connectors(resource_consumer, address);
 
-    msgbus::endpoint bus_provider{main_ctx_object{"ResProEndp", ctx}};
+    msgbus::endpoint provider_bus{main_ctx_object{"ResProEndp", ctx}};
     app::resource_provider_driver driver{ctx, resource_consumer};
-    msgbus::resource_data_server_node resource_provider{bus_provider, driver};
+    msgbus::resource_data_server_node resource_provider{provider_bus, driver};
     conn_setup.setup_connectors(resource_provider, address);
+
+    const bool only_if_busy{
+      ctx.config().is_set("app.resource_provider.only_if_busy")};
 
     auto idle_too_long{
       ctx.config()
@@ -56,14 +60,6 @@ auto main(main_ctx& ctx) -> int {
     const auto is_done{[&] {
         return interrupted or resource_provider.is_done() or
                (idle_too_long and idle_too_long->is_expired());
-    }};
-
-    const auto handle_work_done{[&](some_true wd) -> std::chrono::microseconds {
-        if(wd and idle_too_long) {
-            idle_too_long->reset();
-        }
-        return wd ? std::chrono::microseconds{25}
-                  : std::chrono::microseconds{1000};
     }};
 
     auto& wd = ctx.watchdog();
@@ -79,12 +75,20 @@ auto main(main_ctx& ctx) -> int {
         if(router) {
             something_done(router->update(8));
         }
-        std::this_thread::sleep_for(handle_work_done(something_done));
+        if(something_done) {
+            if(not only_if_busy or resource_provider.has_pending_blobs()) {
+                idle_too_long->reset();
+            }
+            std::this_thread::yield();
+        } else {
+            std::this_thread::sleep_for(std::chrono::microseconds{1000});
+        }
     }
-    wd.announce_shutdown();
     if(router) {
         router->finish();
     }
+    wd.announce_shutdown();
+
     return 0;
 }
 //------------------------------------------------------------------------------
