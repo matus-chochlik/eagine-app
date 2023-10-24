@@ -5,8 +5,8 @@
 /// See accompanying file LICENSE_1_0.txt or copy at
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
-#ifndef EAGINE_RESOURCE_PROVIDER_EAGITEXI_BASE_HPP
-#define EAGINE_RESOURCE_PROVIDER_EAGITEXI_BASE_HPP
+#ifndef EAGINE_RESOURCE_PROVIDER_EAGITEXI_PROVIDER_HPP
+#define EAGINE_RESOURCE_PROVIDER_EAGITEXI_PROVIDER_HPP
 
 import eagine.core;
 import std;

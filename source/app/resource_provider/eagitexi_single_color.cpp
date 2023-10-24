@@ -5,6 +5,7 @@
 /// See accompanying file LICENSE_1_0.txt or copy at
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
+#include "eagitex_provider.hpp"
 #include "eagitexi_provider.hpp"
 #include "providers.hpp"
 #include <cassert>
@@ -59,6 +60,11 @@ auto provider_eagitexi_2d_single_rgb8(main_ctx_parent parent)
   -> unique_holder<resource_provider_interface> {
     return provider_eagitexi_2d_rgb8(
       parent, "/2d_single_rgb8", {hold<single_rgb8_pixel_provider_factory>});
+}
+//------------------------------------------------------------------------------
+auto provider_eagitex_2d_single_rgb8(main_ctx_parent parent)
+  -> unique_holder<resource_provider_interface> {
+    return provider_eagitex_2d_square_rgb8ub(parent, "/2d_square_single_rgb8");
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app
