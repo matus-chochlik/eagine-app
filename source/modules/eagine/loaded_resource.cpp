@@ -321,7 +321,7 @@ public:
     /// @brief Type of the loaded signal parameter.
     using load_info = resource_load_info<Resource>;
 
-    /// @brief Signal emmitted when the resource is successfully loaded.
+    /// @brief Signal emitted when the resource is successfully loaded.
     signal<void(const load_info&) noexcept> loaded;
 
     /// @brief Constructor specifying the resource locator.
@@ -487,6 +487,7 @@ public:
     }
 };
 //------------------------------------------------------------------------------
+export using string_list_resource = loaded_resource<std::vector<std::string>>;
 export using float_vector_resource = loaded_resource<std::vector<float>>;
 export using vec3_vector_resource =
   loaded_resource<std::vector<math::vector<float, 3, true>>>;

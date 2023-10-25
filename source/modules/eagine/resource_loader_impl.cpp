@@ -259,9 +259,13 @@ void pending_resource_info::_handle_plain_text(
         append_to(as_chars(chunk), text);
     }
 
-    if(is(resource_kind::string_list)) {
-        std::vector<std::string> strings;
-        if(const auto cont{continuation()}) {
+    if(const auto cont{continuation()}) {
+        if(cont->is(resource_kind::string_list)) {
+            std::vector<std::string> strings;
+            memory::for_each_delimited(
+              view(text), view_one('\n'), [&](const string_view s) {
+                  strings.push_back(to_string(s));
+              });
             cont->_handle_string_list(*this, strings);
         }
     }
@@ -317,6 +321,7 @@ void pending_resource_info::_handle_yaml_text(
       .arg("locator", _locator.str());
 
     if(is(resource_kind::value_tree)) {
+        // TODO
     }
     mark_finished();
 }
@@ -345,7 +350,10 @@ void pending_resource_info::_handle_string_list(
 
     if(is(resource_kind::string_list)) {
         _parent.string_list_loaded(
-          {.request_id = _request_id, .locator = _locator, .strings = strings});
+          {.request_id = _request_id,
+           .locator = _locator,
+           .strings = strings,
+           .values = strings});
         _parent.resource_loaded(_request_id, _kind, _locator);
     }
     mark_finished();

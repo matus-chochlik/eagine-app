@@ -62,13 +62,90 @@ struct test_request_plain_text : eagitest::app_case {
     bool content_is_ok{false};
 };
 //------------------------------------------------------------------------------
+// string list
+//------------------------------------------------------------------------------
+struct test_request_string_list : eagitest::app_case {
+    using launcher = eagitest::launcher<test_request_string_list>;
+
+    test_request_string_list(auto& s, auto& ec)
+      : eagitest::app_case{s, ec, 2, "string list"}
+      , strings{eagine::url{"txt:///TestText"}, ec} {
+        strings.loaded.connect(
+          make_callable_ref<&test_request_string_list::on_loaded>(this));
+        too_long.reset();
+    }
+
+    void on_loaded(
+      const eagine::app::string_list_resource::load_info& info) noexcept {
+        load_signal_received = true;
+        locator_is_ok = info.base.locator.has_scheme("txt") and
+                        info.base.locator.has_path("/TestText");
+        if(info.base.strings.size() == 6 and strings.size() == 6) {
+            content_is_ok = true;
+            content_is_ok =
+              content_is_ok and (strings[0] ==
+                                 "Lorem ipsum dolor sit amet, consectetur "
+                                 "adipiscing elit, sed do eiusmod tempor");
+            content_is_ok =
+              content_is_ok and (strings[1] ==
+                                 "incididunt ut labore et dolore magna aliqua. "
+                                 "Ut enim ad minim veniam, quis");
+            content_is_ok =
+              content_is_ok and (strings[2] ==
+                                 "nostrud exercitation ullamco laboris nisi ut "
+                                 "aliquip ex ea commodo consequat.");
+            content_is_ok =
+              content_is_ok and (strings[3] ==
+                                 "Duis aute irure dolor in reprehenderit in "
+                                 "voluptate velit esse cillum dolore eu");
+            content_is_ok =
+              content_is_ok and (strings[4] ==
+                                 "fugiat nulla pariatur. Excepteur sint "
+                                 "occaecat cupidatat non proident, sunt");
+            content_is_ok =
+              content_is_ok and (strings[5] ==
+                                 "in culpa qui officia deserunt mollit anim "
+                                 "id est laborum.");
+        }
+    }
+
+    auto is_loaded() const noexcept {
+        return load_signal_received and locator_is_ok and content_is_ok;
+    }
+
+    auto is_done() noexcept -> bool final {
+        return too_long or is_loaded();
+    }
+
+    void update() noexcept final {
+        if(not strings) {
+            strings.load_if_needed(context());
+        }
+    }
+
+    void clean_up() noexcept final {
+        check(strings.is_loaded(), "values are loaded");
+        check(load_signal_received, "load signal received");
+        check(locator_is_ok, "locator is ok");
+        check(content_is_ok, "content is ok");
+
+        strings.clean_up(context());
+    }
+
+    eagine::timeout too_long{std::chrono::seconds{15}};
+    eagine::app::string_list_resource strings;
+    bool load_signal_received{false};
+    bool locator_is_ok{false};
+    bool content_is_ok{false};
+};
+//------------------------------------------------------------------------------
 // float vector
 //------------------------------------------------------------------------------
 struct test_request_float_vector : eagitest::app_case {
     using launcher = eagitest::launcher<test_request_float_vector>;
 
     test_request_float_vector(auto& s, auto& ec)
-      : eagitest::app_case{s, ec, 2, "float vector"}
+      : eagitest::app_case{s, ec, 3, "float vector"}
       , ints{eagine::url{"json:///TestInts"}, ec} {
         ints.loaded.connect(
           make_callable_ref<&test_request_float_vector::on_loaded>(this));
@@ -128,7 +205,7 @@ struct test_request_vec3_vector : eagitest::app_case {
     using launcher = eagitest::launcher<test_request_vec3_vector>;
 
     test_request_vec3_vector(auto& s, auto& ec)
-      : eagitest::app_case{s, ec, 3, "vec3 vector"}
+      : eagitest::app_case{s, ec, 4, "vec3 vector"}
       , vecs{eagine::url{"json:///TestVec3"}, ec} {
         vecs.loaded.connect(
           make_callable_ref<&test_request_vec3_vector::on_loaded>(this));
@@ -191,8 +268,9 @@ struct test_request_vec3_vector : eagitest::app_case {
 // main
 //------------------------------------------------------------------------------
 auto test_main(eagine::test_ctx& ctx) -> int {
-    eagitest::app_suite test{ctx, "resource loader", 3};
+    eagitest::app_suite test{ctx, "resource loader", 4};
     test.once<test_request_plain_text>();
+    test.once<test_request_string_list>();
     test.once<test_request_float_vector>();
     test.once<test_request_vec3_vector>();
     return test.exit_code();

@@ -665,13 +665,14 @@ export struct resource_loader_signals {
         const identifier_t request_id;
         const url& locator;
         const std::vector<std::string>& strings;
+        const std::vector<std::string>& values{strings};
     };
 
     template <>
     struct get_load_info<std::vector<std::string>>
       : std::type_identity<string_list_load_info> {};
 
-    /// @brief Emitted when plain text string is loaded.
+    /// @brief Emitted when list of strings is loaded.
     signal<void(const string_list_load_info&) noexcept> string_list_loaded;
 
     auto load_signal(std::type_identity<std::vector<std::string>>) noexcept
@@ -1086,6 +1087,12 @@ public:
     /// @brief Requests string-list resource.
     auto request_string_list(url locator) noexcept -> resource_request_result;
 
+    auto request(
+      std::type_identity<std::vector<std::string>>,
+      url locator) noexcept {
+        return request_string_list(std::move(locator));
+    }
+
     /// @brief Requests a float vector resource.
     auto request_float_vector(url locator) noexcept -> resource_request_result;
 
@@ -1102,7 +1109,7 @@ public:
         return request_vec3_vector(std::move(locator));
     }
 
-    /// @brief Requests a smoothe vec3 curve resource.
+    /// @brief Requests a smooth vec3 curve resource.
     auto request_smooth_vec3_curve(url locator) noexcept
       -> resource_request_result;
 
