@@ -140,8 +140,21 @@ struct test_request_vec3_vector : eagitest::app_case {
         load_signal_received = true;
         locator_is_ok = info.base.locator.has_scheme("json") and
                         info.base.locator.has_path("/TestVec3");
-        if(info.base.values.size() == 3 and vecs.size() == 3) {
-            content_is_ok = false;
+        if(info.base.values.size() == 4 and vecs.size() == 4) {
+            using eagine::are_equal;
+            content_is_ok = true;
+            content_is_ok = content_is_ok and are_equal(vecs[0].x(), 1.F);
+            content_is_ok = content_is_ok and are_equal(vecs[0].y(), 0.F);
+            content_is_ok = content_is_ok and are_equal(vecs[0].z(), 0.F);
+            content_is_ok = content_is_ok and are_equal(vecs[1].x(), 0.F);
+            content_is_ok = content_is_ok and are_equal(vecs[1].y(), 2.F);
+            content_is_ok = content_is_ok and are_equal(vecs[1].z(), 0.F);
+            content_is_ok = content_is_ok and are_equal(vecs[2].x(), 0.F);
+            content_is_ok = content_is_ok and are_equal(vecs[2].y(), 0.F);
+            content_is_ok = content_is_ok and are_equal(vecs[2].z(), 3.F);
+            content_is_ok = content_is_ok and are_equal(vecs[3].x(), 4.F);
+            content_is_ok = content_is_ok and are_equal(vecs[3].y(), 5.F);
+            content_is_ok = content_is_ok and are_equal(vecs[3].z(), 6.F);
         }
     }
 

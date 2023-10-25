@@ -78,7 +78,7 @@ void valtree_float_vector_builder::do_add(
   span<const T> data) noexcept {
     if(path.size() == 2) {
         if(not data.empty()) {
-            if((path.starts_with("values")) and (path.starts_with("data"))) {
+            if((path.starts_with("values")) or (path.starts_with("data"))) {
                 for(const auto v : data) {
                     _values.push_back(float(v));
                 }
@@ -92,7 +92,7 @@ void valtree_float_vector_builder::do_add(
   span<const float> data) noexcept {
     if(path.size() == 2) {
         if(not data.empty()) {
-            if((path.starts_with("values")) and (path.starts_with("data"))) {
+            if((path.starts_with("values")) or (path.starts_with("data"))) {
                 _values.insert(_values.end(), data.begin(), data.end());
             }
         }
@@ -129,37 +129,14 @@ public:
     using base::do_add;
 
     template <std::integral T>
-    void do_add(const basic_string_path& path, span<const T> data) noexcept {
-        if(not _do_add(path, data)) {
-            if((path.size() == 1) and data.has_single_value()) {
-                if((path.starts_with("count")) or (path.starts_with("size"))) {
-                    _values.reserve(std_size(*data));
-                }
-            }
-        }
-    }
+    void do_add(const basic_string_path& path, span<const T> data) noexcept;
 
     template <std::floating_point T>
-    void do_add(const basic_string_path& path, span<const T> data) noexcept {
-        _do_add(path, data);
-    }
+    void do_add(const basic_string_path& path, span<const T> data) noexcept;
 
-    void finish_object(const basic_string_path& path) noexcept final {
-        if(path.size() == 2) {
-            if((path.starts_with("values")) or (path.starts_with("data"))) {
-                _values.push_back(_temp);
-                _temp = {0.F, 0.F, 0.F};
-            }
-        }
-    }
+    void finish_object(const basic_string_path& path) noexcept final;
 
-    auto finish() noexcept -> bool final {
-        if(auto parent{_parent.lock()}) {
-            parent->handle_vec3_vector(*parent, _values);
-            return true;
-        }
-        return false;
-    }
+    auto finish() noexcept -> bool final;
 
 private:
     template <typename T>
@@ -201,6 +178,44 @@ auto valtree_vec3_vector_builder::_do_add(
                 return true;
             }
         }
+    }
+    return false;
+}
+//------------------------------------------------------------------------------
+template <std::integral T>
+void valtree_vec3_vector_builder::do_add(
+  const basic_string_path& path,
+  span<const T> data) noexcept {
+    if(not _do_add(path, data)) {
+        if((path.size() == 1) and data.has_single_value()) {
+            if((path.starts_with("count")) or (path.starts_with("size"))) {
+                _values.reserve(std_size(*data));
+            }
+        }
+    }
+}
+//------------------------------------------------------------------------------
+template <std::floating_point T>
+void valtree_vec3_vector_builder::do_add(
+  const basic_string_path& path,
+  span<const T> data) noexcept {
+    _do_add(path, data);
+}
+//------------------------------------------------------------------------------
+void valtree_vec3_vector_builder::finish_object(
+  const basic_string_path& path) noexcept {
+    if(path.size() == 2) {
+        if((path.starts_with("values")) or (path.starts_with("data"))) {
+            _values.push_back(_temp);
+            _temp = {0.F, 0.F, 0.F};
+        }
+    }
+}
+//------------------------------------------------------------------------------
+auto valtree_vec3_vector_builder::finish() noexcept -> bool {
+    if(auto parent{_parent.lock()}) {
+        parent->handle_vec3_vector(*parent, _values);
+        return true;
     }
     return false;
 }
