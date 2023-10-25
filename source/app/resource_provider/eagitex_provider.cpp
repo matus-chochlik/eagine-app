@@ -23,7 +23,7 @@ struct eagitex_2d_square_io final
       string_view data_type,
       string_view format,
       string_view iformat,
-      string_view url_args) {
+      const url& locator) {
         int l = 0;
         for(int i = s; i > 0; i /= 2) {
             ++l;
@@ -39,12 +39,28 @@ struct eagitex_2d_square_io final
         hdr << R"(,"tag":["generated"])";
         hdr << R"(,"images":[)";
 
+        std::string url_args;
+
+        const auto is_common_arg{[](const string_view arg) {
+            return arg == "width" or arg == "height" or arg == "levels";
+        }};
+
+        for(const auto& [arg, value] : locator.query()) {
+            if(not is_common_arg(arg)) {
+                url_args.append("+");
+                append_to(arg, url_args);
+                url_args.append("=");
+                append_to(value, url_args);
+            }
+        }
+
         l = 0;
         while(s > 0) {
             hdr << R"({"url":"eagitexi://)" << path;
             hdr << "?level=" << l;
             hdr << "+width=" << s;
             hdr << "+height=" << s;
+            hdr << url_args;
             hdr << R"(","level":)" << l << '}';
 
             s /= 2;
@@ -62,10 +78,9 @@ struct eagitex_2d_square_io final
       string_view data_type,
       string_view format,
       string_view iformat,
-      string_view url_args)
+      const url& locator)
       : main_ctx_object{"ETx2S", parent}
-      , _header{make_header(s, c, path, data_type, format, iformat, url_args)} {
-    }
+      , _header{make_header(s, c, path, data_type, format, iformat, locator)} {}
 
     auto total_size() noexcept -> span_size_t final {
         return span_size(_header.size());
@@ -126,7 +141,7 @@ struct eagitex_2d_square_provider final
           _data_type,
           _format,
           _iformat,
-          "#TODO"};
+          locator};
     }
 
     std::string _path;
