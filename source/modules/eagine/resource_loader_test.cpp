@@ -8,6 +8,7 @@
 
 #include <eagine/testing/unit_begin_app.hpp>
 import eagine.core;
+import eagine.shapes;
 //------------------------------------------------------------------------------
 // plain text
 //------------------------------------------------------------------------------
@@ -265,14 +266,81 @@ struct test_request_vec3_vector : eagitest::app_case {
     bool content_is_ok{false};
 };
 //------------------------------------------------------------------------------
+// shape generator
+//------------------------------------------------------------------------------
+struct test_request_shape_generator : eagitest::app_case {
+    using launcher = eagitest::launcher<test_request_shape_generator>;
+
+    test_request_shape_generator(auto& s, auto& ec)
+      : eagitest::app_case{s, ec, 5, "shape generator"}
+      , shape{eagine::url{"json:///TestMesh"}, ec} {
+        shape.loaded.connect(
+          make_callable_ref<&test_request_shape_generator::on_loaded>(this));
+        too_long.reset();
+    }
+
+    void on_loaded(
+      const eagine::app::shape_generator_resource::load_info& info) noexcept {
+        using eagine::shapes::vertex_attrib_kind;
+
+        load_signal_received = true;
+        locator_is_ok = info.base.locator.has_scheme("json") and
+                        info.base.locator.has_path("/TestMesh");
+        content_is_ok = true;
+        content_is_ok = content_is_ok and (shape->vertex_count() == 4);
+        content_is_ok = content_is_ok and (shape->index_count() == 12);
+        content_is_ok =
+          content_is_ok and
+          (shape->index_type() == eagine::shapes::index_data_type::unsigned_16);
+        content_is_ok =
+          content_is_ok and (shape->has_variant(vertex_attrib_kind::position));
+        content_is_ok = content_is_ok and
+                        (shape->has_variant({vertex_attrib_kind::color, 0}));
+        content_is_ok = content_is_ok and
+                        (shape->has_variant({vertex_attrib_kind::color, 1}));
+        content_is_ok =
+          content_is_ok and (shape->has_variant(vertex_attrib_kind::occlusion));
+    }
+
+    auto is_loaded() const noexcept {
+        return load_signal_received and locator_is_ok and content_is_ok;
+    }
+
+    auto is_done() noexcept -> bool final {
+        return too_long or is_loaded();
+    }
+
+    void update() noexcept final {
+        if(not shape) {
+            shape.load_if_needed(context());
+        }
+    }
+
+    void clean_up() noexcept final {
+        check(shape.is_loaded(), "values are loaded");
+        check(load_signal_received, "load signal received");
+        check(locator_is_ok, "locator is ok");
+        check(content_is_ok, "content is ok");
+
+        shape.clean_up(context());
+    }
+
+    eagine::timeout too_long{std::chrono::seconds{15}};
+    eagine::app::shape_generator_resource shape;
+    bool load_signal_received{false};
+    bool locator_is_ok{false};
+    bool content_is_ok{false};
+};
+//------------------------------------------------------------------------------
 // main
 //------------------------------------------------------------------------------
 auto test_main(eagine::test_ctx& ctx) -> int {
-    eagitest::app_suite test{ctx, "resource loader", 4};
+    eagitest::app_suite test{ctx, "resource loader", 5};
     test.once<test_request_plain_text>();
     test.once<test_request_string_list>();
     test.once<test_request_float_vector>();
     test.once<test_request_vec3_vector>();
+    test.once<test_request_shape_generator>();
     return test.exit_code();
 }
 //------------------------------------------------------------------------------
