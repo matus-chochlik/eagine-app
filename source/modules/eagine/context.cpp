@@ -246,11 +246,7 @@ export class execution_context
   : public main_ctx_object
   , private input_sink {
 public:
-    execution_context(main_ctx_parent parent) noexcept
-      : main_ctx_object("AppExecCtx", parent)
-      , _options{*this}
-      , _registry{*this}
-      , _loader{_registry.emplace<resource_loader>("RsrsLoadr")} {}
+    execution_context(main_ctx_parent parent) noexcept;
 
     /// @brief Returns the application execution result.
     auto result() const noexcept -> int {
@@ -291,17 +287,7 @@ public:
     void clean_up() noexcept;
 
     /// @brief Starts the main application loop (will block until stopped).
-    auto run() noexcept -> execution_context& {
-        declare_state("running", "runStart", "runFinish");
-        active_state("running");
-        log_info("application main loop started").tag("runStart");
-        while(is_running()) {
-            update();
-        }
-        log_info("application main loop finishing").tag("runFinish");
-        clean_up();
-        return *this;
-    }
+    auto run() noexcept -> execution_context&;
 
     /// @brief Indicates if the application ran long enough.
     auto enough_run_time() const noexcept -> bool;
@@ -466,10 +452,7 @@ public:
     auto map_cursor_motion_x(
       const identifier mapping_id,
       const message_id input_id,
-      const input_setup setup) -> execution_context& {
-        return map_input(
-          mapping_id, input_id, {"Mouse"}, {"Cursor", "MotionX"}, setup);
-    }
+      const input_setup setup) -> execution_context&;
 
     /// @brief Map a specified logical input to a mouse x-axis motion signal.
     auto map_cursor_motion_x(const message_id input_id, const input_setup setup)
@@ -481,10 +464,7 @@ public:
     auto map_cursor_motion_y(
       const identifier mapping_id,
       const message_id input_id,
-      const input_setup setup) -> execution_context& {
-        return map_input(
-          mapping_id, input_id, {"Mouse"}, {"Cursor", "MotionY"}, setup);
-    }
+      const input_setup setup) -> execution_context&;
 
     /// @brief Map a specified logical input to a mouse y-axis motion signal.
     auto map_cursor_motion_y(const message_id input_id, const input_setup setup)
@@ -496,10 +476,7 @@ public:
     auto map_wheel_scroll_y(
       const identifier mapping_id,
       const message_id input_id,
-      const input_setup setup) -> execution_context& {
-        return map_input(
-          mapping_id, input_id, {"Mouse"}, {"Wheel", "ScrollY"}, setup);
-    }
+      const input_setup setup) -> execution_context&;
 
     /// @brief Map a specified logical input to a y-axis scroll signal.
     auto map_wheel_scroll_y(const message_id input_id, const input_setup setup)
@@ -516,10 +493,7 @@ public:
     auto map_left_mouse_button(
       const identifier mapping_id,
       const message_id input_id,
-      const input_setup setup) -> execution_context& {
-        return map_input(
-          mapping_id, input_id, {"Mouse"}, {"Cursor", "Pressure"}, setup);
-    }
+      const input_setup setup) -> execution_context&;
 
     /// @brief Map a specified logical input to a left mouse button signal.
     auto map_left_mouse_button(
@@ -600,11 +574,7 @@ public:
         return switch_input_mapping({});
     }
 
-    auto stop_running_input() noexcept -> input_slot {
-        return {
-          message_id{"App", "Stop"},
-          make_callable_ref<&execution_context::_handle_stop_running>(this)};
-    }
+    auto stop_running_input() noexcept -> input_slot;
 
     /// @brief Generates random uniformly-distributed bytes into @p dest.
     void random_uniform(span<byte> dest);
@@ -657,46 +627,17 @@ private:
       std::tuple<input_setup, input_handler>>
       _mapped_inputs;
 
-    void _handle_stop_running(const input& engaged) noexcept {
-        if(engaged) {
-            stop_running();
-        }
-    }
+    void _handle_stop_running(const input& engaged) noexcept;
 
     template <typename T>
     void _forward_input(
       const input_info& info,
-      const input_value<T>& value) noexcept {
-        if(const auto found{eagine::find(
-             _mapped_inputs,
-             std::make_tuple(info.device_id, info.signal_id))}) {
-            const auto& [setup, handler] = *found;
-            if(setup.is_applicable() and setup.has(info.value_kind)) {
-                handler(input(value, info, setup));
-            }
-        }
-        _state->notice_user_active();
-    }
+      const input_value<T>& value) noexcept;
 
-    void consume(
-      const input_info& info,
-      const input_value<bool>& value) noexcept final {
-        _forward_input(info, value);
-    }
-    void consume(const input_info& info, const input_value<int>& value) noexcept
-      final {
-        _forward_input(info, value);
-    }
-    void consume(
-      const input_info& info,
-      const input_value<float>& value) noexcept final {
-        _forward_input(info, value);
-    }
-    void consume(
-      const input_info& info,
-      const input_value<double>& value) noexcept final {
-        _forward_input(info, value);
-    }
+    void consume(const input_info&, const input_value<bool>&) noexcept final;
+    void consume(const input_info&, const input_value<int>&) noexcept final;
+    void consume(const input_info&, const input_value<float>&) noexcept final;
+    void consume(const input_info&, const input_value<double>&) noexcept final;
 };
 //------------------------------------------------------------------------------
 /// @brief Common implementation of the application interface.

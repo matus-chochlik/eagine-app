@@ -418,6 +418,12 @@ inline auto make_all_hmi_providers(main_ctx_parent parent)
 //------------------------------------------------------------------------------
 // execution_context
 //------------------------------------------------------------------------------
+execution_context::execution_context(main_ctx_parent parent) noexcept
+  : main_ctx_object("AppExecCtx", parent)
+  , _options{*this}
+  , _registry{*this}
+  , _loader{_registry.emplace<resource_loader>("RsrsLoadr")} {}
+//------------------------------------------------------------------------------
 inline auto execution_context::_setup_providers() noexcept -> bool {
     const auto try_init = [&](auto provider) -> bool {
         if(provider->is_initialized()) {
@@ -568,6 +574,18 @@ void execution_context::clean_up() noexcept {
     }
 }
 //------------------------------------------------------------------------------
+auto execution_context::run() noexcept -> execution_context& {
+    declare_state("running", "runStart", "runFinish");
+    active_state("running");
+    log_info("application main loop started").tag("runStart");
+    while(is_running()) {
+        update();
+    }
+    log_info("application main loop finishing").tag("runFinish");
+    clean_up();
+    return *this;
+}
+//------------------------------------------------------------------------------
 void execution_context::update() noexcept {
     const auto exec_time{measure_time_interval("appUpdate")};
     _registry.update_and_process();
@@ -695,6 +713,38 @@ auto execution_context::map_input(
     return *this;
 }
 //------------------------------------------------------------------------------
+auto execution_context::map_cursor_motion_x(
+  const identifier mapping_id,
+  const message_id input_id,
+  const input_setup setup) -> execution_context& {
+    return map_input(
+      mapping_id, input_id, {"Mouse"}, {"Cursor", "MotionX"}, setup);
+}
+//------------------------------------------------------------------------------
+auto execution_context::map_cursor_motion_y(
+  const identifier mapping_id,
+  const message_id input_id,
+  const input_setup setup) -> execution_context& {
+    return map_input(
+      mapping_id, input_id, {"Mouse"}, {"Cursor", "MotionY"}, setup);
+}
+//------------------------------------------------------------------------------
+auto execution_context::map_wheel_scroll_y(
+  const identifier mapping_id,
+  const message_id input_id,
+  const input_setup setup) -> execution_context& {
+    return map_input(
+      mapping_id, input_id, {"Mouse"}, {"Wheel", "ScrollY"}, setup);
+}
+//------------------------------------------------------------------------------
+auto execution_context::map_left_mouse_button(
+  const identifier mapping_id,
+  const message_id input_id,
+  const input_setup setup) -> execution_context& {
+    return map_input(
+      mapping_id, input_id, {"Mouse"}, {"Cursor", "Pressure"}, setup);
+}
+//------------------------------------------------------------------------------
 auto execution_context::map_inputs(const identifier mapping_id)
   -> execution_context& {
     map_key(mapping_id, {"App", "Stop"}, {"Escape"});
@@ -725,6 +775,56 @@ auto execution_context::switch_input_mapping(const identifier mapping_id)
         _input_mapping = mapping_id;
     }
     return *this;
+}
+//------------------------------------------------------------------------------
+auto execution_context::stop_running_input() noexcept -> input_slot {
+    return {
+      message_id{"App", "Stop"},
+      make_callable_ref<&execution_context::_handle_stop_running>(this)};
+}
+//------------------------------------------------------------------------------
+void execution_context::_handle_stop_running(const input& engaged) noexcept {
+    if(engaged) {
+        stop_running();
+    }
+}
+//------------------------------------------------------------------------------
+template <typename T>
+void execution_context::_forward_input(
+  const input_info& info,
+  const input_value<T>& value) noexcept {
+    if(const auto found{eagine::find(
+         _mapped_inputs, std::make_tuple(info.device_id, info.signal_id))}) {
+        const auto& [setup, handler] = *found;
+        if(setup.is_applicable() and setup.has(info.value_kind)) {
+            handler(input(value, info, setup));
+        }
+    }
+    _state->notice_user_active();
+}
+//------------------------------------------------------------------------------
+void execution_context::consume(
+  const input_info& info,
+  const input_value<bool>& value) noexcept {
+    _forward_input(info, value);
+}
+//------------------------------------------------------------------------------
+void execution_context::consume(
+  const input_info& info,
+  const input_value<int>& value) noexcept {
+    _forward_input(info, value);
+}
+//------------------------------------------------------------------------------
+void execution_context::consume(
+  const input_info& info,
+  const input_value<float>& value) noexcept {
+    _forward_input(info, value);
+}
+//------------------------------------------------------------------------------
+void execution_context::consume(
+  const input_info& info,
+  const input_value<double>& value) noexcept {
+    _forward_input(info, value);
 }
 //------------------------------------------------------------------------------
 void execution_context::random_uniform(span<byte> dest) {
