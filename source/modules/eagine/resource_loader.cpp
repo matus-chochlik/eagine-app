@@ -156,6 +156,10 @@ public:
       const pending_resource_info& source,
       std::vector<math::vector<float, 3, true>>& values) noexcept;
 
+    void handle_mat4_vector(
+      const pending_resource_info& source,
+      std::vector<math::matrix<float, 4, 4, true, true>>& values) noexcept;
+
     void add_shape_generator(shared_holder<shapes::generator> gen) noexcept;
     void add_gl_shape_context(video_context&) noexcept;
     void add_gl_geometry_and_bindings_context(
@@ -313,6 +317,10 @@ private:
       const pending_resource_info& source,
       const std::vector<math::vector<float, 3, true>>& values) noexcept;
 
+    void _handle_mat4_vector(
+      const pending_resource_info& source,
+      const std::vector<math::matrix<float, 4, 4, true, true>>& values) noexcept;
+
     auto _apply_shape_modifiers(shared_holder<shapes::generator>) noexcept
       -> shared_holder<shapes::generator>;
     void _handle_shape_generator(
@@ -437,6 +445,9 @@ auto make_valtree_float_vector_builder(
   const shared_holder<pending_resource_info>& parent) noexcept
   -> unique_holder<valtree::object_builder>;
 auto make_valtree_vec3_vector_builder(
+  const shared_holder<pending_resource_info>& parent) noexcept
+  -> unique_holder<valtree::object_builder>;
+auto make_valtree_mat4_vector_builder(
   const shared_holder<pending_resource_info>& parent) noexcept
   -> unique_holder<valtree::object_builder>;
 auto make_valtree_camera_parameters_builder(
@@ -742,6 +753,27 @@ export struct resource_loader_signals {
         math::cubic_bezier_curves<math::vector<float, 3, true>, float>>) noexcept
       -> auto& {
         return smooth_vec3_curve_loaded;
+    }
+
+    /// @brief Type of parameter of the mat4_vector_loaded signal.
+    /// @see mat4_vector_loaded
+    struct mat4_vector_load_info {
+        const identifier_t request_id;
+        const url& locator;
+        std::vector<math::matrix<float, 4, 4, true, true>>& values;
+    };
+
+    template <>
+    struct get_load_info<std::vector<math::matrix<float, 4, 4, true, true>>>
+      : std::type_identity<mat4_vector_load_info> {};
+
+    /// @brief Emitted when a vector of mat4 values is loaded.
+    signal<void(const mat4_vector_load_info&) noexcept> mat4_vector_loaded;
+
+    auto load_signal(
+      std::type_identity<
+        std::vector<math::matrix<float, 4, 4, true, true>>>) noexcept -> auto& {
+        return mat4_vector_loaded;
     }
 
     /// @brief Type of parameter of the glsl_source_loaded signal.
@@ -1118,6 +1150,15 @@ public:
         math::cubic_bezier_curves<math::vector<float, 3, true>, float>>,
       url locator) noexcept {
         return request_smooth_vec3_curve(std::move(locator));
+    }
+
+    /// @brief Requests a 4x4 matrix resource.
+    auto request_mat4_vector(url locator) noexcept -> resource_request_result;
+
+    auto request(
+      std::type_identity<std::vector<math::matrix<float, 4, 4, true, true>>>,
+      url locator) noexcept {
+        return request_mat4_vector(std::move(locator));
     }
 
     /// @brief Requests a value tree object resource.

@@ -284,7 +284,6 @@ struct test_request_smooth_vec3_curve : eagitest::app_case {
         load_signal_received = true;
         locator_is_ok = info.base.locator.has_scheme("json") and
                         info.base.locator.has_path("/TestPath");
-        std::cout << info.base.curve.control_points().size() << std::endl;
         if(info.base.curve.control_points().size() == 13) {
             using eagine::are_equal;
             content_is_ok = true;
@@ -323,13 +322,142 @@ struct test_request_smooth_vec3_curve : eagitest::app_case {
     bool content_is_ok{false};
 };
 //------------------------------------------------------------------------------
+// mat4 vector
+//------------------------------------------------------------------------------
+struct test_request_mat4_vector : eagitest::app_case {
+    using launcher = eagitest::launcher<test_request_mat4_vector>;
+
+    test_request_mat4_vector(auto& s, auto& ec)
+      : eagitest::app_case{s, ec, 6, "mat4 vector"}
+      , mats{eagine::url{"json:///TestMat4"}, ec} {
+        mats.loaded.connect(
+          make_callable_ref<&test_request_mat4_vector::on_loaded>(this));
+        too_long.reset();
+    }
+
+    void on_loaded(
+      const eagine::app::mat4_vector_resource::load_info& info) noexcept {
+        load_signal_received = true;
+        locator_is_ok = info.base.locator.has_scheme("json") and
+                        info.base.locator.has_path("/TestMat4");
+        if(info.base.values.size() == 3 and mats.size() == 3) {
+            using eagine::are_equal;
+            using eagine::math::get_rm;
+            content_is_ok = true;
+            content_is_ok =
+              content_is_ok and are_equal(get_rm<0, 0>(mats[0]), 1.F);
+            content_is_ok =
+              content_is_ok and are_equal(get_rm<0, 1>(mats[0]), 0.F);
+            content_is_ok =
+              content_is_ok and are_equal(get_rm<0, 2>(mats[0]), 0.F);
+            content_is_ok =
+              content_is_ok and are_equal(get_rm<0, 3>(mats[0]), 0.F);
+            content_is_ok =
+              content_is_ok and are_equal(get_rm<1, 0>(mats[0]), 0.F);
+            content_is_ok =
+              content_is_ok and are_equal(get_rm<1, 1>(mats[0]), 2.F);
+            content_is_ok =
+              content_is_ok and are_equal(get_rm<1, 2>(mats[0]), 0.F);
+            content_is_ok =
+              content_is_ok and are_equal(get_rm<1, 3>(mats[0]), 0.F);
+            content_is_ok =
+              content_is_ok and are_equal(get_rm<2, 0>(mats[0]), 0.F);
+            content_is_ok =
+              content_is_ok and are_equal(get_rm<2, 1>(mats[0]), 0.F);
+            content_is_ok =
+              content_is_ok and are_equal(get_rm<2, 2>(mats[0]), 3.F);
+            content_is_ok =
+              content_is_ok and are_equal(get_rm<2, 3>(mats[0]), 0.F);
+            content_is_ok =
+              content_is_ok and are_equal(get_rm<3, 0>(mats[0]), 0.F);
+            content_is_ok =
+              content_is_ok and are_equal(get_rm<3, 1>(mats[0]), 0.F);
+            content_is_ok =
+              content_is_ok and are_equal(get_rm<3, 2>(mats[0]), 0.F);
+            content_is_ok =
+              content_is_ok and are_equal(get_rm<3, 3>(mats[0]), 4.F);
+
+            content_is_ok =
+              content_is_ok and are_equal(get_rm<0, 0>(mats[1]), 5.F);
+            content_is_ok =
+              content_is_ok and are_equal(get_rm<1, 1>(mats[1]), 6.F);
+            content_is_ok =
+              content_is_ok and are_equal(get_rm<2, 2>(mats[1]), 7.F);
+            content_is_ok =
+              content_is_ok and are_equal(get_rm<3, 3>(mats[1]), 8.F);
+
+            content_is_ok =
+              content_is_ok and are_equal(get_rm<0, 0>(mats[2]), 0.F);
+            content_is_ok =
+              content_is_ok and are_equal(get_rm<0, 1>(mats[2]), 1.F);
+            content_is_ok =
+              content_is_ok and are_equal(get_rm<0, 2>(mats[2]), 2.F);
+            content_is_ok =
+              content_is_ok and are_equal(get_rm<0, 3>(mats[2]), 3.F);
+            content_is_ok =
+              content_is_ok and are_equal(get_rm<1, 0>(mats[2]), 4.F);
+            content_is_ok =
+              content_is_ok and are_equal(get_rm<1, 1>(mats[2]), 5.F);
+            content_is_ok =
+              content_is_ok and are_equal(get_rm<1, 2>(mats[2]), 6.F);
+            content_is_ok =
+              content_is_ok and are_equal(get_rm<1, 3>(mats[2]), 7.F);
+            content_is_ok =
+              content_is_ok and are_equal(get_rm<2, 0>(mats[2]), 8.F);
+            content_is_ok =
+              content_is_ok and are_equal(get_rm<2, 1>(mats[2]), 9.F);
+            content_is_ok =
+              content_is_ok and are_equal(get_rm<2, 2>(mats[2]), 10.F);
+            content_is_ok =
+              content_is_ok and are_equal(get_rm<2, 3>(mats[2]), 11.F);
+            content_is_ok =
+              content_is_ok and are_equal(get_rm<3, 0>(mats[2]), 12.F);
+            content_is_ok =
+              content_is_ok and are_equal(get_rm<3, 1>(mats[2]), 13.F);
+            content_is_ok =
+              content_is_ok and are_equal(get_rm<3, 2>(mats[2]), 14.F);
+            content_is_ok =
+              content_is_ok and are_equal(get_rm<3, 3>(mats[2]), 15.F);
+        }
+    }
+
+    auto is_loaded() const noexcept {
+        return load_signal_received and locator_is_ok and content_is_ok;
+    }
+
+    auto is_done() noexcept -> bool final {
+        return too_long or is_loaded();
+    }
+
+    void update() noexcept final {
+        if(not mats) {
+            mats.load_if_needed(context());
+        }
+    }
+
+    void clean_up() noexcept final {
+        check(mats.is_loaded(), "values are loaded");
+        check(load_signal_received, "load signal received");
+        check(locator_is_ok, "locator is ok");
+        check(content_is_ok, "content is ok");
+
+        mats.clean_up(context());
+    }
+
+    eagine::timeout too_long{std::chrono::seconds{10}};
+    eagine::app::mat4_vector_resource mats;
+    bool load_signal_received{false};
+    bool locator_is_ok{false};
+    bool content_is_ok{false};
+};
+//------------------------------------------------------------------------------
 // value tree
 //------------------------------------------------------------------------------
 struct test_request_value_tree : eagitest::app_case {
     using launcher = eagitest::launcher<test_request_value_tree>;
 
     test_request_value_tree(auto& s, auto& ec)
-      : eagitest::app_case{s, ec, 6, "value tree"}
+      : eagitest::app_case{s, ec, 7, "value tree"}
       , tree{eagine::url{"json:///TestMesh"}, ec} {
         tree.loaded.connect(
           make_callable_ref<&test_request_value_tree::on_loaded>(this));
@@ -385,7 +513,7 @@ struct test_request_shape_generator : eagitest::app_case {
     using launcher = eagitest::launcher<test_request_shape_generator>;
 
     test_request_shape_generator(auto& s, auto& ec)
-      : eagitest::app_case{s, ec, 7, "shape generator"}
+      : eagitest::app_case{s, ec, 8, "shape generator"}
       , shape{eagine::url{"json:///TestMesh"}, ec} {
         shape.loaded.connect(
           make_callable_ref<&test_request_shape_generator::on_loaded>(this));
@@ -448,12 +576,13 @@ struct test_request_shape_generator : eagitest::app_case {
 // main
 //------------------------------------------------------------------------------
 auto test_main(eagine::test_ctx& ctx) -> int {
-    eagitest::app_suite test{ctx, "resource loader", 7};
+    eagitest::app_suite test{ctx, "resource loader", 8};
     test.once<test_request_plain_text>();
     test.once<test_request_string_list>();
     test.once<test_request_float_vector>();
     test.once<test_request_vec3_vector>();
     test.once<test_request_smooth_vec3_curve>();
+    test.once<test_request_mat4_vector>();
     test.once<test_request_value_tree>();
     test.once<test_request_shape_generator>();
     return test.exit_code();

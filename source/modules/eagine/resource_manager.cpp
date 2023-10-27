@@ -182,6 +182,8 @@ export using managed_vec3_vector =
   managed_resource<std::vector<math::vector<float, 3, true>>>;
 export using managed_smooth_vec3_curve =
   managed_resource<math::bezier_curves<math::vector<float, 3, true>, float, 3>>;
+export using managed_mat4_vector =
+  managed_resource<std::vector<math::matrix<float, 4, 4, true, true>>>;
 export using managed_value_tree = managed_resource<valtree::compound>;
 export using managed_gl_geometry_and_bindings =
   managed_resource<gl_geometry_and_bindings>;
@@ -194,6 +196,7 @@ export using resource_manager = basic_resource_manager<
   float_vector_resource,
   vec3_vector_resource,
   smooth_vec3_curve_resource,
+  mat4_vector_resource,
   value_tree_resource,
   gl_geometry_and_bindings_resource,
   gl_shader_resource,

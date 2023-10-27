@@ -409,6 +409,32 @@ void pending_resource_info::_handle_vec3_vector(
     mark_finished();
 }
 //------------------------------------------------------------------------------
+void pending_resource_info::handle_mat4_vector(
+  const pending_resource_info& source,
+  std::vector<math::matrix<float, 4, 4, true, true>>& values) noexcept {
+    _parent.log_info("loaded mat4 values")
+      .arg("requestId", _request_id)
+      .arg("size", values.size())
+      .arg("locator", _locator.str());
+
+    if(const auto cont{continuation()}) {
+        cont->_handle_mat4_vector(*this, values);
+    }
+
+    if(is(resource_kind::mat4_vector)) {
+        _parent.mat4_vector_loaded(
+          {.request_id = _request_id, .locator = _locator, .values = values});
+        _parent.resource_loaded(_request_id, _kind, _locator);
+    }
+    mark_finished();
+}
+//------------------------------------------------------------------------------
+void pending_resource_info::_handle_mat4_vector(
+  const pending_resource_info& source,
+  const std::vector<math::matrix<float, 4, 4, true, true>>& values) noexcept {
+    mark_finished();
+}
+//------------------------------------------------------------------------------
 auto pending_resource_info::_apply_shape_modifiers(
   shared_holder<shapes::generator> gen) noexcept
   -> shared_holder<shapes::generator> {
@@ -827,6 +853,18 @@ auto resource_loader::request_smooth_vec3_curve(url locator) noexcept
         return new_request;
     }
     return _cancelled_resource(locator, resource_kind::smooth_vec3_curve);
+}
+//------------------------------------------------------------------------------
+auto resource_loader::request_mat4_vector(url locator) noexcept
+  -> resource_request_result {
+    auto new_request{_new_resource(locator, resource_kind::mat4_vector)};
+
+    if(const auto src_request{request_value_tree_traversal(
+         locator, make_valtree_mat4_vector_builder(new_request))}) {
+        return new_request;
+    }
+    new_request.info().mark_finished();
+    return _cancelled_resource(locator, resource_kind::mat4_vector);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request_value_tree(url locator) noexcept
