@@ -266,13 +266,70 @@ struct test_request_vec3_vector : eagitest::app_case {
     bool content_is_ok{false};
 };
 //------------------------------------------------------------------------------
+// smooth path
+//------------------------------------------------------------------------------
+struct test_request_smooth_vec3_curve : eagitest::app_case {
+    using launcher = eagitest::launcher<test_request_smooth_vec3_curve>;
+
+    test_request_smooth_vec3_curve(auto& s, auto& ec)
+      : eagitest::app_case{s, ec, 5, "smooth vec3 curve"}
+      , path{eagine::url{"json:///TestPath"}, ec} {
+        path.loaded.connect(
+          make_callable_ref<&test_request_smooth_vec3_curve::on_loaded>(this));
+        too_long.reset();
+    }
+
+    void on_loaded(
+      const eagine::app::smooth_vec3_curve_resource::load_info& info) noexcept {
+        load_signal_received = true;
+        locator_is_ok = info.base.locator.has_scheme("json") and
+                        info.base.locator.has_path("/TestPath");
+        std::cout << info.base.curve.control_points().size() << std::endl;
+        if(info.base.curve.control_points().size() == 13) {
+            using eagine::are_equal;
+            content_is_ok = true;
+            const auto& cps{path.control_points()};
+            content_is_ok = content_is_ok and cps.size() == 13;
+        }
+    }
+
+    auto is_loaded() const noexcept {
+        return load_signal_received and locator_is_ok and content_is_ok;
+    }
+
+    auto is_done() noexcept -> bool final {
+        return too_long or is_loaded();
+    }
+
+    void update() noexcept final {
+        if(not path) {
+            path.load_if_needed(context());
+        }
+    }
+
+    void clean_up() noexcept final {
+        check(path.is_loaded(), "values are loaded");
+        check(load_signal_received, "load signal received");
+        check(locator_is_ok, "locator is ok");
+        check(content_is_ok, "content is ok");
+
+        path.clean_up(context());
+    }
+
+    eagine::timeout too_long{std::chrono::seconds{10}};
+    eagine::app::smooth_vec3_curve_resource path;
+    bool load_signal_received{false};
+    bool locator_is_ok{false};
+    bool content_is_ok{false};
+};
+//------------------------------------------------------------------------------
 // value tree
 //------------------------------------------------------------------------------
 struct test_request_value_tree : eagitest::app_case {
     using launcher = eagitest::launcher<test_request_value_tree>;
 
     test_request_value_tree(auto& s, auto& ec)
-      : eagitest::app_case{s, ec, 5, "value tree"}
+      : eagitest::app_case{s, ec, 6, "value tree"}
       , tree{eagine::url{"json:///TestMesh"}, ec} {
         tree.loaded.connect(
           make_callable_ref<&test_request_value_tree::on_loaded>(this));
@@ -328,7 +385,7 @@ struct test_request_shape_generator : eagitest::app_case {
     using launcher = eagitest::launcher<test_request_shape_generator>;
 
     test_request_shape_generator(auto& s, auto& ec)
-      : eagitest::app_case{s, ec, 6, "shape generator"}
+      : eagitest::app_case{s, ec, 7, "shape generator"}
       , shape{eagine::url{"json:///TestMesh"}, ec} {
         shape.loaded.connect(
           make_callable_ref<&test_request_shape_generator::on_loaded>(this));
@@ -391,11 +448,12 @@ struct test_request_shape_generator : eagitest::app_case {
 // main
 //------------------------------------------------------------------------------
 auto test_main(eagine::test_ctx& ctx) -> int {
-    eagitest::app_suite test{ctx, "resource loader", 6};
+    eagitest::app_suite test{ctx, "resource loader", 7};
     test.once<test_request_plain_text>();
     test.once<test_request_string_list>();
     test.once<test_request_float_vector>();
     test.once<test_request_vec3_vector>();
+    test.once<test_request_smooth_vec3_curve>();
     test.once<test_request_value_tree>();
     test.once<test_request_shape_generator>();
     return test.exit_code();

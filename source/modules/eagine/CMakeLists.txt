@@ -263,6 +263,7 @@ eagine_embed_target_resources(
 		TestText "${CMAKE_CURRENT_SOURCE_DIR}/resource_loader_text.txt"
 		TestInts "${CMAKE_CURRENT_SOURCE_DIR}/resource_loader_ints.json"
 		TestVec3 "${CMAKE_CURRENT_SOURCE_DIR}/resource_loader_vec3.json"
+		TestPath "${CMAKE_CURRENT_SOURCE_DIR}/resource_loader_path.json"
 		TestMesh "${CMAKE_CURRENT_SOURCE_DIR}/resource_loader_mesh.json"
 	PACKED ENABLE_SEARCH
 )
