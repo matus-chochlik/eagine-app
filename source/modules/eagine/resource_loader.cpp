@@ -1400,10 +1400,7 @@ inline auto valtree_builder_common::log(
 export class pending_resource_requests {
 public:
     /// @brief Construction from a reference to resource_loader.
-    pending_resource_requests(resource_loader& loader) noexcept
-      : _sig_bind{loader.resource_loaded.bind(
-          make_callable_ref<&pending_resource_requests::_handle_loaded>(
-            this))} {}
+    pending_resource_requests(resource_loader& loader) noexcept;
 
     /// @brief Construction from a reference to execution_context.
     pending_resource_requests(execution_context&) noexcept;
