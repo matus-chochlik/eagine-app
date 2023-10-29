@@ -53,6 +53,8 @@ export enum class resource_kind {
     yaml_text,
     /// @brief Vector of string values.
     string_list,
+    /// @brief Vector of URL values.
+    url_list,
     /// @brief Vector of floating-point values.
     float_vector,
     /// @brief Vector of vec3 values.
@@ -312,6 +314,10 @@ private:
     void _handle_string_list(
       const pending_resource_info& source,
       const std::vector<std::string>& strings) noexcept;
+
+    void _handle_url_list(
+      const pending_resource_info& source,
+      const std::vector<url>& urls) noexcept;
 
     void _handle_vec3_vector(
       const pending_resource_info& source,
@@ -689,6 +695,25 @@ export struct resource_loader_signals {
     auto load_signal(std::type_identity<std::vector<std::string>>) noexcept
       -> auto& {
         return string_list_loaded;
+    }
+
+    /// @brief Type of parameter of the url_list_loaded signal.
+    /// @see url_list_loaded
+    struct url_list_load_info {
+        const identifier_t request_id;
+        const url& locator;
+        const std::vector<url>& values;
+    };
+
+    template <>
+    struct get_load_info<std::vector<url>>
+      : std::type_identity<url_list_load_info> {};
+
+    /// @brief Emitted when list of strings is loaded.
+    signal<void(const url_list_load_info&) noexcept> url_list_loaded;
+
+    auto load_signal(std::type_identity<std::vector<url>>) noexcept -> auto& {
+        return url_list_loaded;
     }
 
     /// @brief Type of parameter of the float_vector_loaded signal.
@@ -1123,6 +1148,13 @@ public:
       std::type_identity<std::vector<std::string>>,
       url locator) noexcept {
         return request_string_list(std::move(locator));
+    }
+
+    /// @brief Requests URL-list resource.
+    auto request_url_list(url locator) noexcept -> resource_request_result;
+
+    auto request(std::type_identity<std::vector<url>>, url locator) noexcept {
+        return request_url_list(std::move(locator));
     }
 
     /// @brief Requests a float vector resource.

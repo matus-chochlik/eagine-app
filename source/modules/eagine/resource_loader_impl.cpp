@@ -348,12 +348,43 @@ void pending_resource_info::_handle_string_list(
       .arg("size", strings.size())
       .arg("locator", _locator.str());
 
+    if(const auto cont{continuation()}) {
+        if(cont->is(resource_kind::url_list)) {
+            std::vector<url> urls;
+            urls.reserve(strings.size());
+            for(const auto& str : strings) {
+                if(not str.empty()) {
+                    if(url locator{str}) {
+                        urls.emplace_back(std::move(locator));
+                    }
+                }
+            }
+            cont->_handle_url_list(*this, urls);
+        }
+    }
+
     if(is(resource_kind::string_list)) {
         _parent.string_list_loaded(
           {.request_id = _request_id,
            .locator = _locator,
            .strings = strings,
            .values = strings});
+        _parent.resource_loaded(_request_id, _kind, _locator);
+    }
+    mark_finished();
+}
+//------------------------------------------------------------------------------
+void pending_resource_info::_handle_url_list(
+  const pending_resource_info& source,
+  const std::vector<url>& urls) noexcept {
+    _parent.log_info("loaded URL list")
+      .arg("requestId", _request_id)
+      .arg("size", urls.size())
+      .arg("locator", _locator.str());
+
+    if(is(resource_kind::url_list)) {
+        _parent.url_list_loaded(
+          {.request_id = _request_id, .locator = _locator, .values = urls});
         _parent.resource_loaded(_request_id, _kind, _locator);
     }
     mark_finished();
@@ -817,6 +848,18 @@ auto resource_loader::request_string_list(url locator) noexcept
         return new_request;
     }
     return _cancelled_resource(locator, resource_kind::string_list);
+}
+//------------------------------------------------------------------------------
+auto resource_loader::request_url_list(url locator) noexcept
+  -> resource_request_result {
+    if(const auto src_request{request_string_list(locator)}) {
+        auto new_request{
+          _new_resource(std::move(locator), resource_kind::url_list)};
+        src_request.set_continuation(new_request);
+
+        return new_request;
+    }
+    return _cancelled_resource(locator, resource_kind::url_list);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request_float_vector(url locator) noexcept

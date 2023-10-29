@@ -261,6 +261,7 @@ eagine_embed_target_resources(
 	TARGET test.eagine.app.resource_loader
 	RESOURCES
 		TestText "${CMAKE_CURRENT_SOURCE_DIR}/resource_loader_text.txt"
+		TestURLs "${CMAKE_CURRENT_SOURCE_DIR}/resource_loader_urls.txt"
 		TestInts "${CMAKE_CURRENT_SOURCE_DIR}/resource_loader_ints.json"
 		TestVec3 "${CMAKE_CURRENT_SOURCE_DIR}/resource_loader_vec3.json"
 		TestMat4 "${CMAKE_CURRENT_SOURCE_DIR}/resource_loader_mat4.json"

@@ -1,0 +1,4 @@
+file:///proc/cpuinfo
+file:///etc/hosts
+ftp://example.com/file.txt
+https://oglplus.org/

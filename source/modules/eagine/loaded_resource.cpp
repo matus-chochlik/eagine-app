@@ -488,6 +488,7 @@ public:
 };
 //------------------------------------------------------------------------------
 export using string_list_resource = loaded_resource<std::vector<std::string>>;
+export using url_list_resource = loaded_resource<std::vector<url>>;
 export using float_vector_resource = loaded_resource<std::vector<float>>;
 export using vec3_vector_resource =
   loaded_resource<std::vector<math::vector<float, 3, true>>>;

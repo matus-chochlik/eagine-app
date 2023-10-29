@@ -140,13 +140,76 @@ struct test_request_string_list : eagitest::app_case {
     bool content_is_ok{false};
 };
 //------------------------------------------------------------------------------
+// URL list
+//------------------------------------------------------------------------------
+struct test_request_url_list : eagitest::app_case {
+    using launcher = eagitest::launcher<test_request_url_list>;
+
+    test_request_url_list(auto& s, auto& ec)
+      : eagitest::app_case{s, ec, 3, "URL list"}
+      , urls{eagine::url{"txt:///TestURLs"}, ec} {
+        urls.loaded.connect(
+          make_callable_ref<&test_request_url_list::on_loaded>(this));
+        too_long.reset();
+    }
+
+    void on_loaded(
+      const eagine::app::url_list_resource::load_info& info) noexcept {
+        load_signal_received = true;
+        locator_is_ok = info.base.locator.has_scheme("txt") and
+                        info.base.locator.has_path("/TestURLs");
+        if(info.base.values.size() == 4 and urls.size() == 4) {
+            content_is_ok = true;
+            content_is_ok = content_is_ok and urls[0].has_scheme("file") and
+                            urls[0].has_path("/proc/cpuinfo");
+            content_is_ok = content_is_ok and urls[1].has_scheme("file") and
+                            urls[1].has_path("/etc/hosts");
+            content_is_ok = content_is_ok and urls[2].has_scheme("ftp") and
+                            urls[2].has_domain("example.com") and
+                            urls[2].has_path("/file.txt");
+            content_is_ok = content_is_ok and urls[3].has_scheme("https") and
+                            urls[3].has_domain("oglplus.org") and
+                            urls[3].has_path("/");
+        }
+    }
+
+    auto is_loaded() const noexcept {
+        return load_signal_received and locator_is_ok and content_is_ok;
+    }
+
+    auto is_done() noexcept -> bool final {
+        return too_long or is_loaded();
+    }
+
+    void update() noexcept final {
+        if(not urls) {
+            urls.load_if_needed(context());
+        }
+    }
+
+    void clean_up() noexcept final {
+        check(urls.is_loaded(), "values are loaded");
+        check(load_signal_received, "load signal received");
+        check(locator_is_ok, "locator is ok");
+        check(content_is_ok, "content is ok");
+
+        urls.clean_up(context());
+    }
+
+    eagine::timeout too_long{std::chrono::seconds{15}};
+    eagine::app::url_list_resource urls;
+    bool load_signal_received{false};
+    bool locator_is_ok{false};
+    bool content_is_ok{false};
+};
+//------------------------------------------------------------------------------
 // float vector
 //------------------------------------------------------------------------------
 struct test_request_float_vector : eagitest::app_case {
     using launcher = eagitest::launcher<test_request_float_vector>;
 
     test_request_float_vector(auto& s, auto& ec)
-      : eagitest::app_case{s, ec, 3, "float vector"}
+      : eagitest::app_case{s, ec, 4, "float vector"}
       , ints{eagine::url{"json:///TestInts"}, ec} {
         ints.loaded.connect(
           make_callable_ref<&test_request_float_vector::on_loaded>(this));
@@ -206,7 +269,7 @@ struct test_request_vec3_vector : eagitest::app_case {
     using launcher = eagitest::launcher<test_request_vec3_vector>;
 
     test_request_vec3_vector(auto& s, auto& ec)
-      : eagitest::app_case{s, ec, 4, "vec3 vector"}
+      : eagitest::app_case{s, ec, 5, "vec3 vector"}
       , vecs{eagine::url{"json:///TestVec3"}, ec} {
         vecs.loaded.connect(
           make_callable_ref<&test_request_vec3_vector::on_loaded>(this));
@@ -272,7 +335,7 @@ struct test_request_smooth_vec3_curve : eagitest::app_case {
     using launcher = eagitest::launcher<test_request_smooth_vec3_curve>;
 
     test_request_smooth_vec3_curve(auto& s, auto& ec)
-      : eagitest::app_case{s, ec, 5, "smooth vec3 curve"}
+      : eagitest::app_case{s, ec, 6, "smooth vec3 curve"}
       , path{eagine::url{"json:///TestPath"}, ec} {
         path.loaded.connect(
           make_callable_ref<&test_request_smooth_vec3_curve::on_loaded>(this));
@@ -328,7 +391,7 @@ struct test_request_mat4_vector : eagitest::app_case {
     using launcher = eagitest::launcher<test_request_mat4_vector>;
 
     test_request_mat4_vector(auto& s, auto& ec)
-      : eagitest::app_case{s, ec, 6, "mat4 vector"}
+      : eagitest::app_case{s, ec, 7, "mat4 vector"}
       , mats{eagine::url{"json:///TestMat4"}, ec} {
         mats.loaded.connect(
           make_callable_ref<&test_request_mat4_vector::on_loaded>(this));
@@ -457,7 +520,7 @@ struct test_request_value_tree : eagitest::app_case {
     using launcher = eagitest::launcher<test_request_value_tree>;
 
     test_request_value_tree(auto& s, auto& ec)
-      : eagitest::app_case{s, ec, 7, "value tree"}
+      : eagitest::app_case{s, ec, 8, "value tree"}
       , tree{eagine::url{"json:///TestMesh"}, ec} {
         tree.loaded.connect(
           make_callable_ref<&test_request_value_tree::on_loaded>(this));
@@ -513,7 +576,7 @@ struct test_request_shape_generator : eagitest::app_case {
     using launcher = eagitest::launcher<test_request_shape_generator>;
 
     test_request_shape_generator(auto& s, auto& ec)
-      : eagitest::app_case{s, ec, 8, "shape generator"}
+      : eagitest::app_case{s, ec, 9, "shape generator"}
       , shape{eagine::url{"json:///TestMesh"}, ec} {
         shape.loaded.connect(
           make_callable_ref<&test_request_shape_generator::on_loaded>(this));
@@ -576,9 +639,10 @@ struct test_request_shape_generator : eagitest::app_case {
 // main
 //------------------------------------------------------------------------------
 auto test_main(eagine::test_ctx& ctx) -> int {
-    eagitest::app_suite test{ctx, "resource loader", 8};
+    eagitest::app_suite test{ctx, "resource loader", 9};
     test.once<test_request_plain_text>();
     test.once<test_request_string_list>();
+    test.once<test_request_url_list>();
     test.once<test_request_float_vector>();
     test.once<test_request_vec3_vector>();
     test.once<test_request_smooth_vec3_curve>();
