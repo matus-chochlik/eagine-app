@@ -177,6 +177,9 @@ private:
     std::tuple<_lr_transf<Resources>...> _resources;
 };
 //------------------------------------------------------------------------------
+export using managed_plain_text = managed_resource<std::string>;
+export using managed_string_list = managed_resource<std::vector<std::string>>;
+export using managed_url_list = managed_resource<std::vector<url>>;
 export using managed_float_vector = managed_resource<std::vector<float>>;
 export using managed_vec3_vector =
   managed_resource<std::vector<math::vector<float, 3, true>>>;
@@ -193,6 +196,9 @@ export using managed_gl_texture = managed_resource<oglplus::owned_texture_name>;
 export using managed_gl_buffer = managed_resource<oglplus::owned_buffer_name>;
 //------------------------------------------------------------------------------
 export using resource_manager = basic_resource_manager<
+  plain_text_resource,
+  string_list_resource,
+  url_list_resource,
   float_vector_resource,
   vec3_vector_resource,
   smooth_vec3_curve_resource,
