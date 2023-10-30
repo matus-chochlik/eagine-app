@@ -81,7 +81,7 @@ struct test_request_string_list : eagitest::app_case {
         load_signal_received = true;
         locator_is_ok = info.base.locator.has_scheme("txt") and
                         info.base.locator.has_path("/TestText");
-        if(info.base.strings.size() == 6 and strings.size() == 6) {
+        if(info.base.strings.size() == 60 and strings.size() == 60) {
             content_is_ok = true;
             content_is_ok =
               content_is_ok and (strings[0] ==

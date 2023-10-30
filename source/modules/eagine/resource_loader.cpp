@@ -312,8 +312,10 @@ private:
       const valtree::compound& tree) noexcept;
 
     void _handle_string_list(
+      const msgbus::blob_info&,
       const pending_resource_info& source,
-      const std::vector<std::string>& strings) noexcept;
+      const span_size_t offset,
+      const memory::span<const memory::const_block> data) noexcept;
 
     void _handle_url_list(
       const pending_resource_info& source,

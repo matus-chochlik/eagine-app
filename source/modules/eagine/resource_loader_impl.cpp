@@ -259,18 +259,12 @@ void pending_resource_info::_handle_plain_text(
         append_to(as_chars(chunk), text);
     }
 
-    if(const auto cont{continuation()}) {
-        if(cont->is(resource_kind::string_list)) {
-            std::vector<std::string> strings;
-            memory::for_each_delimited(
-              view(text), view_one('\n'), [&](const string_view s) {
-                  strings.push_back(to_string(s));
-              });
-            cont->_handle_string_list(*this, strings);
-        }
+    if(is(resource_kind::plain_text)) {
+        _parent.plain_text_loaded(
+          {.request_id = _request_id,
+           .locator = _locator,
+           .text = std::move(text)});
     }
-    _parent.plain_text_loaded(
-      {.request_id = _request_id, .locator = _locator, .text = std::move(text)});
     _parent.resource_loaded(_request_id, _kind, _locator);
     mark_finished();
 }
@@ -341,12 +335,34 @@ void pending_resource_info::_handle_value_tree(
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::_handle_string_list(
-  const pending_resource_info& source,
-  const std::vector<std::string>& strings) noexcept {
-    _parent.log_info("loaded string list")
+  const msgbus::blob_info&,
+  const pending_resource_info&,
+  const span_size_t offset,
+  const memory::span<const memory::const_block> data) noexcept {
+    _parent.log_debug("loaded string list data")
       .arg("requestId", _request_id)
-      .arg("size", strings.size())
+      .arg("offset", offset)
       .arg("locator", _locator.str());
+
+    std::vector<std::string> strings;
+    std::string line;
+    const string_view sep{"\n"};
+    for(const auto chunk : data) {
+        auto text{as_chars(chunk)};
+        while(not text.empty()) {
+            if(const auto pos{memory::find_position(text, sep)}) {
+                append_to(head(text, *pos), line);
+                text = skip(text, *pos + sep.size());
+                strings.emplace_back(std::move(line));
+            } else {
+                append_to(text, line);
+                text = {};
+            }
+        }
+    }
+    if(not line.empty()) {
+        strings.emplace_back(std::move(line));
+    }
 
     if(const auto cont{continuation()}) {
         if(cont->is(resource_kind::url_list)) {
@@ -711,6 +727,9 @@ void pending_resource_info::handle_source_data(
         case resource_kind::plain_text:
             _handle_plain_text(binfo, rinfo, offset, data);
             break;
+        case resource_kind::string_list:
+            _handle_string_list(binfo, rinfo, offset, data);
+            break;
         case resource_kind::json_text:
             _handle_json_text(binfo, rinfo, offset, data);
             break;
@@ -825,12 +844,12 @@ auto resource_loader::request_plain_text(url locator) noexcept
         if(const auto src_request{_new_resource(
              fetch_resource_chunks(
                locator,
-               16 * 1024,
+               1024,
                msgbus::message_priority::normal,
                std::chrono::seconds{15}),
              resource_kind::plain_text)}) {
             auto new_request{
-              _new_resource(std::move(locator), resource_kind::glsl_source)};
+              _new_resource(std::move(locator), resource_kind::plain_text)};
             src_request.set_continuation(new_request);
             return new_request;
         }
@@ -840,12 +859,19 @@ auto resource_loader::request_plain_text(url locator) noexcept
 //------------------------------------------------------------------------------
 auto resource_loader::request_string_list(url locator) noexcept
   -> resource_request_result {
-    if(const auto src_request{request_plain_text(locator)}) {
-        auto new_request{
-          _new_resource(std::move(locator), resource_kind::string_list)};
-        src_request.set_continuation(new_request);
-
-        return new_request;
+    if(locator.has_path_suffix(".txt") or locator.has_scheme("txt")) {
+        if(const auto src_request{_new_resource(
+             fetch_resource_chunks(
+               locator,
+               1024,
+               msgbus::message_priority::normal,
+               std::chrono::seconds{15}),
+             resource_kind::string_list)}) {
+            auto new_request{
+              _new_resource(std::move(locator), resource_kind::string_list)};
+            src_request.set_continuation(new_request);
+            return new_request;
+        }
     }
     return _cancelled_resource(locator, resource_kind::string_list);
 }
