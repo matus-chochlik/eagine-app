@@ -228,6 +228,17 @@ public:
         return al_ref().and_then(std::forward<Function>(function));
     }
 
+    /// @brief Returns a reference to the ALUT sound API in this context.
+    /// @see with_alut
+    auto alut_ref() const noexcept -> oalplus::alut_api_reference {
+        return _alut_api;
+    }
+
+    template <typename Function>
+    constexpr auto with_alut(Function&& function) const noexcept {
+        return alut_ref().and_then(std::forward<Function>(function));
+    }
+
     /// @brief Cleans up and releases this audio context and APIs.
     void clean_up() noexcept;
 
@@ -235,6 +246,7 @@ private:
     execution_context& _parent;
     shared_holder<audio_provider> _provider{};
     shared_holder<oalplus::al_api> _al_api{};
+    shared_holder<oalplus::alut_api> _alut_api{};
 };
 //------------------------------------------------------------------------------
 /// @brief Class holding shared video/audio rendering application support objects.

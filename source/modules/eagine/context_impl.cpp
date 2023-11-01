@@ -399,6 +399,7 @@ void audio_context::commit() {
 auto audio_context::init_al_api() noexcept -> bool {
     try {
         _al_api.emplace();
+        _alut_api.emplace();
     } catch(...) {
     }
     return bool(_al_api);
