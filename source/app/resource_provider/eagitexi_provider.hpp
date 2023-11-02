@@ -16,13 +16,13 @@ import std;
 namespace eagine::app {
 //------------------------------------------------------------------------------
 struct pixel_provider_coordinate {
-    int width;
-    int height;
-    int depth;
-    int x;
-    int y;
-    int z;
-    int component;
+    int width{1};
+    int height{1};
+    int depth{1};
+    int x{0};
+    int y{0};
+    int z{0};
+    int component{0};
 };
 //------------------------------------------------------------------------------
 struct pixel_provider_interface : interface<pixel_provider_interface> {
