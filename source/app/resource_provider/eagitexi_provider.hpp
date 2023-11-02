@@ -15,20 +15,23 @@ import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
+struct pixel_provider_coordinate {
+    int width;
+    int height;
+    int depth;
+    int x;
+    int y;
+    int z;
+    int component;
+};
+//------------------------------------------------------------------------------
 struct pixel_provider_interface : interface<pixel_provider_interface> {
     virtual auto pixel_byte_count() noexcept -> int = 0;
 
     virtual auto estimated_data_size(int w, int h, int d) noexcept
       -> span_size_t = 0;
 
-    virtual auto pixel_byte(
-      int x,
-      int y,
-      int z,
-      int w,
-      int h,
-      int d,
-      int c) noexcept -> byte = 0;
+    virtual auto pixel_byte(pixel_provider_coordinate) noexcept -> byte = 0;
 };
 //------------------------------------------------------------------------------
 struct pixel_provider_factory_interface

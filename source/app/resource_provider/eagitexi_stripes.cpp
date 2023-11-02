@@ -25,13 +25,12 @@ struct stripes_r8_pixel_provider : pixel_provider_interface {
         return 1024;
     }
 
-    auto pixel_byte(int x, int y, int z, int, int, int, int c) noexcept
-      -> byte final {
-        x /= size;
-        y /= size;
-        z /= size;
-        assert(c == 0);
-        return ((x + y + z) % 2 == 0) ? 0x00U : 0xFFU;
+    auto pixel_byte(pixel_provider_coordinate c) noexcept -> byte final {
+        c.x /= size;
+        c.y /= size;
+        c.z /= size;
+        assert(c.component == 0);
+        return ((c.x + c.y + c.z) % 2 == 0) ? 0x00U : 0xFFU;
     }
 
     int size;

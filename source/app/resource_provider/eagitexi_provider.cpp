@@ -53,7 +53,14 @@ struct eagitexi_2d_r8_io final
         assert(pixel_provider.pixel_byte_count() == 1);
         for(int y = 0; y < h; ++y) {
             for(int x = 0; x < w; ++x) {
-                buf[i++] = pixel_provider.pixel_byte(x, y, 0, w, h, 1, 0);
+                buf[i++] = pixel_provider.pixel_byte(
+                  {.width = w,
+                   .height = h,
+                   .depth = 1,
+                   .x = x,
+                   .y = y,
+                   .z = 0,
+                   .component = 0});
                 if(i == buf.size()) {
                     compress.next(view(buf), data_compression_level::highest);
                     i = 0U;
@@ -201,8 +208,14 @@ struct eagitexi_2d_rgb8_io final
         for(int y = 0; y < h; ++y) {
             for(int x = 0; x < w; ++x) {
                 for(int c = 0; c < 3; ++c) {
-                    rgb[std_size(c)] =
-                      pixel_provider.pixel_byte(x, y, 0, w, h, 1, c);
+                    rgb[std_size(c)] = pixel_provider.pixel_byte(
+                      {.width = w,
+                       .height = h,
+                       .depth = 1,
+                       .x = x,
+                       .y = y,
+                       .z = 0,
+                       .component = c});
                 }
                 compress.next(pix, data_compression_level::highest);
             }

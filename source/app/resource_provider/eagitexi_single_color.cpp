@@ -26,10 +26,9 @@ struct single_rgb8_pixel_provider : pixel_provider_interface {
         return 1024;
     }
 
-    auto pixel_byte(int, int, int, int, int, int, int c) noexcept
-      -> byte final {
-        assert(c >= 0 and c <= 3);
-        return rgb[std_size(c)];
+    auto pixel_byte(pixel_provider_coordinate c) noexcept -> byte final {
+        assert(c.component >= 0 and c.component <= 3);
+        return rgb[std_size(c.component)];
     }
 };
 //------------------------------------------------------------------------------

@@ -25,13 +25,12 @@ struct checks_r8_pixel_provider : pixel_provider_interface {
         return 1024;
     }
 
-    auto pixel_byte(int x, int y, int z, int, int, int, int c) noexcept
-      -> byte final {
-        x /= size;
-        y /= size;
-        z /= size;
-        assert(c == 0);
-        return ((x % 2 + y % 2 + z % 2) % 2 == 0) ? 0x00U : 0xFFU;
+    auto pixel_byte(pixel_provider_coordinate c) noexcept -> byte final {
+        c.x /= size;
+        c.y /= size;
+        c.z /= size;
+        assert(c.component == 0);
+        return ((c.x % 2 + c.y % 2 + c.z % 2) % 2 == 0) ? 0x00U : 0xFFU;
     }
 
     int size;
