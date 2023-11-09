@@ -116,15 +116,13 @@ auto main(main_ctx& ctx) -> int {
         return interrupted or provider.is_done();
     }};
 
-    auto& wd = ctx.watchdog();
-    wd.declare_initialized();
+    auto alive{ctx.watchdog().start_watch()};
 
     while(not is_done()) {
-        wd.notify_alive();
+        alive.notify();
         provider.update();
     }
     provider.finish();
-    wd.announce_shutdown();
 
     return 0;
 }
