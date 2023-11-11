@@ -6,8 +6,8 @@
 add_executable(
 	eagine-app-resource-provider
 	driver.cpp
+	common.cpp
 	eagitexi_random.cpp
-	eagitex_provider.cpp
 	eagitexi_provider.cpp
 	eagitexi_single_color.cpp
 	eagitexi_checks.cpp
