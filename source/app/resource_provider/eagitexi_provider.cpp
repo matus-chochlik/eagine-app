@@ -47,7 +47,7 @@ struct eagitexi_2d_r8_io final
           {construct_from, append},
           default_data_compression_method()};
 
-        std::array<byte, 256> buf;
+        std::array<byte, 4 * 1024> buf;
         std::size_t i{0U};
 
         assert(pixel_provider.pixel_byte_count() == 1);
@@ -154,6 +154,174 @@ auto provider_eagitexi_2d_r8(
     assert(factory);
     return {
       hold<eagitexi_2d_r8_provider>,
+      parent,
+      std::move(path),
+      std::move(factory)};
+}
+//------------------------------------------------------------------------------
+// 3d_r8
+//------------------------------------------------------------------------------
+struct eagitexi_3d_r8_io final
+  : main_ctx_object
+  , msgbus::source_blob_io {
+    auto make_header(
+      pixel_provider_interface& pixel_provider,
+      const int w,
+      const int h,
+      const int d,
+      const int l) {
+        std::stringstream hdr;
+        hdr << R"({"level":)" << l;
+        hdr << R"(,"width":)" << w;
+        hdr << R"(,"height":)" << h;
+        hdr << R"(,"depth":)" << d;
+        hdr << R"(,"channels":1)";
+        hdr << R"(,"data_type":"unsigned_byte")";
+        hdr << R"(,"format":"red")";
+        hdr << R"(,"iformat":"r8")";
+        hdr << R"(,"tag":["generated"])";
+        hdr << R"(,"data_filter":"zlib")";
+        hdr << '}';
+        auto header{main_context().buffers().get(
+          pixel_provider.estimated_data_size(w, h, d))};
+        memory::copy_into(as_bytes(string_view{hdr.str()}), header);
+        return header;
+    }
+
+    void make_data(
+      pixel_provider_interface& pixel_provider,
+      int w,
+      int h,
+      int d) {
+        const auto append{[this](memory::const_block packed) {
+            memory::append_to(packed, _data);
+            return true;
+        }};
+        stream_compression compress{
+          main_context().compressor(),
+          {construct_from, append},
+          default_data_compression_method()};
+
+        std::array<byte, 16 * 1024> buf;
+        std::size_t i{0U};
+
+        assert(pixel_provider.pixel_byte_count() == 1);
+        for(int z = 0; z < d; ++z) {
+            for(int y = 0; y < h; ++y) {
+                for(int x = 0; x < w; ++x) {
+                    buf[i++] = pixel_provider.pixel_byte(
+                      {.width = w,
+                       .height = h,
+                       .depth = d,
+                       .x = x,
+                       .y = y,
+                       .z = z});
+                    if(i == buf.size()) {
+                        compress.next(
+                          view(buf), data_compression_level::highest);
+                        i = 0U;
+                    }
+                }
+            }
+        }
+        if(i > 0) {
+            compress.next(
+              head(view(buf), span_size(i)), data_compression_level::highest);
+        }
+        compress.finish();
+    }
+
+    eagitexi_3d_r8_io(
+      main_ctx_parent parent,
+      unique_holder<pixel_provider_interface> provider,
+      int w,
+      int h,
+      int d,
+      int l)
+      : main_ctx_object{"ITx3R8", parent}
+      , _width{w}
+      , _height{h}
+      , _depth{d}
+      , _data{make_header(*provider, w, h, d, l)} {
+        make_data(*provider, w, h, d);
+    }
+
+    ~eagitexi_3d_r8_io() noexcept {
+        main_context().buffers().eat(std::move(_data));
+    }
+
+    auto total_size() noexcept -> span_size_t final {
+        return span_size(_data.size());
+    }
+
+    auto fetch_fragment(const span_size_t offs, memory::block dst) noexcept
+      -> span_size_t final {
+        return copy(head(view(_data), dst.size()), dst).size();
+    }
+
+    int _width;
+    int _height;
+    int _depth;
+    memory::buffer _data;
+};
+//------------------------------------------------------------------------------
+struct eagitexi_3d_r8_provider final
+  : main_ctx_object
+  , resource_provider_interface {
+    std::string url_path;
+    shared_holder<pixel_provider_factory_interface> factory;
+
+    eagitexi_3d_r8_provider(
+      main_ctx_parent parent,
+      std::string path,
+      shared_holder<pixel_provider_factory_interface> f) noexcept
+      : main_ctx_object{"PTx2R8", parent}
+      , url_path{path}
+      , factory{std::move(f)} {}
+
+    static auto valid_dim(int d) noexcept -> bool {
+        return (d > 0) and (d <= 16 * 1024);
+    }
+
+    static auto valid_lvl(int l) noexcept -> bool {
+        return (l >= 0);
+    }
+
+    auto has_resource(const url& locator) noexcept -> bool final {
+        if(locator.has_scheme("eagitexi") and locator.has_path(url_path)) {
+            const auto& q{locator.query()};
+            const bool args_ok =
+              valid_dim(q.arg_value_as<int>("width").value_or(1)) and
+              valid_dim(q.arg_value_as<int>("height").value_or(1)) and
+              valid_dim(q.arg_value_as<int>("depth").value_or(1)) and
+              valid_lvl(q.arg_value_as<int>("level").value_or(1));
+            return args_ok and factory->has_resource(locator);
+        }
+        return false;
+    }
+
+    auto get_resource_io(const url& locator)
+      -> unique_holder<msgbus::source_blob_io> final {
+        const auto& q{locator.query()};
+        return {
+          hold<eagitexi_3d_r8_io>,
+          as_parent(),
+          factory->make_provider(locator),
+          q.arg_value_as<int>("width").value_or(2),
+          q.arg_value_as<int>("height").value_or(2),
+          q.arg_value_as<int>("depth").value_or(2),
+          q.arg_value_as<int>("level").value_or(0)};
+    }
+};
+//------------------------------------------------------------------------------
+auto provider_eagitexi_3d_r8(
+  main_ctx_parent parent,
+  std::string path,
+  shared_holder<pixel_provider_factory_interface> factory)
+  -> unique_holder<resource_provider_interface> {
+    assert(factory);
+    return {
+      hold<eagitexi_3d_r8_provider>,
       parent,
       std::move(path),
       std::move(factory)};

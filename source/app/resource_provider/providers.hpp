@@ -26,6 +26,11 @@ auto provider_eagitex_2d_single_rgb8(main_ctx_parent)
 auto provider_eagitexi_2d_single_rgb8(main_ctx_parent)
   -> unique_holder<resource_provider_interface>;
 //------------------------------------------------------------------------------
+auto provider_eagitex_sphere_volume(main_ctx_parent)
+  -> unique_holder<resource_provider_interface>;
+auto provider_eagitexi_sphere_volume(main_ctx_parent)
+  -> unique_holder<resource_provider_interface>;
+//------------------------------------------------------------------------------
 auto provider_text_lorem_ipsum(main_ctx_parent)
   -> unique_holder<resource_provider_interface>;
 //------------------------------------------------------------------------------

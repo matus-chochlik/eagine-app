@@ -10,6 +10,7 @@ add_executable(
 	eagitexi_random.cpp
 	eagitexi_provider.cpp
 	eagitexi_single_color.cpp
+	eagitexi_sphere_volume.cpp
 	eagitexi_checks.cpp
 	eagitexi_stripes.cpp
 	text_lorem_ipsum.cpp
