@@ -6,98 +6,110 @@
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
 #include "eagitexi_provider.hpp"
+#include "common.hpp"
 #include <cassert>
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
 // 2d_r8
 //------------------------------------------------------------------------------
-struct eagitexi_2d_r8_io final
-  : main_ctx_object
-  , msgbus::source_blob_io {
+struct eagitexi_2d_r8_io final : simple_buffer_source_blob_io {
+
     auto make_header(
+      memory::buffer,
       pixel_provider_interface& pixel_provider,
       const int w,
       const int h,
-      const int l) {
-        std::stringstream hdr;
-        hdr << R"({"level":)" << l;
-        hdr << R"(,"width":)" << w;
-        hdr << R"(,"height":)" << h;
-        hdr << R"(,"channels":1)";
-        hdr << R"(,"data_type":"unsigned_byte")";
-        hdr << R"(,"format":"red")";
-        hdr << R"(,"iformat":"r8")";
-        hdr << R"(,"tag":["generated"])";
-        hdr << R"(,"data_filter":"zlib")";
-        hdr << '}';
-        auto header{main_context().buffers().get(
-          pixel_provider.estimated_data_size(w, h, 1))};
-        memory::copy_into(as_bytes(string_view{hdr.str()}), header);
-        return header;
-    }
+      const int l) -> memory::buffer;
 
-    void make_data(pixel_provider_interface& pixel_provider, int w, int h) {
-        const auto append{[this](memory::const_block packed) {
-            memory::append_to(packed, _data);
-            return true;
-        }};
-        stream_compression compress{
-          main_context().compressor(),
-          {construct_from, append},
-          default_data_compression_method()};
-
-        std::array<byte, 4 * 1024> buf;
-        std::size_t i{0U};
-
-        assert(pixel_provider.pixel_byte_count() == 1);
-        for(int y = 0; y < h; ++y) {
-            for(int x = 0; x < w; ++x) {
-                buf[i++] = pixel_provider.pixel_byte(
-                  {.width = w, .height = h, .x = x, .y = y});
-                if(i == buf.size()) {
-                    compress.next(view(buf), data_compression_level::highest);
-                    i = 0U;
-                }
-            }
-        }
-        if(i > 0) {
-            compress.next(
-              head(view(buf), span_size(i)), data_compression_level::highest);
-        }
-        compress.finish();
-    }
+    auto make_data(
+      memory::buffer,
+      pixel_provider_interface& pixel_provider,
+      int w,
+      int h) -> memory::buffer;
 
     eagitexi_2d_r8_io(
       main_ctx_parent parent,
       unique_holder<pixel_provider_interface> provider,
       int w,
       int h,
-      int l)
-      : main_ctx_object{"ITx2R8", parent}
-      , _width{w}
-      , _height{h}
-      , _data{make_header(*provider, w, h, l)} {
-        make_data(*provider, w, h);
-    }
-
-    ~eagitexi_2d_r8_io() noexcept {
-        main_context().buffers().eat(std::move(_data));
-    }
-
-    auto total_size() noexcept -> span_size_t final {
-        return span_size(_data.size());
-    }
-
-    auto fetch_fragment(const span_size_t offs, memory::block dst) noexcept
-      -> span_size_t final {
-        return copy(head(view(_data), dst.size()), dst).size();
-    }
-
-    int _width;
-    int _height;
-    memory::buffer _data;
+      int l);
 };
+//------------------------------------------------------------------------------
+auto eagitexi_2d_r8_io::make_header(
+  memory::buffer header,
+  pixel_provider_interface&,
+  const int w,
+  const int h,
+  const int l) -> memory::buffer {
+    std::stringstream hdr;
+    hdr << R"({"level":)" << l;
+    hdr << R"(,"width":)" << w;
+    hdr << R"(,"height":)" << h;
+    hdr << R"(,"channels":1)";
+    hdr << R"(,"data_type":"unsigned_byte")";
+    hdr << R"(,"format":"red")";
+    hdr << R"(,"iformat":"r8")";
+    hdr << R"(,"tag":["generated"])";
+    hdr << R"(,"data_filter":"zlib")";
+    hdr << '}';
+    memory::copy_into(as_bytes(string_view{hdr.str()}), header);
+    return header;
+}
+//------------------------------------------------------------------------------
+auto eagitexi_2d_r8_io::make_data(
+  memory::buffer data,
+  pixel_provider_interface& pixel_provider,
+  int w,
+  int h) -> memory::buffer {
+    const auto append{[&](memory::const_block packed) {
+        memory::append_to(packed, data);
+        return true;
+    }};
+    stream_compression compress{
+      main_context().compressor(),
+      {construct_from, append},
+      default_data_compression_method()};
+
+    std::array<byte, 4 * 1024> buf;
+    std::size_t i{0U};
+
+    assert(pixel_provider.pixel_byte_count() == 1);
+    for(int y = 0; y < h; ++y) {
+        for(int x = 0; x < w; ++x) {
+            buf[i++] = pixel_provider.pixel_byte(
+              {.width = w, .height = h, .x = x, .y = y});
+            if(i == buf.size()) {
+                compress.next(view(buf), data_compression_level::highest);
+                i = 0U;
+            }
+        }
+    }
+    if(i > 0) {
+        compress.next(
+          head(view(buf), span_size(i)), data_compression_level::highest);
+    }
+    compress.finish();
+    return data;
+}
+//------------------------------------------------------------------------------
+eagitexi_2d_r8_io::eagitexi_2d_r8_io(
+  main_ctx_parent parent,
+  unique_holder<pixel_provider_interface> provider,
+  int w,
+  int h,
+  int l)
+  : simple_buffer_source_blob_io{
+      "ITx2R8",
+      parent,
+      provider->estimated_data_size(w, h, 1),
+      [&](memory::buffer content) {
+          return make_data(
+            make_header(std::move(content), *provider, w, h, l),
+            *provider,
+            w,
+            h);
+      }} {}
 //------------------------------------------------------------------------------
 struct eagitexi_2d_r8_provider final
   : main_ctx_object
@@ -161,75 +173,22 @@ auto provider_eagitexi_2d_r8(
 //------------------------------------------------------------------------------
 // 3d_r8
 //------------------------------------------------------------------------------
-struct eagitexi_3d_r8_io final
-  : main_ctx_object
-  , msgbus::source_blob_io {
+struct eagitexi_3d_r8_io final : simple_buffer_source_blob_io {
+
     auto make_header(
+      memory::buffer,
       pixel_provider_interface& pixel_provider,
       const int w,
       const int h,
       const int d,
-      const int l) {
-        std::stringstream hdr;
-        hdr << R"({"level":)" << l;
-        hdr << R"(,"width":)" << w;
-        hdr << R"(,"height":)" << h;
-        hdr << R"(,"depth":)" << d;
-        hdr << R"(,"channels":1)";
-        hdr << R"(,"data_type":"unsigned_byte")";
-        hdr << R"(,"format":"red")";
-        hdr << R"(,"iformat":"r8")";
-        hdr << R"(,"tag":["generated"])";
-        hdr << R"(,"data_filter":"zlib")";
-        hdr << '}';
-        auto header{main_context().buffers().get(
-          pixel_provider.estimated_data_size(w, h, d))};
-        memory::copy_into(as_bytes(string_view{hdr.str()}), header);
-        return header;
-    }
+      const int l) -> memory::buffer;
 
-    void make_data(
+    auto make_data(
+      memory::buffer,
       pixel_provider_interface& pixel_provider,
       int w,
       int h,
-      int d) {
-        const auto append{[this](memory::const_block packed) {
-            memory::append_to(packed, _data);
-            return true;
-        }};
-        stream_compression compress{
-          main_context().compressor(),
-          {construct_from, append},
-          default_data_compression_method()};
-
-        std::array<byte, 16 * 1024> buf;
-        std::size_t i{0U};
-
-        assert(pixel_provider.pixel_byte_count() == 1);
-        for(int z = 0; z < d; ++z) {
-            for(int y = 0; y < h; ++y) {
-                for(int x = 0; x < w; ++x) {
-                    buf[i++] = pixel_provider.pixel_byte(
-                      {.width = w,
-                       .height = h,
-                       .depth = d,
-                       .x = x,
-                       .y = y,
-                       .z = z});
-                    if(i == buf.size()) {
-                        compress.next(
-                          view(buf), data_compression_level::highest);
-                        i = 0U;
-                    }
-                }
-            }
-        }
-        if(i > 0) {
-            compress.next(
-              head(view(buf), span_size(i)), data_compression_level::highest);
-        }
-        compress.finish();
-    }
+      int d) -> memory::buffer;
 
     eagitexi_3d_r8_io(
       main_ctx_parent parent,
@@ -237,33 +196,90 @@ struct eagitexi_3d_r8_io final
       int w,
       int h,
       int d,
-      int l)
-      : main_ctx_object{"ITx3R8", parent}
-      , _width{w}
-      , _height{h}
-      , _depth{d}
-      , _data{make_header(*provider, w, h, d, l)} {
-        make_data(*provider, w, h, d);
-    }
-
-    ~eagitexi_3d_r8_io() noexcept {
-        main_context().buffers().eat(std::move(_data));
-    }
-
-    auto total_size() noexcept -> span_size_t final {
-        return span_size(_data.size());
-    }
-
-    auto fetch_fragment(const span_size_t offs, memory::block dst) noexcept
-      -> span_size_t final {
-        return copy(head(view(_data), dst.size()), dst).size();
-    }
-
-    int _width;
-    int _height;
-    int _depth;
-    memory::buffer _data;
+      int l);
 };
+//------------------------------------------------------------------------------
+auto eagitexi_3d_r8_io::make_header(
+  memory::buffer header,
+  pixel_provider_interface&,
+  const int w,
+  const int h,
+  const int d,
+  const int l) -> memory::buffer {
+    std::stringstream hdr;
+    hdr << R"({"level":)" << l;
+    hdr << R"(,"width":)" << w;
+    hdr << R"(,"height":)" << h;
+    hdr << R"(,"depth":)" << d;
+    hdr << R"(,"channels":1)";
+    hdr << R"(,"data_type":"unsigned_byte")";
+    hdr << R"(,"format":"red")";
+    hdr << R"(,"iformat":"r8")";
+    hdr << R"(,"tag":["generated"])";
+    hdr << R"(,"data_filter":"zlib")";
+    hdr << '}';
+    memory::copy_into(as_bytes(string_view{hdr.str()}), header);
+    return header;
+}
+//------------------------------------------------------------------------------
+auto eagitexi_3d_r8_io::make_data(
+  memory::buffer data,
+  pixel_provider_interface& pixel_provider,
+  int w,
+  int h,
+  int d) -> memory::buffer {
+    const auto append{[&](memory::const_block packed) {
+        memory::append_to(packed, data);
+        return true;
+    }};
+    stream_compression compress{
+      main_context().compressor(),
+      {construct_from, append},
+      default_data_compression_method()};
+
+    std::array<byte, 16 * 1024> buf;
+    std::size_t i{0U};
+
+    assert(pixel_provider.pixel_byte_count() == 1);
+    for(int z = 0; z < d; ++z) {
+        for(int y = 0; y < h; ++y) {
+            for(int x = 0; x < w; ++x) {
+                buf[i++] = pixel_provider.pixel_byte(
+                  {.width = w, .height = h, .depth = d, .x = x, .y = y, .z = z});
+                if(i == buf.size()) {
+                    compress.next(view(buf), data_compression_level::highest);
+                    i = 0U;
+                }
+            }
+        }
+    }
+    if(i > 0) {
+        compress.next(
+          head(view(buf), span_size(i)), data_compression_level::highest);
+    }
+    compress.finish();
+    return data;
+}
+//------------------------------------------------------------------------------
+eagitexi_3d_r8_io::eagitexi_3d_r8_io(
+  main_ctx_parent parent,
+  unique_holder<pixel_provider_interface> provider,
+  int w,
+  int h,
+  int d,
+  int l)
+  : simple_buffer_source_blob_io{
+      "ITx3R8",
+      parent,
+      provider->estimated_data_size(w, h, d),
+      [&](memory::buffer content) {
+          return make_data(
+            make_header(std::move(content), *provider, w, h, d, l),
+            *provider,
+            w,
+            h,
+            d);
+      }} {}
 //------------------------------------------------------------------------------
 struct eagitexi_3d_r8_provider final
   : main_ctx_object
@@ -275,7 +291,7 @@ struct eagitexi_3d_r8_provider final
       main_ctx_parent parent,
       std::string path,
       shared_holder<pixel_provider_factory_interface> f) noexcept
-      : main_ctx_object{"PTx2R8", parent}
+      : main_ctx_object{"PTx3R8", parent}
       , url_path{path}
       , factory{std::move(f)} {}
 
@@ -329,86 +345,105 @@ auto provider_eagitexi_3d_r8(
 //------------------------------------------------------------------------------
 // 2d_rgb8
 //------------------------------------------------------------------------------
-struct eagitexi_2d_rgb8_io final
-  : main_ctx_object
-  , msgbus::source_blob_io {
+struct eagitexi_2d_rgb8_io final : simple_buffer_source_blob_io {
+
     auto make_header(
+      memory::buffer,
       pixel_provider_interface& pixel_provider,
       const int w,
       const int h,
-      const int l) {
-        std::stringstream hdr;
-        hdr << R"({"level":)" << l;
-        hdr << R"(,"width":)" << w;
-        hdr << R"(,"height":)" << h;
-        hdr << R"(,"channels":3)";
-        hdr << R"(,"data_type":"unsigned_byte")";
-        hdr << R"(,"format":"rgb")";
-        hdr << R"(,"iformat":"rgb8")";
-        hdr << R"(,"tag":["generated"])";
-        hdr << R"(,"data_filter":"zlib")";
-        hdr << '}';
-        auto header{main_context().buffers().get(
-          pixel_provider.estimated_data_size(w, h, 1))};
-        memory::copy_into(as_bytes(string_view{hdr.str()}), header);
-        return header;
-    }
+      const int l) -> memory::buffer;
 
-    void make_data(pixel_provider_interface& pixel_provider, int w, int h) {
-        const auto append{[this](memory::const_block packed) {
-            memory::append_to(packed, _data);
-            return true;
-        }};
-        stream_compression compress{
-          main_context().compressor(),
-          {construct_from, append},
-          default_data_compression_method()};
-
-        assert(pixel_provider.pixel_byte_count() == 3);
-        std::array<byte, 3> rgb{{}};
-        const auto pix{view(rgb)};
-        for(int y = 0; y < h; ++y) {
-            for(int x = 0; x < w; ++x) {
-                for(int c = 0; c < 3; ++c) {
-                    rgb[std_size(c)] = pixel_provider.pixel_byte(
-                      {.width = w, .height = h, .x = x, .y = y, .component = c});
-                }
-                compress.next(pix, data_compression_level::highest);
-            }
-        }
-        compress.finish();
-    }
+    auto make_data(
+      memory::buffer,
+      pixel_provider_interface& pixel_provider,
+      int w,
+      int h) -> memory::buffer;
 
     eagitexi_2d_rgb8_io(
       main_ctx_parent parent,
       unique_holder<pixel_provider_interface> provider,
       int w,
       int h,
-      int l)
-      : main_ctx_object{"ITx2RGB8", parent}
-      , _width{w}
-      , _height{h}
-      , _data{make_header(*provider, w, h, l)} {
-        make_data(*provider, w, h);
-    }
-
-    ~eagitexi_2d_rgb8_io() noexcept {
-        main_context().buffers().eat(std::move(_data));
-    }
-
-    auto total_size() noexcept -> span_size_t final {
-        return span_size(_data.size());
-    }
-
-    auto fetch_fragment(const span_size_t offs, memory::block dst) noexcept
-      -> span_size_t final {
-        return copy(head(view(_data), dst.size()), dst).size();
-    }
-
-    int _width;
-    int _height;
-    memory::buffer _data;
+      int l);
 };
+//------------------------------------------------------------------------------
+auto eagitexi_2d_rgb8_io::make_header(
+  memory::buffer header,
+  pixel_provider_interface&,
+  const int w,
+  const int h,
+  const int l) -> memory::buffer {
+    std::stringstream hdr;
+    hdr << R"({"level":)" << l;
+    hdr << R"(,"width":)" << w;
+    hdr << R"(,"height":)" << h;
+    hdr << R"(,"channels":3)";
+    hdr << R"(,"data_type":"unsigned_byte")";
+    hdr << R"(,"format":"rgb")";
+    hdr << R"(,"iformat":"rgb8")";
+    hdr << R"(,"tag":["generated"])";
+    hdr << R"(,"data_filter":"zlib")";
+    hdr << '}';
+    memory::copy_into(as_bytes(string_view{hdr.str()}), header);
+    return header;
+}
+//------------------------------------------------------------------------------
+auto eagitexi_2d_rgb8_io::make_data(
+  memory::buffer data,
+  pixel_provider_interface& pixel_provider,
+  int w,
+  int h) -> memory::buffer {
+    const auto append{[&](memory::const_block packed) {
+        memory::append_to(packed, data);
+        return true;
+    }};
+    stream_compression compress{
+      main_context().compressor(),
+      {construct_from, append},
+      default_data_compression_method()};
+
+    std::array<byte, 4 * 1024> buf;
+    std::size_t i{0U};
+
+    assert(pixel_provider.pixel_byte_count() >= 3);
+    for(int y = 0; y < h; ++y) {
+        for(int x = 0; x < w; ++x) {
+            for(int c = 0; c < 3; ++c) {
+                buf[i++] = pixel_provider.pixel_byte(
+                  {.width = w, .height = h, .x = x, .y = y, .component = c});
+                if(i == buf.size()) {
+                    compress.next(view(buf), data_compression_level::highest);
+                    i = 0U;
+                }
+            }
+        }
+    }
+    if(i > 0) {
+        compress.next(
+          head(view(buf), span_size(i)), data_compression_level::highest);
+    }
+    compress.finish();
+    return data;
+}
+//------------------------------------------------------------------------------
+eagitexi_2d_rgb8_io::eagitexi_2d_rgb8_io(
+  main_ctx_parent parent,
+  unique_holder<pixel_provider_interface> provider,
+  int w,
+  int h,
+  int l)
+  : simple_buffer_source_blob_io{
+      "ITx2RGB8",
+      parent,
+      provider->estimated_data_size(w, h, 1),
+      [&](memory::buffer content) {
+          return make_data(
+            make_header(std::move(content), *provider, w, h, l),
+            *provider,
+            w,
+            h);
+      }} {}
 //------------------------------------------------------------------------------
 struct eagitexi_2d_rgb8_provider final
   : main_ctx_object

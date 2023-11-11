@@ -33,11 +33,11 @@ struct sphere_volume_pixel_provider : pixel_provider_interface {
 };
 //------------------------------------------------------------------------------
 struct sphere_volume_pixel_provider_factory : pixel_provider_factory_interface {
-    auto has_resource(const url& locator) noexcept -> bool final {
+    auto has_resource(const url&) noexcept -> bool final {
         return true;
     }
 
-    auto make_provider(const url& locator)
+    auto make_provider(const url&)
       -> unique_holder<pixel_provider_interface> final {
         return {hold<sphere_volume_pixel_provider>};
     }

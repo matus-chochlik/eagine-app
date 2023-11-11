@@ -16,6 +16,16 @@ add_executable(
 	text_lorem_ipsum.cpp
 	main.cpp)
 
+eagine_embed_target_resources(
+	TARGET eagine-app-resource-provider
+	RESOURCES
+		TraficCone "models/traffic_cone.json"
+		Jerrycan   "models/jerrycan.json"
+	PACKED
+	ENABLE_SEARCH)
+
+eagine_add_exe_analysis(eagine-app-resource-provider)
+
 eagine_target_modules(
 	eagine-app-resource-provider
 	std

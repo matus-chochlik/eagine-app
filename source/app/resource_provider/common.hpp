@@ -30,6 +30,27 @@ private:
     const std::string _content;
 };
 //------------------------------------------------------------------------------
+struct simple_buffer_source_blob_io
+  : main_ctx_object
+  , msgbus::source_blob_io {
+protected:
+    simple_buffer_source_blob_io(
+      identifier id,
+      main_ctx_parent parent,
+      span_size_t size,
+      std::function<memory::buffer(memory::buffer)>) noexcept;
+
+    ~simple_buffer_source_blob_io() noexcept override;
+
+    auto total_size() noexcept -> span_size_t final;
+
+    auto fetch_fragment(const span_size_t offs, memory::block dst) noexcept
+      -> span_size_t final;
+
+private:
+    memory::buffer _content;
+};
+//------------------------------------------------------------------------------
 struct eagitex_provider_base
   : main_ctx_object
   , resource_provider_interface {
