@@ -39,8 +39,7 @@ struct embedded_resource_provider final
 
     auto has_resource(const url& locator) noexcept -> bool final {
         const auto id{locator.path_identifier()};
-        return _loader.has_resource(id) and
-               locator.query().arg_has_value("embedded", true);
+        return _loader.has_resource(id);
     }
 
     auto get_resource_io(const url& locator)
