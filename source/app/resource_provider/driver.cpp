@@ -13,7 +13,7 @@ namespace eagine::app {
 static inline auto get_default_blob_timeout(const span_size_t size) noexcept
   -> std::chrono::seconds {
     return std::max(
-      std::chrono::seconds{size / 1024}, std::chrono::seconds{15});
+      std::chrono::seconds{size / 1024}, std::chrono::seconds{30});
 }
 //------------------------------------------------------------------------------
 auto resource_provider_interface::get_blob_timeout(
@@ -24,7 +24,7 @@ auto resource_provider_interface::get_blob_timeout(
 auto resource_provider_interface::get_blob_priority(
   const msgbus::message_priority priority) noexcept
   -> msgbus::message_priority {
-    return priority;
+    return increased(priority);
 }
 //------------------------------------------------------------------------------
 // resource_provider_driver
