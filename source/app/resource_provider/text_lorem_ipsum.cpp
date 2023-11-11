@@ -34,10 +34,10 @@ struct lorem_ipsum_io final : msgbus::source_blob_io {
       -> span_size_t final {
         const auto li{as_bytes(lorem_ipsum())};
 
-        dst = head(dst, total_size());
+        dst = head(dst, total_size() - offs);
         offs = offs % li.size();
         memory::block chnk{head(dst, li.size() - offs)};
-        span_size_t done{copy(head(skip(li, offs), chnk.size()), chnk).size()};
+        span_size_t done{copy(head(skip(li, offs), chnk), chnk).size()};
         chnk = skip(dst, done);
 
         while(chnk) {
