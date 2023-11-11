@@ -123,6 +123,9 @@ struct single_rgb8_eagitex_provider final : eagitex_provider_base {
         if(locator.has_scheme("eagitex") and locator.has_path("/2d_single_rgb8")) {
             const auto& q{locator.query()};
             const bool args_ok =
+              valid_color(q.arg_value_as<int>("r").value_or(0)) and
+              valid_color(q.arg_value_as<int>("g").value_or(0)) and
+              valid_color(q.arg_value_as<int>("b").value_or(0)) and
               valid_dimension(q.arg_value_as<int>("size").value_or(1));
             return args_ok;
         }

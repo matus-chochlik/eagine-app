@@ -36,6 +36,10 @@ struct eagitex_provider_base
 protected:
     eagitex_provider_base(identifier id, main_ctx_parent parent) noexcept;
 
+    static auto valid_color(int c) noexcept -> bool {
+        return (c >= 0) and (c <= 255);
+    }
+
     static auto valid_dimension(int d) noexcept -> bool {
         return (d > 0) and (d <= 64 * 1024);
     }
