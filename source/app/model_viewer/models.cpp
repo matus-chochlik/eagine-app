@@ -13,12 +13,12 @@ namespace eagine::app {
 model_viewer_models::model_viewer_models(
   execution_context& ctx,
   video_context& video) {
+    for(auto arg : ctx.main_context().args().all_like("--model")) {
+        load(arg.next().get_string(), url{arg.next().next()}, ctx, video);
+    }
+
     load("Traffic cone", url{"json:///TraficCone"}, ctx, video);
-    load("Jerrycan", url{"json:///Jerrycan"}, ctx, video);
     load("Hydrant", url{"json:///Hydrant"}, ctx, video);
-    load("Pumpkin", url{"json:///Pumpkin"}, ctx, video);
-    load("Guitar", url{"json:///Guitar"}, ctx, video);
-    load("Magnet", url{"json:///Magnet"}, ctx, video);
     load("Crate 1", url{"json:///Crate1"}, ctx, video);
     load("Stool", url{"json:///Stool"}, ctx, video);
     load("Arrow", url{"json:///Arrow"}, ctx, video);

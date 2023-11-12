@@ -27,6 +27,9 @@ eagine_embed_target_resources(
 		TraficCone "models/traffic_cone.json"
 		StairCube  "models/stair_cube.json"
 		Jerrycan   "models/jerrycan.json"
+		Pumpkin    "models/pumpkin.json"
+		Guitar     "models/guitar.json"
+		Magnet     "models/magnet.json"
 		CheckerImg "textures/checker.eagitexi"
 		CheckerTex "textures/checker.eagitex"
 	PACKED
