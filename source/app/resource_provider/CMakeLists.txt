@@ -25,6 +25,7 @@ eagine_embed_target_resources(
 		EdgeNFrag  "glsl/edges_normal_frag.glsl"
 		EdgeNProg  "glsl/edges_normal_prog.json"
 		TraficCone "models/traffic_cone.json"
+		StairCube  "models/stair_cube.json"
 		Jerrycan   "models/jerrycan.json"
 		CheckerImg "textures/checker.eagitexi"
 		CheckerTex "textures/checker.eagitex"
