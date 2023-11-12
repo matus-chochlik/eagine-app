@@ -53,6 +53,8 @@ export enum class resource_kind {
     yaml_text,
     /// @brief Vector of string values.
     string_list,
+    /// @brief Vector of URL values.
+    url_list,
     /// @brief Vector of floating-point values.
     float_vector,
     /// @brief Vector of vec3 values.
@@ -155,6 +157,10 @@ public:
     void handle_vec3_vector(
       const pending_resource_info& source,
       std::vector<math::vector<float, 3, true>>& values) noexcept;
+
+    void handle_mat4_vector(
+      const pending_resource_info& source,
+      std::vector<math::matrix<float, 4, 4, true, true>>& values) noexcept;
 
     void add_shape_generator(shared_holder<shapes::generator> gen) noexcept;
     void add_gl_shape_context(video_context&) noexcept;
@@ -306,12 +312,22 @@ private:
       const valtree::compound& tree) noexcept;
 
     void _handle_string_list(
+      const msgbus::blob_info&,
       const pending_resource_info& source,
-      const std::vector<std::string>& strings) noexcept;
+      const span_size_t offset,
+      const memory::span<const memory::const_block> data) noexcept;
+
+    void _handle_url_list(
+      const pending_resource_info& source,
+      const std::vector<url>& urls) noexcept;
 
     void _handle_vec3_vector(
       const pending_resource_info& source,
       const std::vector<math::vector<float, 3, true>>& values) noexcept;
+
+    void _handle_mat4_vector(
+      const pending_resource_info& source,
+      const std::vector<math::matrix<float, 4, 4, true, true>>& values) noexcept;
 
     auto _apply_shape_modifiers(shared_holder<shapes::generator>) noexcept
       -> shared_holder<shapes::generator>;
@@ -437,6 +453,9 @@ auto make_valtree_float_vector_builder(
   const shared_holder<pending_resource_info>& parent) noexcept
   -> unique_holder<valtree::object_builder>;
 auto make_valtree_vec3_vector_builder(
+  const shared_holder<pending_resource_info>& parent) noexcept
+  -> unique_holder<valtree::object_builder>;
+auto make_valtree_mat4_vector_builder(
   const shared_holder<pending_resource_info>& parent) noexcept
   -> unique_holder<valtree::object_builder>;
 auto make_valtree_camera_parameters_builder(
@@ -665,18 +684,38 @@ export struct resource_loader_signals {
         const identifier_t request_id;
         const url& locator;
         const std::vector<std::string>& strings;
+        const std::vector<std::string>& values{strings};
     };
 
     template <>
     struct get_load_info<std::vector<std::string>>
       : std::type_identity<string_list_load_info> {};
 
-    /// @brief Emitted when plain text string is loaded.
+    /// @brief Emitted when list of strings is loaded.
     signal<void(const string_list_load_info&) noexcept> string_list_loaded;
 
     auto load_signal(std::type_identity<std::vector<std::string>>) noexcept
       -> auto& {
         return string_list_loaded;
+    }
+
+    /// @brief Type of parameter of the url_list_loaded signal.
+    /// @see url_list_loaded
+    struct url_list_load_info {
+        const identifier_t request_id;
+        const url& locator;
+        const std::vector<url>& values;
+    };
+
+    template <>
+    struct get_load_info<std::vector<url>>
+      : std::type_identity<url_list_load_info> {};
+
+    /// @brief Emitted when list of strings is loaded.
+    signal<void(const url_list_load_info&) noexcept> url_list_loaded;
+
+    auto load_signal(std::type_identity<std::vector<url>>) noexcept -> auto& {
+        return url_list_loaded;
     }
 
     /// @brief Type of parameter of the float_vector_loaded signal.
@@ -741,6 +780,27 @@ export struct resource_loader_signals {
         math::cubic_bezier_curves<math::vector<float, 3, true>, float>>) noexcept
       -> auto& {
         return smooth_vec3_curve_loaded;
+    }
+
+    /// @brief Type of parameter of the mat4_vector_loaded signal.
+    /// @see mat4_vector_loaded
+    struct mat4_vector_load_info {
+        const identifier_t request_id;
+        const url& locator;
+        std::vector<math::matrix<float, 4, 4, true, true>>& values;
+    };
+
+    template <>
+    struct get_load_info<std::vector<math::matrix<float, 4, 4, true, true>>>
+      : std::type_identity<mat4_vector_load_info> {};
+
+    /// @brief Emitted when a vector of mat4 values is loaded.
+    signal<void(const mat4_vector_load_info&) noexcept> mat4_vector_loaded;
+
+    auto load_signal(
+      std::type_identity<
+        std::vector<math::matrix<float, 4, 4, true, true>>>) noexcept -> auto& {
+        return mat4_vector_loaded;
     }
 
     /// @brief Type of parameter of the glsl_source_loaded signal.
@@ -1086,6 +1146,19 @@ public:
     /// @brief Requests string-list resource.
     auto request_string_list(url locator) noexcept -> resource_request_result;
 
+    auto request(
+      std::type_identity<std::vector<std::string>>,
+      url locator) noexcept {
+        return request_string_list(std::move(locator));
+    }
+
+    /// @brief Requests URL-list resource.
+    auto request_url_list(url locator) noexcept -> resource_request_result;
+
+    auto request(std::type_identity<std::vector<url>>, url locator) noexcept {
+        return request_url_list(std::move(locator));
+    }
+
     /// @brief Requests a float vector resource.
     auto request_float_vector(url locator) noexcept -> resource_request_result;
 
@@ -1102,7 +1175,7 @@ public:
         return request_vec3_vector(std::move(locator));
     }
 
-    /// @brief Requests a smoothe vec3 curve resource.
+    /// @brief Requests a smooth vec3 curve resource.
     auto request_smooth_vec3_curve(url locator) noexcept
       -> resource_request_result;
 
@@ -1111,6 +1184,15 @@ public:
         math::cubic_bezier_curves<math::vector<float, 3, true>, float>>,
       url locator) noexcept {
         return request_smooth_vec3_curve(std::move(locator));
+    }
+
+    /// @brief Requests a 4x4 matrix resource.
+    auto request_mat4_vector(url locator) noexcept -> resource_request_result;
+
+    auto request(
+      std::type_identity<std::vector<math::matrix<float, 4, 4, true, true>>>,
+      url locator) noexcept {
+        return request_mat4_vector(std::move(locator));
     }
 
     /// @brief Requests a value tree object resource.
@@ -1352,10 +1434,7 @@ inline auto valtree_builder_common::log(
 export class pending_resource_requests {
 public:
     /// @brief Construction from a reference to resource_loader.
-    pending_resource_requests(resource_loader& loader) noexcept
-      : _sig_bind{loader.resource_loaded.bind(
-          make_callable_ref<&pending_resource_requests::_handle_loaded>(
-            this))} {}
+    pending_resource_requests(resource_loader& loader) noexcept;
 
     /// @brief Construction from a reference to execution_context.
     pending_resource_requests(execution_context&) noexcept;

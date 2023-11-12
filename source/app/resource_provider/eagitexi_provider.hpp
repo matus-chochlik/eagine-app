@@ -5,8 +5,8 @@
 /// See accompanying file LICENSE_1_0.txt or copy at
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
-#ifndef EAGINE_RESOURCE_PROVIDER_EAGITEXI_BASE_HPP
-#define EAGINE_RESOURCE_PROVIDER_EAGITEXI_BASE_HPP
+#ifndef EAGINE_RESOURCE_PROVIDER_EAGITEXI_PROVIDER_HPP
+#define EAGINE_RESOURCE_PROVIDER_EAGITEXI_PROVIDER_HPP
 
 import eagine.core;
 import std;
@@ -15,20 +15,23 @@ import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
+struct pixel_provider_coordinate {
+    int width{1};
+    int height{1};
+    int depth{1};
+    int x{0};
+    int y{0};
+    int z{0};
+    int component{0};
+};
+//------------------------------------------------------------------------------
 struct pixel_provider_interface : interface<pixel_provider_interface> {
     virtual auto pixel_byte_count() noexcept -> int = 0;
 
     virtual auto estimated_data_size(int w, int h, int d) noexcept
       -> span_size_t = 0;
 
-    virtual auto pixel_byte(
-      int x,
-      int y,
-      int z,
-      int w,
-      int h,
-      int d,
-      int c) noexcept -> byte = 0;
+    virtual auto pixel_byte(pixel_provider_coordinate) noexcept -> byte = 0;
 };
 //------------------------------------------------------------------------------
 struct pixel_provider_factory_interface
@@ -40,6 +43,12 @@ struct pixel_provider_factory_interface
 };
 //------------------------------------------------------------------------------
 auto provider_eagitexi_2d_r8(
+  main_ctx_parent,
+  std::string path,
+  shared_holder<pixel_provider_factory_interface>)
+  -> unique_holder<resource_provider_interface>;
+//------------------------------------------------------------------------------
+auto provider_eagitexi_3d_r8(
   main_ctx_parent,
   std::string path,
   shared_holder<pixel_provider_factory_interface>)

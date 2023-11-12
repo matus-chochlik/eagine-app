@@ -10,6 +10,10 @@
 namespace eagine::app {
 //------------------------------------------------------------------------------
 struct lorem_ipsum_io final : msgbus::source_blob_io {
+    span_size_t _repeats{1};
+
+    lorem_ipsum_io(span_size_t repeats) noexcept
+      : _repeats{repeats} {}
 
     static constexpr auto lorem_ipsum() noexcept -> string_view {
         return {
@@ -23,26 +27,39 @@ struct lorem_ipsum_io final : msgbus::source_blob_io {
     }
 
     auto total_size() noexcept -> span_size_t final {
-        return lorem_ipsum().size();
+        return lorem_ipsum().size() * _repeats;
     }
 
-    auto fetch_fragment(const span_size_t offs, memory::block dst) noexcept
+    auto fetch_fragment(span_size_t offs, memory::block dst) noexcept
       -> span_size_t final {
-        const auto li{lorem_ipsum()};
-        const auto sz{li.size() - offs};
-        dst = head(dst, sz);
-        return copy(as_bytes(head(skip(li, offs), dst.size())), dst).size();
+        const auto li{as_bytes(lorem_ipsum())};
+
+        dst = head(dst, total_size() - offs);
+        offs = offs % li.size();
+        memory::block chnk{head(dst, li.size() - offs)};
+        span_size_t done{copy(head(skip(li, offs), chnk), chnk).size()};
+        chnk = skip(dst, done);
+
+        while(chnk) {
+            done += copy(head(li, chnk), chnk).size();
+            chnk = skip(dst, done);
+        }
+        return done;
     }
 };
 //------------------------------------------------------------------------------
 struct lorem_ipsum_provider final : resource_provider_interface {
     auto has_resource(const url& locator) noexcept -> bool final {
-        return locator.has_path("/lorem_ipsum");
+        const auto& q{locator.query()};
+        return locator.has_path("/lorem_ipsum") and
+               q.arg_value_as<span_size_t>("repeat").value_or(1) > 0;
     }
 
-    auto get_resource_io(const url&)
+    auto get_resource_io(const url& locator)
       -> unique_holder<msgbus::source_blob_io> final {
-        return {hold<lorem_ipsum_io>};
+        return {
+          hold<lorem_ipsum_io>,
+          locator.query().arg_value_as<span_size_t>("repeat").value_or(1)};
     }
 };
 //------------------------------------------------------------------------------

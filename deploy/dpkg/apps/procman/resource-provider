@@ -22,21 +22,11 @@
 	"conn_args": ["${conn_type_arg}", "--msgbus-router-address", "$[router_addr_args...]"],
 	"url": "eagires:///sequence?count=1048576"
 },"pipelines":[{
-	"identity": "router",
-	"required_by": ["provider"],
-	"command": [
-		"$(eagiapp msgbus-router)", "$<identity router>",
-		"--log-active-state", "RouterNode", "running",
-		"--msgbus-router-shutdown-verify", "false",
-		"--msgbus-router-shutdown-delay", "15s",
-		"$[conn_args...]",
-		"$[log_args...]"]
-},{
 	"identity": "provider",
 	"required_by": ["hexdump"],
 	"command": [
 		"$(eagiapp app-resource-provider)", "$<identity provider>",
-		"--app-resource-provider-max-idle-time", "15s",
+		"--app-resource-provider-with-router",
 		"$[conn_args...]",
 		"$[log_args...]"]
 },{
@@ -47,5 +37,5 @@
 		"$[conn_args...]",
 		"$[log_args...]"]
 }],"expect":{
-	"clean_shutdown": ["router", "provider", "hexdump"]
+	"clean_shutdown": ["provider", "hexdump"]
 }}

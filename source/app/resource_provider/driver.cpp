@@ -13,7 +13,7 @@ namespace eagine::app {
 static inline auto get_default_blob_timeout(const span_size_t size) noexcept
   -> std::chrono::seconds {
     return std::max(
-      std::chrono::seconds{size / 1024}, std::chrono::seconds{15});
+      std::chrono::seconds{size / 1024}, std::chrono::seconds{30});
 }
 //------------------------------------------------------------------------------
 auto resource_provider_interface::get_blob_timeout(
@@ -24,7 +24,7 @@ auto resource_provider_interface::get_blob_timeout(
 auto resource_provider_interface::get_blob_priority(
   const msgbus::message_priority priority) noexcept
   -> msgbus::message_priority {
-    return priority;
+    return increased(priority);
 }
 //------------------------------------------------------------------------------
 // resource_provider_driver
@@ -35,15 +35,21 @@ void resource_provider_driver::_add(
     _providers.emplace_back(std::move(provider));
 }
 //------------------------------------------------------------------------------
-void resource_provider_driver::_populate() {
+void resource_provider_driver::_populate(msgbus::resource_data_consumer_node&) {
+    _add(provider_embedded(*this));
     _add(provider_eagitexi_random(*this));
     _add(provider_eagitexi_2d_single_rgb8(*this));
+    _add(provider_eagitex_2d_single_rgb8(*this));
+    _add(provider_eagitexi_sphere_volume(*this));
+    _add(provider_eagitex_sphere_volume(*this));
     _add(provider_text_lorem_ipsum(*this));
 }
 //------------------------------------------------------------------------------
-resource_provider_driver::resource_provider_driver(main_ctx_parent parent)
+resource_provider_driver::resource_provider_driver(
+  main_ctx_parent parent,
+  msgbus::resource_data_consumer_node& consumer)
   : main_ctx_object{"RsrcPrDrvr", parent} {
-    _populate();
+    _populate(consumer);
 }
 //------------------------------------------------------------------------------
 auto resource_provider_driver::find_provider_of(const url& locator) noexcept

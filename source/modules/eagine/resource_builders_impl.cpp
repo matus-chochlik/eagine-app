@@ -78,7 +78,7 @@ void valtree_float_vector_builder::do_add(
   span<const T> data) noexcept {
     if(path.size() == 2) {
         if(not data.empty()) {
-            if((path.starts_with("values")) and (path.starts_with("data"))) {
+            if((path.starts_with("values")) or (path.starts_with("data"))) {
                 for(const auto v : data) {
                     _values.push_back(float(v));
                 }
@@ -92,7 +92,7 @@ void valtree_float_vector_builder::do_add(
   span<const float> data) noexcept {
     if(path.size() == 2) {
         if(not data.empty()) {
-            if((path.starts_with("values")) and (path.starts_with("data"))) {
+            if((path.starts_with("values")) or (path.starts_with("data"))) {
                 _values.insert(_values.end(), data.begin(), data.end());
             }
         }
@@ -129,37 +129,14 @@ public:
     using base::do_add;
 
     template <std::integral T>
-    void do_add(const basic_string_path& path, span<const T> data) noexcept {
-        if(not _do_add(path, data)) {
-            if((path.size() == 1) and data.has_single_value()) {
-                if((path.starts_with("count")) or (path.starts_with("size"))) {
-                    _values.reserve(std_size(*data));
-                }
-            }
-        }
-    }
+    void do_add(const basic_string_path& path, span<const T> data) noexcept;
 
     template <std::floating_point T>
-    void do_add(const basic_string_path& path, span<const T> data) noexcept {
-        _do_add(path, data);
-    }
+    void do_add(const basic_string_path& path, span<const T> data) noexcept;
 
-    void finish_object(const basic_string_path& path) noexcept final {
-        if(path.size() == 2) {
-            if((path.starts_with("values")) or (path.starts_with("data"))) {
-                _values.push_back(_temp);
-                _temp = {0.F, 0.F, 0.F};
-            }
-        }
-    }
+    void finish_object(const basic_string_path& path) noexcept final;
 
-    auto finish() noexcept -> bool final {
-        if(auto parent{_parent.lock()}) {
-            parent->handle_vec3_vector(*parent, _values);
-            return true;
-        }
-        return false;
-    }
+    auto finish() noexcept -> bool final;
 
 private:
     template <typename T>
@@ -205,10 +182,234 @@ auto valtree_vec3_vector_builder::_do_add(
     return false;
 }
 //------------------------------------------------------------------------------
+template <std::integral T>
+void valtree_vec3_vector_builder::do_add(
+  const basic_string_path& path,
+  span<const T> data) noexcept {
+    if(not _do_add(path, data)) {
+        if((path.size() == 1) and data.has_single_value()) {
+            if((path.starts_with("count")) or (path.starts_with("size"))) {
+                _values.reserve(std_size(*data));
+            }
+        }
+    }
+}
+//------------------------------------------------------------------------------
+template <std::floating_point T>
+void valtree_vec3_vector_builder::do_add(
+  const basic_string_path& path,
+  span<const T> data) noexcept {
+    _do_add(path, data);
+}
+//------------------------------------------------------------------------------
+void valtree_vec3_vector_builder::finish_object(
+  const basic_string_path& path) noexcept {
+    if(path.size() == 2) {
+        if((path.starts_with("values")) or (path.starts_with("data"))) {
+            _values.push_back(_temp);
+            _temp = {0.F, 0.F, 0.F};
+        }
+    }
+}
+//------------------------------------------------------------------------------
+auto valtree_vec3_vector_builder::finish() noexcept -> bool {
+    if(auto parent{_parent.lock()}) {
+        parent->handle_vec3_vector(*parent, _values);
+        return true;
+    }
+    return false;
+}
+//------------------------------------------------------------------------------
 auto make_valtree_vec3_vector_builder(
   const shared_holder<pending_resource_info>& parent) noexcept
   -> unique_holder<valtree::object_builder> {
     return {hold<valtree_vec3_vector_builder>, parent};
+}
+//------------------------------------------------------------------------------
+// valtree_mat4_vector_builder
+//------------------------------------------------------------------------------
+class valtree_mat4_vector_builder
+  : public valtree_builder_base<valtree_mat4_vector_builder> {
+    using base = valtree_builder_base<valtree_mat4_vector_builder>;
+
+public:
+    using base::base;
+
+    auto max_token_size() noexcept -> span_size_t final {
+        return 64;
+    }
+
+    using base::do_add;
+
+    template <std::integral T>
+    void do_add(const basic_string_path& path, span<const T> data) noexcept;
+
+    template <std::floating_point T>
+    void do_add(const basic_string_path& path, span<const T> data) noexcept;
+
+    void finish_object(const basic_string_path& path) noexcept final;
+
+    auto finish() noexcept -> bool final;
+
+private:
+    template <typename T>
+    auto _do_add(const basic_string_path& path, span<const T> data) noexcept
+      -> bool;
+
+    static constexpr auto _default() noexcept
+      -> math::matrix<float, 4, 4, true, true> {
+        return {
+          {{1.F, 0.F, 0.F, 0.F},
+           {0.F, 1.F, 0.F, 0.F},
+           {0.F, 0.F, 1.F, 0.F},
+           {0.F, 0.F, 0.F, 1.F}}};
+    }
+
+    math::matrix<float, 4, 4, true, true> _temp{_default()};
+    std::vector<math::matrix<float, 4, 4, true, true>> _values;
+    std::size_t _offs{0U};
+    std::size_t _roffs{0U};
+    std::size_t _coffs{0U};
+};
+//------------------------------------------------------------------------------
+template <typename T>
+auto valtree_mat4_vector_builder::_do_add(
+  const basic_string_path& path,
+  span<const T> data) noexcept -> bool {
+    if(path.size() == 3) {
+        if((path.starts_with("values")) or (path.starts_with("data"))) {
+            if(data.has_single_value()) {
+                if(path.ends_with("ii")) {
+                    math::set_rm<0, 0>(_temp, float(*data));
+                    return true;
+                } else if(path.ends_with("ij")) {
+                    math::set_rm<0, 1>(_temp, float(*data));
+                    return true;
+                } else if(path.ends_with("ik")) {
+                    math::set_rm<0, 2>(_temp, float(*data));
+                    return true;
+                } else if(path.ends_with("il")) {
+                    math::set_rm<0, 3>(_temp, float(*data));
+                    return true;
+                } else if(path.ends_with("ji")) {
+                    math::set_rm<1, 0>(_temp, float(*data));
+                    return true;
+                } else if(path.ends_with("jj")) {
+                    math::set_rm<1, 1>(_temp, float(*data));
+                    return true;
+                } else if(path.ends_with("jk")) {
+                    math::set_rm<1, 2>(_temp, float(*data));
+                    return true;
+                } else if(path.ends_with("jl")) {
+                    math::set_rm<1, 3>(_temp, float(*data));
+                    return true;
+                } else if(path.ends_with("ki")) {
+                    math::set_rm<2, 0>(_temp, float(*data));
+                    return true;
+                } else if(path.ends_with("kj")) {
+                    math::set_rm<2, 1>(_temp, float(*data));
+                    return true;
+                } else if(path.ends_with("kk")) {
+                    math::set_rm<2, 2>(_temp, float(*data));
+                    return true;
+                } else if(path.ends_with("kl")) {
+                    math::set_rm<2, 3>(_temp, float(*data));
+                    return true;
+                } else if(path.ends_with("li")) {
+                    math::set_rm<3, 0>(_temp, float(*data));
+                    return true;
+                } else if(path.ends_with("lj")) {
+                    math::set_rm<3, 1>(_temp, float(*data));
+                    return true;
+                } else if(path.ends_with("lk")) {
+                    math::set_rm<3, 2>(_temp, float(*data));
+                    return true;
+                } else if(path.ends_with("ll")) {
+                    math::set_rm<3, 3>(_temp, float(*data));
+                    return true;
+                }
+            }
+            if(path.ends_with("_")) {
+                for(const auto i : index_range(data)) {
+                    math::set_rm(_temp, _offs / 4, _offs % 4, float(data[i]));
+                    if(++_offs == 16) {
+                        _offs = 0;
+                        _roffs = 0;
+                        _coffs = 0;
+                        _values.push_back(_temp);
+                        _temp = _default();
+                    }
+                }
+                return true;
+            }
+        }
+    } else if(path.size() == 4) {
+        if(path.ends_with("_")) {
+            for(const auto i : index_range(data)) {
+                math::set_rm(_temp, _roffs, _coffs, float(data[i]));
+                _temp._v[_roffs][_coffs] = data[i];
+                if(++_coffs == 4) {
+                    _coffs = 0;
+                    if(++_roffs == 4) {
+                        _roffs = 0;
+                        _offs = 0;
+                        _values.push_back(_temp);
+                        _temp = _default();
+                    }
+                }
+            }
+            return true;
+        }
+    }
+    return false;
+}
+//------------------------------------------------------------------------------
+template <std::integral T>
+void valtree_mat4_vector_builder::do_add(
+  const basic_string_path& path,
+  span<const T> data) noexcept {
+    if(not _do_add(path, data)) {
+        if((path.size() == 1) and data.has_single_value()) {
+            if((path.starts_with("count")) or (path.starts_with("size"))) {
+                _values.reserve(std_size(*data));
+            }
+        }
+    }
+}
+//------------------------------------------------------------------------------
+template <std::floating_point T>
+void valtree_mat4_vector_builder::do_add(
+  const basic_string_path& path,
+  span<const T> data) noexcept {
+    _do_add(path, data);
+}
+//------------------------------------------------------------------------------
+void valtree_mat4_vector_builder::finish_object(
+  const basic_string_path& path) noexcept {
+    if(path.size() == 2) {
+        if((path.starts_with("values")) or (path.starts_with("data"))) {
+            _values.push_back(_temp);
+            _temp = {
+              {{1.F, 0.F, 0.F, 0.F},
+               {0.F, 1.F, 0.F, 0.F},
+               {0.F, 0.F, 1.F, 0.F},
+               {0.F, 0.F, 0.F, 1.F}}};
+        }
+    }
+}
+//------------------------------------------------------------------------------
+auto valtree_mat4_vector_builder::finish() noexcept -> bool {
+    if(auto parent{_parent.lock()}) {
+        parent->handle_mat4_vector(*parent, _values);
+        return true;
+    }
+    return false;
+}
+//------------------------------------------------------------------------------
+auto make_valtree_mat4_vector_builder(
+  const shared_holder<pending_resource_info>& parent) noexcept
+  -> unique_holder<valtree::object_builder> {
+    return {hold<valtree_mat4_vector_builder>, parent};
 }
 //------------------------------------------------------------------------------
 // camera parameters

@@ -321,7 +321,7 @@ public:
     /// @brief Type of the loaded signal parameter.
     using load_info = resource_load_info<Resource>;
 
-    /// @brief Signal emmitted when the resource is successfully loaded.
+    /// @brief Signal emitted when the resource is successfully loaded.
     signal<void(const load_info&) noexcept> loaded;
 
     /// @brief Constructor specifying the resource locator.
@@ -487,9 +487,13 @@ public:
     }
 };
 //------------------------------------------------------------------------------
+export using string_list_resource = loaded_resource<std::vector<std::string>>;
+export using url_list_resource = loaded_resource<std::vector<url>>;
 export using float_vector_resource = loaded_resource<std::vector<float>>;
 export using vec3_vector_resource =
   loaded_resource<std::vector<math::vector<float, 3, true>>>;
+export using mat4_vector_resource =
+  loaded_resource<std::vector<math::matrix<float, 4, 4, true, true>>>;
 //------------------------------------------------------------------------------
 export template <typename T, typename P, span_size_t O>
 class loaded_resource<math::bezier_curves<T, P, O>>

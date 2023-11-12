@@ -259,14 +259,12 @@ void pending_resource_info::_handle_plain_text(
         append_to(as_chars(chunk), text);
     }
 
-    if(is(resource_kind::string_list)) {
-        std::vector<std::string> strings;
-        if(const auto cont{continuation()}) {
-            cont->_handle_string_list(*this, strings);
-        }
+    if(is(resource_kind::plain_text)) {
+        _parent.plain_text_loaded(
+          {.request_id = _request_id,
+           .locator = _locator,
+           .text = std::move(text)});
     }
-    _parent.plain_text_loaded(
-      {.request_id = _request_id, .locator = _locator, .text = std::move(text)});
     _parent.resource_loaded(_request_id, _kind, _locator);
     mark_finished();
 }
@@ -317,6 +315,7 @@ void pending_resource_info::_handle_yaml_text(
       .arg("locator", _locator.str());
 
     if(is(resource_kind::value_tree)) {
+        // TODO
     }
     mark_finished();
 }
@@ -336,16 +335,72 @@ void pending_resource_info::_handle_value_tree(
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::_handle_string_list(
-  const pending_resource_info& source,
-  const std::vector<std::string>& strings) noexcept {
-    _parent.log_info("loaded string list")
+  const msgbus::blob_info&,
+  const pending_resource_info&,
+  const span_size_t offset,
+  const memory::span<const memory::const_block> data) noexcept {
+    _parent.log_debug("loaded string list data")
       .arg("requestId", _request_id)
-      .arg("size", strings.size())
+      .arg("offset", offset)
       .arg("locator", _locator.str());
+
+    std::vector<std::string> strings;
+    std::string line;
+    const string_view sep{"\n"};
+    for(const auto chunk : data) {
+        auto text{as_chars(chunk)};
+        while(not text.empty()) {
+            if(const auto pos{memory::find_position(text, sep)}) {
+                append_to(head(text, *pos), line);
+                text = skip(text, *pos + sep.size());
+                strings.emplace_back(std::move(line));
+            } else {
+                append_to(text, line);
+                text = {};
+            }
+        }
+    }
+    if(not line.empty()) {
+        strings.emplace_back(std::move(line));
+    }
+
+    if(const auto cont{continuation()}) {
+        if(cont->is(resource_kind::url_list)) {
+            std::vector<url> urls;
+            urls.reserve(strings.size());
+            for(const auto& str : strings) {
+                if(not str.empty()) {
+                    if(url locator{str}) {
+                        urls.emplace_back(std::move(locator));
+                    }
+                }
+            }
+            cont->_handle_url_list(*this, urls);
+        }
+    }
 
     if(is(resource_kind::string_list)) {
         _parent.string_list_loaded(
-          {.request_id = _request_id, .locator = _locator, .strings = strings});
+          {.request_id = _request_id,
+           .locator = _locator,
+           .strings = strings,
+           .values = strings});
+        _parent.resource_loaded(_request_id, _kind, _locator);
+    }
+    mark_finished();
+}
+//------------------------------------------------------------------------------
+void pending_resource_info::_handle_url_list(
+  const pending_resource_info& source,
+  const std::vector<url>& urls) noexcept {
+    _parent.log_info("loaded URL list")
+      .arg("requestId", _request_id)
+      .arg("size", urls.size())
+      .arg("locator", _locator.str());
+
+    if(is(resource_kind::url_list)) {
+        _parent.url_list_loaded(
+          {.request_id = _request_id, .locator = _locator, .values = urls});
         _parent.resource_loaded(_request_id, _kind, _locator);
     }
     mark_finished();
@@ -398,6 +453,32 @@ void pending_resource_info::_handle_vec3_vector(
           {.request_id = _request_id, .locator = _locator, .curve = curve});
         _parent.resource_loaded(_request_id, _kind, _locator);
     }
+    mark_finished();
+}
+//------------------------------------------------------------------------------
+void pending_resource_info::handle_mat4_vector(
+  const pending_resource_info& source,
+  std::vector<math::matrix<float, 4, 4, true, true>>& values) noexcept {
+    _parent.log_info("loaded mat4 values")
+      .arg("requestId", _request_id)
+      .arg("size", values.size())
+      .arg("locator", _locator.str());
+
+    if(const auto cont{continuation()}) {
+        cont->_handle_mat4_vector(*this, values);
+    }
+
+    if(is(resource_kind::mat4_vector)) {
+        _parent.mat4_vector_loaded(
+          {.request_id = _request_id, .locator = _locator, .values = values});
+        _parent.resource_loaded(_request_id, _kind, _locator);
+    }
+    mark_finished();
+}
+//------------------------------------------------------------------------------
+void pending_resource_info::_handle_mat4_vector(
+  const pending_resource_info& source,
+  const std::vector<math::matrix<float, 4, 4, true, true>>& values) noexcept {
     mark_finished();
 }
 //------------------------------------------------------------------------------
@@ -646,6 +727,9 @@ void pending_resource_info::handle_source_data(
         case resource_kind::plain_text:
             _handle_plain_text(binfo, rinfo, offset, data);
             break;
+        case resource_kind::string_list:
+            _handle_string_list(binfo, rinfo, offset, data);
+            break;
         case resource_kind::json_text:
             _handle_json_text(binfo, rinfo, offset, data);
             break;
@@ -760,12 +844,12 @@ auto resource_loader::request_plain_text(url locator) noexcept
         if(const auto src_request{_new_resource(
              fetch_resource_chunks(
                locator,
-               16 * 1024,
+               1024,
                msgbus::message_priority::normal,
                std::chrono::seconds{15}),
              resource_kind::plain_text)}) {
             auto new_request{
-              _new_resource(std::move(locator), resource_kind::glsl_source)};
+              _new_resource(std::move(locator), resource_kind::plain_text)};
             src_request.set_continuation(new_request);
             return new_request;
         }
@@ -775,14 +859,33 @@ auto resource_loader::request_plain_text(url locator) noexcept
 //------------------------------------------------------------------------------
 auto resource_loader::request_string_list(url locator) noexcept
   -> resource_request_result {
-    if(const auto src_request{request_plain_text(locator)}) {
+    if(locator.has_path_suffix(".txt") or locator.has_scheme("txt")) {
+        if(const auto src_request{_new_resource(
+             fetch_resource_chunks(
+               locator,
+               1024,
+               msgbus::message_priority::normal,
+               std::chrono::seconds{15}),
+             resource_kind::string_list)}) {
+            auto new_request{
+              _new_resource(std::move(locator), resource_kind::string_list)};
+            src_request.set_continuation(new_request);
+            return new_request;
+        }
+    }
+    return _cancelled_resource(locator, resource_kind::string_list);
+}
+//------------------------------------------------------------------------------
+auto resource_loader::request_url_list(url locator) noexcept
+  -> resource_request_result {
+    if(const auto src_request{request_string_list(locator)}) {
         auto new_request{
-          _new_resource(std::move(locator), resource_kind::string_list)};
+          _new_resource(std::move(locator), resource_kind::url_list)};
         src_request.set_continuation(new_request);
 
         return new_request;
     }
-    return _cancelled_resource(locator, resource_kind::string_list);
+    return _cancelled_resource(locator, resource_kind::url_list);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request_float_vector(url locator) noexcept
@@ -819,6 +922,18 @@ auto resource_loader::request_smooth_vec3_curve(url locator) noexcept
         return new_request;
     }
     return _cancelled_resource(locator, resource_kind::smooth_vec3_curve);
+}
+//------------------------------------------------------------------------------
+auto resource_loader::request_mat4_vector(url locator) noexcept
+  -> resource_request_result {
+    auto new_request{_new_resource(locator, resource_kind::mat4_vector)};
+
+    if(const auto src_request{request_value_tree_traversal(
+         locator, make_valtree_mat4_vector_builder(new_request))}) {
+        return new_request;
+    }
+    new_request.info().mark_finished();
+    return _cancelled_resource(locator, resource_kind::mat4_vector);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request_value_tree(url locator) noexcept
@@ -1154,6 +1269,11 @@ auto resource_loader::update() noexcept -> work_done {
 }
 //------------------------------------------------------------------------------
 // pending_resource_requests
+//------------------------------------------------------------------------------
+pending_resource_requests::pending_resource_requests(
+  resource_loader& loader) noexcept
+  : _sig_bind{loader.resource_loaded.bind(
+      make_callable_ref<&pending_resource_requests::_handle_loaded>(this))} {}
 //------------------------------------------------------------------------------
 pending_resource_requests::pending_resource_requests(
   execution_context& ctx) noexcept
