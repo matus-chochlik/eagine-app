@@ -34,6 +34,10 @@ eagine_embed_target_resources(
 		Stool      "models/stool.json"
 		CheckerImg "textures/checker.eagitexi"
 		CheckerTex "textures/checker.eagitex"
+		TlngR4S64  "tilings/r4_s64.txt"
+		TlngR4S128 "tilings/r4_s128.txt"
+		TlngR4S256 "tilings/r4_s256.txt"
+		TlngR4S512 "tilings/r4_s512.txt"
 	PACKED
 	ENABLE_SEARCH)
 
