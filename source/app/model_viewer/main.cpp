@@ -155,12 +155,9 @@ void model_viewer::update_overlays(guiplus::gui_utils& utils) noexcept {
 }
 //------------------------------------------------------------------------------
 void model_viewer::update() noexcept {
-    auto& state = context().state();
-    if(state.user_idle_too_long()) {
-        _camera.idle_update(state);
-    }
 
     _backgrounds.update();
+
     if(_backgrounds) {
         _clear_background();
     } else {
@@ -170,13 +167,19 @@ void model_viewer::update() noexcept {
     _models.update();
     _programs.update();
     _textures.update();
+
     if(_models and _programs and _textures) {
+        auto& state = context().state();
+        if(state.user_idle_too_long()) {
+            _camera.idle_update(state);
+        }
         _view_model();
     } else {
         _models.load_if_needed(context(), _video);
         _programs.load_if_needed(context(), _video);
         _textures.load_if_needed(context(), _video);
     }
+
     _video.commit();
 }
 //------------------------------------------------------------------------------
@@ -192,13 +195,14 @@ void model_viewer::clean_up() noexcept {
 //------------------------------------------------------------------------------
 auto establish(main_ctx&) -> unique_holder<launchpad>;
 //------------------------------------------------------------------------------
-auto example_main(main_ctx& ctx) -> int {
+auto viewer_main(main_ctx& ctx) -> int {
     enable_message_bus(ctx);
     return default_main(ctx, establish(ctx));
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app
 auto main(int argc, const char** argv) -> int {
-    return eagine::default_main(argc, argv, eagine::app::example_main);
+    eagine::main_ctx_options options{.app_id = "ModelViewr"};
+    return eagine::main_impl(argc, argv, options, eagine::app::viewer_main);
 }
 //------------------------------------------------------------------------------

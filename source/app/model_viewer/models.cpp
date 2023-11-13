@@ -14,11 +14,9 @@ model_viewer_models::model_viewer_models(
   execution_context& ctx,
   video_context& video) {
     for(auto arg : ctx.main_context().args().all_like("--model")) {
-        load(arg.next().get_string(), url{arg.next().next()}, ctx, video);
+        load(arg, ctx, video);
     }
 
-    load("Traffic cone", url{"json:///TraficCone"}, ctx, video);
-    load("Crate 1", url{"json:///Crate1"}, ctx, video);
     load("Arrow", url{"json:///Arrow"}, ctx, video);
     load(
       "Twisted torus",

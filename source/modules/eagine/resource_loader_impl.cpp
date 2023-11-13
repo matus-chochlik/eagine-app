@@ -623,10 +623,10 @@ void pending_resource_info::_handle_glsl_source(
 auto pending_resource_info::_finish_gl_program(
   _pending_gl_program_state& pgps) noexcept -> bool {
     if(pgps.loaded and pgps.pending_requests.empty()) {
-        _parent.log_info("loaded and linked GL program object")
+        _parent.log_info("loaded and linked GL program object (${locator})")
           .arg("requestId", _request_id)
           .arg("bindgCount", pgps.input_bindings.count())
-          .arg("locator", _locator.str());
+          .arg("locator", "string", _locator.str());
 
         const auto& gl = pgps.video.get().gl_api().operations();
         gl.link_program(pgps.prog);
@@ -651,9 +651,9 @@ auto pending_resource_info::_finish_gl_program(
 void pending_resource_info::_handle_gl_shader(
   const pending_resource_info& source,
   oglplus::owned_shader_name& shdr) noexcept {
-    _parent.log_info("loaded and compiled GL shader object")
+    _parent.log_info("loaded and compiled GL shader object (${locator})")
       .arg("requestId", _request_id)
-      .arg("locator", source.locator().str());
+      .arg("locator", "string", source.locator().str());
 
     if(is(resource_kind::gl_program)) {
         if(const auto pgps{get_if<_pending_gl_program_state>(_state)}) {

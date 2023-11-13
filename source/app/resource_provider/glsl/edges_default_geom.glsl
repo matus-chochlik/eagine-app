@@ -5,14 +5,9 @@ layout(triangle_strip, max_vertices = 3) out;
 
 const vec2 ViewportDimensions = vec2(1024, 1024);
 
-in vec3 vertNormal[3];
-
 noperspective out vec3 geomDist;
-out vec3 geomNormal;
 
 void main() {
-    geomNormal = normalize(vertNormal[0] + vertNormal[1] + vertNormal[2]);
-
     vec2 ScreenPos[3];
     for(int i = 0; i != 3; ++i) {
         ScreenPos[i] =

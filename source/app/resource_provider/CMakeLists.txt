@@ -20,6 +20,10 @@ add_executable(
 eagine_embed_target_resources(
 	TARGET eagine-app-resource-provider
 	RESOURCES
+		EdgeDVert  "glsl/edges_default_vert.glsl"
+		EdgeDGeom  "glsl/edges_default_geom.glsl"
+		EdgeDFrag  "glsl/edges_default_frag.glsl"
+		EdgeDProg  "glsl/edges_default_prog.json"
 		EdgeNVert  "glsl/edges_normal_vert.glsl"
 		EdgeNGeom  "glsl/edges_normal_geom.glsl"
 		EdgeNFrag  "glsl/edges_normal_frag.glsl"
@@ -31,6 +35,7 @@ eagine_embed_target_resources(
 		Hydrant    "models/hydrant.json"
 		Guitar     "models/guitar.json"
 		Magnet     "models/magnet.json"
+		Crate1     "models/crate1.json"
 		Stool      "models/stool.json"
 		CheckerImg "textures/checker.eagitexi"
 		CheckerTex "textures/checker.eagitex"
