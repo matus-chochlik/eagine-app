@@ -648,6 +648,8 @@ auto pending_resource_info::_finish_gl_program(
               .arg("bindgCount", pgps.input_bindings.count())
               .arg("locator", "string", _locator.str());
 
+            gl.use_program(pgps.prog);
+
             _parent.gl_program_loaded(
               {.request_id = _request_id,
                .locator = _locator,
@@ -655,7 +657,6 @@ auto pending_resource_info::_finish_gl_program(
                .name = pgps.prog,
                .ref = pgps.prog,
                .input_bindings = pgps.input_bindings});
-            gl.use_program(pgps.prog);
             _parent.resource_loaded(_request_id, _kind, _locator);
         } else {
             const std::string message{
