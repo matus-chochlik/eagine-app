@@ -18,9 +18,7 @@ model_viewer_models::model_viewer_models(
     }
 
     load("Traffic cone", url{"json:///TraficCone"}, ctx, video);
-    load("Hydrant", url{"json:///Hydrant"}, ctx, video);
     load("Crate 1", url{"json:///Crate1"}, ctx, video);
-    load("Stool", url{"json:///Stool"}, ctx, video);
     load("Arrow", url{"json:///Arrow"}, ctx, video);
     load(
       "Twisted torus",

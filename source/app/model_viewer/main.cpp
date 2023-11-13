@@ -6,6 +6,7 @@
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
 #include "main.hpp"
+import eagine.msgbus;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
@@ -82,7 +83,7 @@ model_viewer::model_viewer(execution_context& ctx, video_context& video)
   , _models{ctx, video}
   , _programs{ctx, video}
   , _textures{ctx, video}
-  , _load_progress{ctx.progress(), "Loading resources", _all_resource_count()} {
+  , _load_progress{ctx.progress(), "loading resources", _all_resource_count()} {
     _backgrounds.loaded.connect(_load_handler());
     _backgrounds.selected.connect(_select_handler());
     _models.loaded.connect(_load_handler());
@@ -192,6 +193,7 @@ void model_viewer::clean_up() noexcept {
 auto establish(main_ctx&) -> unique_holder<launchpad>;
 //------------------------------------------------------------------------------
 auto example_main(main_ctx& ctx) -> int {
+    enable_message_bus(ctx);
     return default_main(ctx, establish(ctx));
 }
 //------------------------------------------------------------------------------

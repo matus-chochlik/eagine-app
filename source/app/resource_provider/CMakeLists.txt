@@ -28,8 +28,10 @@ eagine_embed_target_resources(
 		StairCube  "models/stair_cube.json"
 		Jerrycan   "models/jerrycan.json"
 		Pumpkin    "models/pumpkin.json"
+		Hydrant    "models/hydrant.json"
 		Guitar     "models/guitar.json"
 		Magnet     "models/magnet.json"
+		Stool      "models/stool.json"
 		CheckerImg "textures/checker.eagitexi"
 		CheckerTex "textures/checker.eagitex"
 	PACKED

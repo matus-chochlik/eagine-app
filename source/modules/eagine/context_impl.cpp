@@ -421,8 +421,6 @@ inline auto make_all_hmi_providers(main_ctx_parent parent)
 //------------------------------------------------------------------------------
 execution_context::execution_context(main_ctx_parent parent) noexcept
   : main_ctx_object("AppExecCtx", parent)
-  , _options{*this}
-  , _registry{*this}
   , _loader{_registry.emplace<resource_loader>("RsrsLoadr")} {}
 //------------------------------------------------------------------------------
 inline auto execution_context::_setup_providers() noexcept -> bool {
