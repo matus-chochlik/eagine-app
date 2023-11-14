@@ -1257,8 +1257,8 @@ auto resource_loader::request_gl_buffer(
     return _cancelled_resource(locator, resource_kind::gl_buffer);
 }
 //------------------------------------------------------------------------------
-auto resource_loader::update() noexcept -> work_done {
-    some_true something_done{base::update()};
+auto resource_loader::update_and_process_all() noexcept -> work_done {
+    some_true something_done{base::update_and_process_all()};
 
     for(auto& [request_id, pinfo] : _cancelled) {
         assert(pinfo);

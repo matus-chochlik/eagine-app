@@ -41,7 +41,7 @@ void model_viewer::_init_inputs() {
 }
 //------------------------------------------------------------------------------
 void model_viewer::_init_camera(const oglplus::sphere bs) {
-    const auto sr{bs.radius()};
+    const auto sr{std::max(bs.radius(), 0.1F)};
     _camera.set_fov(degrees_(_fov))
       .set_target(bs.center())
       .set_near(sr * 0.01F)
