@@ -51,9 +51,9 @@ struct embedded_resource_provider final
     embedded_resource_loader _loader;
 };
 //------------------------------------------------------------------------------
-auto provider_embedded(main_ctx_parent parent)
+auto provider_embedded(const provider_parameters& p)
   -> unique_holder<resource_provider_interface> {
-    return {hold<embedded_resource_provider>, parent};
+    return {hold<embedded_resource_provider>, p.parent};
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

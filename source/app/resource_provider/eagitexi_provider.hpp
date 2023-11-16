@@ -12,6 +12,7 @@ import eagine.core;
 import std;
 
 #include "driver.hpp"
+#include "providers.hpp"
 
 namespace eagine::app {
 //------------------------------------------------------------------------------

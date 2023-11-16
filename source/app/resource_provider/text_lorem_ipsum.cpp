@@ -63,7 +63,7 @@ struct lorem_ipsum_provider final : resource_provider_interface {
     }
 };
 //------------------------------------------------------------------------------
-auto provider_text_lorem_ipsum(main_ctx_parent)
+auto provider_text_lorem_ipsum(const provider_parameters&)
   -> unique_holder<resource_provider_interface> {
     return {hold<lorem_ipsum_provider>};
 }

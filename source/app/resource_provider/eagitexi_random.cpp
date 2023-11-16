@@ -105,9 +105,9 @@ struct eagitexi_random_provider final
     }
 };
 //------------------------------------------------------------------------------
-auto provider_eagitexi_random(main_ctx_parent parent)
+auto provider_eagitexi_random(const provider_parameters& p)
   -> unique_holder<resource_provider_interface> {
-    return {hold<eagitexi_random_provider>, parent};
+    return {hold<eagitexi_random_provider>, p.parent};
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

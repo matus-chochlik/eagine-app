@@ -36,13 +36,14 @@ void resource_provider_driver::_add(
 }
 //------------------------------------------------------------------------------
 void resource_provider_driver::_populate(msgbus::resource_data_consumer_node&) {
-    _add(provider_embedded(*this));
-    _add(provider_eagitexi_random(*this));
-    _add(provider_eagitexi_2d_single_rgb8(*this));
-    _add(provider_eagitex_2d_single_rgb8(*this));
-    _add(provider_eagitexi_sphere_volume(*this));
-    _add(provider_eagitex_sphere_volume(*this));
-    _add(provider_text_lorem_ipsum(*this));
+    const provider_parameters parameters{.parent = as_parent()};
+    _add(provider_embedded(parameters));
+    _add(provider_eagitexi_random(parameters));
+    _add(provider_eagitexi_2d_single_rgb8(parameters));
+    _add(provider_eagitex_2d_single_rgb8(parameters));
+    _add(provider_eagitexi_sphere_volume(parameters));
+    _add(provider_eagitex_sphere_volume(parameters));
+    _add(provider_text_lorem_ipsum(parameters));
 }
 //------------------------------------------------------------------------------
 resource_provider_driver::resource_provider_driver(
