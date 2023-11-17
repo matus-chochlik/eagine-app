@@ -20,13 +20,7 @@ public:
       msgbus::resource_data_consumer_node&,
       url);
 
-    auto prepare() noexcept -> bool final {
-        const bool result = not(_finished or _canceled);
-        if(_last) {
-            _finished = true;
-        }
-        return result;
-    }
+    auto prepare() noexcept -> bool final;
 
 private:
     auto _process_packed(memory::const_block) noexcept -> bool;
@@ -78,6 +72,14 @@ eagitexi_tiling_io::eagitexi_tiling_io(
     append(R"({"level":0,"channels":1,"data_type":"unsigned_byte")");
     append(R"(,"tag":["tiling"])");
     append(R"(,"format":"red_integer","iformat":"r8ui")");
+}
+//------------------------------------------------------------------------------
+auto eagitexi_tiling_io::prepare() noexcept -> bool {
+    const bool result = not(_finished or _canceled);
+    if(_last) {
+        _finished = true;
+    }
+    return result;
 }
 //------------------------------------------------------------------------------
 auto eagitexi_tiling_io::_process_packed(memory::const_block packed) noexcept
@@ -165,35 +167,44 @@ struct eagitexi_tiling_provider final
       : main_ctx_object{"PTxTlng", p.parent}
       , consumer{p.consumer} {}
 
-    auto valid_source(const url& locator) noexcept -> bool {
-        return locator and (locator.has_scheme("text") or
-                            locator.has_path_suffix(".text") or
-                            locator.has_path_suffix(".txt"));
-    }
+    auto valid_source(const url& locator) noexcept -> bool;
 
-    auto has_resource(const url& locator) noexcept -> bool final {
-        if(locator.has_scheme("eagitexi") and locator.has_path("/tiling")) {
-            const auto& q{locator.query()};
-            const bool args_ok = q.decoded_arg_value("source")
-                                   .and_then([this](auto source) -> tribool {
-                                       return valid_source(std::move(source));
-                                   })
-                                   .or_false();
-            return args_ok;
-        }
-        return false;
-    }
+    auto has_resource(const url& locator) noexcept -> bool final;
 
     auto get_resource_io(const url& locator)
-      -> unique_holder<msgbus::source_blob_io> final {
-        const auto& q{locator.query()};
-        return {
-          hold<eagitexi_tiling_io>,
-          as_parent(),
-          consumer,
-          q.decoded_arg_value("source").or_default()};
-    }
+      -> unique_holder<msgbus::source_blob_io> final;
 };
+//------------------------------------------------------------------------------
+auto eagitexi_tiling_provider::valid_source(const url& locator) noexcept
+  -> bool {
+    return locator and
+           (locator.has_scheme("text") or locator.has_path_suffix(".text") or
+            locator.has_path_suffix(".txt"));
+}
+//------------------------------------------------------------------------------
+auto eagitexi_tiling_provider::has_resource(const url& locator) noexcept
+  -> bool {
+    if(locator.has_scheme("eagitexi") and locator.has_path("/tiling")) {
+        const auto& q{locator.query()};
+        const bool args_ok = q.decoded_arg_value("source")
+                               .and_then([this](auto source) -> tribool {
+                                   return valid_source(std::move(source));
+                               })
+                               .or_false();
+        return args_ok;
+    }
+    return false;
+}
+//------------------------------------------------------------------------------
+auto eagitexi_tiling_provider::get_resource_io(const url& locator)
+  -> unique_holder<msgbus::source_blob_io> {
+    const auto& q{locator.query()};
+    return {
+      hold<eagitexi_tiling_io>,
+      as_parent(),
+      consumer,
+      q.decoded_arg_value("source").or_default()};
+}
 //------------------------------------------------------------------------------
 auto provider_eagitexi_tiling(const provider_parameters& p)
   -> unique_holder<resource_provider_interface> {
