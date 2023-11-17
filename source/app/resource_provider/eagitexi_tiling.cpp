@@ -29,6 +29,8 @@ public:
     }
 
 private:
+    auto _process_packed(memory::const_block) noexcept -> bool;
+    void _process_cell(const byte);
     void _process_line(const string_view);
 
     void _handle_stream_data_appended(
@@ -42,6 +44,7 @@ private:
 
     identifier_t _request_id;
 
+    stream_compression _compress;
     std::string _tiling_line;
     bool _first{true};
     bool _last{false};
@@ -66,10 +69,25 @@ eagitexi_tiling_io::eagitexi_tiling_io(
       {this,
        member_function_constant_t<
          &eagitexi_tiling_io::_handle_stream_canceled>{}})}
-  , _request_id{std::get<0>(consumer.stream_resource(std::move(source)))} {
+  , _request_id{std::get<0>(consumer.stream_resource(std::move(source)))}
+  , _compress{
+      main_context().compressor(),
+      {this,
+       member_function_constant_t<&eagitexi_tiling_io::_process_packed>{}},
+      default_data_compression_method()} {
     append(R"({"level":0,"channels":1,"data_type":"unsigned_byte")");
     append(R"(,"tag":["tiling"])");
     append(R"(,"format":"red_integer","iformat":"r8ui")");
+}
+//------------------------------------------------------------------------------
+auto eagitexi_tiling_io::_process_packed(memory::const_block packed) noexcept
+  -> bool {
+    append(packed);
+    return true;
+}
+//------------------------------------------------------------------------------
+void eagitexi_tiling_io::_process_cell(const byte b) {
+    _compress.next(view_one(b), data_compression_level::highest);
 }
 //------------------------------------------------------------------------------
 void eagitexi_tiling_io::_process_line(const string_view line) {
@@ -79,20 +97,20 @@ void eagitexi_tiling_io::_process_line(const string_view line) {
             std::stringstream hdr;
             hdr << R"(,"width":)" << line.size();
             hdr << R"(,"height":)" << line.size();
-            hdr << R"(,"data_filter":"none")";
+            hdr << R"(,"data_filter":"zlib")";
             hdr << '}';
             append(hdr.str());
         }
     }
     for(const char c : line) {
         if('0' <= c and c <= '9') {
-            append(byte(c - '0'));
+            _process_cell(byte(c - '0'));
         } else if('A' <= c and c <= 'F') {
-            append(byte(c - 'A' + 10));
+            _process_cell(byte(c - 'A' + 10));
         } else if('a' <= c and c <= 'f') {
-            append(byte(c - 'a' + 10));
+            _process_cell(byte(c - 'a' + 10));
         } else {
-            append(byte(0));
+            _process_cell(byte(0));
         }
     }
 }
@@ -123,6 +141,7 @@ void eagitexi_tiling_io::_handle_stream_finished(
     if(_request_id == request_id) {
         _process_line(_tiling_line);
         _tiling_line.clear();
+        _compress.finish();
         _last = true;
     }
 }
