@@ -55,7 +55,8 @@ struct eagitexi_random_io final
 
     auto fetch_fragment(const span_size_t offs, memory::block dst) noexcept
       -> span_size_t final {
-        return generate(dst, make_generator(offs)).size();
+        return generate(head(dst, total_size() - offs), make_generator(offs))
+          .size();
     }
 
     const span_size_t _size;

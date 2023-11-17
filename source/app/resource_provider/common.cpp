@@ -34,10 +34,31 @@ auto simple_string_source_blob_io::fetch_fragment(
 simple_buffer_source_blob_io::simple_buffer_source_blob_io(
   identifier id,
   main_ctx_parent parent,
+  span_size_t size) noexcept
+  : main_ctx_object{id, parent}
+  , _content{main_context().buffers().get(size)} {
+    _content.clear();
+}
+//------------------------------------------------------------------------------
+simple_buffer_source_blob_io::simple_buffer_source_blob_io(
+  identifier id,
+  main_ctx_parent parent,
   span_size_t size,
   std::function<memory::buffer(memory::buffer)> make_content) noexcept
   : main_ctx_object{id, parent}
   , _content{make_content(main_context().buffers().get(size))} {}
+//------------------------------------------------------------------------------
+void simple_buffer_source_blob_io::append(const memory::const_block part) {
+    memory::append_to(part, _content);
+}
+//------------------------------------------------------------------------------
+void simple_buffer_source_blob_io::append(const string_view part) {
+    append(as_bytes(part));
+}
+//------------------------------------------------------------------------------
+void simple_buffer_source_blob_io::append(const byte b) {
+    append(view_one(b));
+}
 //------------------------------------------------------------------------------
 simple_buffer_source_blob_io::~simple_buffer_source_blob_io() noexcept {
     main_context().buffers().eat(std::move(_content));

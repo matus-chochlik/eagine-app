@@ -35,10 +35,14 @@ void resource_provider_driver::_add(
     _providers.emplace_back(std::move(provider));
 }
 //------------------------------------------------------------------------------
-void resource_provider_driver::_populate(msgbus::resource_data_consumer_node&) {
-    const provider_parameters parameters{.parent = as_parent()};
+void resource_provider_driver::_populate(
+  msgbus::resource_data_consumer_node& consumer) {
+    const provider_parameters parameters{
+      .parent = as_parent(), .consumer = consumer};
+
     _add(provider_embedded(parameters));
     _add(provider_eagitexi_random(parameters));
+    _add(provider_eagitexi_tiling(parameters));
     _add(provider_eagitexi_2d_single_rgb8(parameters));
     _add(provider_eagitex_2d_single_rgb8(parameters));
     _add(provider_eagitexi_sphere_volume(parameters));
