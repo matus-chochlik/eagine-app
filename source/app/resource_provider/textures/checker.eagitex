@@ -13,6 +13,6 @@
 ,"wrap_s":"clamp_to_border"
 ,"wrap_t":"clamp_to_border"
 ,"label":"gray checker"
-,"tag": ["texture", "checker"],
+,"tag": ["texture", "checker"]
 ,"images":[{"url":"eagires:///CheckerImg","target":"texture_2d_array"}]
 }

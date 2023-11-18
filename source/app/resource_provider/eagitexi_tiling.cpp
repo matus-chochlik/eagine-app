@@ -556,7 +556,7 @@ auto eagitexi_tiling_noise_io::prepare() noexcept -> bool {
         std::stringstream header;
         header << R"(,"width":)" << _width;
         header << R"(,"height":)" << _height;
-        header << R"(,"values":[)";
+        header << R"(,"data":[)";
         append(header.str());
 
         _header_done = true;
