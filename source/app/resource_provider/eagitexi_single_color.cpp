@@ -57,10 +57,10 @@ struct single_rgb8_pixel_provider_factory : pixel_provider_factory_interface {
     }
 };
 //------------------------------------------------------------------------------
-auto provider_eagitexi_2d_single_rgb8(main_ctx_parent parent)
+auto provider_eagitexi_2d_single_rgb8(const provider_parameters& p)
   -> unique_holder<resource_provider_interface> {
     return provider_eagitexi_2d_rgb8(
-      parent, "/2d_single_rgb8", {hold<single_rgb8_pixel_provider_factory>});
+      p.parent, "/2d_single_rgb8", {hold<single_rgb8_pixel_provider_factory>});
 }
 //------------------------------------------------------------------------------
 // eagitex
@@ -145,9 +145,9 @@ struct single_rgb8_eagitex_provider final : eagitex_provider_base {
     }
 };
 //------------------------------------------------------------------------------
-auto provider_eagitex_2d_single_rgb8(main_ctx_parent parent)
+auto provider_eagitex_2d_single_rgb8(const provider_parameters& p)
   -> unique_holder<resource_provider_interface> {
-    return {hold<single_rgb8_eagitex_provider>, parent};
+    return {hold<single_rgb8_eagitex_provider>, p.parent};
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

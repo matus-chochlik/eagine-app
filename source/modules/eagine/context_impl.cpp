@@ -421,8 +421,6 @@ inline auto make_all_hmi_providers(main_ctx_parent parent)
 //------------------------------------------------------------------------------
 execution_context::execution_context(main_ctx_parent parent) noexcept
   : main_ctx_object("AppExecCtx", parent)
-  , _options{*this}
-  , _registry{*this}
   , _loader{_registry.emplace<resource_loader>("RsrsLoadr")} {}
 //------------------------------------------------------------------------------
 inline auto execution_context::_setup_providers() noexcept -> bool {
@@ -590,7 +588,6 @@ auto execution_context::run() noexcept -> execution_context& {
 void execution_context::update() noexcept {
     const auto exec_time{measure_time_interval("appUpdate")};
     _registry.update_and_process();
-    _loader.update();
     _state->update_activity();
     for(auto& provider : _hmi_providers) {
         provider->update(*this, *_app);

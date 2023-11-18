@@ -37,10 +37,19 @@ protected:
     simple_buffer_source_blob_io(
       identifier id,
       main_ctx_parent parent,
+      span_size_t size) noexcept;
+
+    simple_buffer_source_blob_io(
+      identifier id,
+      main_ctx_parent parent,
       span_size_t size,
       std::function<memory::buffer(memory::buffer)>) noexcept;
 
     ~simple_buffer_source_blob_io() noexcept override;
+
+    void append(const memory::const_block);
+    void append(const string_view);
+    void append(const byte);
 
     auto total_size() noexcept -> span_size_t final;
 

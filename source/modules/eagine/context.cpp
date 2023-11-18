@@ -605,8 +605,8 @@ public:
 
 private:
     int _exec_result{0};
-    launch_options _options;
-    msgbus::registry _registry;
+    launch_options _options{*this};
+    msgbus::registry _registry{*this};
     shared_holder<context_state> _state;
     unique_holder<application> _app;
 

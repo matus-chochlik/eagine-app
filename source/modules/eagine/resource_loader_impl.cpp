@@ -594,23 +594,38 @@ void pending_resource_info::_handle_glsl_source(
 
     if(is(resource_kind::gl_shader)) {
         if(const auto pgss{get_if<_pending_gl_shader_state>(_state)}) {
-            const auto& [gl, GL] = pgss->video.get().gl_api();
+            const auto& glapi{pgss->video.get().gl_api()};
+            const auto& [gl, GL] = glapi;
 
             oglplus::owned_shader_name shdr;
             gl.create_shader(pgss->shdr_type) >> shdr;
             gl.shader_source(shdr, glsl_src);
-            gl.compile_shader(shdr);
-            if(const auto cont{continuation()}) {
-                cont->_handle_gl_shader(*this, shdr);
+            if(gl.compile_shader(shdr)) {
+                _parent
+                  .log_info("loaded and compiled GL shader object (${locator})")
+                  .arg("requestId", _request_id)
+                  .arg("locator", "string", _locator.str());
+
+                if(const auto cont{continuation()}) {
+                    cont->_handle_gl_shader(*this, shdr);
+                }
+                _parent.gl_shader_loaded(
+                  {.request_id = _request_id,
+                   .locator = _locator,
+                   .video = pgss->video,
+                   .type = pgss->shdr_type,
+                   .name = shdr,
+                   .ref = shdr});
+                _parent.resource_loaded(_request_id, _kind, _locator);
+            } else {
+                const std::string message{
+                  glapi.shader_info_log(shdr).value_or("N/A")};
+                _parent
+                  .log_error("failed to load and link GL shader (${locator})")
+                  .arg("requestId", _request_id)
+                  .arg("message", "string", message)
+                  .arg("locator", "string", _locator.str());
             }
-            _parent.gl_shader_loaded(
-              {.request_id = _request_id,
-               .locator = _locator,
-               .video = pgss->video,
-               .type = pgss->shdr_type,
-               .name = shdr,
-               .ref = shdr});
-            _parent.resource_loaded(_request_id, _kind, _locator);
 
             if(shdr) {
                 gl.delete_shader(std::move(shdr));
@@ -623,22 +638,34 @@ void pending_resource_info::_handle_glsl_source(
 auto pending_resource_info::_finish_gl_program(
   _pending_gl_program_state& pgps) noexcept -> bool {
     if(pgps.loaded and pgps.pending_requests.empty()) {
-        _parent.log_info("loaded and linked GL program object")
-          .arg("requestId", _request_id)
-          .arg("bindgCount", pgps.input_bindings.count())
-          .arg("locator", _locator.str());
 
-        const auto& gl = pgps.video.get().gl_api().operations();
-        gl.link_program(pgps.prog);
-        gl.use_program(pgps.prog);
-        _parent.gl_program_loaded(
-          {.request_id = _request_id,
-           .locator = _locator,
-           .video = pgps.video,
-           .name = pgps.prog,
-           .ref = pgps.prog,
-           .input_bindings = pgps.input_bindings});
-        _parent.resource_loaded(_request_id, _kind, _locator);
+        const auto& glapi{pgps.video.get().gl_api()};
+        const auto& gl = glapi.operations();
+
+        if(gl.link_program(pgps.prog)) {
+            _parent.log_info("loaded and linked GL program object (${locator})")
+              .arg("requestId", _request_id)
+              .arg("bindgCount", pgps.input_bindings.count())
+              .arg("locator", "string", _locator.str());
+
+            gl.use_program(pgps.prog);
+
+            _parent.gl_program_loaded(
+              {.request_id = _request_id,
+               .locator = _locator,
+               .video = pgps.video,
+               .name = pgps.prog,
+               .ref = pgps.prog,
+               .input_bindings = pgps.input_bindings});
+            _parent.resource_loaded(_request_id, _kind, _locator);
+        } else {
+            const std::string message{
+              glapi.program_info_log(pgps.prog).value_or("N/A")};
+            _parent.log_error("failed to load and link GL program (${locator})")
+              .arg("requestId", _request_id)
+              .arg("message", "string", message)
+              .arg("locator", "string", _locator.str());
+        }
 
         if(pgps.prog) {
             gl.delete_program(std::move(pgps.prog));
@@ -651,10 +678,6 @@ auto pending_resource_info::_finish_gl_program(
 void pending_resource_info::_handle_gl_shader(
   const pending_resource_info& source,
   oglplus::owned_shader_name& shdr) noexcept {
-    _parent.log_info("loaded and compiled GL shader object")
-      .arg("requestId", _request_id)
-      .arg("locator", source.locator().str());
-
     if(is(resource_kind::gl_program)) {
         if(const auto pgps{get_if<_pending_gl_program_state>(_state)}) {
             if(pgps->prog) [[likely]] {
@@ -1234,8 +1257,8 @@ auto resource_loader::request_gl_buffer(
     return _cancelled_resource(locator, resource_kind::gl_buffer);
 }
 //------------------------------------------------------------------------------
-auto resource_loader::update() noexcept -> work_done {
-    some_true something_done{base::update()};
+auto resource_loader::update_and_process_all() noexcept -> work_done {
+    some_true something_done{base::update_and_process_all()};
 
     for(auto& [request_id, pinfo] : _cancelled) {
         assert(pinfo);

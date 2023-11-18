@@ -55,10 +55,10 @@ struct stripes_r8_pixel_provider_factory : pixel_provider_factory_interface {
     }
 };
 //------------------------------------------------------------------------------
-auto provider_eagitexi_2d_stripes_r8(main_ctx_parent parent)
+auto provider_eagitexi_2d_stripes_r8(const provider_parameters& p)
   -> unique_holder<resource_provider_interface> {
     return provider_eagitexi_2d_r8(
-      parent, "/2d_stripes_r8", {hold<stripes_r8_pixel_provider_factory>});
+      p.parent, "/2d_stripes_r8", {hold<stripes_r8_pixel_provider_factory>});
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

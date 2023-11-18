@@ -10,6 +10,7 @@ add_executable(
 	embedded.cpp
 	eagitexi_random.cpp
 	eagitexi_provider.cpp
+	eagitexi_tiling.cpp
 	eagitexi_single_color.cpp
 	eagitexi_sphere_volume.cpp
 	eagitexi_checks.cpp
@@ -20,14 +21,29 @@ add_executable(
 eagine_embed_target_resources(
 	TARGET eagine-app-resource-provider
 	RESOURCES
+		EdgeDVert  "glsl/edges_default_vert.glsl"
+		EdgeDGeom  "glsl/edges_default_geom.glsl"
+		EdgeDFrag  "glsl/edges_default_frag.glsl"
+		EdgeDProg  "glsl/edges_default_prog.json"
 		EdgeNVert  "glsl/edges_normal_vert.glsl"
 		EdgeNGeom  "glsl/edges_normal_geom.glsl"
 		EdgeNFrag  "glsl/edges_normal_frag.glsl"
 		EdgeNProg  "glsl/edges_normal_prog.json"
 		TraficCone "models/traffic_cone.json"
+		StairCube  "models/stair_cube.json"
 		Jerrycan   "models/jerrycan.json"
+		Pumpkin    "models/pumpkin.json"
+		Hydrant    "models/hydrant.json"
+		Guitar     "models/guitar.json"
+		Magnet     "models/magnet.json"
+		Crate1     "models/crate1.json"
+		Stool      "models/stool.json"
 		CheckerImg "textures/checker.eagitexi"
 		CheckerTex "textures/checker.eagitex"
+		TlngR4S64  "tilings/r4_s64.txt"
+		TlngR4S128 "tilings/r4_s128.txt"
+		TlngR4S256 "tilings/r4_s256.txt"
+		TlngR4S512 "tilings/r4_s512.txt"
 	PACKED
 	ENABLE_SEARCH)
 

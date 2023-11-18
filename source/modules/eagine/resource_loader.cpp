@@ -1134,7 +1134,7 @@ public:
     void forget_resource(identifier_t request_id) noexcept;
 
     /// @brief Does some work and updates internal state (should be called periodically).
-    auto update() noexcept -> work_done;
+    auto update_and_process_all() noexcept -> work_done final;
 
     /// @brief Requests plain text resource.
     auto request_plain_text(url locator) noexcept -> resource_request_result;

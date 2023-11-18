@@ -179,6 +179,20 @@ public:
         return *this;
     }
 
+    template <typename... Args>
+    auto load(
+      const program_arg& arg,
+      execution_context& ctx,
+      video_context& video,
+      Args&&... args) -> model_viewer_resources& {
+        return load(
+          arg.next().get_string(),
+          url{arg.next().next()},
+          ctx,
+          video,
+          std::forward<Args>(args)...);
+    }
+
     auto use(video_context& video) noexcept -> model_viewer_resources& {
         current().use(video);
         return *this;

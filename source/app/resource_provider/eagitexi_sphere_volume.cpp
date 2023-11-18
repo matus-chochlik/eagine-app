@@ -43,10 +43,10 @@ struct sphere_volume_pixel_provider_factory : pixel_provider_factory_interface {
     }
 };
 //------------------------------------------------------------------------------
-auto provider_eagitexi_sphere_volume(main_ctx_parent parent)
+auto provider_eagitexi_sphere_volume(const provider_parameters& p)
   -> unique_holder<resource_provider_interface> {
     return provider_eagitexi_3d_r8(
-      parent, "/sphere_volume", {hold<sphere_volume_pixel_provider_factory>});
+      p.parent, "/sphere_volume", {hold<sphere_volume_pixel_provider_factory>});
 }
 //------------------------------------------------------------------------------
 // eagitex
@@ -106,9 +106,9 @@ struct sphere_volume_eagitex_provider final : eagitex_provider_base {
     }
 };
 //------------------------------------------------------------------------------
-auto provider_eagitex_sphere_volume(main_ctx_parent parent)
+auto provider_eagitex_sphere_volume(const provider_parameters& p)
   -> unique_holder<resource_provider_interface> {
-    return {hold<sphere_volume_eagitex_provider>, parent};
+    return {hold<sphere_volume_eagitex_provider>, p.parent};
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app
