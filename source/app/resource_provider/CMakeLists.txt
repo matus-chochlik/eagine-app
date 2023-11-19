@@ -16,6 +16,7 @@ add_executable(
 	eagitexi_checks.cpp
 	eagitexi_stripes.cpp
 	text_lorem_ipsum.cpp
+	text_resource_list.cpp
 	main.cpp)
 
 eagine_embed_target_resources(

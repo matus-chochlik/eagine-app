@@ -30,6 +30,8 @@ embedded_resource_io::embedded_resource_io(
           return content;
       }} {}
 //------------------------------------------------------------------------------
+// provider
+//------------------------------------------------------------------------------
 struct embedded_resource_provider final
   : main_ctx_object
   , resource_provider_interface {
@@ -37,19 +39,40 @@ struct embedded_resource_provider final
     embedded_resource_provider(main_ctx_parent parent) noexcept
       : main_ctx_object{"EmbdResPvd", parent} {}
 
-    auto has_resource(const url& locator) noexcept -> bool final {
-        const auto id{locator.path_identifier()};
-        return _loader.has_resource(id);
-    }
+    auto has_resource(const url& locator) noexcept -> bool final;
 
     auto get_resource_io(const url& locator)
-      -> unique_holder<msgbus::source_blob_io> final {
-        const auto id{locator.path_identifier()};
-        return {hold<embedded_resource_io>, as_parent(), _loader.search(id)};
-    }
+      -> unique_holder<msgbus::source_blob_io> final;
+
+    void for_each_locator(
+      callable_ref<void(string_view) noexcept>) noexcept final;
 
     embedded_resource_loader _loader;
 };
+//------------------------------------------------------------------------------
+auto embedded_resource_provider::has_resource(const url& locator) noexcept
+  -> bool {
+    const auto id{locator.path_identifier()};
+    return _loader.has_resource(id);
+}
+//------------------------------------------------------------------------------
+auto embedded_resource_provider::get_resource_io(const url& locator)
+  -> unique_holder<msgbus::source_blob_io> {
+    const auto id{locator.path_identifier()};
+    return {hold<embedded_resource_io>, as_parent(), _loader.search(id)};
+}
+//------------------------------------------------------------------------------
+void embedded_resource_provider::for_each_locator(
+  callable_ref<void(string_view) noexcept> callback) noexcept {
+    std::string locator;
+    const auto wrapped_callback{[&](const auto res_id, const auto&) {
+        locator.clear();
+        locator.append("eagires:///");
+        append_to(string_view{identifier{res_id}.name()}, locator);
+        callback(locator);
+    }};
+    _loader.for_each(wrapped_callback);
+}
 //------------------------------------------------------------------------------
 auto provider_embedded(const provider_parameters& p)
   -> unique_holder<resource_provider_interface> {

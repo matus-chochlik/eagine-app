@@ -114,36 +114,52 @@ auto single_rgb8_eagitex_io::make_header(int s, int r, int g, int b)
     return hdr.str();
 }
 //------------------------------------------------------------------------------
+// provider
+//------------------------------------------------------------------------------
 struct single_rgb8_eagitex_provider final : eagitex_provider_base {
 
     single_rgb8_eagitex_provider(main_ctx_parent parent) noexcept
       : eagitex_provider_base{"PTxSiRGB8", parent} {}
 
-    auto has_resource(const url& locator) noexcept -> bool final {
-        if(locator.has_scheme("eagitex") and locator.has_path("/2d_single_rgb8")) {
-            const auto& q{locator.query()};
-            const bool args_ok =
-              valid_color(q.arg_value_as<int>("r").value_or(0)) and
-              valid_color(q.arg_value_as<int>("g").value_or(0)) and
-              valid_color(q.arg_value_as<int>("b").value_or(0)) and
-              valid_dimension(q.arg_value_as<int>("size").value_or(1));
-            return args_ok;
-        }
-        return false;
-    }
+    auto has_resource(const url& locator) noexcept -> bool final;
 
     auto get_resource_io(const url& locator)
-      -> unique_holder<msgbus::source_blob_io> final {
-        const auto& q{locator.query()};
-        return {
-          hold<single_rgb8_eagitex_io>,
-          as_parent(),
-          q.arg_value_as<int>("size").value_or(0),
-          q.arg_value_as<int>("r").value_or(0),
-          q.arg_value_as<int>("g").value_or(0),
-          q.arg_value_as<int>("b").value_or(0)};
-    }
+      -> unique_holder<msgbus::source_blob_io> final;
+
+    void for_each_locator(
+      callable_ref<void(string_view) noexcept>) noexcept final;
 };
+//------------------------------------------------------------------------------
+auto single_rgb8_eagitex_provider::has_resource(const url& locator) noexcept
+  -> bool {
+    if(locator.has_scheme("eagitex") and locator.has_path("/2d_single_rgb8")) {
+        const auto& q{locator.query()};
+        const bool args_ok =
+          valid_color(q.arg_value_as<int>("r").value_or(0)) and
+          valid_color(q.arg_value_as<int>("g").value_or(0)) and
+          valid_color(q.arg_value_as<int>("b").value_or(0)) and
+          valid_dimension(q.arg_value_as<int>("size").value_or(1));
+        return args_ok;
+    }
+    return false;
+}
+//------------------------------------------------------------------------------
+auto single_rgb8_eagitex_provider::get_resource_io(const url& locator)
+  -> unique_holder<msgbus::source_blob_io> {
+    const auto& q{locator.query()};
+    return {
+      hold<single_rgb8_eagitex_io>,
+      as_parent(),
+      q.arg_value_as<int>("size").value_or(0),
+      q.arg_value_as<int>("r").value_or(0),
+      q.arg_value_as<int>("g").value_or(0),
+      q.arg_value_as<int>("b").value_or(0)};
+}
+//------------------------------------------------------------------------------
+void single_rgb8_eagitex_provider::for_each_locator(
+  callable_ref<void(string_view) noexcept> callback) noexcept {
+    callback("eagitex:///2d_single_rgb8");
+}
 //------------------------------------------------------------------------------
 auto provider_eagitex_2d_single_rgb8(const provider_parameters& p)
   -> unique_holder<resource_provider_interface> {

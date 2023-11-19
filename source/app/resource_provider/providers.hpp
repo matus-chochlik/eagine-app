@@ -14,6 +14,7 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 struct provider_parameters {
     main_ctx_parent parent;
+    resource_provider_driver& driver;
     msgbus::resource_data_consumer_node& consumer;
 };
 //------------------------------------------------------------------------------
@@ -45,6 +46,9 @@ auto provider_eagitexi_sphere_volume(const provider_parameters&)
   -> unique_holder<resource_provider_interface>;
 //------------------------------------------------------------------------------
 auto provider_text_lorem_ipsum(const provider_parameters&)
+  -> unique_holder<resource_provider_interface>;
+//------------------------------------------------------------------------------
+auto provider_text_resource_list(const provider_parameters&)
   -> unique_holder<resource_provider_interface>;
 //------------------------------------------------------------------------------
 } // namespace eagine::app
