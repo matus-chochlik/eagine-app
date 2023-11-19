@@ -1,0 +1,5 @@
+msgbus:
+  router:
+    id_major: 1200
+    id_count: 100
+
