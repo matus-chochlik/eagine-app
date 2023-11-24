@@ -78,7 +78,7 @@ auto resource_provider_driver::has_resource(const url& locator) noexcept
 }
 //------------------------------------------------------------------------------
 auto resource_provider_driver::get_resource_io(
-  const identifier_t,
+  const endpoint_id_t,
   const url& locator) -> unique_holder<msgbus::source_blob_io> {
     if(const auto provider{find_provider_of(locator)}) {
         return provider->get_resource_io(locator);
@@ -87,7 +87,7 @@ auto resource_provider_driver::get_resource_io(
 }
 //------------------------------------------------------------------------------
 auto resource_provider_driver::get_blob_timeout(
-  const identifier_t,
+  const endpoint_id_t,
   const url& locator,
   const span_size_t size) noexcept -> std::chrono::seconds {
     return find_provider_of(locator)
@@ -96,7 +96,7 @@ auto resource_provider_driver::get_blob_timeout(
 }
 //------------------------------------------------------------------------------
 auto resource_provider_driver::get_blob_priority(
-  const identifier_t,
+  const endpoint_id_t,
   const url& locator,
   const msgbus::message_priority priority) noexcept
   -> msgbus::message_priority {
