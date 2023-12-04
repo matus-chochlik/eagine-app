@@ -111,6 +111,8 @@ eagitexi_2d_r8_io::eagitexi_2d_r8_io(
             h);
       }} {}
 //------------------------------------------------------------------------------
+// provider
+//------------------------------------------------------------------------------
 struct eagitexi_2d_r8_provider final
   : main_ctx_object
   , resource_provider_interface {
@@ -120,10 +122,7 @@ struct eagitexi_2d_r8_provider final
     eagitexi_2d_r8_provider(
       main_ctx_parent parent,
       std::string path,
-      shared_holder<pixel_provider_factory_interface> f) noexcept
-      : main_ctx_object{"PTx2R8", parent}
-      , url_path{path}
-      , factory{std::move(f)} {}
+      shared_holder<pixel_provider_factory_interface> f) noexcept;
 
     static auto valid_dim(int d) noexcept -> bool {
         return (d > 0) and (d <= 64 * 1024);
@@ -133,30 +132,52 @@ struct eagitexi_2d_r8_provider final
         return (l >= 0);
     }
 
-    auto has_resource(const url& locator) noexcept -> bool final {
-        if(locator.has_scheme("eagitexi") and locator.has_path(url_path)) {
-            const auto& q{locator.query()};
-            const bool args_ok =
-              valid_dim(q.arg_value_as<int>("width").value_or(1)) and
-              valid_dim(q.arg_value_as<int>("height").value_or(1)) and
-              valid_lvl(q.arg_value_as<int>("level").value_or(1));
-            return args_ok and factory->has_resource(locator);
-        }
-        return false;
-    }
+    auto has_resource(const url& locator) noexcept -> bool final;
 
     auto get_resource_io(const url& locator)
-      -> unique_holder<msgbus::source_blob_io> final {
-        const auto& q{locator.query()};
-        return {
-          hold<eagitexi_2d_r8_io>,
-          as_parent(),
-          factory->make_provider(locator),
-          q.arg_value_as<int>("width").value_or(2),
-          q.arg_value_as<int>("height").value_or(2),
-          q.arg_value_as<int>("level").value_or(0)};
-    }
+      -> unique_holder<msgbus::source_blob_io> final;
+
+    void for_each_locator(
+      callable_ref<void(string_view) noexcept>) noexcept final;
 };
+//------------------------------------------------------------------------------
+eagitexi_2d_r8_provider::eagitexi_2d_r8_provider(
+  main_ctx_parent parent,
+  std::string path,
+  shared_holder<pixel_provider_factory_interface> f) noexcept
+  : main_ctx_object{"PTx2R8", parent}
+  , url_path{path}
+  , factory{std::move(f)} {}
+//------------------------------------------------------------------------------
+auto eagitexi_2d_r8_provider::has_resource(const url& locator) noexcept
+  -> bool {
+    if(locator.has_scheme("eagitexi") and locator.has_path(url_path)) {
+        const auto& q{locator.query()};
+        const bool args_ok =
+          valid_dim(q.arg_value_as<int>("width").value_or(1)) and
+          valid_dim(q.arg_value_as<int>("height").value_or(1)) and
+          valid_lvl(q.arg_value_as<int>("level").value_or(1));
+        return args_ok and factory->has_resource(locator);
+    }
+    return false;
+}
+//------------------------------------------------------------------------------
+auto eagitexi_2d_r8_provider::get_resource_io(const url& locator)
+  -> unique_holder<msgbus::source_blob_io> {
+    const auto& q{locator.query()};
+    return {
+      hold<eagitexi_2d_r8_io>,
+      as_parent(),
+      factory->make_provider(locator),
+      q.arg_value_as<int>("width").value_or(2),
+      q.arg_value_as<int>("height").value_or(2),
+      q.arg_value_as<int>("level").value_or(0)};
+}
+//------------------------------------------------------------------------------
+void eagitexi_2d_r8_provider::for_each_locator(
+  callable_ref<void(string_view) noexcept> callback) noexcept {
+    callback("eagitexi://" + url_path);
+}
 //------------------------------------------------------------------------------
 auto provider_eagitexi_2d_r8(
   main_ctx_parent parent,
@@ -290,10 +311,7 @@ struct eagitexi_3d_r8_provider final
     eagitexi_3d_r8_provider(
       main_ctx_parent parent,
       std::string path,
-      shared_holder<pixel_provider_factory_interface> f) noexcept
-      : main_ctx_object{"PTx3R8", parent}
-      , url_path{path}
-      , factory{std::move(f)} {}
+      shared_holder<pixel_provider_factory_interface> f) noexcept;
 
     static auto valid_dim(int d) noexcept -> bool {
         return (d > 0) and (d <= 16 * 1024);
@@ -303,32 +321,54 @@ struct eagitexi_3d_r8_provider final
         return (l >= 0);
     }
 
-    auto has_resource(const url& locator) noexcept -> bool final {
-        if(locator.has_scheme("eagitexi") and locator.has_path(url_path)) {
-            const auto& q{locator.query()};
-            const bool args_ok =
-              valid_dim(q.arg_value_as<int>("width").value_or(1)) and
-              valid_dim(q.arg_value_as<int>("height").value_or(1)) and
-              valid_dim(q.arg_value_as<int>("depth").value_or(1)) and
-              valid_lvl(q.arg_value_as<int>("level").value_or(1));
-            return args_ok and factory->has_resource(locator);
-        }
-        return false;
-    }
+    auto has_resource(const url& locator) noexcept -> bool final;
 
     auto get_resource_io(const url& locator)
-      -> unique_holder<msgbus::source_blob_io> final {
-        const auto& q{locator.query()};
-        return {
-          hold<eagitexi_3d_r8_io>,
-          as_parent(),
-          factory->make_provider(locator),
-          q.arg_value_as<int>("width").value_or(2),
-          q.arg_value_as<int>("height").value_or(2),
-          q.arg_value_as<int>("depth").value_or(2),
-          q.arg_value_as<int>("level").value_or(0)};
-    }
+      -> unique_holder<msgbus::source_blob_io> final;
+
+    void for_each_locator(
+      callable_ref<void(string_view) noexcept>) noexcept final;
 };
+//------------------------------------------------------------------------------
+eagitexi_3d_r8_provider::eagitexi_3d_r8_provider(
+  main_ctx_parent parent,
+  std::string path,
+  shared_holder<pixel_provider_factory_interface> f) noexcept
+  : main_ctx_object{"PTx3R8", parent}
+  , url_path{path}
+  , factory{std::move(f)} {}
+//------------------------------------------------------------------------------
+auto eagitexi_3d_r8_provider::has_resource(const url& locator) noexcept
+  -> bool {
+    if(locator.has_scheme("eagitexi") and locator.has_path(url_path)) {
+        const auto& q{locator.query()};
+        const bool args_ok =
+          valid_dim(q.arg_value_as<int>("width").value_or(1)) and
+          valid_dim(q.arg_value_as<int>("height").value_or(1)) and
+          valid_dim(q.arg_value_as<int>("depth").value_or(1)) and
+          valid_lvl(q.arg_value_as<int>("level").value_or(1));
+        return args_ok and factory->has_resource(locator);
+    }
+    return false;
+}
+//------------------------------------------------------------------------------
+auto eagitexi_3d_r8_provider::get_resource_io(const url& locator)
+  -> unique_holder<msgbus::source_blob_io> {
+    const auto& q{locator.query()};
+    return {
+      hold<eagitexi_3d_r8_io>,
+      as_parent(),
+      factory->make_provider(locator),
+      q.arg_value_as<int>("width").value_or(2),
+      q.arg_value_as<int>("height").value_or(2),
+      q.arg_value_as<int>("depth").value_or(2),
+      q.arg_value_as<int>("level").value_or(0)};
+}
+//------------------------------------------------------------------------------
+void eagitexi_3d_r8_provider::for_each_locator(
+  callable_ref<void(string_view) noexcept> callback) noexcept {
+    callback("eagitexi://" + url_path);
+}
 //------------------------------------------------------------------------------
 auto provider_eagitexi_3d_r8(
   main_ctx_parent parent,
@@ -454,10 +494,7 @@ struct eagitexi_2d_rgb8_provider final
     eagitexi_2d_rgb8_provider(
       main_ctx_parent parent,
       std::string path,
-      shared_holder<pixel_provider_factory_interface> f) noexcept
-      : main_ctx_object{"PTx2RGB8", parent}
-      , url_path{path}
-      , factory{std::move(f)} {}
+      shared_holder<pixel_provider_factory_interface> f) noexcept;
 
     static auto valid_dim(int d) noexcept -> bool {
         return (d > 0) and (d <= 64 * 1024);
@@ -467,30 +504,52 @@ struct eagitexi_2d_rgb8_provider final
         return (l >= 0);
     }
 
-    auto has_resource(const url& locator) noexcept -> bool final {
-        if(locator.has_scheme("eagitexi") and locator.has_path(url_path)) {
-            const auto& q{locator.query()};
-            const bool args_ok =
-              valid_dim(q.arg_value_as<int>("width").value_or(1)) and
-              valid_dim(q.arg_value_as<int>("height").value_or(1)) and
-              valid_lvl(q.arg_value_as<int>("level").value_or(1));
-            return args_ok and factory->has_resource(locator);
-        }
-        return false;
-    }
+    auto has_resource(const url& locator) noexcept -> bool final;
 
     auto get_resource_io(const url& locator)
-      -> unique_holder<msgbus::source_blob_io> final {
-        const auto& q{locator.query()};
-        return {
-          hold<eagitexi_2d_rgb8_io>,
-          as_parent(),
-          factory->make_provider(locator),
-          q.arg_value_as<int>("width").value_or(2),
-          q.arg_value_as<int>("height").value_or(2),
-          q.arg_value_as<int>("level").value_or(0)};
-    }
+      -> unique_holder<msgbus::source_blob_io> final;
+
+    void for_each_locator(
+      callable_ref<void(string_view) noexcept>) noexcept final;
 };
+//------------------------------------------------------------------------------
+eagitexi_2d_rgb8_provider::eagitexi_2d_rgb8_provider(
+  main_ctx_parent parent,
+  std::string path,
+  shared_holder<pixel_provider_factory_interface> f) noexcept
+  : main_ctx_object{"PTx2RGB8", parent}
+  , url_path{path}
+  , factory{std::move(f)} {}
+//------------------------------------------------------------------------------
+auto eagitexi_2d_rgb8_provider::has_resource(const url& locator) noexcept
+  -> bool {
+    if(locator.has_scheme("eagitexi") and locator.has_path(url_path)) {
+        const auto& q{locator.query()};
+        const bool args_ok =
+          valid_dim(q.arg_value_as<int>("width").value_or(1)) and
+          valid_dim(q.arg_value_as<int>("height").value_or(1)) and
+          valid_lvl(q.arg_value_as<int>("level").value_or(1));
+        return args_ok and factory->has_resource(locator);
+    }
+    return false;
+}
+//------------------------------------------------------------------------------
+auto eagitexi_2d_rgb8_provider::get_resource_io(const url& locator)
+  -> unique_holder<msgbus::source_blob_io> {
+    const auto& q{locator.query()};
+    return {
+      hold<eagitexi_2d_rgb8_io>,
+      as_parent(),
+      factory->make_provider(locator),
+      q.arg_value_as<int>("width").value_or(2),
+      q.arg_value_as<int>("height").value_or(2),
+      q.arg_value_as<int>("level").value_or(0)};
+}
+//------------------------------------------------------------------------------
+void eagitexi_2d_rgb8_provider::for_each_locator(
+  callable_ref<void(string_view) noexcept> callback) noexcept {
+    return callback("eagitexi://" + url_path);
+}
 //------------------------------------------------------------------------------
 auto provider_eagitexi_2d_rgb8(
   main_ctx_parent parent,

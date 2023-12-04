@@ -178,6 +178,9 @@ struct eagitexi_tiling_provider final
       -> std::chrono::seconds final {
         return std::chrono::minutes{2};
     }
+
+    void for_each_locator(
+      callable_ref<void(string_view) noexcept>) noexcept final;
 };
 //------------------------------------------------------------------------------
 auto eagitexi_tiling_provider::valid_source(const url& locator) noexcept
@@ -210,6 +213,12 @@ auto eagitexi_tiling_provider::get_resource_io(const url& locator)
       consumer,
       q.decoded_arg_value("source").or_default()};
 }
+//------------------------------------------------------------------------------
+void eagitexi_tiling_provider::for_each_locator(
+  callable_ref<void(string_view) noexcept> callback) noexcept {
+    callback("eagitexi:///tiling");
+}
+//------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 // tiling image provider
 //------------------------------------------------------------------------------
@@ -556,7 +565,7 @@ auto eagitexi_tiling_noise_io::prepare() noexcept -> bool {
         std::stringstream header;
         header << R"(,"width":)" << _width;
         header << R"(,"height":)" << _height;
-        header << R"(,"values":[)";
+        header << R"(,"data":[)";
         append(header.str());
 
         _header_done = true;
@@ -606,6 +615,9 @@ struct eagitexi_tiling_noise_provider final
       -> std::chrono::seconds final {
         return std::chrono::minutes{5};
     }
+
+    void for_each_locator(
+      callable_ref<void(string_view) noexcept>) noexcept final;
 };
 //------------------------------------------------------------------------------
 auto eagitexi_tiling_noise_provider::valid_source(const url& locator) noexcept
@@ -643,6 +655,12 @@ auto eagitexi_tiling_noise_provider::get_resource_io(const url& locator)
       q.arg_value_as<span_size_t>("height").value_or(0),
       q.decoded_arg_value("source").or_default()};
 }
+//------------------------------------------------------------------------------
+void eagitexi_tiling_noise_provider::for_each_locator(
+  callable_ref<void(string_view) noexcept> callback) noexcept {
+    callback("eagitexi:///tiling_noise");
+}
+//------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 // noise image provider
 //------------------------------------------------------------------------------

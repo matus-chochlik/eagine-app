@@ -17,7 +17,13 @@ model_viewer_models::model_viewer_models(
         load(arg, ctx, video);
     }
 
-    load("Arrow", url{"json:///Arrow"}, ctx, video);
+    load(
+      "Screen",
+      url{"shape:///unit_screen"
+          "?position=true+normal=true+tangent=true+bitangent=true"
+          "+wrap_coord=true"},
+      ctx,
+      video);
     load(
       "Twisted torus",
       url{"shape:///unit_twisted_torus"
@@ -28,7 +34,7 @@ model_viewer_models::model_viewer_models(
       "Torus",
       url{"shape:///unit_torus"
           "?position=true+normal=true+tangent=true+bitangent=true"
-          "+wrap_coord=true"},
+          "+wrap_coord=true+occlusion=true"},
       ctx,
       video);
     load(
@@ -48,6 +54,7 @@ model_viewer_models::model_viewer_models(
           "?position=true+normal=true+tangent=true+bitangent=true"},
       ctx,
       video);
+    load("Arrow", url{"json:///Arrow"}, ctx, video);
 }
 //------------------------------------------------------------------------------
 auto model_viewer_models::bounding_sphere() noexcept -> oglplus::sphere {

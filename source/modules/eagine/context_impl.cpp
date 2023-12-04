@@ -586,7 +586,8 @@ auto execution_context::run() noexcept -> execution_context& {
 }
 //------------------------------------------------------------------------------
 void execution_context::update() noexcept {
-    const auto exec_time{measure_time_interval("appUpdate")};
+    static const auto exec_time_id{register_time_interval("appUpdate")};
+    const auto exec_time{measure_time_interval(exec_time_id)};
     _registry.update_and_process();
     _state->update_activity();
     for(auto& provider : _hmi_providers) {

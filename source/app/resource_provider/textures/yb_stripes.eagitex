@@ -1,0 +1,26 @@
+{"levels":10
+,"width":1024
+,"height":1024
+,"depth":1
+,"channels":3
+,"data_type":"unsigned_byte"
+,"format":"rgb"
+,"iformat":"rgb8"
+,"min_filter":"linear_mipmap_linear"
+,"mag_filter":"linear"
+,"wrap_s":"repeat"
+,"wrap_t":"repeat"
+,"label":"yellow-black stripes"
+,"tag": ["texture", "stripes"]
+,"images":
+ [{"url":"eagitexi:///YBStrpImg0","target":"texture_2d","level":0}
+ ,{"url":"eagitexi:///YBStrpImg1","target":"texture_2d","level":1}
+ ,{"url":"eagitexi:///YBStrpImg2","target":"texture_2d","level":2}
+ ,{"url":"eagitexi:///YBStrpImg3","target":"texture_2d","level":3}
+ ,{"url":"eagitexi:///YBStrpImg4","target":"texture_2d","level":4}
+ ,{"url":"eagitexi:///YBStrpImg5","target":"texture_2d","level":5}
+ ,{"url":"eagitexi:///YBStrpImg6","target":"texture_2d","level":6}
+ ,{"url":"eagitexi:///YBStrpImg7","target":"texture_2d","level":7}
+ ,{"url":"eagitexi:///YBStrpImg8","target":"texture_2d","level":8}
+ ,{"url":"eagitexi:///YBStrpImg9","target":"texture_2d","level":9}]
+}

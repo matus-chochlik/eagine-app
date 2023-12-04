@@ -81,30 +81,46 @@ auto sphere_volume_eagitex_io::make_header(int s) -> std::string {
     return hdr.str();
 }
 //------------------------------------------------------------------------------
+// provider
+//------------------------------------------------------------------------------
 struct sphere_volume_eagitex_provider final : eagitex_provider_base {
 
     sphere_volume_eagitex_provider(main_ctx_parent parent) noexcept
       : eagitex_provider_base{"PTxSphR8", parent} {}
 
-    auto has_resource(const url& locator) noexcept -> bool final {
-        if(locator.has_scheme("eagitex") and locator.has_path("/sphere_volume")) {
-            const auto& q{locator.query()};
-            const bool args_ok =
-              valid_dimension(q.arg_value_as<int>("size").value_or(1));
-            return args_ok;
-        }
-        return false;
-    }
+    auto has_resource(const url& locator) noexcept -> bool final;
 
     auto get_resource_io(const url& locator)
-      -> unique_holder<msgbus::source_blob_io> final {
-        const auto& q{locator.query()};
-        return {
-          hold<sphere_volume_eagitex_io>,
-          as_parent(),
-          q.arg_value_as<int>("size").value_or(0)};
-    }
+      -> unique_holder<msgbus::source_blob_io> final;
+
+    void for_each_locator(
+      callable_ref<void(string_view) noexcept>) noexcept final;
 };
+//------------------------------------------------------------------------------
+auto sphere_volume_eagitex_provider::has_resource(const url& locator) noexcept
+  -> bool {
+    if(locator.has_scheme("eagitex") and locator.has_path("/sphere_volume")) {
+        const auto& q{locator.query()};
+        const bool args_ok =
+          valid_dimension(q.arg_value_as<int>("size").value_or(1));
+        return args_ok;
+    }
+    return false;
+}
+//------------------------------------------------------------------------------
+auto sphere_volume_eagitex_provider::get_resource_io(const url& locator)
+  -> unique_holder<msgbus::source_blob_io> {
+    const auto& q{locator.query()};
+    return {
+      hold<sphere_volume_eagitex_io>,
+      as_parent(),
+      q.arg_value_as<int>("size").value_or(0)};
+}
+//------------------------------------------------------------------------------
+void sphere_volume_eagitex_provider::for_each_locator(
+  callable_ref<void(string_view) noexcept> callback) noexcept {
+    return callback("eagitex:///sphere_volume");
+}
 //------------------------------------------------------------------------------
 auto provider_eagitex_sphere_volume(const provider_parameters& p)
   -> unique_holder<resource_provider_interface> {

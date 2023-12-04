@@ -38,7 +38,7 @@ void resource_provider_driver::_add(
 void resource_provider_driver::_populate(
   msgbus::resource_data_consumer_node& consumer) {
     const provider_parameters parameters{
-      .parent = as_parent(), .consumer = consumer};
+      .parent = as_parent(), .driver = *this, .consumer = consumer};
 
     _add(provider_embedded(parameters));
     _add(provider_eagitexi_random(parameters));
@@ -49,6 +49,7 @@ void resource_provider_driver::_populate(
     _add(provider_eagitexi_sphere_volume(parameters));
     _add(provider_eagitex_sphere_volume(parameters));
     _add(provider_text_lorem_ipsum(parameters));
+    _add(provider_text_resource_list(parameters));
 }
 //------------------------------------------------------------------------------
 resource_provider_driver::resource_provider_driver(
@@ -77,7 +78,7 @@ auto resource_provider_driver::has_resource(const url& locator) noexcept
 }
 //------------------------------------------------------------------------------
 auto resource_provider_driver::get_resource_io(
-  const identifier_t,
+  const endpoint_id_t,
   const url& locator) -> unique_holder<msgbus::source_blob_io> {
     if(const auto provider{find_provider_of(locator)}) {
         return provider->get_resource_io(locator);
@@ -86,7 +87,7 @@ auto resource_provider_driver::get_resource_io(
 }
 //------------------------------------------------------------------------------
 auto resource_provider_driver::get_blob_timeout(
-  const identifier_t,
+  const endpoint_id_t,
   const url& locator,
   const span_size_t size) noexcept -> std::chrono::seconds {
     return find_provider_of(locator)
@@ -95,13 +96,24 @@ auto resource_provider_driver::get_blob_timeout(
 }
 //------------------------------------------------------------------------------
 auto resource_provider_driver::get_blob_priority(
-  const identifier_t,
+  const endpoint_id_t,
   const url& locator,
   const msgbus::message_priority priority) noexcept
   -> msgbus::message_priority {
     return find_provider_of(locator)
       .member(&resource_provider_interface::get_blob_priority, priority)
       .value_or(priority);
+}
+//------------------------------------------------------------------------------
+auto resource_provider_driver::provider_count() const noexcept -> span_size_t {
+    return span_size(_providers.size());
+}
+//------------------------------------------------------------------------------
+auto resource_provider_driver::provider(span_size_t i) const noexcept
+  -> resource_provider_interface& {
+    assert(i < provider_count());
+    assert(_providers[std_size(i)]);
+    return *_providers[std_size(i)];
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

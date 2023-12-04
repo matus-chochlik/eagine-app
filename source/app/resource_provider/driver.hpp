@@ -26,6 +26,9 @@ struct resource_provider_interface : abstract<resource_provider_interface> {
     virtual auto get_blob_priority(
       const msgbus::message_priority priority) noexcept
       -> msgbus::message_priority;
+
+    virtual void for_each_locator(
+      callable_ref<void(string_view) noexcept>) noexcept = 0;
 };
 //------------------------------------------------------------------------------
 class resource_provider_driver final
@@ -41,19 +44,22 @@ public:
 
     auto has_resource(const url&) noexcept -> tribool final;
 
-    auto get_resource_io(const identifier_t, const url&)
+    auto get_resource_io(const endpoint_id_t, const url&)
       -> unique_holder<msgbus::source_blob_io> final;
 
     auto get_blob_timeout(
-      const identifier_t,
+      const endpoint_id_t,
       const url&,
       const span_size_t size) noexcept -> std::chrono::seconds final;
 
     auto get_blob_priority(
-      const identifier_t,
+      const endpoint_id_t,
       const url&,
       const msgbus::message_priority priority) noexcept
       -> msgbus::message_priority final;
+
+    auto provider_count() const noexcept -> span_size_t;
+    auto provider(span_size_t) const noexcept -> resource_provider_interface&;
 
 private:
     void _add(unique_holder<resource_provider_interface>);

@@ -16,6 +16,7 @@ add_executable(
 	eagitexi_checks.cpp
 	eagitexi_stripes.cpp
 	text_lorem_ipsum.cpp
+	text_resource_list.cpp
 	main.cpp)
 
 eagine_embed_target_resources(
@@ -40,6 +41,17 @@ eagine_embed_target_resources(
 		Stool      "models/stool.json"
 		CheckerImg "textures/checker.eagitexi"
 		CheckerTex "textures/checker.eagitex"
+		YBStrpImg0 "textures/yb_stripes_0.eagitexi"
+		YBStrpImg1 "textures/yb_stripes_1.eagitexi"
+		YBStrpImg2 "textures/yb_stripes_2.eagitexi"
+		YBStrpImg3 "textures/yb_stripes_3.eagitexi"
+		YBStrpImg4 "textures/yb_stripes_4.eagitexi"
+		YBStrpImg5 "textures/yb_stripes_5.eagitexi"
+		YBStrpImg6 "textures/yb_stripes_6.eagitexi"
+		YBStrpImg7 "textures/yb_stripes_7.eagitexi"
+		YBStrpImg8 "textures/yb_stripes_8.eagitexi"
+		YBStrpImg9 "textures/yb_stripes_9.eagitexi"
+		YBStrpsTex "textures/yb_stripes.eagitex"
 		TlngR4S64  "tilings/r4_s64.txt"
 		TlngR4S128 "tilings/r4_s128.txt"
 		TlngR4S256 "tilings/r4_s256.txt"

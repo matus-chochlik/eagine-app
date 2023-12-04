@@ -106,6 +106,9 @@ struct eagitexi_random_provider final
 
     auto get_resource_io(const url& locator)
       -> unique_holder<msgbus::source_blob_io> final;
+
+    void for_each_locator(
+      callable_ref<void(string_view) noexcept>) noexcept final;
 };
 //------------------------------------------------------------------------------
 auto eagitexi_random_provider::has_resource(const url& locator) noexcept
@@ -132,6 +135,11 @@ auto eagitexi_random_provider::get_resource_io(const url& locator)
       q.arg_value_as<int>("height").value_or(1),
       q.arg_value_as<int>("depth").value_or(1),
       q.arg_value_as<int>("level").value_or(0)};
+}
+//------------------------------------------------------------------------------
+void eagitexi_random_provider::for_each_locator(
+  callable_ref<void(string_view) noexcept> callback) noexcept {
+    callback("eagitexi:///random");
 }
 //------------------------------------------------------------------------------
 auto provider_eagitexi_random(const provider_parameters& p)
