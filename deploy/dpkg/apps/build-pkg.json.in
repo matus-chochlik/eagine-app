@@ -1,2 +1,3 @@
 {"resource-provider":"$<TARGET_FILE:eagine-app-resource-provider>"
+,"model-viewer":"$<TARGET_FILE:eagine-app-model-viewer>"
 }
