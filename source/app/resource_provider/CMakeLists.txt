@@ -17,11 +17,13 @@ add_executable(
 	eagitexi_stripes.cpp
 	text_lorem_ipsum.cpp
 	text_resource_list.cpp
+	special_args.cpp
 	main.cpp)
 
 eagine_embed_target_resources(
 	TARGET eagine-app-resource-provider
 	RESOURCES
+		BashCmpltn "other/eagine-app-resource-provider.bco"
 		EdgeDVert  "glsl/edges_default_vert.glsl"
 		EdgeDGeom  "glsl/edges_default_geom.glsl"
 		EdgeDFrag  "glsl/edges_default_frag.glsl"

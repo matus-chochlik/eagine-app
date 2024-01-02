@@ -12,6 +12,7 @@ import eagine.app;
 import std;
 
 #include "driver.hpp"
+#include "special_args.hpp"
 
 namespace eagine {
 //------------------------------------------------------------------------------
@@ -103,6 +104,10 @@ void resource_provider::finish() {
 // main
 //------------------------------------------------------------------------------
 auto main(main_ctx& ctx) -> int {
+    if(app::handle_special_args(ctx)) {
+        return 0;
+    }
+
     signal_switch interrupted;
     const auto& log = ctx.log();
 
