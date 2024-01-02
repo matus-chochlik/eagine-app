@@ -6,6 +6,7 @@
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
 #include "main.hpp"
+#include "special_args.hpp"
 import eagine.msgbus;
 
 namespace eagine::app {
@@ -196,6 +197,9 @@ void model_viewer::clean_up() noexcept {
 auto establish(main_ctx&) -> unique_holder<launchpad>;
 //------------------------------------------------------------------------------
 auto viewer_main(main_ctx& ctx) -> int {
+    if(app::handle_special_args(ctx)) {
+        return 0;
+    }
     enable_message_bus(ctx);
     return default_main(ctx, establish(ctx));
 }
