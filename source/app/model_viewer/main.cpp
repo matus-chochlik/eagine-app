@@ -197,8 +197,8 @@ void model_viewer::clean_up() noexcept {
 auto establish(main_ctx&) -> unique_holder<launchpad>;
 //------------------------------------------------------------------------------
 auto viewer_main(main_ctx& ctx) -> int {
-    if(app::handle_special_args(ctx)) {
-        return 0;
+    if(const auto exit_code{app::handle_special_args(ctx)}) {
+        return *exit_code;
     }
     enable_message_bus(ctx);
     return default_main(ctx, establish(ctx));

@@ -23,6 +23,7 @@ add_executable(
 eagine_embed_target_resources(
 	TARGET eagine-app-resource-provider
 	RESOURCES
+		BoostLcnse "../../../LICENSE_1_0.txt"
 		BashCmpltn "other/eagine-app-resource-provider.bco"
 		EdgeDVert  "glsl/edges_default_vert.glsl"
 		EdgeDGeom  "glsl/edges_default_geom.glsl"

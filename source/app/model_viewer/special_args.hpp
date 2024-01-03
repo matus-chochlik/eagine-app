@@ -10,7 +10,7 @@
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-auto handle_special_args(main_ctx& ctx) -> bool;
+auto handle_special_args(main_ctx& ctx) -> std::optional<int>;
 //------------------------------------------------------------------------------
 } // namespace eagine::app
 #endif

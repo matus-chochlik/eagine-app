@@ -23,6 +23,7 @@ add_dependencies(eagine-app-model-viewer eagine-apps)
 eagine_embed_target_resources(
 	TARGET eagine-app-model-viewer
 	RESOURCES
+		BoostLcnse "../../../LICENSE_1_0.txt"
 		BashCmpltn "other/eagine-app-model-viewer.bco"
 		DfaultVert "glsl/default_vert.glsl"
 		DfaultFrag "glsl/default_frag.glsl"

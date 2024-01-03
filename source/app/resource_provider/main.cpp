@@ -104,8 +104,8 @@ void resource_provider::finish() {
 // main
 //------------------------------------------------------------------------------
 auto main(main_ctx& ctx) -> int {
-    if(app::handle_special_args(ctx)) {
-        return 0;
+    if(const auto exit_code{app::handle_special_args(ctx)}) {
+        return *exit_code;
     }
 
     signal_switch interrupted;
