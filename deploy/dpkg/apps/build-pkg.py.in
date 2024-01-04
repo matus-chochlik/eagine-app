@@ -33,9 +33,9 @@ with open(os.path.join("@CMAKE_CURRENT_BINARY_DIR@", "build-pkg.json"), "rb") as
             shutil.copy(
                 src_path,
                 os.path.join(bin_prefix, full_name))
+            subprocess.call(
+                ["strip", os.path.join(bin_prefix, full_name)])
             with open(os.path.join(bco_prefix, full_name), "wt") as bcofd:
-                subprocess.call(
-                    ["strip", os.path.join(bin_prefix, full_name)])
                 subprocess.call(
                     [os.path.join(bin_prefix, full_name), "--print-bash-completion"],
                     stdout=bcofd)
