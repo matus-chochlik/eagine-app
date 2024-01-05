@@ -48,7 +48,7 @@ void model_viewer::_init_camera(const oglplus::sphere bs) {
       .set_near(sr * 0.01F)
       .set_far(sr * 100.0F)
       .set_orbit_min(sr * 1.2F)
-      .set_orbit_max(sr * 4.0F);
+      .set_orbit_max(sr * 25.0F);
 }
 //------------------------------------------------------------------------------
 auto model_viewer::_all_resource_count() noexcept -> span_size_t {
@@ -74,6 +74,8 @@ void model_viewer::_on_selected() noexcept {
         _init_camera(_models.bounding_sphere());
         _programs.use(_video);
         _programs.apply_bindings(_video, _models.attrib_bindings());
+        _textures.use(_video);
+        _programs.set_texture_unit(_video, _textures.texture_unit(_video));
     }
 }
 //------------------------------------------------------------------------------

@@ -40,5 +40,12 @@ auto model_viewer_programs::set_camera(
     return *this;
 }
 //------------------------------------------------------------------------------
+auto model_viewer_programs::set_texture_unit(
+  video_context& video,
+  oglplus::texture_unit::value_type tu) -> model_viewer_programs& {
+    current().set_texture_unit(video, tu);
+    return *this;
+}
+//------------------------------------------------------------------------------
 } // namespace eagine::app
 
