@@ -10,8 +10,8 @@ function _eagine_app_resource_provider()
 
     local only_once_opts=" \
         -h --help \
-		--app-resource-provider-with-router \
-	"
+        --app-resource-provider-with-router \
+    "
 
     local opts=""
 
