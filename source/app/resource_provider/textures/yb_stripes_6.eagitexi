@@ -1,6 +1,7 @@
 {"level":6
 ,"width":16
 ,"height":16
+,"depth":1
 ,"channels":3
 ,"data_type":"unsigned_byte"
 ,"format":"rgb"
