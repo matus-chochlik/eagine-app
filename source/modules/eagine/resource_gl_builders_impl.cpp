@@ -49,7 +49,7 @@ public:
     void do_add(
       const basic_string_path& path,
       span<const string_view> data) noexcept {
-        if(path.size() == 1) {
+        if(path.has_size(1)) {
             if(path.starts_with("label")) {
                 if(data.has_single_value()) {
                     if(auto parent{_parent.lock()}) {
@@ -57,7 +57,7 @@ public:
                     }
                 }
             }
-        } else if((path.size() == 3) and data) {
+        } else if((path.has_size(3)) and data) {
             if((path.starts_with("inputs")) and (path.ends_with("attrib"))) {
                 if(const auto kind{
                      from_string<shapes::vertex_attrib_kind>(*data)}) {
@@ -83,7 +83,7 @@ public:
 
     template <std::integral T>
     void do_add(const basic_string_path& path, span<const T>& data) noexcept {
-        if((path.size() == 3) and data) {
+        if((path.has_size(3)) and data) {
             if((path.starts_with("inputs")) and (path.ends_with("variant"))) {
                 _attrib_variant_index = span_size(*data);
             }
@@ -91,7 +91,7 @@ public:
     }
 
     void add_object(const basic_string_path& path) noexcept final {
-        if(path.size() == 2) {
+        if(path.has_size(2)) {
             if(path.starts_with("inputs")) {
                 _input_name = to_string(path.back());
                 _attrib_kind = shapes::vertex_attrib_kind::position;
@@ -105,7 +105,7 @@ public:
     }
 
     void finish_object(const basic_string_path& path) noexcept final {
-        if(path.size() == 2) {
+        if(path.has_size(2)) {
             if(path.starts_with("inputs")) {
                 if(not _input_name.empty()) {
                     if(auto parent{_parent.lock()}) {
@@ -258,7 +258,7 @@ public:
     void do_add(
       const basic_string_path& path,
       const span<const T> data) noexcept {
-        if(path.size() == 1) {
+        if(path.has_size(1)) {
             if(path.starts_with("level")) {
                 _success &= assign_if_fits(data, _params.level);
             } else if(path.starts_with("x_offs")) {
@@ -288,13 +288,28 @@ public:
             } else if(path.starts_with("iformat")) {
                 _success &= assign_if_fits(data, _params.iformat);
             }
+        } else if(path.has_size(2)) {
+            if(path.starts_with("data")) {
+                _success &= append_image_data(as_bytes(data));
+            }
+        }
+    }
+
+    template <std::floating_point T>
+    void do_add(
+      const basic_string_path& path,
+      const span<const T> data) noexcept {
+        if(path.has_size(2)) {
+            if(path.starts_with("data")) {
+                _success &= append_image_data(as_bytes(data));
+            }
         }
     }
 
     void do_add(
       const basic_string_path& path,
       const span<const string_view> data) noexcept {
-        if(path.size() == 1) {
+        if(path.has_size(1)) {
             if(path.starts_with("data_type")) {
                 _success &=
                   texture_data_type_from_string(data, _params.data_type);
@@ -404,7 +419,7 @@ public:
     void do_add(
       const basic_string_path& path,
       const span<const T> data) noexcept {
-        if(path.size() == 1) {
+        if(path.has_size(1)) {
             if(path.starts_with("levels")) {
                 _success &= assign_if_fits(data, _params.levels);
             } else if(path.starts_with("width")) {
@@ -423,7 +438,7 @@ public:
             } else if(path.starts_with("iformat")) {
                 _success &= assign_if_fits(data, _params.iformat);
             }
-        } else if(path.size() == 3) {
+        } else if(path.has_size(3)) {
             if(path.starts_with("images")) {
                 if(path.ends_with("level")) {
                     _success &= assign_if_fits(data, _image_params.level);
@@ -447,7 +462,7 @@ public:
     void do_add(
       const basic_string_path& path,
       const span<const string_view> data) noexcept {
-        if(path.size() == 1) {
+        if(path.has_size(1)) {
             using It = oglplus::gl_types::int_type;
             using Et = oglplus::gl_types::enum_type;
 
@@ -485,7 +500,7 @@ public:
                     _i_params.emplace_back(0x8E45, It(e));
                 }
             }
-        } else if(path.size() == 3) {
+        } else if(path.has_size(3)) {
             if(path.starts_with("images")) {
                 if(path.ends_with("url")) {
                     if(data.has_single_value()) {
@@ -508,7 +523,7 @@ public:
     }
 
     void add_object(const basic_string_path& path) noexcept final {
-        if(path.size() == 2) {
+        if(path.has_size(2)) {
             if(path.starts_with("images")) {
                 _image_locator = {};
                 _image_params = {};
@@ -526,7 +541,7 @@ public:
                     _success = false;
                 }
             }
-        } else if(path.size() == 2) {
+        } else if(path.has_size(2)) {
             if(path.starts_with("images")) {
                 if(_image_locator) {
                     _image_requests.emplace_back(
@@ -936,7 +951,7 @@ public:
     void do_add(
       const basic_string_path& path,
       span<const string_view> data) noexcept {
-        if(path.size() == 1) {
+        if(path.has_size(1)) {
             if(path.starts_with("label")) {
                 if(data.has_single_value()) {
                     if(auto parent{_parent.lock()}) {

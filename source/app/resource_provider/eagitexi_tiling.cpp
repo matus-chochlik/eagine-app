@@ -523,7 +523,7 @@ eagitexi_tiling_noise_io::eagitexi_tiling_noise_io(
   , _tiling{as_parent(), consumer, std::move(locator)} {
     append(R"({"level":0,"channels":1,"data_type":"float")"
            R"(,"format":"red","iformat":"red")"
-           R"(,"tag":["generated","noise"])");
+           R"(,"tag":["generated","noise","sudoku"])");
 }
 //------------------------------------------------------------------------------
 auto eagitexi_tiling_noise_io::_get_noise(float x, float y, std::size_t i)
@@ -565,6 +565,7 @@ auto eagitexi_tiling_noise_io::prepare() noexcept -> bool {
         std::stringstream header;
         header << R"(,"width":)" << _width;
         header << R"(,"height":)" << _height;
+        header << R"(,"depth":1)";
         header << R"(,"data":[)";
         append(header.str());
 
