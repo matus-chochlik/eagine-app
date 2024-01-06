@@ -295,13 +295,27 @@ public:
         }
     }
 
-    template <std::floating_point T>
     void do_add(
       const basic_string_path& path,
-      const span<const T> data) noexcept {
+      const span<const float> data) noexcept {
         if(path.has_size(2)) {
             if(path.starts_with("data")) {
                 _success &= append_image_data(as_bytes(data));
+            }
+        }
+    }
+
+    void do_add(
+      const basic_string_path& path,
+      const span<const double> data) noexcept {
+        if(path.has_size(2)) {
+            if(path.starts_with("data")) {
+                _float_data.clear();
+                _float_data.reserve(std_size(data.size()));
+                for(const auto d : data) {
+                    _float_data.push_back(float(d));
+                }
+                _success &= append_image_data(as_bytes(view(_float_data)));
             }
         }
     }
@@ -366,6 +380,7 @@ public:
 
 private:
     memory::buffer _temp;
+    std::vector<float> _float_data;
     stream_decompression _decompression;
     oglplus::texture_target _target;
     resource_gl_texture_image_params _params{};
