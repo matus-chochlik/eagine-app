@@ -44,7 +44,9 @@ auto file_io::fetch_fragment(span_size_t offs, memory::block dst) noexcept
 //------------------------------------------------------------------------------
 // provider
 //------------------------------------------------------------------------------
-class file_provider final : public resource_provider_interface {
+class file_provider final
+  : public main_ctx_object
+  , public resource_provider_interface {
 public:
     file_provider(const provider_parameters&);
 
@@ -76,9 +78,25 @@ private:
     std::vector<std::filesystem::path> _search_paths;
 };
 //------------------------------------------------------------------------------
-file_provider::file_provider(const provider_parameters&) {
-    // TODO
-    _search_paths.emplace_back("/opt/resources");
+file_provider::file_provider(const provider_parameters& params)
+  : main_ctx_object{"FilePrvdr", params.parent} {
+    std::vector<std::string> paths;
+    main_context().config().fetch("app.resource_provider.root_path", paths);
+    main_context().config().fetch("app.resource_provider.root_paths", paths);
+    for(const auto& path : paths) {
+        if(std::filesystem::is_directory(path)) {
+            _search_paths.emplace_back(path);
+        } else {
+            log_warning("'${path}' is not a path to existing directory")
+              .arg("path", "FsPath", path);
+        }
+    }
+    log_info("configured resource directories: ${path}")
+      .arg_func([&](logger_backend& backend) {
+          for(auto& path : _search_paths) {
+              backend.add_string("path", "FsPath", path.string());
+          }
+      });
 }
 //------------------------------------------------------------------------------
 auto file_provider::_has_resource(
