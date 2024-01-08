@@ -40,6 +40,7 @@ void resource_provider_driver::_populate(
     const provider_parameters parameters{
       .parent = as_parent(), .driver = *this, .consumer = consumer};
 
+    _add(provider_file(parameters));
     _add(provider_embedded(parameters));
     _add(provider_eagitexi_random(parameters));
     _add(provider_eagitexi_tiling(parameters));

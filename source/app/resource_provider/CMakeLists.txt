@@ -7,6 +7,7 @@ add_executable(
 	eagine-app-resource-provider
 	driver.cpp
 	common.cpp
+	file.cpp
 	embedded.cpp
 	eagitexi_random.cpp
 	eagitexi_provider.cpp

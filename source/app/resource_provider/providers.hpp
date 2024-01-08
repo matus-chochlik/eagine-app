@@ -18,6 +18,9 @@ struct provider_parameters {
     msgbus::resource_data_consumer_node& consumer;
 };
 //------------------------------------------------------------------------------
+auto provider_file(const provider_parameters&)
+  -> unique_holder<resource_provider_interface>;
+//------------------------------------------------------------------------------
 auto provider_embedded(const provider_parameters&)
   -> unique_holder<resource_provider_interface>;
 //------------------------------------------------------------------------------
