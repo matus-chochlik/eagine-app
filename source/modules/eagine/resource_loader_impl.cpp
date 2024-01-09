@@ -704,37 +704,38 @@ auto pending_resource_info::_finish_gl_texture(
         const auto& gl = pgts.video.get().gl_api().operations();
         gl.active_texture(pgts.tex_unit);
 
-        assert(pgts.pparams);
-        const auto& params{*pgts.pparams};
-        for(const auto level : integer_range(pgts.levels)) {
-            if(not pgts.level_images_done[std_size(level)]) {
-                _clear_gl_texture_image(pgts, params, level, {});
+        if(pgts.pparams) {
+            const auto& params{*pgts.pparams};
+            for(const auto level : integer_range(pgts.levels)) {
+                if(not pgts.level_images_done[std_size(level)]) {
+                    _clear_gl_texture_image(pgts, params, level, {});
+                }
             }
-        }
 
-        _parent.log_info("loaded and set-up GL texture object")
-          .arg("requestId", _request_id)
-          .arg("levels", pgts.levels)
-          .arg("images", pgts.level_images_done.count())
-          .arg("locator", _locator.str());
+            _parent.log_info("loaded and set-up GL texture object")
+              .arg("requestId", _request_id)
+              .arg("levels", pgts.levels)
+              .arg("images", pgts.level_images_done.count())
+              .arg("locator", _locator.str());
 
-        // TODO: call this earlier (before all images are loaded)?
-        _parent.gl_texture_loaded(
-          {.request_id = _request_id,
-           .locator = _locator,
-           .video = pgts.video,
-           .target = pgts.tex_target,
-           .name = pgts.tex,
-           .ref = pgts.tex});
-        _parent.gl_texture_images_loaded(
-          {.request_id = _request_id,
-           .locator = _locator,
-           .video = pgts.video,
-           .name = pgts.tex});
-        _parent.resource_loaded(_request_id, _kind, _locator);
+            // TODO: call this earlier (before all images are loaded)?
+            _parent.gl_texture_loaded(
+              {.request_id = _request_id,
+               .locator = _locator,
+               .video = pgts.video,
+               .target = pgts.tex_target,
+               .name = pgts.tex,
+               .ref = pgts.tex});
+            _parent.gl_texture_images_loaded(
+              {.request_id = _request_id,
+               .locator = _locator,
+               .video = pgts.video,
+               .name = pgts.tex});
+            _parent.resource_loaded(_request_id, _kind, _locator);
 
-        if(pgts.tex) {
-            gl.delete_textures(std::move(pgts.tex));
+            if(pgts.tex) {
+                gl.delete_textures(std::move(pgts.tex));
+            }
         }
         return true;
     }
