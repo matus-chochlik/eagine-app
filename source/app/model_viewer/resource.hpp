@@ -121,6 +121,10 @@ protected:
         return items[_selected_index];
     }
 
+protected:
+    auto _resource_name(const program_arg& arg) -> std::string;
+    auto _resource_url(const program_arg& arg) -> url;
+
 private:
     void _on_loaded() noexcept;
     void _on_selected() noexcept;
@@ -186,8 +190,8 @@ public:
       video_context& video,
       Args&&... args) -> model_viewer_resources& {
         return load(
-          arg.next().get_string(),
-          url{arg.next().next()},
+          this->_resource_name(arg),
+          this->_resource_url(arg),
           ctx,
           video,
           std::forward<Args>(args)...);

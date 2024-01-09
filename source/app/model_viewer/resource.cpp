@@ -46,6 +46,27 @@ void model_viewer_resources_base::_settings(
     gui.pop_id();
 }
 //------------------------------------------------------------------------------
+auto model_viewer_resources_base::_resource_name(const program_arg& arg)
+  -> std::string {
+    if(url::is_url(arg.next())) {
+        return to_string(url{arg.next()}
+                           .path_str()
+                           .and_then([](auto p) {
+                               return valid_if_not_empty<string_view>{
+                                 strip_prefix(p, string_view{"/"})};
+                           })
+                           .value_or("unknown"));
+    }
+    return arg.next().get_string();
+}
+//------------------------------------------------------------------------------
+auto model_viewer_resources_base::_resource_url(const program_arg& arg) -> url {
+    if(url::is_url(arg.next())) {
+        return url{arg.next()};
+    }
+    return url{arg.next().next()};
+}
+//------------------------------------------------------------------------------
 void model_viewer_resources_base::update() noexcept {
     if(_selected_index != _next_index) {
         _selected_index = _next_index;
