@@ -24,7 +24,7 @@ private:
 resource_list_io::resource_list_io(resource_provider_driver& driver) noexcept
   : simple_buffer_source_blob_io{"IResrcList", driver, 16 * 1024}
   , _driver{driver} {
-    append("text:///resource_list");
+    append("text:///resource_list\n");
 }
 //------------------------------------------------------------------------------
 auto resource_list_io::prepare() noexcept -> bool {
