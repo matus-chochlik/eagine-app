@@ -7,7 +7,9 @@ add_executable(
 	eagine-app-resource-provider
 	driver.cpp
 	common.cpp
+	ostream_io.cpp
 	file.cpp
+	shapes.cpp
 	embedded.cpp
 	eagitexi_random.cpp
 	eagitexi_provider.cpp
@@ -73,6 +75,7 @@ eagine_target_modules(
 	eagine-app-resource-provider
 	std
 	eagine.core
+	eagine.shapes
 	eagine.sslplus
 	eagine.msgbus
 	eagine.app)

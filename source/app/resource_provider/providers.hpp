@@ -24,6 +24,9 @@ auto provider_file(const provider_parameters&)
 auto provider_embedded(const provider_parameters&)
   -> unique_holder<resource_provider_interface>;
 //------------------------------------------------------------------------------
+auto provider_shape(const provider_parameters&)
+  -> unique_holder<resource_provider_interface>;
+//------------------------------------------------------------------------------
 auto provider_eagitexi_random(const provider_parameters&)
   -> unique_holder<resource_provider_interface>;
 //------------------------------------------------------------------------------
