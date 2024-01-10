@@ -25,6 +25,9 @@ public:
 
     void for_each_locator(
       callable_ref<void(string_view) noexcept>) noexcept final;
+
+private:
+    std::string _domain;
 };
 //------------------------------------------------------------------------------
 shape_provider::shape_provider(const provider_parameters& params)
@@ -47,7 +50,9 @@ auto shape_provider::get_resource_io(const url& locator)
 }
 //------------------------------------------------------------------------------
 void shape_provider::for_each_locator(
-  callable_ref<void(string_view) noexcept>) noexcept {}
+  callable_ref<void(string_view) noexcept> callback) noexcept {
+    shapes::for_each_shape_locator(_domain, callback);
+}
 //------------------------------------------------------------------------------
 auto provider_shape(const provider_parameters& params)
   -> unique_holder<resource_provider_interface> {
