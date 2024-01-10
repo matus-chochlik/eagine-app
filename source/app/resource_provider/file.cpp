@@ -75,11 +75,14 @@ private:
       callable_ref<void(string_view) noexcept>) noexcept;
 
     std::string _hostname;
+    application_config_value<bool> _allow_symlinks;
     std::vector<std::filesystem::path> _search_paths;
 };
 //------------------------------------------------------------------------------
 file_provider::file_provider(const provider_parameters& params)
-  : main_ctx_object{"FilePrvdr", params.parent} {
+  : main_ctx_object{"FilePrvdr", params.parent}
+  , _allow_symlinks{*this, "app.resource_provider.allow_symlinks", false} {
+
     std::vector<std::string> paths;
     main_context().config().fetch("app.resource_provider.root_path", paths);
     main_context().config().fetch("app.resource_provider.root_paths", paths);
@@ -103,11 +106,11 @@ auto file_provider::_has_resource(
   const std::filesystem::path& prefix,
   const std::filesystem::path& path,
   const url& locator) noexcept -> bool {
-    if(not std::filesystem::is_symlink(path)) {
+    if(_allow_symlinks or not std::filesystem::is_symlink(path)) {
         if(std::filesystem::is_regular_file(path)) {
-            std::error_code ec{};
-            const auto relative{std::filesystem::relative(path, prefix, ec)};
-            if(not ec) {
+            std::error_code error{};
+            const auto relative{std::filesystem::relative(path, prefix, error)};
+            if(not error) {
                 if(locator.has_path(relative.string())) {
                     return true;
                 }
@@ -137,11 +140,11 @@ auto file_provider::_get_resource_io(
   const std::filesystem::path& prefix,
   const std::filesystem::path& path,
   const url& locator) noexcept -> unique_holder<msgbus::source_blob_io> {
-    if(not std::filesystem::is_symlink(path)) {
+    if(_allow_symlinks or not std::filesystem::is_symlink(path)) {
         if(std::filesystem::is_regular_file(path)) {
-            std::error_code ec{};
-            const auto relative{std::filesystem::relative(path, prefix, ec)};
-            if(not ec) {
+            std::error_code error{};
+            const auto relative{std::filesystem::relative(path, prefix, error)};
+            if(not error) {
                 if(locator.has_path(relative.string())) {
                     return {hold<file_io>, path};
                 }
@@ -172,11 +175,11 @@ void file_provider::_for_each_locator(
   const std::filesystem::path& prefix,
   const std::filesystem::path& path,
   callable_ref<void(string_view) noexcept> callback) noexcept {
-    if(not std::filesystem::is_symlink(path)) {
+    if(_allow_symlinks or not std::filesystem::is_symlink(path)) {
         if(std::filesystem::is_regular_file(path)) {
-            std::error_code ec{};
-            const auto relative{std::filesystem::relative(path, prefix, ec)};
-            if(not ec) {
+            std::error_code error{};
+            const auto relative{std::filesystem::relative(path, prefix, error)};
+            if(not error) {
                 callback(
                   std::format("file://{}/{}", _hostname, relative.string()));
             }
