@@ -10,6 +10,7 @@ pkg_dir=$(realpath "@PKG_DIR@")
 mkdir -p "${pkg_dir}/usr"
 pkg_prefix=$(realpath "@PKG_DIR@/usr")
 tlg_prefix="${pkg_prefix}/share/eagine/tilings"
+mdl_prefix="${pkg_prefix}/share/eagine/models"
 
 # ------------------------------------------------------------------------------
 mkdir -p "${tlg_prefix}"
@@ -18,6 +19,11 @@ cp "${src_dir}/assets/tilings/"r4_s256_??.txt  "${tlg_prefix}/"
 cp "${src_dir}/assets/tilings/"r4_s512_??.txt  "${tlg_prefix}/"
 cp "${src_dir}/assets/tilings/"r4_s1024_??.txt "${tlg_prefix}/"
 cp "${src_dir}/assets/tilings/"r4_s2048_??.txt "${tlg_prefix}/"
+# ------------------------------------------------------------------------------
+mkdir -p "${mdl_prefix}"
+
+cp "${src_dir}/assets/models/monkey.json" "${mdl_prefix}/"
+cp "${src_dir}/assets/models/jigsaw.json" "${mdl_prefix}/"
 # ------------------------------------------------------------------------------
 mkdir -p "${pkg_dir}/DEBIAN"
 cat << CONTROL > "${pkg_dir}/DEBIAN/control"
