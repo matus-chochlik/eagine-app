@@ -5,13 +5,13 @@
 /// See accompanying file LICENSE_1_0.txt or copy at
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
+export module eagine.app.resource_provider:special_args;
+
 import eagine.core;
 import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-auto handle_special_args(main_ctx& ctx) -> std::optional<int> {
-    return handle_common_special_args(ctx);
-}
+export auto handle_special_args(main_ctx& ctx) -> std::optional<int>;
 //------------------------------------------------------------------------------
 } // namespace eagine::app

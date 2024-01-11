@@ -9,10 +9,8 @@ import eagine.core;
 import eagine.sslplus;
 import eagine.msgbus;
 import eagine.app;
+import eagine.app.resource_provider;
 import std;
-
-#include "driver.hpp"
-#include "special_args.hpp"
 
 namespace eagine {
 //------------------------------------------------------------------------------

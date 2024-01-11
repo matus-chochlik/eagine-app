@@ -5,10 +5,11 @@
 /// See accompanying file LICENSE_1_0.txt or copy at
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
-#ifndef EAGINE_RESOURCE_PROVIDER_PROVIDERS_HPP
-#define EAGINE_RESOURCE_PROVIDER_PROVIDERS_HPP
+export module eagine.app.resource_provider:providers;
 
-#include "driver.hpp"
+import eagine.core;
+import eagine.msgbus;
+import :driver;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
@@ -18,6 +19,8 @@ struct provider_parameters {
     msgbus::resource_data_consumer_node& consumer;
 };
 //------------------------------------------------------------------------------
+auto provider_zip_archive(const provider_parameters&)
+  -> unique_holder<resource_provider_interface>;
 auto provider_file(const provider_parameters&)
   -> unique_holder<resource_provider_interface>;
 //------------------------------------------------------------------------------
@@ -59,4 +62,3 @@ auto provider_text_resource_list(const provider_parameters&)
 //------------------------------------------------------------------------------
 } // namespace eagine::app
 
-#endif

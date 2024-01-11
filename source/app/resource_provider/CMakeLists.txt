@@ -2,26 +2,66 @@
 # Distributed under the Boost Software License, Version 1.0.
 # See accompanying file LICENSE_1_0.txt or copy at
 #  http://www.boost.org/LICENSE_1_0.txt
+eagine_add_module(
+	eagine.app.resource_provider PARTITION special_args
+	IMPORTS std eagine.core)
 
-add_executable(
-	eagine-app-resource-provider
-	driver.cpp
-	common.cpp
-	ostream_io.cpp
-	file.cpp
-	shapes.cpp
-	embedded.cpp
-	eagitexi_random.cpp
-	eagitexi_provider.cpp
-	eagitexi_tiling.cpp
-	eagitexi_single_color.cpp
-	eagitexi_sphere_volume.cpp
-	eagitexi_checks.cpp
-	eagitexi_stripes.cpp
-	text_lorem_ipsum.cpp
-	text_resource_list.cpp
-	special_args.cpp
-	main.cpp)
+eagine_add_module(
+	eagine.app.resource_provider PARTITION driver
+	IMPORTS
+		std
+		eagine.core
+		eagine.msgbus)
+
+eagine_add_module(
+	eagine.app.resource_provider PARTITION providers
+	IMPORTS
+		std
+		eagine.core
+		eagine.msgbus)
+
+eagine_add_module(
+	eagine.app.resource_provider PARTITION common
+	IMPORTS
+		std
+		eagine.core
+		eagine.msgbus)
+
+eagine_add_module(
+	eagine.app.resource_provider PARTITION eagitexi_provider
+	IMPORTS
+		std
+		eagine.core
+		eagine.msgbus)
+
+eagine_add_module(
+	eagine.app.resource_provider
+	SOURCES
+		special_args
+		driver
+		common
+		file
+		zip_archive
+		embedded
+		shapes
+		eagitexi_provider
+		eagitexi_single_color
+		eagitexi_random
+		eagitexi_checks
+		eagitexi_stripes
+		eagitexi_tiling
+		eagitexi_sphere_volume
+		text_lorem_ipsum
+		text_resource_list
+	IMPORTS
+		std
+		eagine.core
+		eagine.shapes
+		eagine.msgbus
+	PRIVATE_LINK_LIBRARIES
+		EAGine::Deps::Zip)
+
+add_executable(eagine-app-resource-provider main.cpp)
 
 eagine_embed_target_resources(
 	TARGET eagine-app-resource-provider
@@ -79,7 +119,8 @@ eagine_target_modules(
 	eagine.shapes
 	eagine.sslplus
 	eagine.msgbus
-	eagine.app)
+	eagine.app
+	eagine.app.resource_provider)
 
 set_target_properties(
 	eagine-app-resource-provider

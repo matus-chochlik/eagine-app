@@ -5,81 +5,94 @@
 /// See accompanying file LICENSE_1_0.txt or copy at
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
-#include "common.hpp"
-#include <cassert>
+export module eagine.app.resource_provider:common;
+
+import eagine.core;
+import eagine.msgbus;
+import std;
+import :driver;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-// simple_string_source_blob_io
+struct simple_string_source_blob_io
+  : main_ctx_object
+  , msgbus::source_blob_io {
+protected:
+    simple_string_source_blob_io(
+      identifier id,
+      main_ctx_parent parent,
+      std::string content) noexcept;
+
+    auto total_size() noexcept -> span_size_t final;
+
+    auto fetch_fragment(const span_size_t offs, memory::block dst) noexcept
+      -> span_size_t final;
+
+private:
+    const std::string _content;
+};
 //------------------------------------------------------------------------------
-simple_string_source_blob_io::simple_string_source_blob_io(
-  identifier id,
-  main_ctx_parent parent,
-  std::string content) noexcept
-  : main_ctx_object{id, parent}
-  , _content{std::move(content)} {}
+struct simple_buffer_source_blob_io
+  : main_ctx_object
+  , msgbus::source_blob_io {
+protected:
+    simple_buffer_source_blob_io(
+      identifier id,
+      main_ctx_parent parent,
+      span_size_t size) noexcept;
+
+    simple_buffer_source_blob_io(
+      identifier id,
+      main_ctx_parent parent,
+      span_size_t size,
+      std::function<memory::buffer(memory::buffer)>) noexcept;
+
+    ~simple_buffer_source_blob_io() noexcept override;
+
+    void append(const memory::const_block);
+    void append(const string_view);
+    void append(const byte);
+
+    auto total_size() noexcept -> span_size_t final;
+
+    auto fetch_fragment(const span_size_t offs, memory::block dst) noexcept
+      -> span_size_t final;
+
+private:
+    memory::buffer _content;
+};
 //------------------------------------------------------------------------------
-auto simple_string_source_blob_io::total_size() noexcept -> span_size_t {
-    return span_size(_content.size());
-}
+class ostream_io final : public msgbus::source_blob_io {
+public:
+    auto ostream() noexcept -> std::ostream&;
+
+    auto total_size() noexcept -> span_size_t final;
+
+    auto fetch_fragment(span_size_t offs, memory::block dst) noexcept
+      -> span_size_t final;
+
+private:
+    std::stringstream _content;
+};
 //------------------------------------------------------------------------------
-auto simple_string_source_blob_io::fetch_fragment(
-  const span_size_t offs,
-  memory::block dst) noexcept -> span_size_t {
-    return copy(head(skip(view(_content), offs), dst.size()), dst).size();
-}
-//------------------------------------------------------------------------------
-// simple_buffer_source_blob_io
-//------------------------------------------------------------------------------
-simple_buffer_source_blob_io::simple_buffer_source_blob_io(
-  identifier id,
-  main_ctx_parent parent,
-  span_size_t size) noexcept
-  : main_ctx_object{id, parent}
-  , _content{main_context().buffers().get(size)} {
-    _content.clear();
-}
-//------------------------------------------------------------------------------
-simple_buffer_source_blob_io::simple_buffer_source_blob_io(
-  identifier id,
-  main_ctx_parent parent,
-  span_size_t size,
-  std::function<memory::buffer(memory::buffer)> make_content) noexcept
-  : main_ctx_object{id, parent}
-  , _content{make_content(main_context().buffers().get(size))} {}
-//------------------------------------------------------------------------------
-void simple_buffer_source_blob_io::append(const memory::const_block part) {
-    memory::append_to(part, _content);
-}
-//------------------------------------------------------------------------------
-void simple_buffer_source_blob_io::append(const string_view part) {
-    append(as_bytes(part));
-}
-//------------------------------------------------------------------------------
-void simple_buffer_source_blob_io::append(const byte b) {
-    append(view_one(b));
-}
-//------------------------------------------------------------------------------
-simple_buffer_source_blob_io::~simple_buffer_source_blob_io() noexcept {
-    main_context().buffers().eat(std::move(_content));
-}
-//------------------------------------------------------------------------------
-auto simple_buffer_source_blob_io::total_size() noexcept -> span_size_t {
-    return span_size(_content.size());
-}
-//------------------------------------------------------------------------------
-auto simple_buffer_source_blob_io::fetch_fragment(
-  const span_size_t offs,
-  memory::block dst) noexcept -> span_size_t {
-    return copy(head(skip(view(_content), offs), dst.size()), dst).size();
-}
-//------------------------------------------------------------------------------
-// eagitex_provider_base
-//------------------------------------------------------------------------------
-eagitex_provider_base::eagitex_provider_base(
-  identifier id,
-  main_ctx_parent parent) noexcept
-  : main_ctx_object{id, parent} {}
+struct eagitex_provider_base
+  : main_ctx_object
+  , resource_provider_interface {
+protected:
+    eagitex_provider_base(identifier id, main_ctx_parent parent) noexcept;
+
+    static auto valid_color(int c) noexcept -> bool {
+        return (c >= 0) and (c <= 255);
+    }
+
+    static auto valid_dimension(int d) noexcept -> bool {
+        return (d > 0) and (d <= 64 * 1024);
+    }
+
+    static auto valid_level(int l) noexcept -> bool {
+        return (l >= 0);
+    }
+};
 //------------------------------------------------------------------------------
 } // namespace eagine::app
 

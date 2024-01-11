@@ -5,8 +5,12 @@
 /// See accompanying file LICENSE_1_0.txt or copy at
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
-#include "ostream_io.hpp"
+module eagine.app.resource_provider;
+
+import eagine.core;
 import eagine.shapes;
+import eagine.msgbus;
+import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
