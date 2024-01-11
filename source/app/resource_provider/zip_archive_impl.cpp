@@ -17,24 +17,124 @@ import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-// zip_archive
+// zipped_file
 //------------------------------------------------------------------------------
-class zip_archive {
+class zipped_file : public main_ctx_object {
 public:
-    zip_archive(const std::filesystem::path& path, int);
+    zipped_file(
+      main_ctx_parent&,
+      std::shared_ptr<::zip_t>,
+      ::zip_file_t*) noexcept;
+
+    auto size() noexcept -> span_size_t;
+
+    auto read(span_size_t offs, memory::block dst) noexcept -> span_size_t;
 
 private:
-    std::unique_ptr<::zip_t, int (*)(::zip_t*)> _zip;
+    auto _get_content_size() noexcept -> span_size_t;
+    auto _get_content() noexcept -> memory::const_block;
+
+    main_ctx_buffer _content;
+    std::shared_ptr<::zip_t> _archive;
+    std::unique_ptr<::zip_file_t, int (*)(::zip_file_t*)> _file;
 };
 //------------------------------------------------------------------------------
-zip_archive::zip_archive(const std::filesystem::path& path, int ec = 0)
-  : _zip{::zip_open(path.string().c_str(), 0, &ec), &::zip_close} {}
+zipped_file::zipped_file(
+  main_ctx_parent& parent,
+  std::shared_ptr<::zip_t> archive,
+  zip_file_t* file) noexcept
+  : main_ctx_object{"ZippedFile", parent}
+  , _content{*this}
+  , _archive{std::move(archive)}
+  , _file{file, &::zip_fclose} {}
+//------------------------------------------------------------------------------
+auto zipped_file::_get_content_size() noexcept -> span_size_t {
+    if(_archive and _file) {
+        ::zip_stat_t stat{};
+        ::zip_stat_init(&stat);
+        // TODO
+        return 8;
+    }
+    return 0;
+}
+//------------------------------------------------------------------------------
+auto zipped_file::_get_content() noexcept -> memory::const_block {
+    if(_content.empty()) {
+        if(const auto size{_get_content_size()}) {
+            _content.get(size).clear();
+            // TODO: load content
+            append_to(as_bytes(string_view("TODOTODO")), _content);
+        }
+    }
+    return memory::view(_content);
+}
+//------------------------------------------------------------------------------
+auto zipped_file::size() noexcept -> span_size_t {
+    return _get_content().size();
+}
+//------------------------------------------------------------------------------
+auto zipped_file::read(span_size_t offs, memory::block dst) noexcept
+  -> span_size_t {
+    const auto src{skip(_get_content(), offs)};
+    dst = head(dst, src);
+    return copy(head(src, dst), dst).size();
+}
+//------------------------------------------------------------------------------
+// zip_archive
+//------------------------------------------------------------------------------
+class zip_archive : public main_ctx_object {
+public:
+    zip_archive(main_ctx_parent&, const std::filesystem::path& path, int);
+
+    explicit operator bool() noexcept {
+        return bool(_archive);
+    }
+
+    auto handle() noexcept {
+        return _archive.get();
+    }
+
+    auto open_file(string_view path) noexcept -> unique_holder<zipped_file>;
+
+    void for_each_file(
+      callable_ref<void(string_view) noexcept> callback) noexcept;
+
+private:
+    std::shared_ptr<::zip_t> _archive;
+};
+//------------------------------------------------------------------------------
+zip_archive::zip_archive(
+  main_ctx_parent& parent,
+  const std::filesystem::path& path,
+  int ec = 0)
+  : main_ctx_object{"ZipArchive", parent}
+  , _archive{::zip_open(path.string().c_str(), 0, &ec), &::zip_close} {}
+//------------------------------------------------------------------------------
+auto zip_archive::open_file(string_view path) noexcept
+  -> unique_holder<zipped_file> {
+    return {
+      default_selector,
+      as_parent(),
+      _archive,
+      ::zip_fopen(_archive.get(), c_str(path), 0)};
+}
+//------------------------------------------------------------------------------
+void zip_archive::for_each_file(
+  callable_ref<void(string_view) noexcept> callback) noexcept {
+    if(_archive) {
+        const auto count{::zip_get_num_entries(_archive.get(), 0)};
+        for(::zip_int64_t i = 0; i < count; ++i) {
+            callback(string_view{
+              ::zip_get_name(_archive.get(), i, ZIP_FL_ENC_STRICT)});
+        }
+    }
+}
 //------------------------------------------------------------------------------
 // zip_archive_io
 //------------------------------------------------------------------------------
 class zip_archive_io final : public msgbus::source_blob_io {
 public:
-    zip_archive_io(std::filesystem::path, const url&);
+    zip_archive_io(shared_holder<zipped_file>);
 
     auto total_size() noexcept -> span_size_t final;
 
@@ -42,22 +142,21 @@ public:
       -> span_size_t final;
 
 private:
-    span_size_t _size{0};
+    shared_holder<zipped_file> _file;
 };
 //------------------------------------------------------------------------------
-zip_archive_io::zip_archive_io(std::filesystem::path path, const url& locator) {
-    (void)path;
-    (void)locator;
-}
+zip_archive_io::zip_archive_io(shared_holder<zipped_file> file)
+  : _file{std::move(file)} {}
 //------------------------------------------------------------------------------
 auto zip_archive_io::total_size() noexcept -> span_size_t {
-    return _size;
+    return _file.member(&zipped_file::size).value_or(0);
 }
 //------------------------------------------------------------------------------
 auto zip_archive_io::fetch_fragment(span_size_t offs, memory::block dst) noexcept
   -> span_size_t {
-    (void)offs;
-    (void)dst;
+    if(_file) {
+        return _file->read(offs, dst);
+    }
     return 0;
 }
 //------------------------------------------------------------------------------
@@ -78,15 +177,23 @@ public:
       callable_ref<void(string_view) noexcept>) noexcept final;
 
 private:
-    auto _has_resource(
-      const std::filesystem::path&,
-      const std::filesystem::path&,
-      const url& locator) noexcept -> bool;
+    auto _get_archive(const std::filesystem::path& path) noexcept
+      -> optional_reference<zip_archive>;
 
-    auto _get_resource_io(
-      const std::filesystem::path&,
-      const std::filesystem::path&,
-      const url& locator) noexcept -> unique_holder<msgbus::source_blob_io>;
+    auto _search_archive(std::filesystem::path, const url&) noexcept
+      -> std::tuple<optional_reference<zip_archive>, std::string>;
+    auto _search_archive_file(std::filesystem::path, const url&) noexcept
+      -> shared_holder<zipped_file>;
+    auto _search_archive_file(const url&) noexcept
+      -> shared_holder<zipped_file>;
+
+    auto _is_zip_archive(const std::filesystem::path& path) noexcept -> bool;
+
+    auto _has_resource(std::filesystem::path, const url& locator) noexcept
+      -> bool;
+
+    auto _get_resource_io(std::filesystem::path, const url& locator) noexcept
+      -> unique_holder<msgbus::source_blob_io>;
 
     void _for_each_locator(
       const std::filesystem::path&,
@@ -95,11 +202,11 @@ private:
 
     std::string _hostname;
     std::vector<std::filesystem::path> _search_paths;
+    flat_map<std::filesystem::path, zip_archive> _open_archives;
 };
 //------------------------------------------------------------------------------
 zip_archive_provider::zip_archive_provider(const provider_parameters& params)
   : main_ctx_object{"FilePrvdr", params.parent} {
-
     std::vector<std::string> paths;
     main_context().config().fetch("app.resource_provider.root_path", paths);
     main_context().config().fetch("app.resource_provider.root_paths", paths);
@@ -119,26 +226,82 @@ zip_archive_provider::zip_archive_provider(const provider_parameters& params)
       });
 }
 //------------------------------------------------------------------------------
+auto zip_archive_provider::_get_archive(
+  const std::filesystem::path& path) noexcept
+  -> optional_reference<zip_archive> {
+    if(auto found{find(_open_archives, path)}) {
+        return found.ref();
+    }
+    if(auto open{zip_archive(as_parent(), path)}) {
+        auto pos{_open_archives.emplace(path, std::move(open)).first};
+        return {pos->second};
+    }
+    return {};
+}
+//------------------------------------------------------------------------------
+auto zip_archive_provider::_is_zip_archive(
+  const std::filesystem::path& path) noexcept -> bool {
+    return path.extension() == ".zip";
+}
+//------------------------------------------------------------------------------
+auto zip_archive_provider::_search_archive(
+  std::filesystem::path archive_path,
+  const url& locator) noexcept
+  -> std::tuple<optional_reference<zip_archive>, std::string> {
+    std::string file_path;
+    bool found_archive{false};
+    for(const auto entry : locator.path()) {
+        if(found_archive) {
+            if(not file_path.empty()) {
+                file_path.append("/");
+            }
+            append_to(entry, file_path);
+        } else {
+            archive_path /= to_string(entry);
+            if(not std::filesystem::exists(archive_path)) {
+                return {};
+            }
+            if(std::filesystem::is_regular_file(archive_path)) {
+                if(not _is_zip_archive(archive_path)) {
+                    return {};
+                }
+                found_archive = true;
+            }
+        }
+    }
+    if(found_archive) {
+        return {_get_archive(archive_path), std::move(file_path)};
+    }
+    return {};
+}
+//------------------------------------------------------------------------------
+auto zip_archive_provider::_search_archive_file(
+  std::filesystem::path archive_path,
+  const url& locator) noexcept -> shared_holder<zipped_file> {
+    if(auto [zip, file_path]{_search_archive(archive_path, locator)}; zip) {
+        return zip->open_file(file_path);
+    }
+    return {};
+}
+//------------------------------------------------------------------------------
+auto zip_archive_provider::_search_archive_file(const url& locator) noexcept
+  -> shared_holder<zipped_file> {
+    for(auto search_path : _search_paths) {
+        if(auto file{_search_archive_file(search_path, locator)}) {
+            return file;
+        }
+    }
+    return {};
+}
+//------------------------------------------------------------------------------
 auto zip_archive_provider::_has_resource(
-  const std::filesystem::path& prefix,
-  const std::filesystem::path& path,
+  std::filesystem::path archive_path,
   const url& locator) noexcept -> bool {
-    if(not std::filesystem::is_symlink(path)) {
-        if(std::filesystem::is_regular_file(path)) {
-            std::error_code error{};
-            const auto relative{std::filesystem::relative(path, prefix, error)};
-            if(not error) {
-                if(locator.has_path(relative.string())) {
-                    return true;
-                }
-            }
-        } else if(std::filesystem::is_directory(path)) {
-            for(auto const& dir_entry :
-                std::filesystem::directory_iterator{path}) {
-                if(_has_resource(prefix, dir_entry, locator)) {
-                    return true;
-                }
-            }
+    if(auto [zip, file_path]{_search_archive(archive_path, locator)}; zip) {
+        ::zip_stat_t s{};
+        ::zip_stat_init(&s);
+        if(::zip_stat(zip->handle(), file_path.c_str(), ZIP_STAT_SIZE, &s) == 0) {
+            return s.size > 0;
         }
     }
     return false;
@@ -146,7 +309,7 @@ auto zip_archive_provider::_has_resource(
 //------------------------------------------------------------------------------
 auto zip_archive_provider::has_resource(const url& locator) noexcept -> bool {
     for(const auto& search_path : _search_paths) {
-        if(_has_resource(search_path, search_path, locator)) {
+        if(_has_resource(search_path, locator)) {
             return true;
         }
     }
@@ -154,34 +317,17 @@ auto zip_archive_provider::has_resource(const url& locator) noexcept -> bool {
 }
 //------------------------------------------------------------------------------
 auto zip_archive_provider::_get_resource_io(
-  const std::filesystem::path& prefix,
-  const std::filesystem::path& path,
+  std::filesystem::path search_path,
   const url& locator) noexcept -> unique_holder<msgbus::source_blob_io> {
-    if(not std::filesystem::is_symlink(path)) {
-        if(std::filesystem::is_regular_file(path)) {
-            std::error_code error{};
-            const auto relative{std::filesystem::relative(path, prefix, error)};
-            if(not error) {
-                if(locator.has_path(relative.string())) {
-                    return {hold<zip_archive_io>, path, locator};
-                }
-            }
-        } else if(std::filesystem::is_directory(path)) {
-            for(auto const& dir_entry :
-                std::filesystem::directory_iterator{path}) {
-                if(auto io{_get_resource_io(prefix, dir_entry, locator)}) {
-                    return io;
-                }
-            }
-        }
-    }
-    return {};
+    return {
+      hold<zip_archive_io>,
+      _search_archive_file(std::move(search_path), locator)};
 }
 //------------------------------------------------------------------------------
 auto zip_archive_provider::get_resource_io(const url& locator)
   -> unique_holder<msgbus::source_blob_io> {
     for(const auto& search_path : _search_paths) {
-        if(auto io{_get_resource_io(search_path, search_path, locator)}) {
+        if(auto io{_get_resource_io(search_path, locator)}) {
             return io;
         }
     }
@@ -193,12 +339,20 @@ void zip_archive_provider::_for_each_locator(
   const std::filesystem::path& path,
   callable_ref<void(string_view) noexcept> callback) noexcept {
     if(not std::filesystem::is_symlink(path)) {
-        if(std::filesystem::is_regular_file(path)) {
+        if(std::filesystem::is_regular_file(path) and _is_zip_archive(path)) {
             std::error_code error{};
             const auto relative{std::filesystem::relative(path, prefix, error)};
             if(not error) {
-                callback(
-                  std::format("zip://{}/{}", _hostname, relative.string()));
+                if(auto zip{_get_archive(path)}) {
+                    const auto wrapped_callback{[&](const string_view name) {
+                        callback(std::format(
+                          "zip://{}/{}/{}",
+                          _hostname,
+                          relative.string(),
+                          std::string_view{name}));
+                    }};
+                    zip->for_each_file({construct_from, wrapped_callback});
+                }
             }
         } else if(std::filesystem::is_directory(path)) {
             for(auto const& dir_entry :
