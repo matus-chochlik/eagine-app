@@ -24,46 +24,52 @@ public:
     zipped_file(
       main_ctx_parent&,
       std::shared_ptr<::zip_t>,
-      ::zip_file_t*) noexcept;
+      string_view name) noexcept;
 
     auto size() noexcept -> span_size_t;
 
     auto read(span_size_t offs, memory::block dst) noexcept -> span_size_t;
 
 private:
-    auto _get_content_size() noexcept -> span_size_t;
+    auto _get_content_size(::zip_t*, string_view) noexcept -> span_size_t;
     auto _get_content() noexcept -> memory::const_block;
 
+    span_size_t _size;
     main_ctx_buffer _content;
     std::shared_ptr<::zip_t> _archive;
     std::unique_ptr<::zip_file_t, int (*)(::zip_file_t*)> _file;
 };
 //------------------------------------------------------------------------------
-zipped_file::zipped_file(
-  main_ctx_parent& parent,
-  std::shared_ptr<::zip_t> archive,
-  zip_file_t* file) noexcept
-  : main_ctx_object{"ZippedFile", parent}
-  , _content{*this}
-  , _archive{std::move(archive)}
-  , _file{file, &::zip_fclose} {}
-//------------------------------------------------------------------------------
-auto zipped_file::_get_content_size() noexcept -> span_size_t {
-    if(_archive and _file) {
-        ::zip_stat_t stat{};
-        ::zip_stat_init(&stat);
-        // TODO
-        return 8;
+auto zipped_file::_get_content_size(::zip_t* archive, string_view path) noexcept
+  -> span_size_t {
+    if(archive) {
+        ::zip_stat_t s{};
+        ::zip_stat_init(&s);
+        if(::zip_stat(archive, c_str(path), ZIP_STAT_SIZE, &s) == 0) {
+            return span_size(s.size);
+        }
     }
     return 0;
 }
 //------------------------------------------------------------------------------
+zipped_file::zipped_file(
+  main_ctx_parent& parent,
+  std::shared_ptr<::zip_t> archive,
+  string_view path) noexcept
+  : main_ctx_object{"ZippedFile", parent}
+  , _size{_get_content_size(archive.get(), path)}
+  , _content{*this}
+  , _archive{std::move(archive)}
+  , _file{::zip_fopen(_archive.get(), c_str(path), 0), &::zip_fclose} {}
+//------------------------------------------------------------------------------
 auto zipped_file::_get_content() noexcept -> memory::const_block {
     if(_content.empty()) {
-        if(const auto size{_get_content_size()}) {
-            _content.get(size).clear();
-            // TODO: load content
-            append_to(as_bytes(string_view("TODOTODO")), _content);
+        if(_size > 0) {
+            _content.get(_size).resize(_size);
+            const auto sz{limit_cast<::zip_uint64_t>(_content.size())};
+            if(::zip_fread(_file.get(), _content.data(), sz) != sz) {
+                _content.clear();
+            }
         }
     }
     return memory::view(_content);
@@ -112,11 +118,7 @@ zip_archive::zip_archive(
 //------------------------------------------------------------------------------
 auto zip_archive::open_file(string_view path) noexcept
   -> unique_holder<zipped_file> {
-    return {
-      default_selector,
-      as_parent(),
-      _archive,
-      ::zip_fopen(_archive.get(), c_str(path), 0)};
+    return {default_selector, as_parent(), _archive, path};
 }
 //------------------------------------------------------------------------------
 void zip_archive::for_each_file(
