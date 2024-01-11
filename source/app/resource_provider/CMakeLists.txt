@@ -45,6 +45,7 @@ eagine_embed_target_resources(
 		Magnet     "models/magnet.json"
 		Crate1     "models/crate1.json"
 		Stool      "models/stool.json"
+		JackOLntrn "models/jack_o_lantern.json"
 		CheckerImg "textures/checker.eagitexi"
 		CheckerTex "textures/checker.eagitex"
 		YBStrpImg0 "textures/yb_stripes_0.eagitexi"
