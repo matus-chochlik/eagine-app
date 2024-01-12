@@ -16,21 +16,21 @@ eagine_add_module(
 eagine_add_module(
 	eagine.app.resource_provider PARTITION providers
 	IMPORTS
-		std
+		driver std
 		eagine.core
 		eagine.msgbus)
 
 eagine_add_module(
 	eagine.app.resource_provider PARTITION common
 	IMPORTS
-		std
+		driver std
 		eagine.core
 		eagine.msgbus)
 
 eagine_add_module(
 	eagine.app.resource_provider PARTITION eagitexi_provider
 	IMPORTS
-		std
+		driver providers std
 		eagine.core
 		eagine.msgbus)
 
