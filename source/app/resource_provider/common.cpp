@@ -47,8 +47,6 @@ protected:
       span_size_t size,
       std::function<memory::buffer(memory::buffer)>) noexcept;
 
-    ~simple_buffer_source_blob_io() noexcept override;
-
     void append(const memory::const_block);
     void append(const string_view);
     void append(const byte);
@@ -59,7 +57,7 @@ protected:
       -> span_size_t final;
 
 private:
-    memory::buffer _content;
+    main_ctx_buffer _content;
 };
 //------------------------------------------------------------------------------
 class ostream_io final : public msgbus::source_blob_io {
