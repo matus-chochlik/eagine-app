@@ -418,21 +418,6 @@ public:
       identifier id,
       shared_holder<pending_resource_info> info) noexcept;
 
-    auto log(log_event_severity severity, const string_view format) noexcept
-      -> log_entry;
-
-    auto log_error(const string_view format) noexcept {
-        return log(log_event_severity::error, format);
-    }
-
-    auto log_info(const string_view format) noexcept {
-        return log(log_event_severity::info, format);
-    }
-
-    auto log_debug(const string_view format) noexcept {
-        return log(log_event_severity::debug, format);
-    }
-
 protected:
     weak_holder<pending_resource_info> _parent;
 };
@@ -1430,15 +1415,6 @@ private:
     flat_map<identifier_t, shared_holder<pending_resource_info>> _finished;
     flat_map<identifier_t, shared_holder<pending_resource_info>> _cancelled;
 };
-//------------------------------------------------------------------------------
-inline auto valtree_builder_common::log(
-  log_event_severity severity,
-  const string_view format) noexcept -> log_entry {
-    if(auto parent{_parent.lock()}) [[likely]] {
-        return parent->loader().log(severity, format);
-    }
-    return {{}, {}, severity, {}, nullptr};
-}
 //------------------------------------------------------------------------------
 /// @brief Class tracking specific pending resource load requests.
 /// @see resource_loader

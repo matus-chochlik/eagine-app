@@ -152,6 +152,8 @@ void pending_resource_info::handle_gl_texture_image(
   const memory::const_block data) noexcept {
     if(const auto cont{continuation()}) {
         cont->_handle_gl_texture_image(*this, target, params, data);
+    } else {
+        _handle_gl_texture_image(*this, target, params, data);
     }
 }
 //------------------------------------------------------------------------------
