@@ -9,21 +9,23 @@ pkg_dir=$(realpath "@PKG_DIR@")
 
 mkdir -p "${pkg_dir}/usr"
 pkg_prefix=$(realpath "@PKG_DIR@/usr")
-tlg_prefix="${pkg_prefix}/share/eagine/tilings"
-mdl_prefix="${pkg_prefix}/share/eagine/models"
+ast_prefix="${pkg_prefix}/share/eagine/assets"
 
+mkdir -p "${ast_prefix}"
 # ------------------------------------------------------------------------------
-mkdir -p "${tlg_prefix}"
-
-cp "${src_dir}/assets/tilings/"r4_s256_??.txt  "${tlg_prefix}/"
-cp "${src_dir}/assets/tilings/"r4_s512_??.txt  "${tlg_prefix}/"
-cp "${src_dir}/assets/tilings/"r4_s1024_??.txt "${tlg_prefix}/"
-cp "${src_dir}/assets/tilings/"r4_s2048_??.txt "${tlg_prefix}/"
+pushd "${src_dir}/assets/tilings" && \
+zip -9 "${ast_prefix}/tilings_app.eagizip" \
+	r4_s256_??.txt \
+	r4_s512_??.txt \
+	r4_s1024_??.txt \
+	r4_s2048_??.txt
+popd
 # ------------------------------------------------------------------------------
-mkdir -p "${mdl_prefix}"
-
-cp "${src_dir}/assets/models/monkey.json" "${mdl_prefix}/"
-cp "${src_dir}/assets/models/jigsaw.json" "${mdl_prefix}/"
+pushd "${src_dir}/assets/models"
+zip -9 "${ast_prefix}/models_app.eagizip" \
+	jigsaw.json \
+	monkey.json
+popd
 # ------------------------------------------------------------------------------
 mkdir -p "${pkg_dir}/DEBIAN"
 cat << CONTROL > "${pkg_dir}/DEBIAN/control"
