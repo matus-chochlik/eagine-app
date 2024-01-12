@@ -182,7 +182,7 @@ public:
       const oglplus::gl_types::int_type value) noexcept;
     void handle_gl_texture_image(
       const oglplus::texture_target,
-      const resource_gl_texture_image_params&,
+      resource_gl_texture_image_params&,
       const memory::const_block) noexcept;
     auto add_gl_texture_image_request(identifier_t request_id) noexcept -> bool;
     void add_gl_texture_update_context(
@@ -195,8 +195,7 @@ public:
       video_context&,
       oglplus::texture_target,
       oglplus::texture_unit) noexcept;
-    auto handle_gl_texture_params(const resource_gl_texture_params&) noexcept
-      -> bool;
+    auto handle_gl_texture_params(resource_gl_texture_params&) noexcept -> bool;
 
     void add_gl_buffer_context(video_context&, oglplus::buffer_target) noexcept;
     void handle_gl_buffer_data(
@@ -359,16 +358,28 @@ private:
       const resource_gl_texture_params&,
       span_size_t level,
       const memory::const_block) noexcept;
+    void _adjust_gl_texture_params(
+      const oglplus::texture_target,
+      const _pending_gl_texture_state&,
+      resource_gl_texture_params&) noexcept;
+    void _adjust_gl_texture_params(
+      const oglplus::texture_target,
+      const _pending_gl_texture_state&,
+      resource_gl_texture_image_params&) noexcept;
+    void _adjust_gl_texture_params(
+      const oglplus::texture_target,
+      const _pending_gl_texture_update_state&,
+      resource_gl_texture_image_params&) noexcept;
     auto _handle_pending_gl_texture_state(
       auto& gl,
-      auto&,
+      auto& GL,
       auto& glapi,
-      _pending_gl_texture_state& pgts,
+      const _pending_gl_texture_state& pgts,
       const resource_gl_texture_params& params) noexcept -> bool;
     void _handle_gl_texture_image(
       const pending_resource_info& source,
       const oglplus::texture_target,
-      const resource_gl_texture_image_params&,
+      resource_gl_texture_image_params&,
       const memory::const_block) noexcept;
 
     auto _finish_gl_buffer(_pending_gl_buffer_state&) noexcept -> bool;

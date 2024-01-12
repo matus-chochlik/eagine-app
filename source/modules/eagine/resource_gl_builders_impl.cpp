@@ -617,11 +617,45 @@ auto make_valtree_gl_texture_builder(
     return {hold<valtree_gl_texture_builder>, parent, video, target, unit};
 }
 //------------------------------------------------------------------------------
+static void _adjust_texture_dimensions(
+  const oglplus::texture_target target,
+  auto& pgts,
+  auto& params) noexcept {
+    pgts.video.get().with_gl([&](auto&, auto& GL, auto&) {
+        if(target == GL.texture_2d_array) {
+            params.dimensions = std::max(params.dimensions, 3);
+        } else if(target == GL.texture_1d_array) {
+            params.dimensions = std::max(params.dimensions, 2);
+        }
+    });
+}
+//------------------------------------------------------------------------------
+void pending_resource_info::_adjust_gl_texture_params(
+  const oglplus::texture_target target,
+  const _pending_gl_texture_state& pgts,
+  resource_gl_texture_params& params) noexcept {
+    _adjust_texture_dimensions(target, pgts, params);
+}
+//------------------------------------------------------------------------------
+void pending_resource_info::_adjust_gl_texture_params(
+  const oglplus::texture_target target,
+  const _pending_gl_texture_state& pgts,
+  resource_gl_texture_image_params& params) noexcept {
+    _adjust_texture_dimensions(target, pgts, params);
+}
+//------------------------------------------------------------------------------
+void pending_resource_info::_adjust_gl_texture_params(
+  const oglplus::texture_target target,
+  const _pending_gl_texture_update_state& pgts,
+  resource_gl_texture_image_params& params) noexcept {
+    _adjust_texture_dimensions(target, pgts, params);
+}
+//------------------------------------------------------------------------------
 auto pending_resource_info::_handle_pending_gl_texture_state(
   auto& gl,
   auto&,
   auto& glapi,
-  _pending_gl_texture_state& pgts,
+  const _pending_gl_texture_state& pgts,
   const resource_gl_texture_params& params) noexcept -> bool {
 
     gl.active_texture(pgts.tex_unit);
@@ -738,8 +772,9 @@ auto pending_resource_info::_handle_pending_gl_texture_state(
 }
 //------------------------------------------------------------------------------
 auto pending_resource_info::handle_gl_texture_params(
-  const resource_gl_texture_params& params) noexcept -> bool {
+  resource_gl_texture_params& params) noexcept -> bool {
     if(const auto pgts{get_if<_pending_gl_texture_state>(_state)}) {
+        _adjust_gl_texture_params(pgts->tex_target, *pgts, params);
         _parent.log_info("loaded GL texture storage parameters")
           .arg("levels", params.levels)
           .arg("width", params.width)
@@ -809,23 +844,24 @@ void pending_resource_info::_clear_gl_texture_image(
 void pending_resource_info::_handle_gl_texture_image(
   const pending_resource_info& source,
   const oglplus::texture_target target,
-  const resource_gl_texture_image_params& params,
+  resource_gl_texture_image_params& tex_params,
   const memory::const_block data) noexcept {
+
     _parent.log_info("loaded GL texture sub-image")
       .arg("requestId", _request_id)
-      .arg("level", params.level)
-      .arg("xoffs", params.x_offs)
-      .arg("yoffs", params.y_offs)
-      .arg("zoffs", params.z_offs)
-      .arg("width", params.width)
-      .arg("height", params.height)
-      .arg("depth", params.depth)
-      .arg("dimensions", params.dimensions)
-      .arg("channels", params.channels)
+      .arg("level", tex_params.level)
+      .arg("xoffs", tex_params.x_offs)
+      .arg("yoffs", tex_params.y_offs)
+      .arg("zoffs", tex_params.z_offs)
+      .arg("width", tex_params.width)
+      .arg("height", tex_params.height)
+      .arg("depth", tex_params.depth)
+      .arg("dimensions", tex_params.dimensions)
+      .arg("channels", tex_params.channels)
       .arg("dataSize", data.size())
       .arg("locator", source.locator().str());
 
-    auto add_image_data = [&](auto& glapi, auto& pgts) {
+    auto add_image_data{[&](auto& glapi, auto& pgts, auto& params) {
         if(params.dimensions == 3) {
             if(glapi.texture_sub_image3d) {
                 glapi.texture_sub_image3d(
@@ -905,15 +941,18 @@ void pending_resource_info::_handle_gl_texture_image(
                   data);
             }
         }
-    };
+    }};
 
     if(is(resource_kind::gl_texture)) {
         if(const auto pgts{get_if<_pending_gl_texture_state>(_state)}) {
             if(pgts->tex) [[likely]] {
+                _adjust_gl_texture_params(target, *pgts, tex_params);
                 if(const auto found{eagine::find(
                      pgts->pending_requests, source.request_id())}) {
-                    pgts->level_images_done.set(std_size(params.level), true);
-                    add_image_data(pgts->video.get().gl_api(), *pgts);
+                    pgts->level_images_done.set(
+                      std_size(tex_params.level), true);
+                    add_image_data(
+                      pgts->video.get().gl_api(), *pgts, tex_params);
 
                     pgts->pending_requests.erase(found.position());
                     if(not _finish_gl_texture(*pgts)) {
@@ -924,7 +963,8 @@ void pending_resource_info::_handle_gl_texture_image(
         }
     } else if(is(resource_kind::gl_texture_update)) {
         if(const auto pgts{get_if<_pending_gl_texture_update_state>(_state)}) {
-            add_image_data(pgts->video.get().gl_api(), *pgts);
+            _adjust_gl_texture_params(target, *pgts, tex_params);
+            add_image_data(pgts->video.get().gl_api(), *pgts, tex_params);
         }
     }
     mark_finished();

@@ -147,7 +147,7 @@ auto pending_resource_info::add_gl_program_input_binding(
 //------------------------------------------------------------------------------
 void pending_resource_info::handle_gl_texture_image(
   const oglplus::texture_target target,
-  const resource_gl_texture_image_params& params,
+  resource_gl_texture_image_params& params,
   const memory::const_block data) noexcept {
     if(const auto cont{continuation()}) {
         cont->_handle_gl_texture_image(*this, target, params, data);
