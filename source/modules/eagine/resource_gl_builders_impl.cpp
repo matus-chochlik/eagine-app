@@ -21,6 +21,7 @@ import eagine.core.runtime;
 import eagine.core.utility;
 import eagine.core.container;
 import eagine.core.value_tree;
+import eagine.core.main_ctx;
 import eagine.core.c_api;
 import eagine.oglplus;
 import eagine.shapes;
@@ -37,7 +38,7 @@ public:
     valtree_gl_program_builder(
       const shared_holder<pending_resource_info>& info,
       video_context& video) noexcept
-      : base{info}
+      : base{"GLprgBuldr", info}
       , _video{video} {}
 
     auto max_token_size() noexcept -> span_size_t final {
@@ -216,20 +217,19 @@ public:
       shared_holder<pending_resource_info> info,
       oglplus::texture_target target,
       const resource_gl_texture_image_params& params) noexcept
-      : base{std::move(info)}
+      : base{"GLtxiBuldr", std::move(info)}
+      , _tex_data{*this, 512 * 512 * 4}
       , _target{target}
       , _params{params} {
-        if(const auto parent{_parent.lock()}) {
-            parent->loader().buffers().get(512 * 512);
-        }
+        _tex_data.clear();
     }
 
     auto append_image_data(const memory::const_block blk) noexcept -> bool {
         log_debug("appending texture image data")
           .tag("apndImgDta")
-          .arg("offset", _temp.size())
+          .arg("offset", _tex_data.size())
           .arg("size", blk.size());
-        memory::append_to(blk, _temp);
+        memory::append_to(blk, _tex_data);
         //  TODO: progressive image specification once we have enough
         //  data for width * some constant so that the temp buffer
         //  doesn't get too big
@@ -361,11 +361,10 @@ public:
         if(const auto parent{_parent.lock()}) {
             if(_success) {
                 _decompression.finish();
-                parent->handle_gl_texture_image(_target, _params, _temp);
+                parent->handle_gl_texture_image(_target, _params, _tex_data);
             } else {
                 parent->mark_finished();
             }
-            parent->loader().buffers().eat(std::move(_temp));
             return _success;
         }
         return false;
@@ -374,12 +373,11 @@ public:
     void failed() noexcept final {
         if(const auto parent{_parent.lock()}) {
             parent->mark_finished();
-            parent->loader().buffers().eat(std::move(_temp));
         }
     }
 
 private:
-    memory::buffer _temp;
+    main_ctx_buffer _tex_data;
     std::vector<float> _float_data;
     stream_decompression _decompression;
     oglplus::texture_target _target;
@@ -419,7 +417,7 @@ public:
       video_context& video,
       oglplus::texture_target tex_target,
       oglplus::texture_unit tex_unit) noexcept
-      : base{info}
+      : base{"GLtexBuldr", info}
       , _video{video}
       , _tex_target{tex_target}
       , _tex_unit{tex_unit} {}
@@ -993,7 +991,7 @@ public:
       const shared_holder<pending_resource_info>& info,
       video_context& video,
       oglplus::buffer_target buf_target) noexcept
-      : base{info}
+      : base{"GLbufBuldr", info}
       , _video{video}
       , _buf_target{buf_target} {}
 

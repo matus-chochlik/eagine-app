@@ -16,6 +16,7 @@ import eagine.core.types;
 import eagine.core.memory;
 import eagine.core.string;
 import eagine.core.math;
+import eagine.core.identifier;
 import eagine.core.container;
 import eagine.core.reflection;
 import eagine.core.value_tree;
@@ -778,6 +779,14 @@ void pending_resource_info::handle_source_cancelled(
     _parent.resource_cancelled(_request_id, _kind, _locator);
     mark_finished();
 }
+//------------------------------------------------------------------------------
+// valtree_builder_common
+//------------------------------------------------------------------------------
+valtree_builder_common::valtree_builder_common(
+  identifier id,
+  shared_holder<pending_resource_info> info) noexcept
+  : main_ctx_object{id, info->loader().as_parent()}
+  , _parent{std::move(info)} {}
 //------------------------------------------------------------------------------
 // resource_request_result
 //------------------------------------------------------------------------------

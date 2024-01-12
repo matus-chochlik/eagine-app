@@ -13,6 +13,7 @@ import eagine.core.math;
 import eagine.core.memory;
 import eagine.core.string;
 import eagine.core.container;
+import eagine.core.identifier;
 import eagine.core.reflection;
 import eagine.core.serialization;
 import eagine.core.value_tree;
@@ -411,11 +412,11 @@ private:
     resource_kind _kind{resource_kind::unknown};
 };
 //------------------------------------------------------------------------------
-class valtree_builder_common {
+class valtree_builder_common : public main_ctx_object {
 public:
     valtree_builder_common(
-      const shared_holder<pending_resource_info>& info) noexcept
-      : _parent{info} {}
+      identifier id,
+      shared_holder<pending_resource_info> info) noexcept;
 
     auto log(log_event_severity severity, const string_view format) noexcept
       -> log_entry;

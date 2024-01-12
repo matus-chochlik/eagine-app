@@ -110,7 +110,7 @@ auto valtree_float_vector_builder::finish() noexcept -> bool {
 auto make_valtree_float_vector_builder(
   const shared_holder<pending_resource_info>& parent) noexcept
   -> unique_holder<valtree::object_builder> {
-    return {hold<valtree_float_vector_builder>, parent};
+    return {hold<valtree_float_vector_builder>, "FlVecBuldr", parent};
 }
 //------------------------------------------------------------------------------
 // valtree_vec3_vector_builder
@@ -223,7 +223,7 @@ auto valtree_vec3_vector_builder::finish() noexcept -> bool {
 auto make_valtree_vec3_vector_builder(
   const shared_holder<pending_resource_info>& parent) noexcept
   -> unique_holder<valtree::object_builder> {
-    return {hold<valtree_vec3_vector_builder>, parent};
+    return {hold<valtree_vec3_vector_builder>, "Vec3VBuldr", parent};
 }
 //------------------------------------------------------------------------------
 // valtree_mat4_vector_builder
@@ -409,7 +409,7 @@ auto valtree_mat4_vector_builder::finish() noexcept -> bool {
 auto make_valtree_mat4_vector_builder(
   const shared_holder<pending_resource_info>& parent) noexcept
   -> unique_holder<valtree::object_builder> {
-    return {hold<valtree_mat4_vector_builder>, parent};
+    return {hold<valtree_mat4_vector_builder>, "Mat4VBuldr", parent};
 }
 //------------------------------------------------------------------------------
 // camera parameters
@@ -423,7 +423,7 @@ public:
     valtree_orbiting_camera_parameters_builder(
       const shared_holder<pending_resource_info>& parent,
       orbiting_camera& camera) noexcept
-      : base{parent}
+      : base{"OrbCmBuldr", parent}
       , _camera{camera} {}
 
     auto max_token_size() noexcept -> span_size_t final {
@@ -498,7 +498,7 @@ public:
     valtree_input_setup_builder(
       const shared_holder<pending_resource_info>& parent,
       execution_context& ctx) noexcept
-      : base{parent}
+      : base{"InStpBuldr", parent}
       , _ctx{ctx} {}
 
     auto max_token_size() noexcept -> span_size_t final {
