@@ -243,7 +243,13 @@ auto zip_archive_provider::_get_archive(
 //------------------------------------------------------------------------------
 auto zip_archive_provider::_is_zip_archive(
   const std::filesystem::path& path) noexcept -> bool {
-    return path.extension() == ".zip";
+    static const std::array<std::string_view, 2> exts{{".eagizip", ".zip"}};
+    for(const auto ext : exts) {
+        if(path.extension() == ext) {
+            return true;
+        }
+    }
+    return false;
 }
 //------------------------------------------------------------------------------
 auto zip_archive_provider::_search_archive(
