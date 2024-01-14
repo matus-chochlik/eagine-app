@@ -46,20 +46,22 @@ model_viewer_models::model_viewer_models(
       ctx,
       video);
     load(
-      "Round cube",
-      url{"shape:///unit_round_cube"
-          "?position=true+normal=true+tangent=true+bitangent=true"},
-      ctx,
-      video);
-    load(
       "Icosahedron",
       url{"shape:///unit_icosahedron?position=true+normal=true"},
       ctx,
       video);
     load(
+      "Round cube",
+      url{"shape:///unit_round_cube"
+          "?position=true+normal=true+tangent=true+bitangent=true"
+          "+wrap_coord=true"},
+      ctx,
+      video);
+    load(
       "Cube",
       url{"shape:///unit_cube"
-          "?position=true+normal=true+tangent=true+bitangent=true"},
+          "?position=true+normal=true+tangent=true+bitangent=true"
+          "+wrap_coord=true"},
       ctx,
       video);
     load("Arrow", url{"json:///Arrow"}, ctx, video);

@@ -14,7 +14,7 @@ void main() {
     float EdgeAlpha = exp2(-pow(MinDist / EdgeWidth, 2.0));
 
     float l = mix(max(dot(geomNormal, LightDir), 1.0), 0.35, 0.55);
-    vec3 c = texture(Texture0, vec3(geomWrapCoord.xy, 0.0)).rgb;
+    vec3 c = texture(Texture0, geomWrapCoord).rgb;
     vec3 FaceColor = l * 1.0 * c;
     vec3 EdgeColor = l * 0.8 * c;
 
