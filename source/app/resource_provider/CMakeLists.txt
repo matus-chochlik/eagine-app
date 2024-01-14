@@ -99,6 +99,7 @@ eagine_embed_target_resources(
 		YBStrpImg9 "textures/yb_stripes_9.eagitexi"
 		YBStrpsTex "textures/yb_stripes.eagitex"
 		LvlGrdtTex "textures/level_gradient.eagitex"
+		RandomTex  "textures/random.eagitex"
 		OGLplusTex "textures/oglplus.eagitex"
 		GreenCube  "textures/green_cube.eagitex"
 		TNoise64   "textures/tiling_noise_64.eagitex"
