@@ -24,6 +24,7 @@ popd
 pushd "${src_dir}/assets/models"
 zip -9 "${ast_prefix}/models_app.eagizip" \
 	jigsaw.json \
+	wheelcart.json \
 	monkey.json
 popd
 # ------------------------------------------------------------------------------
