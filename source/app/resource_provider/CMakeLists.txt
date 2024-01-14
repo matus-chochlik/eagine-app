@@ -78,7 +78,6 @@ eagine_embed_target_resources(
 		EdgeNProg  "glsl/edges_normal_prog.json"
 		TraficCone "models/traffic_cone.json"
 		StairCube  "models/stair_cube.json"
-		Jerrycan   "models/jerrycan.json"
 		Pumpkin    "models/pumpkin.json"
 		Hydrant    "models/hydrant.json"
 		Guitar     "models/guitar.json"
