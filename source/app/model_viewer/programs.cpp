@@ -5,47 +5,30 @@
 /// See accompanying file LICENSE_1_0.txt or copy at
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
-#include "programs.hpp"
-#include <cassert>
+export module eagine.app.model_viewer:programs;
+
+import eagine.core;
+import eagine.oglplus;
+import eagine.app;
+import :program;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-model_viewer_programs::model_viewer_programs(
-  execution_context& ctx,
-  video_context& video) {
-    for(auto arg : ctx.main_context().args().all_like("--program")) {
-        load(arg, ctx, video);
-    }
+export class model_viewer_programs
+  : public model_viewer_resources<model_viewer_program> {
+public:
+    model_viewer_programs(execution_context&, video_context&);
 
-    load("Default", url{"json:///DfaultProg"}, ctx, video);
-    load("Normal to Color", url{"json:///Nml2ClrPrg"}, ctx, video);
-    load("Tangent to Color", url{"json:///Tgt2ClrPrg"}, ctx, video);
-    load("Bi-tangent to Color", url{"json:///Btg2ClrPrg"}, ctx, video);
-    load("UV to Color", url{"json:///Wrp2ClrPrg"}, ctx, video);
-    load("Edges (UV)", url{"json:///EdgeUVProg"}, ctx, video);
-}
-//------------------------------------------------------------------------------
-auto model_viewer_programs::apply_bindings(
-  video_context& video,
-  const oglplus::vertex_attrib_bindings& attrib_bindings)
-  -> model_viewer_programs& {
-    current().apply_bindings(video, attrib_bindings);
-    return *this;
-}
-//------------------------------------------------------------------------------
-auto model_viewer_programs::set_camera(
-  video_context& video,
-  orbiting_camera& camera) -> model_viewer_programs& {
-    current().set_camera(video, camera);
-    return *this;
-}
-//------------------------------------------------------------------------------
-auto model_viewer_programs::set_texture_unit(
-  video_context& video,
-  oglplus::texture_unit::value_type tu) -> model_viewer_programs& {
-    current().set_texture_unit(video, tu);
-    return *this;
-}
+    auto apply_bindings(
+      video_context&,
+      const oglplus::vertex_attrib_bindings& attrib_bindings)
+      -> model_viewer_programs&;
+
+    auto set_camera(video_context&, orbiting_camera& camera)
+      -> model_viewer_programs&;
+
+    auto set_texture_unit(video_context&, oglplus::texture_unit::value_type)
+      -> model_viewer_programs&;
+};
 //------------------------------------------------------------------------------
 } // namespace eagine::app
-

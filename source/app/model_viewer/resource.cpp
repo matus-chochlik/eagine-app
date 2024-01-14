@@ -5,90 +5,233 @@
 /// See accompanying file LICENSE_1_0.txt or copy at
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
-#include "resource.hpp"
+module;
+
 #include <cassert>
+
+export module eagine.app.model_viewer:resource;
+
+import eagine.core;
+import eagine.guiplus;
+import eagine.app;
+import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-void model_viewer_resource_intf::signal_loaded() {
-    model_viewer_resource_signals::loaded();
-}
+struct model_viewer_resource_intf;
+struct model_viewer_resource_signals {
+    signal<void() noexcept> loaded;
+    signal<void() noexcept> selected;
+};
 //------------------------------------------------------------------------------
-auto model_viewer_resources_base::_settings_height(
-  optional_reference<model_viewer_resource_intf> impl) noexcept -> float {
-    return 45.F + impl.member(&model_viewer_resource_intf::settings_height)
-                    .value_or(0.F);
-}
+struct model_viewer_resource_intf
+  : abstract<model_viewer_resource_intf>
+  , model_viewer_resource_signals {
+
+    virtual auto is_loaded() noexcept -> bool = 0;
+    virtual void load_if_needed(execution_context&, video_context&) = 0;
+    virtual void use(video_context&) = 0;
+    virtual void clean_up(execution_context&, video_context&) = 0;
+    virtual auto settings_height() -> float {
+        return 0.F;
+    }
+    virtual void settings(const guiplus::imgui_api&) noexcept {}
+
+protected:
+    void signal_loaded();
+};
 //------------------------------------------------------------------------------
-void model_viewer_resources_base::_settings(
-  const string_view head,
-  optional_reference<model_viewer_resource_intf> impl,
-  const guiplus::imgui_api& gui) noexcept {
-    gui.separator_text(head);
-    gui.push_id(head);
-    assert(_next_index < _names.size());
-    if(gui.begin_combo("Current", _names[_next_index]).or_false()) {
-        for(const auto i : index_range(_names)) {
-            const bool is_selected{i == _next_index};
-            const auto name{_names[i]};
-            if(gui.selectable(name, is_selected).or_false()) {
-                _next_index = i;
-            }
-            if(is_selected) {
-                gui.set_item_default_focus();
+template <typename Intf>
+class model_viewer_resource_wrapper {
+public:
+    model_viewer_resource_wrapper(unique_holder<Intf> impl) noexcept
+      : _impl{std::move(impl)} {}
+
+    auto implementation() noexcept -> optional_reference<Intf> {
+        return {_impl};
+    }
+
+    explicit operator bool() const noexcept {
+        return is_loaded();
+    }
+
+    auto signals() const noexcept -> model_viewer_resource_signals& {
+        return *_impl;
+    }
+
+    auto is_loaded() const noexcept -> bool {
+        return _impl and _impl->is_loaded();
+    }
+
+    auto load_if_needed(execution_context& ctx, video_context& video)
+      -> model_viewer_resource_wrapper& {
+        if(_impl) [[likely]] {
+            _impl->load_if_needed(ctx, video);
+        }
+        return *this;
+    }
+
+    auto use(video_context& video) -> model_viewer_resource_wrapper& {
+        if(_impl) [[likely]] {
+            _impl->use(video);
+        }
+        return *this;
+    }
+
+    auto clean_up(execution_context& ctx, video_context& video)
+      -> model_viewer_resource_wrapper& {
+        if(_impl) {
+            _impl->clean_up(ctx, video);
+        }
+        return *this;
+    }
+
+protected:
+    unique_holder<Intf> _impl;
+};
+//------------------------------------------------------------------------------
+class model_viewer_resources_base {
+public:
+    signal<void() noexcept> loaded;
+    signal<void() noexcept> selected;
+
+    void update() noexcept;
+    auto all_resource_count() noexcept -> span_size_t;
+
+protected:
+    auto _settings_height(
+      optional_reference<model_viewer_resource_intf>) noexcept -> float;
+
+    void _settings(
+      const string_view head,
+      optional_reference<model_viewer_resource_intf>,
+      const guiplus::imgui_api& gui) noexcept;
+
+    auto _load_handler() noexcept {
+        return make_callable_ref<&model_viewer_resources_base::_on_loaded>(
+          this);
+    }
+    auto _select_handler() noexcept {
+        return make_callable_ref<&model_viewer_resources_base::_on_selected>(
+          this);
+    }
+
+    void _add_name(std::string name);
+
+    auto _current(auto& items) const noexcept -> auto& {
+        assert(_selected_index < items.size());
+        return items[_selected_index];
+    }
+
+protected:
+    auto _resource_name(const program_arg& arg) -> std::string;
+    auto _resource_url(const program_arg& arg) -> url;
+
+private:
+    void _on_loaded() noexcept;
+    void _on_selected() noexcept;
+
+    std::size_t _next_index{0U};
+    std::size_t _selected_index{0U};
+    std::vector<std::string> _names;
+};
+//------------------------------------------------------------------------------
+template <typename Wrapper>
+class model_viewer_resources : public model_viewer_resources_base {
+public:
+    explicit operator bool() const noexcept {
+        return are_all_loaded();
+    }
+
+    auto are_all_loaded() const noexcept -> bool {
+        for(auto& resource : _loaded) {
+            if(not resource.is_loaded()) {
+                return false;
             }
         }
-        gui.end_combo();
+        return true;
     }
-    if(impl) {
-        impl->settings(gui);
+
+    auto loaded_resource_count() noexcept -> span_size_t {
+        span_size_t result{0};
+        for(auto& resource : _loaded) {
+            if(resource.is_loaded()) {
+                ++result;
+            }
+        }
+        return result;
     }
-    gui.pop_id();
-}
-//------------------------------------------------------------------------------
-auto model_viewer_resources_base::_resource_name(const program_arg& arg)
-  -> std::string {
-    if(url::is_url(arg.next())) {
-        return to_string(url{arg.next()}
-                           .path_str()
-                           .and_then([](auto p) {
-                               return valid_if_not_empty<string_view>{
-                                 strip_prefix(p, string_view{"/"})};
-                           })
-                           .value_or("unknown"));
+
+    auto current() noexcept -> Wrapper& {
+        return _current(_loaded);
     }
-    return arg.next().get_string();
-}
-//------------------------------------------------------------------------------
-auto model_viewer_resources_base::_resource_url(const program_arg& arg) -> url {
-    if(url::is_url(arg.next())) {
-        return url{arg.next()};
+
+    template <typename... Args>
+    auto load(
+      std::string name,
+      url locator,
+      execution_context& ctx,
+      video_context& video,
+      Args&&... args) -> model_viewer_resources& {
+        this->_add_name(std::move(name));
+        _loaded.emplace_back(make_viewer_resource(
+          std::type_identity<Wrapper>{},
+          std::move(locator),
+          ctx,
+          video,
+          std::forward<Args>(args)...));
+        _loaded.back().signals().loaded.connect(this->_load_handler());
+        _loaded.back().signals().selected.connect(this->_select_handler());
+        return *this;
     }
-    return url{arg.next().next()};
-}
-//------------------------------------------------------------------------------
-void model_viewer_resources_base::update() noexcept {
-    if(_selected_index != _next_index) {
-        _selected_index = _next_index;
-        _on_selected();
+
+    template <typename... Args>
+    auto load(
+      const program_arg& arg,
+      execution_context& ctx,
+      video_context& video,
+      Args&&... args) -> model_viewer_resources& {
+        return load(
+          this->_resource_name(arg),
+          this->_resource_url(arg),
+          ctx,
+          video,
+          std::forward<Args>(args)...);
     }
-}
-//------------------------------------------------------------------------------
-auto model_viewer_resources_base::all_resource_count() noexcept -> span_size_t {
-    return span_size(_names.size());
-}
-//------------------------------------------------------------------------------
-void model_viewer_resources_base::_add_name(std::string name) {
-    _names.emplace_back(std::move(name));
-}
-//------------------------------------------------------------------------------
-void model_viewer_resources_base::_on_loaded() noexcept {
-    loaded();
-    selected();
-}
-//------------------------------------------------------------------------------
-void model_viewer_resources_base::_on_selected() noexcept {
-    selected();
-}
+
+    auto use(video_context& video) noexcept -> model_viewer_resources& {
+        current().use(video);
+        return *this;
+    }
+
+    auto load_if_needed(execution_context& ctx, video_context& video) noexcept
+      -> model_viewer_resources& {
+        for(auto& resource : _loaded) {
+            resource.load_if_needed(ctx, video);
+        }
+        return *this;
+    }
+
+    auto clean_up(execution_context& ctx, video_context& video)
+      -> model_viewer_resources& {
+        for(auto& resource : _loaded) {
+            resource.clean_up(ctx, video);
+        }
+        return *this;
+    }
+
+    auto settings_height() noexcept -> float {
+        return this->_settings_height(current().implementation());
+    }
+
+    void settings(
+      const string_view head,
+      const guiplus::imgui_api& gui) noexcept {
+        return this->_settings(head, current().implementation(), gui);
+    }
+
+private:
+    std::vector<Wrapper> _loaded;
+};
 //------------------------------------------------------------------------------
 } // namespace eagine::app

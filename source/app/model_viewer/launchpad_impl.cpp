@@ -5,7 +5,11 @@
 /// See accompanying file LICENSE_1_0.txt or copy at
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
-#include "main.hpp"
+module eagine.app.model_viewer;
+
+import eagine.core;
+import eagine.oglplus;
+import eagine.app;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------

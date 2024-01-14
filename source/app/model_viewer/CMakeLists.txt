@@ -3,22 +3,103 @@
 # See accompanying file LICENSE_1_0.txt or copy at
 #  http://www.boost.org/LICENSE_1_0.txt
 #
+eagine_add_module(
+	eagine.app.model_viewer PARTITION resource
+	IMPORTS
+		std
+		eagine.core
+		eagine.guiplus
+		eagine.app)
 
-add_executable(
-	eagine-app-model-viewer
-	resource.cpp
-	background.cpp
-	backgrounds.cpp
-	geometry.cpp
-	models.cpp
-	program.cpp
-	programs.cpp
-	texture.cpp
-	textures.cpp
-	launchpad.cpp
-	special_args.cpp
-	main.cpp)
-add_dependencies(eagine-app-model-viewer eagine-apps)
+eagine_add_module(
+	eagine.app.model_viewer PARTITION background
+	IMPORTS
+		std resource
+		eagine.core
+		eagine.oglplus
+		eagine.app)
+
+eagine_add_module(
+	eagine.app.model_viewer PARTITION backgrounds
+	IMPORTS
+		std background
+		eagine.core
+		eagine.oglplus
+		eagine.app)
+
+eagine_add_module(
+	eagine.app.model_viewer PARTITION geometry
+	IMPORTS
+		std resource
+		eagine.core
+		eagine.shapes
+		eagine.oglplus
+		eagine.app)
+
+eagine_add_module(
+	eagine.app.model_viewer PARTITION models
+	IMPORTS
+		std geometry
+		eagine.core
+		eagine.oglplus
+		eagine.app)
+
+eagine_add_module(
+	eagine.app.model_viewer PARTITION program
+	IMPORTS
+		std resource
+		eagine.core
+		eagine.oglplus
+		eagine.app)
+
+eagine_add_module(
+	eagine.app.model_viewer PARTITION programs
+	IMPORTS
+		std program
+		eagine.core
+		eagine.oglplus
+		eagine.app)
+
+eagine_add_module(
+	eagine.app.model_viewer PARTITION texture
+	IMPORTS
+		std resource
+		eagine.core
+		eagine.oglplus
+		eagine.app)
+
+eagine_add_module(
+	eagine.app.model_viewer PARTITION textures
+	IMPORTS
+		std texture
+		eagine.core
+		eagine.oglplus
+		eagine.app)
+
+eagine_add_module(
+	eagine.app.model_viewer
+	SOURCES
+		resource
+		background
+		backgrounds
+		geometry
+		models
+		program
+		programs
+		texture
+		textures
+		launchpad
+		model_viewer
+	IMPORTS
+		std
+		eagine.core
+		eagine.shapes
+		eagine.msgbus
+		eagine.guiplus
+		eagine.oglplus
+		eagine.app)
+
+add_executable(eagine-app-model-viewer main.cpp)
 
 eagine_embed_target_resources(
 	TARGET eagine-app-model-viewer
@@ -45,14 +126,16 @@ eagine_embed_target_resources(
 	ENABLE_SEARCH)
 eagine_add_exe_analysis(eagine-app-model-viewer)
 
+eagine_add_exe_analysis(eagine-app-model-viewer)
+
 eagine_target_modules(
 	eagine-app-model-viewer
 	std
 	eagine.core
 	eagine.shapes
 	eagine.oglplus
-	eagine.guiplus
-	eagine.app)
+	eagine.app
+	eagine.app.model_viewer)
 
 set_target_properties(
 	eagine-app-model-viewer

@@ -5,23 +5,25 @@
 /// See accompanying file LICENSE_1_0.txt or copy at
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
-#ifndef EAGINE_APP_MODEL_VIEWER_MAIN_HPP
-#define EAGINE_APP_MODEL_VIEWER_MAIN_HPP
-
-#include "backgrounds.hpp"
-#include "models.hpp"
-#include "programs.hpp"
-#include "textures.hpp"
+export module eagine.app.model_viewer;
 
 import eagine.core;
-import eagine.oglplus;
 import eagine.guiplus;
+import eagine.oglplus;
 import eagine.app;
-import std;
+export import :resource;
+export import :background;
+export import :backgrounds;
+export import :geometry;
+export import :models;
+export import :program;
+export import :programs;
+export import :texture;
+export import :textures;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-class model_viewer : public common_application {
+export class model_viewer : public common_application {
 
 public:
     model_viewer(execution_context&, video_context&);
@@ -59,5 +61,7 @@ private:
     bool _show_setting_window{false};
 };
 //------------------------------------------------------------------------------
+export auto establish(main_ctx&) -> unique_holder<launchpad>;
+//------------------------------------------------------------------------------
 } // namespace eagine::app
-#endif
+
