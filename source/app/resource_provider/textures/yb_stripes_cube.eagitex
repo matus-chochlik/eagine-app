@@ -1,0 +1,18 @@
+{"levels":1
+,"width":1024
+,"height":1024
+,"channels":3
+,"data_type":"unsigned_byte"
+,"format":"rgb"
+,"iformat":"rgb8"
+,"wrap_s":"clamp_to_border"
+,"wrap_t":"clamp_to_border"
+,"tag": ["texture", "yellow-blue stripes", "sky-box"]
+,"images":
+[{"url":"eagitexi:///YBStrpImg0","target":"texture_cube_map_positive_x"}
+,{"url":"eagitexi:///YBStrpImg0","target":"texture_cube_map_negative_x"}
+,{"url":"eagitexi:///YBStrpImg0","target":"texture_cube_map_positive_y"}
+,{"url":"eagitexi:///YBStrpImg0","target":"texture_cube_map_negative_y"}
+,{"url":"eagitexi:///YBStrpImg0","target":"texture_cube_map_positive_z"}
+,{"url":"eagitexi:///YBStrpImg0","target":"texture_cube_map_negative_z"}]
+}

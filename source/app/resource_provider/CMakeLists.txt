@@ -105,6 +105,7 @@ eagine_embed_target_resources(
 		ColorCube  "textures/color_cube.eagitex"
 		GreenCube  "textures/green_cube.eagitex"
 		GrenCubImg "textures/green_cube.eagitexi"
+		YBStrpCube "textures/yb_stripes_cube.eagitex"
 		TNoise64   "textures/tiling_noise_64.eagitex"
 		TNoise128  "textures/tiling_noise_128.eagitex"
 		TNoise256  "textures/tiling_noise_256.eagitex"
