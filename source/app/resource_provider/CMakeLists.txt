@@ -102,6 +102,7 @@ eagine_embed_target_resources(
 		RandomTex  "textures/random.eagitex"
 		OGLplusTex "textures/oglplus.eagitex"
 		GreenCube  "textures/green_cube.eagitex"
+		GrenCubImg "textures/green_cube.eagitexi"
 		TNoise64   "textures/tiling_noise_64.eagitex"
 		TNoise128  "textures/tiling_noise_128.eagitex"
 		TNoise256  "textures/tiling_noise_256.eagitex"
