@@ -44,6 +44,7 @@ private:
     void _on_selected() noexcept;
     auto _select_handler() noexcept;
     void _clear_background() noexcept;
+    void _clear_background_default() noexcept;
     void _view_model() noexcept;
     void _show_settings(const input& i) noexcept;
     auto _show_settings_handler() noexcept;

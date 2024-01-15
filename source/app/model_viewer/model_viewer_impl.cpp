@@ -127,6 +127,14 @@ void model_viewer::_clear_background() noexcept {
     _backgrounds.clear(_video, _camera);
 }
 //------------------------------------------------------------------------------
+void model_viewer::_clear_background_default() noexcept {
+    _video.with_gl([](auto& gl, auto& GL) {
+        gl.clear_color(0.45F, 0.45F, 0.45F, 1.F);
+        gl.clear_depth(1.F);
+        gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
+    });
+}
+//------------------------------------------------------------------------------
 void model_viewer::_view_model() noexcept {
     _programs.use(_video);
     _programs.set_camera(_video, _camera);
@@ -179,6 +187,7 @@ void model_viewer::update() noexcept {
     if(_backgrounds and _cube_maps) {
         _clear_background();
     } else {
+        _clear_background_default();
         _cube_maps.load_if_needed(context(), _video);
         _backgrounds.load_if_needed(context(), _video);
     }
