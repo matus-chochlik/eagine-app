@@ -27,6 +27,9 @@ public:
     auto set_camera(video_context&, orbiting_camera& camera)
       -> model_viewer_programs&;
 
+    auto set_cube_map_unit(video_context&, oglplus::texture_unit::value_type)
+      -> model_viewer_programs&;
+
     auto set_texture_unit(video_context&, oglplus::texture_unit::value_type)
       -> model_viewer_programs&;
 };

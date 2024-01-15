@@ -38,6 +38,11 @@ model_viewer_cube_maps::model_viewer_cube_maps(
     });
 }
 //------------------------------------------------------------------------------
+auto model_viewer_cube_maps::texture_unit(video_context& video)
+  -> oglplus::texture_unit::value_type {
+    return current().texture_unit(video);
+}
+//------------------------------------------------------------------------------
 // Model textures
 //------------------------------------------------------------------------------
 model_viewer_textures::model_viewer_textures(

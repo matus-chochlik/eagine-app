@@ -19,6 +19,8 @@ export class model_viewer_cube_maps
   : public model_viewer_resources<model_viewer_texture> {
 public:
     model_viewer_cube_maps(execution_context&, video_context&);
+
+    auto texture_unit(video_context&) -> oglplus::texture_unit::value_type;
 };
 //------------------------------------------------------------------------------
 export class model_viewer_textures

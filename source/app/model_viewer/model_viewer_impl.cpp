@@ -83,6 +83,7 @@ void model_viewer::_on_selected() noexcept {
         _programs.apply_bindings(_video, _models.attrib_bindings());
         _cube_maps.use(_video);
         _textures.use(_video);
+        _programs.set_cube_map_unit(_video, _cube_maps.texture_unit(_video));
         _programs.set_texture_unit(_video, _textures.texture_unit(_video));
     }
 }

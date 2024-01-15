@@ -31,6 +31,7 @@ model_viewer_programs::model_viewer_programs(
     load("Bi-tangent to Color", url{"json:///Btg2ClrPrg"}, ctx, video);
     load("UV to Color", url{"json:///Wrp2ClrPrg"}, ctx, video);
     load("Edges (UV)", url{"json:///EdgeUVProg"}, ctx, video);
+    load("Metal", url{"json:///MetalProg"}, ctx, video);
 }
 //------------------------------------------------------------------------------
 auto model_viewer_programs::apply_bindings(
@@ -45,6 +46,13 @@ auto model_viewer_programs::set_camera(
   video_context& video,
   orbiting_camera& camera) -> model_viewer_programs& {
     current().set_camera(video, camera);
+    return *this;
+}
+//------------------------------------------------------------------------------
+auto model_viewer_programs::set_cube_map_unit(
+  video_context& video,
+  oglplus::texture_unit::value_type tu) -> model_viewer_programs& {
+    current().set_cube_map_unit(video, tu);
     return *this;
 }
 //------------------------------------------------------------------------------
