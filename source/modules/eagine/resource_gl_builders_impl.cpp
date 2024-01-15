@@ -187,6 +187,24 @@ static auto texture_format_from_string(
     return gl_enum_from_string<oglplus::pixel_format>(data, v);
 }
 //------------------------------------------------------------------------------
+static auto texture_min_filter_from_string(
+  span<const string_view> data,
+  oglplus::gl_types::enum_type& v) noexcept -> bool {
+    return gl_enum_from_string<oglplus::texture_min_filter>(data, v);
+}
+//------------------------------------------------------------------------------
+static auto texture_mag_filter_from_string(
+  span<const string_view> data,
+  oglplus::gl_types::enum_type& v) noexcept -> bool {
+    return gl_enum_from_string<oglplus::texture_min_filter>(data, v);
+}
+//------------------------------------------------------------------------------
+static auto texture_wrap_mode_from_string(
+  span<const string_view> data,
+  oglplus::gl_types::enum_type& v) noexcept -> bool {
+    return gl_enum_from_string<oglplus::texture_wrap_mode>(data, v);
+}
+//------------------------------------------------------------------------------
 static auto texture_swizzle_from_string(
   span<const string_view> data,
   oglplus::gl_types::enum_type& v) noexcept -> bool {
@@ -512,6 +530,31 @@ public:
                 _success &= texture_format_from_string(data, _params.format);
             } else if(path.starts_with("iformat")) {
                 _success &= texture_iformat_from_string(data, _params.iformat);
+            } else if(path.starts_with("min_filter")) {
+                Et e{0};
+                if(_success &= texture_min_filter_from_string(data, e)) {
+                    _i_params.emplace_back(0x2801, It(e));
+                }
+            } else if(path.starts_with("mag_filter")) {
+                Et e{0};
+                if(_success &= texture_mag_filter_from_string(data, e)) {
+                    _i_params.emplace_back(0x2800, It(e));
+                }
+            } else if(path.starts_with("wrap_s")) {
+                Et e{0};
+                if(_success &= texture_wrap_mode_from_string(data, e)) {
+                    _i_params.emplace_back(0x2802, It(e));
+                }
+            } else if(path.starts_with("wrap_t")) {
+                Et e{0};
+                if(_success &= texture_wrap_mode_from_string(data, e)) {
+                    _i_params.emplace_back(0x2803, It(e));
+                }
+            } else if(path.starts_with("wrap_r")) {
+                Et e{0};
+                if(_success &= texture_wrap_mode_from_string(data, e)) {
+                    _i_params.emplace_back(0x8072, It(e));
+                }
             } else if(path.starts_with("swizzle_r")) {
                 Et e{0};
                 if(_success &= texture_swizzle_from_string(data, e)) {
