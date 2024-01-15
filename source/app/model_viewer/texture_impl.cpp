@@ -36,6 +36,7 @@ public:
       url locator,
       execution_context&,
       video_context&,
+      oglplus::texture_target,
       oglplus::texture_unit::value_type);
     auto is_loaded() noexcept -> bool final;
     void load_if_needed(execution_context&, video_context&) final;
@@ -46,6 +47,7 @@ public:
 
 private:
     void _on_loaded(const gl_texture_resource::load_info&) noexcept;
+    oglplus::texture_target _tex_target;
     oglplus::texture_unit::value_type _tex_unit{0};
 };
 //------------------------------------------------------------------------------
@@ -53,8 +55,10 @@ model_viewer_texture_resource::model_viewer_texture_resource(
   url locator,
   execution_context& ctx,
   video_context&,
+  oglplus::texture_target tex_target,
   oglplus::texture_unit::value_type tex_unit)
   : gl_texture_resource{std::move(locator), ctx}
+  , _tex_target{tex_target}
   , _tex_unit{tex_unit} {
     gl_texture_resource::loaded.connect(
       make_callable_ref<&model_viewer_texture_resource::_on_loaded>(this));
@@ -74,7 +78,7 @@ void model_viewer_texture_resource::load_if_needed(
   video_context& video) {
     video.with_gl([&, this](auto&, auto& GL) {
         gl_texture_resource::load_if_needed(
-          ctx, GL.texture_2d_array, GL.texture0 + texture_unit(video));
+          ctx, _tex_target, GL.texture0 + texture_unit(video));
     });
 }
 //------------------------------------------------------------------------------
@@ -96,9 +100,15 @@ auto make_viewer_resource(
   url locator,
   execution_context& ctx,
   video_context& video,
-  oglplus::texture_unit::value_type tu) -> model_viewer_texture_holder {
+  oglplus::texture_target tex_target,
+  oglplus::texture_unit::value_type tex_unit) -> model_viewer_texture_holder {
     return {
-      hold<model_viewer_texture_resource>, std::move(locator), ctx, video, tu};
+      hold<model_viewer_texture_resource>,
+      std::move(locator),
+      ctx,
+      video,
+      tex_target,
+      tex_unit};
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

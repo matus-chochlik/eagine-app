@@ -15,6 +15,12 @@ import :texture;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
+export class model_viewer_cube_maps
+  : public model_viewer_resources<model_viewer_texture> {
+public:
+    model_viewer_cube_maps(execution_context&, video_context&);
+};
+//------------------------------------------------------------------------------
 export class model_viewer_textures
   : public model_viewer_resources<model_viewer_texture> {
 public:

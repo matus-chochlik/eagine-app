@@ -122,6 +122,7 @@ eagine_embed_target_resources(
 		Arrow      "models/arrow.json"
 		CheckerImg "textures/checker.eagitexi"
 		CheckerTex "textures/checker.eagitex"
+		CheckerCub "textures/checker_cube.eagitex"
 	PACKED
 	ENABLE_SEARCH)
 eagine_add_exe_analysis(eagine-app-model-viewer)

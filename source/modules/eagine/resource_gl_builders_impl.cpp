@@ -682,6 +682,31 @@ static void _adjust_texture_dimensions(
     });
 }
 //------------------------------------------------------------------------------
+static void _adjust_texture_z_offs(
+  const oglplus::texture_target target,
+  auto& pgts,
+  auto& params) noexcept {
+    pgts.video.get().with_gl([&](auto&, auto& GL, auto&) {
+        static const std::array<oglplus::texture_target, 6> cm_faces{
+          {GL.texture_cube_map_positive_x,
+           GL.texture_cube_map_negative_x,
+           GL.texture_cube_map_positive_y,
+           GL.texture_cube_map_negative_y,
+           GL.texture_cube_map_positive_z,
+           GL.texture_cube_map_negative_z}};
+
+        int z_offs = 0;
+        for(const auto cm_face : cm_faces) {
+            if(target == cm_face) {
+                params.z_offs = z_offs;
+                params.dimensions = std::max(params.dimensions, 3);
+                break;
+            }
+            ++z_offs;
+        }
+    });
+}
+//------------------------------------------------------------------------------
 void pending_resource_info::_adjust_gl_texture_params(
   const oglplus::texture_target target,
   const _pending_gl_texture_state& pgts,
@@ -694,6 +719,7 @@ void pending_resource_info::_adjust_gl_texture_params(
   const _pending_gl_texture_state& pgts,
   resource_gl_texture_image_params& params) noexcept {
     _adjust_texture_dimensions(target, pgts, params);
+    _adjust_texture_z_offs(target, pgts, params);
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::_adjust_gl_texture_params(
@@ -701,6 +727,7 @@ void pending_resource_info::_adjust_gl_texture_params(
   const _pending_gl_texture_update_state& pgts,
   resource_gl_texture_image_params& params) noexcept {
     _adjust_texture_dimensions(target, pgts, params);
+    _adjust_texture_z_offs(target, pgts, params);
 }
 //------------------------------------------------------------------------------
 auto pending_resource_info::_handle_pending_gl_texture_state(

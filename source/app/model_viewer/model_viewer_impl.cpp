@@ -58,12 +58,14 @@ void model_viewer::_init_camera(const oglplus::sphere bs) {
 //------------------------------------------------------------------------------
 auto model_viewer::_all_resource_count() noexcept -> span_size_t {
     return _backgrounds.all_resource_count() + _models.all_resource_count() +
-           _programs.all_resource_count() + _textures.all_resource_count();
+           _programs.all_resource_count() + _cube_maps.all_resource_count() +
+           _textures.all_resource_count();
 }
 //------------------------------------------------------------------------------
 auto model_viewer::_loaded_resource_count() noexcept -> span_size_t {
     return _backgrounds.loaded_resource_count() +
            _models.loaded_resource_count() + _programs.loaded_resource_count() +
+           _cube_maps.loaded_resource_count() +
            _textures.loaded_resource_count();
 }
 //------------------------------------------------------------------------------
@@ -75,10 +77,11 @@ void model_viewer::_on_loaded() noexcept {
 }
 //------------------------------------------------------------------------------
 void model_viewer::_on_selected() noexcept {
-    if(_backgrounds and _models and _programs and _textures) {
+    if(_backgrounds and _models and _programs and _cube_maps and _textures) {
         _init_camera(_models.bounding_sphere());
         _programs.use(_video);
         _programs.apply_bindings(_video, _models.attrib_bindings());
+        _cube_maps.use(_video);
         _textures.use(_video);
         _programs.set_texture_unit(_video, _textures.texture_unit(_video));
     }
@@ -90,6 +93,7 @@ model_viewer::model_viewer(execution_context& ctx, video_context& video)
   , _backgrounds{ctx, video}
   , _models{ctx, video}
   , _programs{ctx, video}
+  , _cube_maps{ctx, video}
   , _textures{ctx, video}
   , _load_progress{ctx.progress(), "loading resources", _all_resource_count()} {
     _backgrounds.loaded.connect(_load_handler());
@@ -98,6 +102,8 @@ model_viewer::model_viewer(execution_context& ctx, video_context& video)
     _models.selected.connect(_select_handler());
     _programs.loaded.connect(_load_handler());
     _programs.selected.connect(_select_handler());
+    _cube_maps.loaded.connect(_load_handler());
+    _cube_maps.selected.connect(_select_handler());
     _textures.loaded.connect(_load_handler());
     _textures.selected.connect(_select_handler());
 
@@ -116,6 +122,7 @@ auto model_viewer::is_done() noexcept -> bool {
 }
 //------------------------------------------------------------------------------
 void model_viewer::_clear_background() noexcept {
+    _cube_maps.use(_video);
     _backgrounds.use(_video);
     _backgrounds.clear(_video, _camera);
 }
@@ -131,8 +138,9 @@ void model_viewer::_view_model() noexcept {
 //------------------------------------------------------------------------------
 void model_viewer::_setting_window(const guiplus::imgui_api& gui) noexcept {
     const auto height{
-      _backgrounds.settings_height() + _programs.settings_height() +
-      _models.settings_height() + _textures.settings_height() + 85.F};
+      _backgrounds.settings_height() + _cube_maps.settings_height() +
+      _programs.settings_height() + _models.settings_height() +
+      _textures.settings_height() + 85.F};
     gui.set_next_window_size({350, height});
     if(gui.begin("Settings", _show_setting_window).or_false()) {
         if(gui.slider_float("FOV", _fov, 20.F, 120.F)) {
@@ -142,6 +150,7 @@ void model_viewer::_setting_window(const guiplus::imgui_api& gui) noexcept {
         gui.help_marker("changes the field of view of the camera");
 
         _backgrounds.settings("Backgrounds", gui);
+        _cube_maps.settings("Skybox", gui);
         _programs.settings("Programs", gui);
         _models.settings("Models", gui);
         _textures.settings("Textures", gui);
@@ -164,11 +173,13 @@ void model_viewer::update_overlays(guiplus::gui_utils& utils) noexcept {
 //------------------------------------------------------------------------------
 void model_viewer::update() noexcept {
 
+    _cube_maps.update();
     _backgrounds.update();
 
-    if(_backgrounds) {
+    if(_backgrounds and _cube_maps) {
         _clear_background();
     } else {
+        _cube_maps.load_if_needed(context(), _video);
         _backgrounds.load_if_needed(context(), _video);
     }
 
@@ -192,6 +203,7 @@ void model_viewer::update() noexcept {
 }
 //------------------------------------------------------------------------------
 void model_viewer::clean_up() noexcept {
+    _cube_maps.clean_up(context(), _video);
     _textures.clean_up(context(), _video);
     _programs.clean_up(context(), _video);
     _models.clean_up(context(), _video);

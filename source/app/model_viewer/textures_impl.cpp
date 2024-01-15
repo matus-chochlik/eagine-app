@@ -18,15 +18,45 @@ import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
+// Cube maps
+//------------------------------------------------------------------------------
+model_viewer_cube_maps::model_viewer_cube_maps(
+  execution_context& ctx,
+  video_context& video) {
+    video.with_gl([&, this](auto&, auto& GL) {
+        if(auto arg{ctx.main_context().args().find("--cube-map")}) {
+            load(arg, ctx, video, GL.texture_cube_map, 0);
+        } else {
+            load(
+              "Default",
+              url{"eagitex:///CheckerCub"},
+              ctx,
+              video,
+              GL.texture_cube_map,
+              0);
+        }
+    });
+}
+//------------------------------------------------------------------------------
+// Model textures
+//------------------------------------------------------------------------------
 model_viewer_textures::model_viewer_textures(
   execution_context& ctx,
   video_context& video) {
-    int tex_unit = 0;
-    for(auto arg : ctx.main_context().args().all_like("--texture")) {
-        load(arg, ctx, video, tex_unit++);
-    }
+    video.with_gl([&, this](auto&, auto& GL) {
+        int tex_unit = 1;
+        for(auto arg : ctx.main_context().args().all_like("--texture")) {
+            load(arg, ctx, video, GL.texture_2d_array, tex_unit++);
+        }
 
-    load("Checker", url{"eagitex:///CheckerTex"}, ctx, video, tex_unit++);
+        load(
+          "Checker",
+          url{"eagitex:///CheckerTex"},
+          ctx,
+          video,
+          GL.texture_2d_array,
+          tex_unit++);
+    });
 }
 //------------------------------------------------------------------------------
 auto model_viewer_textures::texture_unit(video_context& video)

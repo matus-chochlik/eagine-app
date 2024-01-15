@@ -36,6 +36,7 @@ auto make_viewer_resource(
   url,
   execution_context&,
   video_context&,
+  oglplus::texture_target,
   oglplus::texture_unit::value_type) -> model_viewer_texture_holder;
 //------------------------------------------------------------------------------
 } // namespace eagine::app

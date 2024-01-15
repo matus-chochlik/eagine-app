@@ -53,6 +53,7 @@ private:
     model_viewer_backgrounds _backgrounds;
     model_viewer_models _models;
     model_viewer_programs _programs;
+    model_viewer_cube_maps _cube_maps;
     model_viewer_textures _textures;
     activity_progress _load_progress;
 

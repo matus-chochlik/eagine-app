@@ -30,7 +30,7 @@ auto model_viewer_background::clear(
     return *this;
 }
 //------------------------------------------------------------------------------
-//  Background
+//  Default Background
 //------------------------------------------------------------------------------
 class model_viewer_default_background : public model_viewer_background_intf {
 public:
@@ -144,14 +144,75 @@ void model_viewer_default_background::settings(
     }
 }
 //------------------------------------------------------------------------------
-//  Default background
+//  Skybox Background
+//------------------------------------------------------------------------------
+class model_viewer_skybox_background : public model_viewer_background_intf {
+public:
+    model_viewer_skybox_background(execution_context&, video_context&);
+
+    auto is_loaded() noexcept -> bool final;
+    void load_if_needed(execution_context&, video_context&) final;
+    void use(video_context&) final;
+    void clear(video_context&, const mat4& camera, const float distance) final;
+    void clean_up(execution_context&, video_context&) final;
+    auto settings_height() -> float final;
+    void settings(const guiplus::imgui_api&) noexcept final;
+
+private:
+    background_skybox _bg;
+};
+//------------------------------------------------------------------------------
+model_viewer_skybox_background::model_viewer_skybox_background(
+  execution_context&,
+  video_context& video)
+  : _bg{video, 0} {}
+//------------------------------------------------------------------------------
+auto model_viewer_skybox_background::is_loaded() noexcept -> bool {
+    return true;
+}
+//------------------------------------------------------------------------------
+void model_viewer_skybox_background::load_if_needed(
+  execution_context&,
+  video_context&) {}
+//------------------------------------------------------------------------------
+void model_viewer_skybox_background::use(video_context&) {}
+//------------------------------------------------------------------------------
+void model_viewer_skybox_background::clear(
+  video_context& video,
+  const mat4& camera,
+  const float distance) {
+    _bg.clear(video, camera, distance);
+}
+//------------------------------------------------------------------------------
+void model_viewer_skybox_background::clean_up(
+  execution_context&,
+  video_context& video) {
+    _bg.clean_up(video);
+}
+//------------------------------------------------------------------------------
+auto model_viewer_skybox_background::settings_height() -> float {
+    return 25.F;
+}
+//------------------------------------------------------------------------------
+void model_viewer_skybox_background::settings(
+  const guiplus::imgui_api&) noexcept {
+    //
+}
+//------------------------------------------------------------------------------
+//  Make background
 //------------------------------------------------------------------------------
 auto make_viewer_resource(
   std::type_identity<model_viewer_background>,
-  url,
+  url locator,
   execution_context& ctx,
   video_context& video) -> model_viewer_background_holder {
-    return {hold<model_viewer_default_background>, ctx, video};
+    if(locator.has_scheme("eagibg")) {
+        if(locator.has_path("/Skybox")) {
+            return {hold<model_viewer_skybox_background>, ctx, video};
+        }
+        return {hold<model_viewer_default_background>, ctx, video};
+    }
+    return {};
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app
