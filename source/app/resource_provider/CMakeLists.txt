@@ -98,6 +98,8 @@ eagine_embed_target_resources(
 		YBStrpImg8 "textures/yb_stripes_8.eagitexi"
 		YBStrpImg9 "textures/yb_stripes_9.eagitexi"
 		YBStrpsTex "textures/yb_stripes.eagitex"
+		ZebraImg   "textures/zebra_fur.eagitexi"
+		ZebraTex   "textures/zebra_fur.eagitex"
 		LvlGrdtTex "textures/level_gradient.eagitex"
 		RandomTex  "textures/random.eagitex"
 		OGLplusTex "textures/oglplus.eagitex"
