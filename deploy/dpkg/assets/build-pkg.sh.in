@@ -21,6 +21,11 @@ zip -9 "${ast_prefix}/tilings_app.eagizip" \
 	r4_s2048_??.txt
 popd
 # ------------------------------------------------------------------------------
+pushd "${src_dir}/assets/tilesets" && \
+zip -9 "${ast_prefix}/tilesets_app.eagizip" \
+	*.eagitexi
+popd
+# ------------------------------------------------------------------------------
 pushd "${src_dir}/assets/models"
 zip -9 "${ast_prefix}/models_app.eagizip" \
 	jerrycan.json \
