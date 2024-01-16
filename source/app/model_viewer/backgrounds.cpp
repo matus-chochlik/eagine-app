@@ -5,23 +5,21 @@
 /// See accompanying file LICENSE_1_0.txt or copy at
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
-#include "backgrounds.hpp"
-#include <cassert>
+export module eagine.app.model_viewer:backgrounds;
+
+import eagine.core;
+import eagine.oglplus;
+import eagine.app;
+import :background;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-model_viewer_backgrounds::model_viewer_backgrounds(
-  execution_context& ctx,
-  video_context& video) {
-    load("Icosphere", url{"eagibg:///Icosphere"}, ctx, video);
-}
-//------------------------------------------------------------------------------
-auto model_viewer_backgrounds::clear(
-  video_context& video,
-  orbiting_camera& camera) -> model_viewer_backgrounds& {
-    current().clear(video, camera);
-    return *this;
-}
+export class model_viewer_backgrounds
+  : public model_viewer_resources<model_viewer_background> {
+public:
+    model_viewer_backgrounds(execution_context&, video_context&);
+
+    auto clear(video_context&, orbiting_camera&) -> model_viewer_backgrounds&;
+};
 //------------------------------------------------------------------------------
 } // namespace eagine::app
-

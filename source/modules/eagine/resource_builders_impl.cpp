@@ -55,7 +55,7 @@ template <std::integral T>
 void valtree_float_vector_builder::do_add(
   const basic_string_path& path,
   span<const T> data) noexcept {
-    if(path.size() == 2) {
+    if(path.has_size(2)) {
         if(not data.empty()) {
             if((path.starts_with("values")) or (path.starts_with("data"))) {
                 for(const auto v : data) {
@@ -63,7 +63,7 @@ void valtree_float_vector_builder::do_add(
                 }
             }
         }
-    } else if(path.size() == 1) {
+    } else if(path.has_size(1)) {
         if(data.has_single_value()) {
             if((path.starts_with("count")) or (path.starts_with("size"))) {
                 _values.reserve(std_size(*data));
@@ -76,7 +76,7 @@ template <std::floating_point T>
 void valtree_float_vector_builder::do_add(
   const basic_string_path& path,
   span<const T> data) noexcept {
-    if(path.size() == 2) {
+    if(path.has_size(2)) {
         if(not data.empty()) {
             if((path.starts_with("values")) or (path.starts_with("data"))) {
                 for(const auto v : data) {
@@ -90,7 +90,7 @@ void valtree_float_vector_builder::do_add(
 void valtree_float_vector_builder::do_add(
   const basic_string_path& path,
   span<const float> data) noexcept {
-    if(path.size() == 2) {
+    if(path.has_size(2)) {
         if(not data.empty()) {
             if((path.starts_with("values")) or (path.starts_with("data"))) {
                 _values.insert(_values.end(), data.begin(), data.end());
@@ -110,7 +110,7 @@ auto valtree_float_vector_builder::finish() noexcept -> bool {
 auto make_valtree_float_vector_builder(
   const shared_holder<pending_resource_info>& parent) noexcept
   -> unique_holder<valtree::object_builder> {
-    return {hold<valtree_float_vector_builder>, parent};
+    return {hold<valtree_float_vector_builder>, "FlVecBuldr", parent};
 }
 //------------------------------------------------------------------------------
 // valtree_vec3_vector_builder
@@ -152,7 +152,7 @@ template <typename T>
 auto valtree_vec3_vector_builder::_do_add(
   const basic_string_path& path,
   span<const T> data) noexcept -> bool {
-    if(path.size() == 3) {
+    if(path.has_size(3)) {
         if((path.starts_with("values")) or (path.starts_with("data"))) {
             if(data.has_single_value()) {
                 if((path.ends_with("x")) or (path.ends_with("r"))) {
@@ -187,7 +187,7 @@ void valtree_vec3_vector_builder::do_add(
   const basic_string_path& path,
   span<const T> data) noexcept {
     if(not _do_add(path, data)) {
-        if((path.size() == 1) and data.has_single_value()) {
+        if((path.has_size(1)) and data.has_single_value()) {
             if((path.starts_with("count")) or (path.starts_with("size"))) {
                 _values.reserve(std_size(*data));
             }
@@ -204,7 +204,7 @@ void valtree_vec3_vector_builder::do_add(
 //------------------------------------------------------------------------------
 void valtree_vec3_vector_builder::finish_object(
   const basic_string_path& path) noexcept {
-    if(path.size() == 2) {
+    if(path.has_size(2)) {
         if((path.starts_with("values")) or (path.starts_with("data"))) {
             _values.push_back(_temp);
             _temp = {0.F, 0.F, 0.F};
@@ -223,7 +223,7 @@ auto valtree_vec3_vector_builder::finish() noexcept -> bool {
 auto make_valtree_vec3_vector_builder(
   const shared_holder<pending_resource_info>& parent) noexcept
   -> unique_holder<valtree::object_builder> {
-    return {hold<valtree_vec3_vector_builder>, parent};
+    return {hold<valtree_vec3_vector_builder>, "Vec3VBuldr", parent};
 }
 //------------------------------------------------------------------------------
 // valtree_mat4_vector_builder
@@ -276,7 +276,7 @@ template <typename T>
 auto valtree_mat4_vector_builder::_do_add(
   const basic_string_path& path,
   span<const T> data) noexcept -> bool {
-    if(path.size() == 3) {
+    if(path.has_size(3)) {
         if((path.starts_with("values")) or (path.starts_with("data"))) {
             if(data.has_single_value()) {
                 if(path.ends_with("ii")) {
@@ -343,7 +343,7 @@ auto valtree_mat4_vector_builder::_do_add(
                 return true;
             }
         }
-    } else if(path.size() == 4) {
+    } else if(path.has_size(4)) {
         if(path.ends_with("_")) {
             for(const auto i : index_range(data)) {
                 math::set_rm(_temp, _roffs, _coffs, float(data[i]));
@@ -369,7 +369,7 @@ void valtree_mat4_vector_builder::do_add(
   const basic_string_path& path,
   span<const T> data) noexcept {
     if(not _do_add(path, data)) {
-        if((path.size() == 1) and data.has_single_value()) {
+        if((path.has_size(1)) and data.has_single_value()) {
             if((path.starts_with("count")) or (path.starts_with("size"))) {
                 _values.reserve(std_size(*data));
             }
@@ -386,7 +386,7 @@ void valtree_mat4_vector_builder::do_add(
 //------------------------------------------------------------------------------
 void valtree_mat4_vector_builder::finish_object(
   const basic_string_path& path) noexcept {
-    if(path.size() == 2) {
+    if(path.has_size(2)) {
         if((path.starts_with("values")) or (path.starts_with("data"))) {
             _values.push_back(_temp);
             _temp = {
@@ -409,7 +409,7 @@ auto valtree_mat4_vector_builder::finish() noexcept -> bool {
 auto make_valtree_mat4_vector_builder(
   const shared_holder<pending_resource_info>& parent) noexcept
   -> unique_holder<valtree::object_builder> {
-    return {hold<valtree_mat4_vector_builder>, parent};
+    return {hold<valtree_mat4_vector_builder>, "Mat4VBuldr", parent};
 }
 //------------------------------------------------------------------------------
 // camera parameters
@@ -423,7 +423,7 @@ public:
     valtree_orbiting_camera_parameters_builder(
       const shared_holder<pending_resource_info>& parent,
       orbiting_camera& camera) noexcept
-      : base{parent}
+      : base{"OrbCmBuldr", parent}
       , _camera{camera} {}
 
     auto max_token_size() noexcept -> span_size_t final {
@@ -453,7 +453,7 @@ template <typename T>
 void valtree_orbiting_camera_parameters_builder::parse_param(
   const basic_string_path& path,
   span<const T> data) noexcept {
-    if((path.size() == 1) and data.has_single_value()) {
+    if((path.has_size(1)) and data.has_single_value()) {
         const auto value{*data};
         if(value > 0.F) {
             if(path.starts_with("near")) {
@@ -498,7 +498,7 @@ public:
     valtree_input_setup_builder(
       const shared_holder<pending_resource_info>& parent,
       execution_context& ctx) noexcept
-      : base{parent}
+      : base{"InStpBuldr", parent}
       , _ctx{ctx} {}
 
     auto max_token_size() noexcept -> span_size_t final {
@@ -771,7 +771,7 @@ void valtree_input_setup_builder::do_add(
         const auto parent{path.parent()};
         if(parent.ends_with("input")) {
             if(parse_msg_id(data, _input_id)) {
-                if(parent.size() == 3) {
+                if(parent.has_size(3)) {
                     if(not is_parsing_feedback()) {
                         _status_l1 = status_type_l1::parsing_input;
                     }
@@ -783,13 +783,13 @@ void valtree_input_setup_builder::do_add(
             }
         } else if(parent.ends_with("slot")) {
             if(parse_msg_id(data, _slot_id)) {
-                if(parent.size() == 3) {
+                if(parent.has_size(3)) {
                     _status_l1 = status_type_l1::parsing_slot;
                 }
             }
         } else if(parent.ends_with("feedback")) {
             if(parse_msg_id(data, _feedback_id)) {
-                if(parent.size() == 3) {
+                if(parent.has_size(3)) {
                     _status_l1 = status_type_l1::parsing_feedback;
                     if(not _device_id) {
                         if(_feedback_id->has_class("Key")) {
@@ -805,7 +805,7 @@ void valtree_input_setup_builder::do_add(
 void valtree_input_setup_builder::add_object(
   const basic_string_path& path) noexcept {
     _str_data_offs = 0;
-    if(path.size() == 1) {
+    if(path.has_size(1)) {
         reset();
         _mapping_id = {};
         const auto entry{path.front()};
@@ -825,7 +825,7 @@ void valtree_input_setup_builder::add_object(
 //------------------------------------------------------------------------------
 void valtree_input_setup_builder::finish_object(
   const basic_string_path& path) noexcept {
-    if(path.size() == 2) {
+    if(path.has_size(2)) {
         if(is_parsing_input()) {
             add_input();
         } else if(is_parsing_feedback()) {

@@ -13,5 +13,5 @@
 ,"wrap_s":"clamp_to_border"
 ,"wrap_t":"clamp_to_border"
 ,"label":"gray checker"
-,"images":[{"url":"eagires:///CheckerImg","target":"texture_2d_array"}]
+,"images":[{"url":"eagitexi:///CheckerImg","target":"texture_2d_array"}]
 }

@@ -9,9 +9,8 @@ import eagine.core;
 import eagine.sslplus;
 import eagine.msgbus;
 import eagine.app;
+import eagine.app.resource_provider;
 import std;
-
-#include "driver.hpp"
 
 namespace eagine {
 //------------------------------------------------------------------------------
@@ -103,6 +102,10 @@ void resource_provider::finish() {
 // main
 //------------------------------------------------------------------------------
 auto main(main_ctx& ctx) -> int {
+    if(const auto exit_code{app::handle_special_args(ctx)}) {
+        return *exit_code;
+    }
+
     signal_switch interrupted;
     const auto& log = ctx.log();
 

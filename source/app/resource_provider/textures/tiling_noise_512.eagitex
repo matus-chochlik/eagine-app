@@ -1,0 +1,18 @@
+{"levels":1
+,"width":512
+,"height":512
+,"depth":1
+,"channels":1
+,"data_type":"float"
+,"format":"red"
+,"iformat":"red"
+,"swizzle_g":"red"
+,"swizzle_b":"red"
+,"min_filter":"linear"
+,"mag_filter":"linear"
+,"wrap_s":"clamp_to_border"
+,"wrap_t":"clamp_to_border"
+,"label":"tiling noise 512"
+,"tag": ["texture", "noise"]
+,"images":[{"url":"eagitexi:///tiling_noise?width=512+height=512+source=text%3A%2F%2F%2FTlngR4S512","target":"texture_2d_array"}]
+}

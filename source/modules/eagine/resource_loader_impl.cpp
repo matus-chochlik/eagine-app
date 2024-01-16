@@ -16,6 +16,7 @@ import eagine.core.types;
 import eagine.core.memory;
 import eagine.core.string;
 import eagine.core.math;
+import eagine.core.identifier;
 import eagine.core.container;
 import eagine.core.reflection;
 import eagine.core.value_tree;
@@ -147,10 +148,12 @@ auto pending_resource_info::add_gl_program_input_binding(
 //------------------------------------------------------------------------------
 void pending_resource_info::handle_gl_texture_image(
   const oglplus::texture_target target,
-  const resource_gl_texture_image_params& params,
+  resource_gl_texture_image_params& params,
   const memory::const_block data) noexcept {
     if(const auto cont{continuation()}) {
         cont->_handle_gl_texture_image(*this, target, params, data);
+    } else {
+        _handle_gl_texture_image(*this, target, params, data);
     }
 }
 //------------------------------------------------------------------------------
@@ -704,37 +707,38 @@ auto pending_resource_info::_finish_gl_texture(
         const auto& gl = pgts.video.get().gl_api().operations();
         gl.active_texture(pgts.tex_unit);
 
-        assert(pgts.pparams);
-        const auto& params{*pgts.pparams};
-        for(const auto level : integer_range(pgts.levels)) {
-            if(not pgts.level_images_done[std_size(level)]) {
-                _clear_gl_texture_image(pgts, params, level, {});
+        if(pgts.pparams) {
+            const auto& params{*pgts.pparams};
+            for(const auto level : integer_range(pgts.levels)) {
+                if(not pgts.level_images_done[std_size(level)]) {
+                    _clear_gl_texture_image(pgts, params, level, {});
+                }
             }
-        }
 
-        _parent.log_info("loaded and set-up GL texture object")
-          .arg("requestId", _request_id)
-          .arg("levels", pgts.levels)
-          .arg("images", pgts.level_images_done.count())
-          .arg("locator", _locator.str());
+            _parent.log_info("loaded and set-up GL texture object")
+              .arg("requestId", _request_id)
+              .arg("levels", pgts.levels)
+              .arg("images", pgts.level_images_done.count())
+              .arg("locator", _locator.str());
 
-        // TODO: call this earlier (before all images are loaded)?
-        _parent.gl_texture_loaded(
-          {.request_id = _request_id,
-           .locator = _locator,
-           .video = pgts.video,
-           .target = pgts.tex_target,
-           .name = pgts.tex,
-           .ref = pgts.tex});
-        _parent.gl_texture_images_loaded(
-          {.request_id = _request_id,
-           .locator = _locator,
-           .video = pgts.video,
-           .name = pgts.tex});
-        _parent.resource_loaded(_request_id, _kind, _locator);
+            // TODO: call this earlier (before all images are loaded)?
+            _parent.gl_texture_loaded(
+              {.request_id = _request_id,
+               .locator = _locator,
+               .video = pgts.video,
+               .target = pgts.tex_target,
+               .name = pgts.tex,
+               .ref = pgts.tex});
+            _parent.gl_texture_images_loaded(
+              {.request_id = _request_id,
+               .locator = _locator,
+               .video = pgts.video,
+               .name = pgts.tex});
+            _parent.resource_loaded(_request_id, _kind, _locator);
 
-        if(pgts.tex) {
-            gl.delete_textures(std::move(pgts.tex));
+            if(pgts.tex) {
+                gl.delete_textures(std::move(pgts.tex));
+            }
         }
         return true;
     }
@@ -777,6 +781,14 @@ void pending_resource_info::handle_source_cancelled(
     _parent.resource_cancelled(_request_id, _kind, _locator);
     mark_finished();
 }
+//------------------------------------------------------------------------------
+// valtree_builder_common
+//------------------------------------------------------------------------------
+valtree_builder_common::valtree_builder_common(
+  identifier id,
+  shared_holder<pending_resource_info> info) noexcept
+  : main_ctx_object{id, info->loader().as_parent()}
+  , _parent{std::move(info)} {}
 //------------------------------------------------------------------------------
 // resource_request_result
 //------------------------------------------------------------------------------

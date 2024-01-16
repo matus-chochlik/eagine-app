@@ -90,6 +90,7 @@ eagine_add_module(
 		eagine.core.math
 		eagine.core.memory
 		eagine.core.string
+		eagine.core.identifier
 		eagine.core.reflection
 		eagine.core.serialization
 		eagine.core.container

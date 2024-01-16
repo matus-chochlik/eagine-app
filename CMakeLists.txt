@@ -29,6 +29,7 @@ add_subdirectory(submodules)
 
 include(EAGineCoreCommon)
 find_package(EAGineGLFW3)
+find_package(EAGineLibZip)
 
 add_subdirectory(assets)
 add_subdirectory(include)

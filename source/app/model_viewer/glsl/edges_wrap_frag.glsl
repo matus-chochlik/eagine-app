@@ -2,7 +2,7 @@
 
 const float EdgeWidth = 0.8;
 const vec3 LightDir = normalize(vec3(1.0, 1.0, 1.0));
-uniform sampler2DArray Checker;
+uniform sampler2DArray Texture0;
 
 noperspective in vec3 geomDist;
 in vec3 geomNormal;
@@ -14,9 +14,9 @@ void main() {
     float EdgeAlpha = exp2(-pow(MinDist / EdgeWidth, 2.0));
 
     float l = mix(max(dot(geomNormal, LightDir), 1.0), 0.35, 0.55);
-    float c = texture(Checker, vec3(geomWrapCoord.xy, 0.0)).r;
-    vec3 FaceColor = vec3(l * c * 1.0);
-    vec3 EdgeColor = vec3(l * c * 0.8);
+    vec3 c = texture(Texture0, geomWrapCoord).rgb;
+    vec3 FaceColor = l * 1.0 * c;
+    vec3 EdgeColor = l * 0.8 * c;
 
     fragColor = mix(FaceColor, EdgeColor, EdgeAlpha);
 }

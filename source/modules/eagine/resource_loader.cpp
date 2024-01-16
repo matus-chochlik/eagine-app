@@ -13,6 +13,7 @@ import eagine.core.math;
 import eagine.core.memory;
 import eagine.core.string;
 import eagine.core.container;
+import eagine.core.identifier;
 import eagine.core.reflection;
 import eagine.core.serialization;
 import eagine.core.value_tree;
@@ -182,7 +183,7 @@ public:
       const oglplus::gl_types::int_type value) noexcept;
     void handle_gl_texture_image(
       const oglplus::texture_target,
-      const resource_gl_texture_image_params&,
+      resource_gl_texture_image_params&,
       const memory::const_block) noexcept;
     auto add_gl_texture_image_request(identifier_t request_id) noexcept -> bool;
     void add_gl_texture_update_context(
@@ -195,8 +196,7 @@ public:
       video_context&,
       oglplus::texture_target,
       oglplus::texture_unit) noexcept;
-    auto handle_gl_texture_params(const resource_gl_texture_params&) noexcept
-      -> bool;
+    auto handle_gl_texture_params(resource_gl_texture_params&) noexcept -> bool;
 
     void add_gl_buffer_context(video_context&, oglplus::buffer_target) noexcept;
     void handle_gl_buffer_data(
@@ -359,16 +359,28 @@ private:
       const resource_gl_texture_params&,
       span_size_t level,
       const memory::const_block) noexcept;
+    void _adjust_gl_texture_params(
+      const oglplus::texture_target,
+      const _pending_gl_texture_state&,
+      resource_gl_texture_params&) noexcept;
+    void _adjust_gl_texture_params(
+      const oglplus::texture_target,
+      const _pending_gl_texture_state&,
+      resource_gl_texture_image_params&) noexcept;
+    void _adjust_gl_texture_params(
+      const oglplus::texture_target,
+      const _pending_gl_texture_update_state&,
+      resource_gl_texture_image_params&) noexcept;
     auto _handle_pending_gl_texture_state(
       auto& gl,
-      auto&,
+      auto& GL,
       auto& glapi,
-      _pending_gl_texture_state& pgts,
+      const _pending_gl_texture_state& pgts,
       const resource_gl_texture_params& params) noexcept -> bool;
     void _handle_gl_texture_image(
       const pending_resource_info& source,
       const oglplus::texture_target,
-      const resource_gl_texture_image_params&,
+      resource_gl_texture_image_params&,
       const memory::const_block) noexcept;
 
     auto _finish_gl_buffer(_pending_gl_buffer_state&) noexcept -> bool;
@@ -400,26 +412,11 @@ private:
     resource_kind _kind{resource_kind::unknown};
 };
 //------------------------------------------------------------------------------
-class valtree_builder_common {
+class valtree_builder_common : public main_ctx_object {
 public:
     valtree_builder_common(
-      const shared_holder<pending_resource_info>& info) noexcept
-      : _parent{info} {}
-
-    auto log(log_event_severity severity, const string_view format) noexcept
-      -> log_entry;
-
-    auto log_error(const string_view format) noexcept {
-        return log(log_event_severity::error, format);
-    }
-
-    auto log_info(const string_view format) noexcept {
-        return log(log_event_severity::info, format);
-    }
-
-    auto log_debug(const string_view format) noexcept {
-        return log(log_event_severity::debug, format);
-    }
+      identifier id,
+      shared_holder<pending_resource_info> info) noexcept;
 
 protected:
     weak_holder<pending_resource_info> _parent;
@@ -1418,15 +1415,6 @@ private:
     flat_map<identifier_t, shared_holder<pending_resource_info>> _finished;
     flat_map<identifier_t, shared_holder<pending_resource_info>> _cancelled;
 };
-//------------------------------------------------------------------------------
-inline auto valtree_builder_common::log(
-  log_event_severity severity,
-  const string_view format) noexcept -> log_entry {
-    if(auto parent{_parent.lock()}) [[likely]] {
-        return parent->loader().log(severity, format);
-    }
-    return {{}, {}, severity, {}, nullptr};
-}
 //------------------------------------------------------------------------------
 /// @brief Class tracking specific pending resource load requests.
 /// @see resource_loader

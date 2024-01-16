@@ -5,26 +5,30 @@
 /// See accompanying file LICENSE_1_0.txt or copy at
 ///  http://www.boost.org/LICENSE_1_0.txt
 ///
-#include "textures.hpp"
-#include <cassert>
+export module eagine.app.model_viewer:textures;
+
+import eagine.core;
+import eagine.oglplus;
+import eagine.app;
+import std;
+import :texture;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-model_viewer_textures::model_viewer_textures(
-  execution_context& ctx,
-  video_context& video) {
-    int tex_unit = 0;
-    for(auto arg : ctx.main_context().args().all_like("--texture")) {
-        load(arg, ctx, video, tex_unit++);
-    }
+export class model_viewer_cube_maps
+  : public model_viewer_resources<model_viewer_texture> {
+public:
+    model_viewer_cube_maps(execution_context&, video_context&);
 
-    load("Checker", url{"eagitex:///CheckerTex"}, ctx, video, tex_unit++);
-}
+    auto texture_unit(video_context&) -> oglplus::texture_unit::value_type;
+};
 //------------------------------------------------------------------------------
-auto model_viewer_textures::texture_unit(video_context& video)
-  -> oglplus::texture_unit::value_type {
-    return current().texture_unit(video);
-}
+export class model_viewer_textures
+  : public model_viewer_resources<model_viewer_texture> {
+public:
+    model_viewer_textures(execution_context&, video_context&);
+
+    auto texture_unit(video_context&) -> oglplus::texture_unit::value_type;
+};
 //------------------------------------------------------------------------------
 } // namespace eagine::app
-

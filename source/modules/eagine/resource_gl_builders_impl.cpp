@@ -21,6 +21,7 @@ import eagine.core.runtime;
 import eagine.core.utility;
 import eagine.core.container;
 import eagine.core.value_tree;
+import eagine.core.main_ctx;
 import eagine.core.c_api;
 import eagine.oglplus;
 import eagine.shapes;
@@ -37,7 +38,7 @@ public:
     valtree_gl_program_builder(
       const shared_holder<pending_resource_info>& info,
       video_context& video) noexcept
-      : base{info}
+      : base{"GLprgBuldr", info}
       , _video{video} {}
 
     auto max_token_size() noexcept -> span_size_t final {
@@ -49,7 +50,7 @@ public:
     void do_add(
       const basic_string_path& path,
       span<const string_view> data) noexcept {
-        if(path.size() == 1) {
+        if(path.has_size(1)) {
             if(path.starts_with("label")) {
                 if(data.has_single_value()) {
                     if(auto parent{_parent.lock()}) {
@@ -57,7 +58,7 @@ public:
                     }
                 }
             }
-        } else if((path.size() == 3) and data) {
+        } else if((path.has_size(3)) and data) {
             if((path.starts_with("inputs")) and (path.ends_with("attrib"))) {
                 if(const auto kind{
                      from_string<shapes::vertex_attrib_kind>(*data)}) {
@@ -83,7 +84,7 @@ public:
 
     template <std::integral T>
     void do_add(const basic_string_path& path, span<const T>& data) noexcept {
-        if((path.size() == 3) and data) {
+        if((path.has_size(3)) and data) {
             if((path.starts_with("inputs")) and (path.ends_with("variant"))) {
                 _attrib_variant_index = span_size(*data);
             }
@@ -91,7 +92,7 @@ public:
     }
 
     void add_object(const basic_string_path& path) noexcept final {
-        if(path.size() == 2) {
+        if(path.has_size(2)) {
             if(path.starts_with("inputs")) {
                 _input_name = to_string(path.back());
                 _attrib_kind = shapes::vertex_attrib_kind::position;
@@ -105,7 +106,7 @@ public:
     }
 
     void finish_object(const basic_string_path& path) noexcept final {
-        if(path.size() == 2) {
+        if(path.has_size(2)) {
             if(path.starts_with("inputs")) {
                 if(not _input_name.empty()) {
                     if(auto parent{_parent.lock()}) {
@@ -186,6 +187,24 @@ static auto texture_format_from_string(
     return gl_enum_from_string<oglplus::pixel_format>(data, v);
 }
 //------------------------------------------------------------------------------
+static auto texture_min_filter_from_string(
+  span<const string_view> data,
+  oglplus::gl_types::enum_type& v) noexcept -> bool {
+    return gl_enum_from_string<oglplus::texture_min_filter>(data, v);
+}
+//------------------------------------------------------------------------------
+static auto texture_mag_filter_from_string(
+  span<const string_view> data,
+  oglplus::gl_types::enum_type& v) noexcept -> bool {
+    return gl_enum_from_string<oglplus::texture_min_filter>(data, v);
+}
+//------------------------------------------------------------------------------
+static auto texture_wrap_mode_from_string(
+  span<const string_view> data,
+  oglplus::gl_types::enum_type& v) noexcept -> bool {
+    return gl_enum_from_string<oglplus::texture_wrap_mode>(data, v);
+}
+//------------------------------------------------------------------------------
 static auto texture_swizzle_from_string(
   span<const string_view> data,
   oglplus::gl_types::enum_type& v) noexcept -> bool {
@@ -216,20 +235,17 @@ public:
       shared_holder<pending_resource_info> info,
       oglplus::texture_target target,
       const resource_gl_texture_image_params& params) noexcept
-      : base{std::move(info)}
+      : base{"GLtxiBuldr", std::move(info)}
+      , _tex_data{*this, 512 * 512 * 4, nothing}
       , _target{target}
-      , _params{params} {
-        if(const auto parent{_parent.lock()}) {
-            parent->loader().buffers().get(512 * 512);
-        }
-    }
+      , _params{params} {}
 
     auto append_image_data(const memory::const_block blk) noexcept -> bool {
         log_debug("appending texture image data")
           .tag("apndImgDta")
-          .arg("offset", _temp.size())
+          .arg("offset", _tex_data.size())
           .arg("size", blk.size());
-        memory::append_to(blk, _temp);
+        memory::append_to(blk, _tex_data);
         //  TODO: progressive image specification once we have enough
         //  data for width * some constant so that the temp buffer
         //  doesn't get too big
@@ -258,7 +274,7 @@ public:
     void do_add(
       const basic_string_path& path,
       const span<const T> data) noexcept {
-        if(path.size() == 1) {
+        if(path.has_size(1)) {
             if(path.starts_with("level")) {
                 _success &= assign_if_fits(data, _params.level);
             } else if(path.starts_with("x_offs")) {
@@ -288,13 +304,42 @@ public:
             } else if(path.starts_with("iformat")) {
                 _success &= assign_if_fits(data, _params.iformat);
             }
+        } else if(path.has_size(2)) {
+            if(path.starts_with("data")) {
+                _success &= append_image_data(as_bytes(data));
+            }
+        }
+    }
+
+    void do_add(
+      const basic_string_path& path,
+      const span<const float> data) noexcept {
+        if(path.has_size(2)) {
+            if(path.starts_with("data")) {
+                _success &= append_image_data(as_bytes(data));
+            }
+        }
+    }
+
+    void do_add(
+      const basic_string_path& path,
+      const span<const double> data) noexcept {
+        if(path.has_size(2)) {
+            if(path.starts_with("data")) {
+                _float_data.clear();
+                _float_data.reserve(std_size(data.size()));
+                for(const auto d : data) {
+                    _float_data.push_back(float(d));
+                }
+                _success &= append_image_data(as_bytes(view(_float_data)));
+            }
         }
     }
 
     void do_add(
       const basic_string_path& path,
       const span<const string_view> data) noexcept {
-        if(path.size() == 1) {
+        if(path.has_size(1)) {
             if(path.starts_with("data_type")) {
                 _success &=
                   texture_data_type_from_string(data, _params.data_type);
@@ -332,11 +377,10 @@ public:
         if(const auto parent{_parent.lock()}) {
             if(_success) {
                 _decompression.finish();
-                parent->handle_gl_texture_image(_target, _params, _temp);
+                parent->handle_gl_texture_image(_target, _params, _tex_data);
             } else {
                 parent->mark_finished();
             }
-            parent->loader().buffers().eat(std::move(_temp));
             return _success;
         }
         return false;
@@ -345,12 +389,12 @@ public:
     void failed() noexcept final {
         if(const auto parent{_parent.lock()}) {
             parent->mark_finished();
-            parent->loader().buffers().eat(std::move(_temp));
         }
     }
 
 private:
-    memory::buffer _temp;
+    main_ctx_buffer _tex_data;
+    std::vector<float> _float_data;
     stream_decompression _decompression;
     oglplus::texture_target _target;
     resource_gl_texture_image_params _params{};
@@ -389,10 +433,32 @@ public:
       video_context& video,
       oglplus::texture_target tex_target,
       oglplus::texture_unit tex_unit) noexcept
-      : base{info}
+      : base{"GLtexBuldr", info}
       , _video{video}
+      , _tex_data{*this}
       , _tex_target{tex_target}
       , _tex_unit{tex_unit} {}
+
+    auto append_image_data(const memory::const_block blk) noexcept -> bool {
+        log_debug("appending texture image data")
+          .tag("apndImgDta")
+          .arg("offset", _tex_data.size())
+          .arg("size", blk.size());
+        memory::append_to(blk, _tex_data);
+        return true;
+    }
+
+    auto init_decompression(data_compression_method method) noexcept -> bool {
+        if(const auto parent{_parent.lock()}) {
+            _decompression = stream_decompression{
+              data_compressor{method, parent->loader().buffers()},
+              make_callable_ref<&valtree_gl_texture_builder::append_image_data>(
+                this),
+              method};
+            return true;
+        }
+        return false;
+    }
 
     auto max_token_size() noexcept -> span_size_t final {
         return 256;
@@ -404,7 +470,7 @@ public:
     void do_add(
       const basic_string_path& path,
       const span<const T> data) noexcept {
-        if(path.size() == 1) {
+        if(path.has_size(1)) {
             if(path.starts_with("levels")) {
                 _success &= assign_if_fits(data, _params.levels);
             } else if(path.starts_with("width")) {
@@ -423,7 +489,7 @@ public:
             } else if(path.starts_with("iformat")) {
                 _success &= assign_if_fits(data, _params.iformat);
             }
-        } else if(path.size() == 3) {
+        } else if(path.has_size(3)) {
             if(path.starts_with("images")) {
                 if(path.ends_with("level")) {
                     _success &= assign_if_fits(data, _image_params.level);
@@ -447,7 +513,7 @@ public:
     void do_add(
       const basic_string_path& path,
       const span<const string_view> data) noexcept {
-        if(path.size() == 1) {
+        if(path.has_size(1)) {
             using It = oglplus::gl_types::int_type;
             using Et = oglplus::gl_types::enum_type;
 
@@ -464,6 +530,31 @@ public:
                 _success &= texture_format_from_string(data, _params.format);
             } else if(path.starts_with("iformat")) {
                 _success &= texture_iformat_from_string(data, _params.iformat);
+            } else if(path.starts_with("min_filter")) {
+                Et e{0};
+                if(_success &= texture_min_filter_from_string(data, e)) {
+                    _i_params.emplace_back(0x2801, It(e));
+                }
+            } else if(path.starts_with("mag_filter")) {
+                Et e{0};
+                if(_success &= texture_mag_filter_from_string(data, e)) {
+                    _i_params.emplace_back(0x2800, It(e));
+                }
+            } else if(path.starts_with("wrap_s")) {
+                Et e{0};
+                if(_success &= texture_wrap_mode_from_string(data, e)) {
+                    _i_params.emplace_back(0x2802, It(e));
+                }
+            } else if(path.starts_with("wrap_t")) {
+                Et e{0};
+                if(_success &= texture_wrap_mode_from_string(data, e)) {
+                    _i_params.emplace_back(0x2803, It(e));
+                }
+            } else if(path.starts_with("wrap_r")) {
+                Et e{0};
+                if(_success &= texture_wrap_mode_from_string(data, e)) {
+                    _i_params.emplace_back(0x8072, It(e));
+                }
             } else if(path.starts_with("swizzle_r")) {
                 Et e{0};
                 if(_success &= texture_swizzle_from_string(data, e)) {
@@ -484,8 +575,19 @@ public:
                 if(_success &= texture_swizzle_from_string(data, e)) {
                     _i_params.emplace_back(0x8E45, It(e));
                 }
+            } else if(path.starts_with("data_filter")) {
+                if(data.has_single_value()) {
+                    if(const auto method{
+                         from_string<data_compression_method>(*data)}) {
+                        _success &= init_decompression(*method);
+                    } else {
+                        _success = false;
+                    }
+                } else {
+                    _success = false;
+                }
             }
-        } else if(path.size() == 3) {
+        } else if(path.has_size(3)) {
             if(path.starts_with("images")) {
                 if(path.ends_with("url")) {
                     if(data.has_single_value()) {
@@ -508,11 +610,19 @@ public:
     }
 
     void add_object(const basic_string_path& path) noexcept final {
-        if(path.size() == 2) {
+        if(path.has_size(2)) {
             if(path.starts_with("images")) {
                 _image_locator = {};
                 _image_params = {};
                 _image_target = _tex_target;
+            }
+        }
+    }
+
+    void unparsed_data(span<const memory::const_block> data) noexcept final {
+        if(_success and _decompression.is_initialized()) {
+            for(const auto& blk : data) {
+                _decompression.next(blk);
             }
         }
     }
@@ -526,7 +636,7 @@ public:
                     _success = false;
                 }
             }
-        } else if(path.size() == 2) {
+        } else if(path.has_size(2)) {
             if(path.starts_with("images")) {
                 if(_image_locator) {
                     _image_requests.emplace_back(
@@ -538,6 +648,19 @@ public:
 
     auto finish() noexcept -> bool final {
         if(const auto parent{_parent.lock()}) {
+            if(_success and _decompression.is_initialized()) {
+                resource_gl_texture_image_params img_params{
+                  .dimensions = _params.dimensions,
+                  .level = 0,
+                  .width = _params.width,
+                  .height = _params.height,
+                  .depth = _params.depth,
+                  .iformat = _params.iformat,
+                  .format = _params.format,
+                  .data_type = _params.data_type};
+                parent->handle_gl_texture_image(
+                  _tex_target, img_params, _tex_data);
+            }
             if(_success) {
                 for(auto& [loc, tgt, para] : _image_requests) {
                     const auto img_request{
@@ -563,6 +686,8 @@ public:
 
 private:
     video_context& _video;
+    main_ctx_buffer _tex_data;
+    stream_decompression _decompression;
     resource_gl_texture_params _params{};
     url _image_locator;
     resource_gl_texture_image_params _image_params;
@@ -587,11 +712,72 @@ auto make_valtree_gl_texture_builder(
     return {hold<valtree_gl_texture_builder>, parent, video, target, unit};
 }
 //------------------------------------------------------------------------------
+static void _adjust_texture_dimensions(
+  const oglplus::texture_target target,
+  auto& pgts,
+  auto& params) noexcept {
+    pgts.video.get().with_gl([&](auto&, auto& GL, auto&) {
+        if(target == GL.texture_2d_array) {
+            params.dimensions = std::max(params.dimensions, 3);
+        } else if(target == GL.texture_1d_array) {
+            params.dimensions = std::max(params.dimensions, 2);
+        }
+    });
+}
+//------------------------------------------------------------------------------
+static void _adjust_texture_z_offs(
+  const oglplus::texture_target target,
+  auto& pgts,
+  auto& params) noexcept {
+    pgts.video.get().with_gl([&](auto&, auto& GL, auto&) {
+        static const std::array<oglplus::texture_target, 6> cm_faces{
+          {GL.texture_cube_map_positive_x,
+           GL.texture_cube_map_negative_x,
+           GL.texture_cube_map_positive_y,
+           GL.texture_cube_map_negative_y,
+           GL.texture_cube_map_positive_z,
+           GL.texture_cube_map_negative_z}};
+
+        int z_offs = 0;
+        for(const auto cm_face : cm_faces) {
+            if(target == cm_face) {
+                params.z_offs = z_offs;
+                params.dimensions = std::max(params.dimensions, 3);
+                break;
+            }
+            ++z_offs;
+        }
+    });
+}
+//------------------------------------------------------------------------------
+void pending_resource_info::_adjust_gl_texture_params(
+  const oglplus::texture_target target,
+  const _pending_gl_texture_state& pgts,
+  resource_gl_texture_params& params) noexcept {
+    _adjust_texture_dimensions(target, pgts, params);
+}
+//------------------------------------------------------------------------------
+void pending_resource_info::_adjust_gl_texture_params(
+  const oglplus::texture_target target,
+  const _pending_gl_texture_state& pgts,
+  resource_gl_texture_image_params& params) noexcept {
+    _adjust_texture_dimensions(target, pgts, params);
+    _adjust_texture_z_offs(target, pgts, params);
+}
+//------------------------------------------------------------------------------
+void pending_resource_info::_adjust_gl_texture_params(
+  const oglplus::texture_target target,
+  const _pending_gl_texture_update_state& pgts,
+  resource_gl_texture_image_params& params) noexcept {
+    _adjust_texture_dimensions(target, pgts, params);
+    _adjust_texture_z_offs(target, pgts, params);
+}
+//------------------------------------------------------------------------------
 auto pending_resource_info::_handle_pending_gl_texture_state(
   auto& gl,
   auto&,
   auto& glapi,
-  _pending_gl_texture_state& pgts,
+  const _pending_gl_texture_state& pgts,
   const resource_gl_texture_params& params) noexcept -> bool {
 
     gl.active_texture(pgts.tex_unit);
@@ -708,8 +894,9 @@ auto pending_resource_info::_handle_pending_gl_texture_state(
 }
 //------------------------------------------------------------------------------
 auto pending_resource_info::handle_gl_texture_params(
-  const resource_gl_texture_params& params) noexcept -> bool {
+  resource_gl_texture_params& params) noexcept -> bool {
     if(const auto pgts{get_if<_pending_gl_texture_state>(_state)}) {
+        _adjust_gl_texture_params(pgts->tex_target, *pgts, params);
         _parent.log_info("loaded GL texture storage parameters")
           .arg("levels", params.levels)
           .arg("width", params.width)
@@ -779,23 +966,24 @@ void pending_resource_info::_clear_gl_texture_image(
 void pending_resource_info::_handle_gl_texture_image(
   const pending_resource_info& source,
   const oglplus::texture_target target,
-  const resource_gl_texture_image_params& params,
+  resource_gl_texture_image_params& tex_params,
   const memory::const_block data) noexcept {
+
     _parent.log_info("loaded GL texture sub-image")
       .arg("requestId", _request_id)
-      .arg("level", params.level)
-      .arg("xoffs", params.x_offs)
-      .arg("yoffs", params.y_offs)
-      .arg("zoffs", params.z_offs)
-      .arg("width", params.width)
-      .arg("height", params.height)
-      .arg("depth", params.depth)
-      .arg("dimensions", params.dimensions)
-      .arg("channels", params.channels)
+      .arg("level", tex_params.level)
+      .arg("xoffs", tex_params.x_offs)
+      .arg("yoffs", tex_params.y_offs)
+      .arg("zoffs", tex_params.z_offs)
+      .arg("width", tex_params.width)
+      .arg("height", tex_params.height)
+      .arg("depth", tex_params.depth)
+      .arg("dimensions", tex_params.dimensions)
+      .arg("channels", tex_params.channels)
       .arg("dataSize", data.size())
       .arg("locator", source.locator().str());
 
-    auto add_image_data = [&](auto& glapi, auto& pgts) {
+    auto add_image_data{[&](auto& glapi, auto& pgts, auto& params) {
         if(params.dimensions == 3) {
             if(glapi.texture_sub_image3d) {
                 glapi.texture_sub_image3d(
@@ -875,26 +1063,28 @@ void pending_resource_info::_handle_gl_texture_image(
                   data);
             }
         }
-    };
+    }};
 
     if(is(resource_kind::gl_texture)) {
         if(const auto pgts{get_if<_pending_gl_texture_state>(_state)}) {
             if(pgts->tex) [[likely]] {
+                _adjust_gl_texture_params(target, *pgts, tex_params);
+                pgts->level_images_done.set(std_size(tex_params.level), true);
+                add_image_data(pgts->video.get().gl_api(), *pgts, tex_params);
+
                 if(const auto found{eagine::find(
                      pgts->pending_requests, source.request_id())}) {
-                    pgts->level_images_done.set(std_size(params.level), true);
-                    add_image_data(pgts->video.get().gl_api(), *pgts);
-
                     pgts->pending_requests.erase(found.position());
-                    if(not _finish_gl_texture(*pgts)) {
-                        return;
-                    }
+                }
+                if(not _finish_gl_texture(*pgts)) {
+                    return;
                 }
             }
         }
     } else if(is(resource_kind::gl_texture_update)) {
         if(const auto pgts{get_if<_pending_gl_texture_update_state>(_state)}) {
-            add_image_data(pgts->video.get().gl_api(), *pgts);
+            _adjust_gl_texture_params(target, *pgts, tex_params);
+            add_image_data(pgts->video.get().gl_api(), *pgts, tex_params);
         }
     }
     mark_finished();
@@ -923,7 +1113,7 @@ public:
       const shared_holder<pending_resource_info>& info,
       video_context& video,
       oglplus::buffer_target buf_target) noexcept
-      : base{info}
+      : base{"GLbufBuldr", info}
       , _video{video}
       , _buf_target{buf_target} {}
 
@@ -936,7 +1126,7 @@ public:
     void do_add(
       const basic_string_path& path,
       span<const string_view> data) noexcept {
-        if(path.size() == 1) {
+        if(path.has_size(1)) {
             if(path.starts_with("label")) {
                 if(data.has_single_value()) {
                     if(auto parent{_parent.lock()}) {
