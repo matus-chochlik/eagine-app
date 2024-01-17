@@ -1,0 +1,12 @@
+{"levels":8
+,"width":128
+,"height":128
+,"depth":16
+,"channels":1
+,"data_type":"unsigned_byte"
+,"min_filter":"linear_mipmap_linear"
+,"mag_filter":"linear"
+,"format":"red"
+,"iformat":"r8"
+,"images":[{"url":"eagitexi:///TSCon16Img"}]
+}

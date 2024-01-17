@@ -16,6 +16,8 @@ export import :geometry;
 export import :models;
 export import :program;
 export import :programs;
+export import :texture;
+export import :textures;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
@@ -50,6 +52,8 @@ private:
     background_icosahedron _bg;
     tiling_viewer_models _models;
     tiling_viewer_programs _programs;
+    tiling_viewer_tilings _tilings;
+    tiling_viewer_tilesets _tilesets;
     activity_progress _load_progress;
 
     orbiting_camera _camera;

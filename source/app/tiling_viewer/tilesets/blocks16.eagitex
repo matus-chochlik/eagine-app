@@ -1,0 +1,12 @@
+{"levels":5
+,"width":16
+,"height":16
+,"depth":16
+,"channels":1
+,"data_type":"unsigned_byte"
+,"min_filter":"linear_mipmap_linear"
+,"mag_filter":"linear"
+,"format":"red"
+,"iformat":"r8"
+,"images":[{"url":"eagitexi:///TSBlk16Img"}]
+}

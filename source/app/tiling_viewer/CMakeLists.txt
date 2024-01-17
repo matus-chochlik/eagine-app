@@ -45,6 +45,22 @@ eagine_add_module(
 		eagine.app)
 
 eagine_add_module(
+	eagine.app.tiling_viewer PARTITION texture
+	IMPORTS
+		std resource
+		eagine.core
+		eagine.oglplus
+		eagine.app)
+
+eagine_add_module(
+	eagine.app.tiling_viewer PARTITION textures
+	IMPORTS
+		std texture
+		eagine.core
+		eagine.oglplus
+		eagine.app)
+
+eagine_add_module(
 	eagine.app.tiling_viewer
 	SOURCES
 		resource
@@ -52,6 +68,8 @@ eagine_add_module(
 		models
 		program
 		programs
+		texture
+		textures
 		launchpad
 		tiling_viewer
 	IMPORTS
@@ -73,8 +91,12 @@ eagine_embed_target_resources(
 		DfaultVert "glsl/default_vert.glsl"
 		DfaultFrag "glsl/default_frag.glsl"
 		DfaultProg "glsl/default_prog.json"
+		Tlg1024Img "tilings/tiling_1024.eagitexi"
+		Tlg1024Tex "tilings/tiling_1024.eagitex"
 		TSBlk16Img "tilesets/blocks16.eagitexi"
+		TSBlk16Tex "tilesets/blocks16.eagitex"
 		TSCon16Img "tilesets/connections16.eagitexi"
+		TSCon16Tex "tilesets/connections16.eagitex"
 	PACKED
 	ENABLE_SEARCH)
 eagine_add_exe_analysis(eagine-app-tiling-viewer)

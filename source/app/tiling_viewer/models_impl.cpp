@@ -25,7 +25,7 @@ tiling_viewer_models::tiling_viewer_models(
       "Round cube",
       url{"shape:///unit_round_cube"
           "?position=true+normal=true+tangent=true+bitangent=true"
-          "+wrap_coord=true"},
+          "+wrap_coord=true+divisions=16"},
       ctx,
       video);
     load(
