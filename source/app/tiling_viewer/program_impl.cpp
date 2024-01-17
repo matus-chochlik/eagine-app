@@ -95,7 +95,7 @@ void tiling_viewer_program_resource::_on_loaded(
   const gl_program_resource::load_info& info) noexcept {
     info.get_uniform_location("Camera").and_then(_1.assign_to(_camera_loc));
     info.get_uniform_location("Tiling").and_then(_1.assign_to(_tiling_loc));
-    info.get_uniform_location("Texture0").and_then(_1.assign_to(_tileset_loc));
+    info.get_uniform_location("Tileset").and_then(_1.assign_to(_tileset_loc));
     signal_loaded();
 }
 //------------------------------------------------------------------------------

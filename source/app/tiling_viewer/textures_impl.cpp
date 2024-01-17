@@ -55,15 +55,15 @@ tiling_viewer_tilesets::tiling_viewer_tilesets(
         }
 
         load(
-          "Checker",
-          url{"eagitex:///TSBlk16Tex"},
+          "Connections",
+          url{"eagitex:///TSCon16Tex"},
           ctx,
           video,
           GL.texture_2d_array,
           tex_unit++);
         load(
-          "Checker",
-          url{"eagitex:///TSCon16Tex"},
+          "Blocks",
+          url{"eagitex:///TSBlk16Tex"},
           ctx,
           video,
           GL.texture_2d_array,

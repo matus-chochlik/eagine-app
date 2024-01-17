@@ -4,9 +4,13 @@
 ,"depth":16
 ,"channels":1
 ,"data_type":"unsigned_byte"
-,"min_filter":"linear_mipmap_linear"
-,"mag_filter":"linear"
 ,"format":"red"
 ,"iformat":"r8"
+,"swizzle_g":"red"
+,"swizzle_b":"red"
+,"min_filter":"linear_mipmap_linear"
+,"mag_filter":"linear"
+,"wrap_s":"repeat"
+,"wrap_t":"repeat"
 ,"images":[{"url":"eagitexi:///TSBlk16Img"}]
 ,"generate_mipmap":true}

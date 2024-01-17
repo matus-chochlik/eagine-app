@@ -57,7 +57,7 @@ private:
     activity_progress _load_progress;
 
     orbiting_camera _camera;
-    float _fov{70.F};
+    float _fov{50.F};
     bool _show_setting_window{false};
 };
 //------------------------------------------------------------------------------

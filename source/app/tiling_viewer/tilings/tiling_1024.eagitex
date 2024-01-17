@@ -4,6 +4,10 @@
 ,"depth":6
 ,"channels":1
 ,"data_type":"unsigned_byte"
+,"min_filter":"nearest"
+,"mag_filter":"nearest"
+,"wrap_s":"repeat"
+,"wrap_t":"repeat"
 ,"format":"red_integer"
 ,"iformat":"r8ui"
 ,"images":[{"url":"eagitexi:///Tlg1024Img"}]

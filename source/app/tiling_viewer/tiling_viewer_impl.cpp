@@ -51,9 +51,9 @@ void tiling_viewer::_init_camera(const oglplus::sphere bs) {
     _camera.set_fov(degrees_(_fov))
       .set_target(bs.center())
       .set_near(sr * 0.01F)
-      .set_far(sr * 100.0F)
-      .set_orbit_min(sr * 1.2F)
-      .set_orbit_max(sr * 25.0F);
+      .set_far(sr * 50.0F)
+      .set_orbit_min(sr * 0.51F)
+      .set_orbit_max(sr * 7.5F);
 }
 //------------------------------------------------------------------------------
 auto tiling_viewer::_all_resource_count() noexcept -> span_size_t {
@@ -126,7 +126,9 @@ auto tiling_viewer::is_done() noexcept -> bool {
 }
 //------------------------------------------------------------------------------
 void tiling_viewer::_setting_window(const guiplus::imgui_api& gui) noexcept {
-    const auto height{85.F};
+    const auto height{
+      _tilings.settings_height() + _tilesets.settings_height() +
+      _programs.settings_height() + _models.settings_height() + 85.F};
     gui.set_next_window_size({350, height});
     if(gui.begin("Settings", _show_setting_window).or_false()) {
         if(gui.slider_float("FOV", _fov, 20.F, 120.F)) {
@@ -135,6 +137,8 @@ void tiling_viewer::_setting_window(const guiplus::imgui_api& gui) noexcept {
         gui.same_line();
         gui.help_marker("changes the field of view of the camera");
 
+        _tilings.settings("Tilings", gui);
+        _tilesets.settings("Tilesets", gui);
         _programs.settings("Programs", gui);
         _models.settings("Models", gui);
 
