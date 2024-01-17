@@ -379,156 +379,134 @@ class VoronoiArgumentParser(argparse.ArgumentParser):
             "--print-bash-completion",
             metavar='FILE|-',
             dest='print_bash_completion',
-            default=None
-        )
+            default=None)
 
         self.add_argument(
             'output',
             nargs='?',
             type=argparse.FileType('w'),
-            default=sys.stdout
-        )
+            default=sys.stdout)
 
         self.add_argument(
             '--log', '-l',
             type=argparse.FileType('w'),
-            default=sys.stderr
-        )
+            default=sys.stderr)
 
         self.add_argument(
             '--jobs', '-j',
             dest="job_count",
             type=self._positive_int,
             action="store",
-            default=multiprocessing.cpu_count()
-        )
+            default=1)
 
         self.add_argument(
             '--x-cells', '-X',
             type=self._positive_int,
             action="store",
-            default=None
-        )
+            default=None)
 
         self.add_argument(
             '--y-cells', '-Y',
             type=self._positive_int,
             action="store",
-            default=None
-        )
+            default=None)
 
         self.add_argument(
             '--width', '-W',
             type=self._positive_int,
             action="store",
-            default=512
-        )
+            default=512)
 
         self.add_argument(
             '--height', '-H',
             type=self._positive_int,
             action="store",
-            default=512
-        )
+            default=512)
 
         self.add_argument(
             '--units', '-U',
             action="store",
             choices=["px", "mm", "cm", "in", "pt"],
-            default="px"
-        )
+            default="px")
 
         self.add_argument(
             '--stroke-width', '-s',
             type=float,
             action="store",
-            default=0.5
-        )
+            default=0.5)
 
         self.add_argument(
             '--value-low', '-vl',
             type=float,
             action="store",
-            default=0.05
-        )
+            default=0.05)
 
         self.add_argument(
             '--value-high', '-vh',
             type=float,
             action="store",
-            default=0.95
-        )
+            default=0.95)
 
         self.add_argument(
             '--cell-z-coord', '-cz',
             type=float,
             action="store",
-            default=0.0
-        )
+            default=0.0)
 
         self.add_argument(
             '--scale', '-S',
             type=float,
             action="store",
-            default=0.9
-        )
+            default=0.9)
 
         self.add_argument(
             '--scale-mode', '-Q',
             type=str,
             choices=["constant", "linear", "sqrt", "pow2", "exp", "sigmoid"],
             action="store",
-            default="constant"
-        )
+            default="constant")
 
         self.add_argument(
             '--seed', '-rs',
             type=float,
             action="store",
-            default=None
-        )
+            default=None)
 
         self.add_argument(
             '--rim-seed', '-Rs',
             type=float,
             action="store",
-            default=None
-        )
+            default=None)
 
         self.add_argument(
             '--rim-width', '-Rw',
             type=self._positive_int,
             action="store",
-            default=2
-        )
+            default=2)
 
         rimmug = self.add_mutually_exclusive_group()
 
         rimmug.add_argument(
             '--only-rim',
             action="store_true",
-            default=False
-        )
+            default=False)
 
         rimmug.add_argument(
             '--skip-rim',
             action="store_true",
-            default=False
-        )
+            default=False)
 
         self.add_argument(
             '--transformable', '-T',
             action="store_true",
-            default=False
-        )
+            default=False)
 
         self.add_argument(
             '--color-mode', '-M',
             type=str,
             choices=["grayscale", "cell-coord", "cell-coord-value", "image-rgb"],
             action="store",
-            default="grayscale"
-        )
+            default="grayscale")
 
         self.add_argument(
             '--cell-mode', '-C',
@@ -543,30 +521,26 @@ class VoronoiArgumentParser(argparse.ArgumentParser):
                 "worley-cvh"
             ],
             action="store",
-            default="full"
-        )
+            default="full")
 
         self.add_argument(
             '--offs-mode', '-O',
             type=str,
             choices=["default", "honeycomb-x", "honeycomb-y"],
             action="store",
-            default="default"
-        )
+            default="default")
 
         self.add_argument(
             '--image', '-i',
             dest="image_path",
             type=os.path.realpath,
             action="store",
-            default=None
-        )
+            default=None)
 
         self.add_argument(
             '--verbose', '-v',
             action="store_true",
-            default=False
-        )
+            default=False)
     # --------------------------------------------------------------------------
     def process_parsed_options(self, options):
         if options.transformable:
