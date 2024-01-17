@@ -421,6 +421,7 @@ struct resource_gl_texture_params {
     oglplus::gl_types::enum_type iformat{0};
     oglplus::gl_types::enum_type format{0};
     oglplus::gl_types::enum_type data_type{0};
+    bool generate_mipmap{false};
 };
 //------------------------------------------------------------------------------
 class valtree_gl_texture_builder
@@ -506,6 +507,16 @@ public:
                     _image_params.dimensions =
                       std::max(_image_params.dimensions, 3);
                 }
+            }
+        }
+    }
+
+    void do_add(
+      const basic_string_path& path,
+      const span<const bool> data) noexcept {
+        if(path.has_size(1)) {
+            if(path.starts_with("generate_mipmap")) {
+                _success &= assign_if_fits(data, _params.generate_mipmap);
             }
         }
     }
@@ -674,6 +685,9 @@ public:
                 for(const auto [param, value] : _i_params) {
                     parent->handle_gl_texture_i_param(
                       oglplus::texture_parameter{param}, value);
+                }
+                if(_params.generate_mipmap) {
+                    parent->handle_gl_texture_generate_mipmap();
                 }
                 parent->mark_loaded();
             } else {
@@ -936,6 +950,18 @@ void pending_resource_info::handle_gl_texture_i_param(
                     }
                 });
             }
+        }
+    }
+}
+//------------------------------------------------------------------------------
+void pending_resource_info::handle_gl_texture_generate_mipmap() noexcept {
+    _parent.log_info("requesting GL texture mipmap generation")
+      .arg("requestId", _request_id)
+      .arg("locator", locator().str());
+
+    if(is(resource_kind::gl_texture)) {
+        if(const auto pgts{get_if<_pending_gl_texture_state>(_state)}) {
+            pgts->generate_mipmap = true;
         }
     }
 }

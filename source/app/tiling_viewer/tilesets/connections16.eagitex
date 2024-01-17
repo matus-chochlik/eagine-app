@@ -9,4 +9,4 @@
 ,"format":"red"
 ,"iformat":"r8"
 ,"images":[{"url":"eagitexi:///TSCon16Img"}]
-}
+,"generate_mipmap":true}

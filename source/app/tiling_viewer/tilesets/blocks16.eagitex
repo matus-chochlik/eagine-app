@@ -9,4 +9,4 @@
 ,"format":"red"
 ,"iformat":"r8"
 ,"images":[{"url":"eagitexi:///TSBlk16Img"}]
-}
+,"generate_mipmap":true}
