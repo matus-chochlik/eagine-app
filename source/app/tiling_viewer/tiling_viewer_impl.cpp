@@ -18,6 +18,14 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 //  Application
 //------------------------------------------------------------------------------
+auto tiling_viewer::_load_handler() noexcept {
+    return make_callable_ref<&tiling_viewer::_on_loaded>(this);
+}
+//------------------------------------------------------------------------------
+auto tiling_viewer::_select_handler() noexcept {
+    return make_callable_ref<&tiling_viewer::_on_selected>(this);
+}
+//------------------------------------------------------------------------------
 auto tiling_viewer::_show_settings_handler() noexcept {
     return make_callable_ref<&tiling_viewer::_show_settings>(this);
 }
@@ -48,12 +56,53 @@ void tiling_viewer::_init_camera(const oglplus::sphere bs) {
       .set_orbit_max(sr * 25.0F);
 }
 //------------------------------------------------------------------------------
+auto tiling_viewer::_all_resource_count() noexcept -> span_size_t {
+    return _models.all_resource_count() + _programs.all_resource_count();
+}
+//------------------------------------------------------------------------------
+auto tiling_viewer::_loaded_resource_count() noexcept -> span_size_t {
+    return _models.loaded_resource_count() + _programs.loaded_resource_count();
+}
+//------------------------------------------------------------------------------
+void tiling_viewer::_on_loaded() noexcept {
+    _load_progress.update_progress(_loaded_resource_count());
+    if(_loaded_resource_count() == _all_resource_count()) {
+        _load_progress.finish();
+    }
+}
+//------------------------------------------------------------------------------
+void tiling_viewer::_on_selected() noexcept {
+    if(_models and _programs) {
+        _init_camera(_models.bounding_sphere());
+        _programs.use(_video);
+        _programs.apply_bindings(_video, _models.attrib_bindings());
+        //_programs.set_cube_map_unit(_video, _cube_maps.texture_unit(_video));
+        //_programs.set_texture_unit(_video, _textures.texture_unit(_video));
+    }
+}
+//------------------------------------------------------------------------------
 tiling_viewer::tiling_viewer(execution_context& ctx, video_context& video)
   : common_application{ctx}
   , _video{video}
-  , _bg{_video, {0.1F, 0.1F, 0.1F, 1.0F}, {0.4F, 0.4F, 0.4F, 0.0F}, 1.F} {
+  , _bg{_video, {0.1F, 0.1F, 0.1F, 1.0F}, {0.4F, 0.4F, 0.4F, 0.0F}, 1.F}
+  , _models{ctx, video}
+  , _programs{ctx, video}
+  , _load_progress{ctx.progress(), "loading resources", _all_resource_count()} {
+    _models.loaded.connect(_load_handler());
+    _models.selected.connect(_select_handler());
+    _programs.loaded.connect(_load_handler());
+    _programs.selected.connect(_select_handler());
+
     _init_camera({{0.F, 0.F, 0.F}, 1.F});
     _init_inputs();
+}
+//------------------------------------------------------------------------------
+void tiling_viewer::_view_tiling() noexcept {
+    _programs.use(_video);
+    _programs.set_camera(_video, _camera);
+
+    _models.use(_video);
+    _models.draw(_video);
 }
 //------------------------------------------------------------------------------
 void tiling_viewer::_show_settings(const input& i) noexcept {
@@ -69,19 +118,24 @@ auto tiling_viewer::is_done() noexcept -> bool {
 void tiling_viewer::_setting_window(const guiplus::imgui_api& gui) noexcept {
     const auto height{85.F};
     gui.set_next_window_size({350, height});
-    if(gui.slider_float("FOV", _fov, 20.F, 120.F)) {
-        _camera.set_fov(degrees_(_fov));
-    }
-    gui.same_line();
-    gui.help_marker("changes the field of view of the camera");
+    if(gui.begin("Settings", _show_setting_window).or_false()) {
+        if(gui.slider_float("FOV", _fov, 20.F, 120.F)) {
+            _camera.set_fov(degrees_(_fov));
+        }
+        gui.same_line();
+        gui.help_marker("changes the field of view of the camera");
 
-    gui.separator();
-    if(gui.button("Close").or_true()) {
-        _show_setting_window = false;
+        _programs.settings("Programs", gui);
+        _models.settings("Models", gui);
+
+        gui.separator();
+        if(gui.button("Close").or_true()) {
+            _show_setting_window = false;
+        }
+        gui.same_line();
+        gui.help_marker("closes this settings window");
+        gui.end();
     }
-    gui.same_line();
-    gui.help_marker("closes this settings window");
-    gui.end();
 }
 //------------------------------------------------------------------------------
 void tiling_viewer::update_overlays(guiplus::gui_utils& utils) noexcept {
@@ -92,10 +146,27 @@ void tiling_viewer::update_overlays(guiplus::gui_utils& utils) noexcept {
 //------------------------------------------------------------------------------
 void tiling_viewer::update() noexcept {
     _bg.clear(_video, _camera);
+
+    _models.update();
+    _programs.update();
+
+    if(_models and _programs) {
+        auto& state = context().state();
+        if(state.user_idle_too_long()) {
+            _camera.idle_update(state);
+        }
+        _view_tiling();
+    } else {
+        _models.load_if_needed(context(), _video);
+        _programs.load_if_needed(context(), _video);
+    }
+
     _video.commit();
 }
 //------------------------------------------------------------------------------
 void tiling_viewer::clean_up() noexcept {
+    _programs.clean_up(context(), _video);
+    _models.clean_up(context(), _video);
     _bg.clean_up(_video);
     _video.end();
 }

@@ -11,6 +11,11 @@ import eagine.core;
 import eagine.guiplus;
 import eagine.oglplus;
 import eagine.app;
+export import :resource;
+export import :geometry;
+export import :models;
+export import :program;
+export import :programs;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
@@ -28,6 +33,14 @@ private:
     void _init_inputs();
     void _init_camera(const oglplus::sphere bs);
 
+    auto _all_resource_count() noexcept -> span_size_t;
+    auto _loaded_resource_count() noexcept -> span_size_t;
+    void _on_loaded() noexcept;
+    auto _load_handler() noexcept;
+    void _on_selected() noexcept;
+    auto _select_handler() noexcept;
+
+    void _view_tiling() noexcept;
     void _show_settings(const input& i) noexcept;
     auto _show_settings_handler() noexcept;
     void _setting_window(const guiplus::imgui_api&) noexcept;
@@ -35,6 +48,9 @@ private:
     video_context& _video;
 
     background_icosahedron _bg;
+    tiling_viewer_models _models;
+    tiling_viewer_programs _programs;
+    activity_progress _load_progress;
 
     orbiting_camera _camera;
     float _fov{70.F};

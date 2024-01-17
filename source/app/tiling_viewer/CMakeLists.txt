@@ -4,8 +4,54 @@
 #  http://www.boost.org/LICENSE_1_0.txt
 #
 eagine_add_module(
+	eagine.app.tiling_viewer PARTITION resource
+	IMPORTS
+		std
+		eagine.core
+		eagine.guiplus
+		eagine.app)
+
+eagine_add_module(
+	eagine.app.tiling_viewer PARTITION geometry
+	IMPORTS
+		std resource
+		eagine.core
+		eagine.shapes
+		eagine.oglplus
+		eagine.app)
+
+eagine_add_module(
+	eagine.app.tiling_viewer PARTITION models
+	IMPORTS
+		std geometry
+		eagine.core
+		eagine.oglplus
+		eagine.app)
+
+eagine_add_module(
+	eagine.app.tiling_viewer PARTITION program
+	IMPORTS
+		std resource
+		eagine.core
+		eagine.oglplus
+		eagine.app)
+
+eagine_add_module(
+	eagine.app.tiling_viewer PARTITION programs
+	IMPORTS
+		std program
+		eagine.core
+		eagine.oglplus
+		eagine.app)
+
+eagine_add_module(
 	eagine.app.tiling_viewer
 	SOURCES
+		resource
+		geometry
+		models
+		program
+		programs
 		launchpad
 		tiling_viewer
 	IMPORTS
@@ -27,6 +73,8 @@ eagine_embed_target_resources(
 		DfaultVert "glsl/default_vert.glsl"
 		DfaultFrag "glsl/default_frag.glsl"
 		DfaultProg "glsl/default_prog.json"
+		TSBlk16Img "tilesets/blocks16.eagitexi"
+		TSCon16Img "tilesets/connections16.eagitexi"
 	PACKED
 	ENABLE_SEARCH)
 eagine_add_exe_analysis(eagine-app-tiling-viewer)
