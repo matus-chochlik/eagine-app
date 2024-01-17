@@ -130,8 +130,6 @@ eagine_embed_target_resources(
 	ENABLE_SEARCH)
 eagine_add_exe_analysis(eagine-app-model-viewer)
 
-eagine_add_exe_analysis(eagine-app-model-viewer)
-
 eagine_target_modules(
 	eagine-app-model-viewer
 	std
