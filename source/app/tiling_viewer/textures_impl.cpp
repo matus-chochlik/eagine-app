@@ -62,6 +62,13 @@ tiling_viewer_tilesets::tiling_viewer_tilesets(
           GL.texture_2d_array,
           tex_unit++);
         load(
+          "Nodes",
+          url{"eagitex:///TSNds16Tex"},
+          ctx,
+          video,
+          GL.texture_2d_array,
+          tex_unit++);
+        load(
           "Blocks",
           url{"eagitex:///TSBlk16Tex"},
           ctx,

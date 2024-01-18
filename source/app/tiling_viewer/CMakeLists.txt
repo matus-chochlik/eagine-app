@@ -95,6 +95,8 @@ eagine_embed_target_resources(
 		Tlg1024Tex "tilings/tiling_1024.eagitex"
 		TSBlk16Img "tilesets/blocks16.eagitexi"
 		TSBlk16Tex "tilesets/blocks16.eagitex"
+		TSNds16Img "tilesets/nodes16.eagitexi"
+		TSNds16Tex "tilesets/nodes16.eagitex"
 		TSCon16Img "tilesets/connections16.eagitexi"
 		TSCon16Tex "tilesets/connections16.eagitex"
 	PACKED
