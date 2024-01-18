@@ -7,6 +7,7 @@
 ///
 export module eagine.app.tiling_viewer;
 
+import std;
 import eagine.core;
 import eagine.guiplus;
 import eagine.oglplus;
@@ -20,6 +21,19 @@ export import :texture;
 export import :textures;
 
 namespace eagine::app {
+//------------------------------------------------------------------------------
+class tiling_camera : public orbiting_camera {
+public:
+    auto init(const context_state_view&) noexcept -> tiling_camera&;
+    auto idle_update(execution_context&, const context_state_view&) noexcept
+      -> tiling_camera&;
+
+private:
+    animated_value<std::tuple<radians_t<float>, radians_t<float>, float>, float>
+      _geo_coord;
+    enum class animation_status { zoom_in, wait, zoom_out, relocate };
+    animation_status _status{animation_status::zoom_in};
+};
 //------------------------------------------------------------------------------
 export class tiling_viewer : public common_application {
 
@@ -56,7 +70,7 @@ private:
     tiling_viewer_tilesets _tilesets;
     activity_progress _load_progress;
 
-    orbiting_camera _camera;
+    tiling_camera _camera;
     float _fov{50.F};
     bool _show_setting_window{false};
 };

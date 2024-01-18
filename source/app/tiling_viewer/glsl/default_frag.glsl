@@ -10,8 +10,8 @@ uniform isampler2DArray Tiling;
 uniform sampler2DArray Tileset;
 
 void main() {
-	vec3 tileCoord = vec3(
-		vertTilesetCoord,
-		float(texture(Tiling, vertTilingCoord).r));
+    vec3 tileCoord = vec3(
+        vertTilesetCoord,
+        float(texture(Tiling, vertTilingCoord).r));
     fragColor = texture(Tileset, tileCoord).rgb;
 }

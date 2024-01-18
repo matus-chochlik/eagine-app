@@ -21,5 +21,5 @@ void main() {
     vertTangent = Tangent;
     vertBitangent = Bitangent;
     vertTilingCoord = WrapCoord;
-	vertTilesetCoord = TilingRes * WrapCoord.xy;
+    vertTilesetCoord = TilingRes * WrapCoord.xy;
 }
