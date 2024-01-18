@@ -112,12 +112,15 @@ void tiling_viewer::_init_camera(const oglplus::sphere bs) {
 //------------------------------------------------------------------------------
 auto tiling_viewer::_all_resource_count() noexcept -> span_size_t {
     return _models.all_resource_count() + _programs.all_resource_count() +
-           _tilings.all_resource_count() + _tilesets.all_resource_count();
+           _tilings.all_resource_count() + _transitions.all_resource_count() +
+           _tilesets.all_resource_count();
 }
 //------------------------------------------------------------------------------
 auto tiling_viewer::_loaded_resource_count() noexcept -> span_size_t {
     return _models.loaded_resource_count() + _programs.loaded_resource_count() +
-           _tilings.loaded_resource_count() + _tilesets.loaded_resource_count();
+           _tilings.loaded_resource_count() +
+           _transitions.loaded_resource_count() +
+           _tilesets.loaded_resource_count();
 }
 //------------------------------------------------------------------------------
 void tiling_viewer::_on_loaded() noexcept {
@@ -133,6 +136,8 @@ void tiling_viewer::_on_selected() noexcept {
         _programs.use(_video);
         _programs.apply_bindings(_video, _models.attrib_bindings());
         _programs.set_tiling_unit(_video, _tilings.texture_unit(_video));
+        _programs.set_transition_unit(
+          _video, _transitions.texture_unit(_video));
         _programs.set_tileset_unit(_video, _tilesets.texture_unit(_video));
     }
 }
@@ -144,6 +149,7 @@ tiling_viewer::tiling_viewer(execution_context& ctx, video_context& video)
   , _models{ctx, video}
   , _programs{ctx, video}
   , _tilings{ctx, video}
+  , _transitions{ctx, video}
   , _tilesets{ctx, video}
   , _load_progress{ctx.progress(), "loading resources", _all_resource_count()} {
 
@@ -153,6 +159,8 @@ tiling_viewer::tiling_viewer(execution_context& ctx, video_context& video)
     _programs.selected.connect(_select_handler());
     _tilings.loaded.connect(_load_handler());
     _tilings.selected.connect(_select_handler());
+    _transitions.loaded.connect(_load_handler());
+    _transitions.selected.connect(_select_handler());
     _tilesets.loaded.connect(_load_handler());
     _tilesets.selected.connect(_select_handler());
 
@@ -165,6 +173,7 @@ void tiling_viewer::_view_tiling() noexcept {
     _programs.set_camera(_video, _camera);
 
     _tilings.use(_video);
+    _transitions.use(_video);
     _tilesets.use(_video);
     _models.use(_video);
     _models.draw(_video);
@@ -182,8 +191,9 @@ auto tiling_viewer::is_done() noexcept -> bool {
 //------------------------------------------------------------------------------
 void tiling_viewer::_setting_window(const guiplus::imgui_api& gui) noexcept {
     const auto height{
-      _tilings.settings_height() + _tilesets.settings_height() +
-      _programs.settings_height() + _models.settings_height() + 85.F};
+      _tilings.settings_height() + _transitions.settings_height() +
+      _tilesets.settings_height() + _programs.settings_height() +
+      _models.settings_height() + 85.F};
     gui.set_next_window_size({350, height});
     if(gui.begin("Settings", _show_setting_window).or_false()) {
         if(gui.slider_float("FOV", _fov, 20.F, 120.F)) {
@@ -193,6 +203,7 @@ void tiling_viewer::_setting_window(const guiplus::imgui_api& gui) noexcept {
         gui.help_marker("changes the field of view of the camera");
 
         _tilings.settings("Tilings", gui);
+        _transitions.settings("Transitions", gui);
         _tilesets.settings("Tilesets", gui);
         _programs.settings("Programs", gui);
         _models.settings("Models", gui);
@@ -219,9 +230,10 @@ void tiling_viewer::update() noexcept {
     _models.update();
     _programs.update();
     _tilings.update();
+    _transitions.update();
     _tilesets.update();
 
-    if(_models and _programs and _tilings and _tilesets) {
+    if(_models and _programs and _tilings and _transitions and _tilesets) {
         auto& state = context().state();
         if(state.user_idle_too_long()) {
             _camera.idle_update(context(), state);
@@ -231,6 +243,7 @@ void tiling_viewer::update() noexcept {
         _models.load_if_needed(context(), _video);
         _programs.load_if_needed(context(), _video);
         _tilings.load_if_needed(context(), _video);
+        _transitions.load_if_needed(context(), _video);
         _tilesets.load_if_needed(context(), _video);
     }
 
@@ -239,6 +252,7 @@ void tiling_viewer::update() noexcept {
 //------------------------------------------------------------------------------
 void tiling_viewer::clean_up() noexcept {
     _tilesets.clean_up(context(), _video);
+    _transitions.clean_up(context(), _video);
     _tilings.clean_up(context(), _video);
     _programs.clean_up(context(), _video);
     _models.clean_up(context(), _video);

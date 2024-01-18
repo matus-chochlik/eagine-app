@@ -668,7 +668,6 @@ void eagitexi_tiling_noise_provider::for_each_locator(
     callback("eagitexi:///tiling_noise");
 }
 //------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
 // noise image provider
 //------------------------------------------------------------------------------
 auto provider_eagitexi_tiling_noise(const provider_parameters& p)

@@ -67,6 +67,7 @@ private:
     tiling_viewer_models _models;
     tiling_viewer_programs _programs;
     tiling_viewer_tilings _tilings;
+    tiling_viewer_transitions _transitions;
     tiling_viewer_tilesets _tilesets;
     activity_progress _load_progress;
 

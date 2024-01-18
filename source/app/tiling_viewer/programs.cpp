@@ -30,6 +30,9 @@ public:
     auto set_tiling_unit(video_context&, oglplus::texture_unit::value_type)
       -> tiling_viewer_programs&;
 
+    auto set_transition_unit(video_context&, oglplus::texture_unit::value_type)
+      -> tiling_viewer_programs&;
+
     auto set_tileset_unit(video_context&, oglplus::texture_unit::value_type)
       -> tiling_viewer_programs&;
 };

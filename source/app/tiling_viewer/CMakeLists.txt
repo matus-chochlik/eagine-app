@@ -93,6 +93,8 @@ eagine_embed_target_resources(
 		DfaultProg "glsl/default_prog.json"
 		Tlg1024Img "tilings/tiling_1024.eagitexi"
 		Tlg1024Tex "tilings/tiling_1024.eagitex"
+		TrnsPCBImg "transitions/pcb.eagitexi"
+		TrnsPCBTex "transitions/pcb.eagitex"
 		TSBlk16Img "tilesets/blocks16.eagitexi"
 		TSBlk16Tex "tilesets/blocks16.eagitex"
 		TSNds16Img "tilesets/nodes16.eagitexi"

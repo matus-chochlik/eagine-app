@@ -23,6 +23,14 @@ public:
     auto texture_unit(video_context&) -> oglplus::texture_unit::value_type;
 };
 //------------------------------------------------------------------------------
+export class tiling_viewer_transitions
+  : public tiling_viewer_resources<tiling_viewer_texture> {
+public:
+    tiling_viewer_transitions(execution_context&, video_context&);
+
+    auto texture_unit(video_context&) -> oglplus::texture_unit::value_type;
+};
+//------------------------------------------------------------------------------
 export class tiling_viewer_tilesets
   : public tiling_viewer_resources<tiling_viewer_texture> {
 public:

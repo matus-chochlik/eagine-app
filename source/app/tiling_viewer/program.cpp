@@ -24,6 +24,9 @@ struct tiling_viewer_program_intf : tiling_viewer_resource_intf {
     virtual void set_tiling_unit(
       video_context&,
       oglplus::texture_unit::value_type) = 0;
+    virtual void set_transition_unit(
+      video_context&,
+      oglplus::texture_unit::value_type) = 0;
     virtual void set_tileset_unit(
       video_context&,
       oglplus::texture_unit::value_type) = 0;
@@ -46,6 +49,9 @@ public:
       -> tiling_viewer_program&;
 
     auto set_tiling_unit(video_context&, oglplus::texture_unit::value_type)
+      -> tiling_viewer_program&;
+
+    auto set_transition_unit(video_context&, oglplus::texture_unit::value_type)
       -> tiling_viewer_program&;
 
     auto set_tileset_unit(video_context&, oglplus::texture_unit::value_type)

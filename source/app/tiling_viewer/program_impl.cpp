@@ -45,6 +45,14 @@ auto tiling_viewer_program::set_tiling_unit(
     return *this;
 }
 //------------------------------------------------------------------------------
+auto tiling_viewer_program::set_transition_unit(
+  video_context& video,
+  oglplus::texture_unit::value_type tu) -> tiling_viewer_program& {
+    assert(_impl);
+    _impl->set_transition_unit(video, tu);
+    return *this;
+}
+//------------------------------------------------------------------------------
 auto tiling_viewer_program::set_tileset_unit(
   video_context& video,
   oglplus::texture_unit::value_type tu) -> tiling_viewer_program& {
@@ -71,6 +79,8 @@ public:
     void set_camera(video_context&, const mat4&) final;
     void set_tiling_unit(video_context&, oglplus::texture_unit::value_type)
       final;
+    void set_transition_unit(video_context&, oglplus::texture_unit::value_type)
+      final;
     void set_tileset_unit(video_context&, oglplus::texture_unit::value_type)
       final;
     void clean_up(execution_context&, video_context&) final;
@@ -79,6 +89,7 @@ private:
     void _on_loaded(const gl_program_resource::load_info&) noexcept;
     oglplus::uniform_location _camera_loc{};
     oglplus::uniform_location _tiling_loc{};
+    oglplus::uniform_location _trans_loc{};
     oglplus::uniform_location _tileset_loc{};
 };
 //------------------------------------------------------------------------------
@@ -95,6 +106,7 @@ void tiling_viewer_program_resource::_on_loaded(
   const gl_program_resource::load_info& info) noexcept {
     info.get_uniform_location("Camera").and_then(_1.assign_to(_camera_loc));
     info.get_uniform_location("Tiling").and_then(_1.assign_to(_tiling_loc));
+    info.get_uniform_location("Transition").and_then(_1.assign_to(_trans_loc));
     info.get_uniform_location("Tileset").and_then(_1.assign_to(_tileset_loc));
     signal_loaded();
 }
@@ -129,6 +141,12 @@ void tiling_viewer_program_resource::set_tiling_unit(
   video_context& video,
   oglplus::texture_unit::value_type tu) {
     set(video, _tiling_loc, int(tu));
+}
+//------------------------------------------------------------------------------
+void tiling_viewer_program_resource::set_transition_unit(
+  video_context& video,
+  oglplus::texture_unit::value_type tu) {
+    set(video, _trans_loc, int(tu));
 }
 //------------------------------------------------------------------------------
 void tiling_viewer_program_resource::set_tileset_unit(

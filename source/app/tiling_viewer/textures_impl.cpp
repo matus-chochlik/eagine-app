@@ -43,13 +43,38 @@ auto tiling_viewer_tilings::texture_unit(video_context& video)
     return current().texture_unit(video);
 }
 //------------------------------------------------------------------------------
+// Transition pattern textures
+//------------------------------------------------------------------------------
+tiling_viewer_transitions::tiling_viewer_transitions(
+  execution_context& ctx,
+  video_context& video) {
+    video.with_gl([&, this](auto&, auto& GL) {
+        if(auto arg{ctx.main_context().args().find("--transition")}) {
+            load(arg, ctx, video, GL.texture_2d_array, 1);
+        } else {
+            load(
+              "PCB",
+              url{"eagitex:///TrnsPCBTex"},
+              ctx,
+              video,
+              GL.texture_2d_array,
+              1);
+        }
+    });
+}
+//------------------------------------------------------------------------------
+auto tiling_viewer_transitions::texture_unit(video_context& video)
+  -> oglplus::texture_unit::value_type {
+    return current().texture_unit(video);
+}
+//------------------------------------------------------------------------------
 // Tile-set image texture
 //------------------------------------------------------------------------------
 tiling_viewer_tilesets::tiling_viewer_tilesets(
   execution_context& ctx,
   video_context& video) {
     video.with_gl([&, this](auto&, auto& GL) {
-        int tex_unit = 1;
+        int tex_unit = 2;
         for(auto arg : ctx.main_context().args().all_like("--tileset")) {
             load(arg, ctx, video, GL.texture_2d_array, tex_unit++);
         }
