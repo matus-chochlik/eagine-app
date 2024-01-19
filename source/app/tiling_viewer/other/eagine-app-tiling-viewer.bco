@@ -11,6 +11,7 @@ function _eagine_app_tiling_viewer()
     local only_once_opts=" \
         -h --help \
         --tiling \
+        --transition \
         --tileset \
     "
 
@@ -41,6 +42,8 @@ function _eagine_app_tiling_viewer()
         -h|--help)
             return 0;;
         --tiling)
+            COMPREPLY=( "TextureId eagitex://domain/path" );;
+        --transition)
             COMPREPLY=( "TextureId eagitex://domain/path" );;
         --tileset)
             COMPREPLY=( "TextureId eagitex://domain/path" );;
