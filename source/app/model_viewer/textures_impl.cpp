@@ -54,13 +54,12 @@ model_viewer_textures::model_viewer_textures(
             load(arg, ctx, video, GL.texture_2d_array, tex_unit++);
         }
 
-        load(
-          "Checker",
-          url{"eagitex:///CheckerTex"},
-          ctx,
-          video,
-          GL.texture_2d_array,
-          tex_unit++);
+        const std::array<std::tuple<std::string, url>, 1> args{
+          {{"Checker", url{"eagitex:///CheckerTex"}}}};
+
+        for(const auto& [name, loc] : args) {
+            load(name, loc, ctx, video, GL.texture_2d_array, tex_unit++);
+        }
     });
 }
 //------------------------------------------------------------------------------

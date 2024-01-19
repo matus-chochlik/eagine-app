@@ -18,22 +18,23 @@ import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
+static int tex_unit = 0;
+//------------------------------------------------------------------------------
 // Tiling pattern textures
 //------------------------------------------------------------------------------
 tiling_viewer_tilings::tiling_viewer_tilings(
   execution_context& ctx,
   video_context& video) {
     video.with_gl([&, this](auto&, auto& GL) {
-        if(auto arg{ctx.main_context().args().find("--tiling")}) {
-            load(arg, ctx, video, GL.texture_2d_array, 0);
-        } else {
-            load(
-              "Default",
-              url{"eagitex:///Tlg1024Tex"},
-              ctx,
-              video,
-              GL.texture_2d_array,
-              0);
+        for(auto arg : ctx.main_context().args().all_like("--tiling")) {
+            load(arg, ctx, video, GL.texture_2d_array, tex_unit++);
+        }
+
+        const std::array<std::tuple<std::string, url>, 1> args{
+          {{"Default", url{"eagitex:///Tlg1024Tex"}}}};
+
+        for(const auto& [name, loc] : args) {
+            load(name, loc, ctx, video, GL.texture_2d_array, tex_unit++);
         }
     });
 }
@@ -49,16 +50,15 @@ tiling_viewer_transitions::tiling_viewer_transitions(
   execution_context& ctx,
   video_context& video) {
     video.with_gl([&, this](auto&, auto& GL) {
-        if(auto arg{ctx.main_context().args().find("--transition")}) {
-            load(arg, ctx, video, GL.texture_2d_array, 1);
-        } else {
-            load(
-              "PCB",
-              url{"eagitex:///TrnsPCBTex"},
-              ctx,
-              video,
-              GL.texture_2d_array,
-              1);
+        for(auto arg : ctx.main_context().args().all_like("--transition")) {
+            load(arg, ctx, video, GL.texture_2d_array, tex_unit++);
+        }
+
+        const std::array<std::tuple<std::string, url>, 1> args{
+          {{"PCB", url{"eagitex:///TrnsPCBTex"}}}};
+
+        for(const auto& [name, loc] : args) {
+            load(name, loc, ctx, video, GL.texture_2d_array, tex_unit++);
         }
     });
 }
@@ -74,39 +74,19 @@ tiling_viewer_tilesets::tiling_viewer_tilesets(
   execution_context& ctx,
   video_context& video) {
     video.with_gl([&, this](auto&, auto& GL) {
-        int tex_unit = 2;
         for(auto arg : ctx.main_context().args().all_like("--tileset")) {
             load(arg, ctx, video, GL.texture_2d_array, tex_unit++);
         }
 
-        load(
-          "PCB",
-          url{"eagitex:///TSPCBTex"},
-          ctx,
-          video,
-          GL.texture_2d_array,
-          tex_unit++);
-        load(
-          "Connections",
-          url{"eagitex:///TSCon16Tex"},
-          ctx,
-          video,
-          GL.texture_2d_array,
-          tex_unit++);
-        load(
-          "Nodes",
-          url{"eagitex:///TSNds16Tex"},
-          ctx,
-          video,
-          GL.texture_2d_array,
-          tex_unit++);
-        load(
-          "Blocks",
-          url{"eagitex:///TSBlk16Tex"},
-          ctx,
-          video,
-          GL.texture_2d_array,
-          tex_unit++);
+        const std::array<std::tuple<std::string, url>, 4> args{
+          {{"PCB", url{"eagitex:///TSPCBTex"}},
+           {"Connections", url{"eagitex:///TSCon16Tex"}},
+           {"Nodes", url{"eagitex:///TSNds16Tex"}},
+           {"Blocks", url{"eagitex:///TSBlk16Tex"}}}};
+
+        for(const auto& [name, loc] : args) {
+            load(name, loc, ctx, video, GL.texture_2d_array, tex_unit++);
+        }
     });
 }
 //------------------------------------------------------------------------------

@@ -25,13 +25,18 @@ model_viewer_programs::model_viewer_programs(
         load(arg, ctx, video);
     }
 
-    load("Default", url{"json:///DfaultProg"}, ctx, video);
-    load("Normal to Color", url{"json:///Nml2ClrPrg"}, ctx, video);
-    load("Tangent to Color", url{"json:///Tgt2ClrPrg"}, ctx, video);
-    load("Bi-tangent to Color", url{"json:///Btg2ClrPrg"}, ctx, video);
-    load("UV to Color", url{"json:///Wrp2ClrPrg"}, ctx, video);
-    load("Edges (UV)", url{"json:///EdgeUVProg"}, ctx, video);
-    load("Metal", url{"json:///MetalProg"}, ctx, video);
+    const std::array<std::tuple<std::string, url>, 7> args{
+      {{"Default", url{"json:///DfaultProg"}},
+       {"Normal to Color", url{"json:///Nml2ClrPrg"}},
+       {"Tangent to Color", url{"json:///Tgt2ClrPrg"}},
+       {"Bi-tangent to Color", url{"json:///Btg2ClrPrg"}},
+       {"UV to Color", url{"json:///Wrp2ClrPrg"}},
+       {"Edges (UV)", url{"json:///EdgeUVProg"}},
+       {"Metal", url{"json:///MetalProg"}}}};
+
+    for(const auto& [name, loc] : args) {
+        load(name, loc, ctx, video);
+    }
 }
 //------------------------------------------------------------------------------
 auto model_viewer_programs::apply_bindings(

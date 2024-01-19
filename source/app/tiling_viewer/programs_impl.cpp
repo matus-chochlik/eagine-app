@@ -21,7 +21,12 @@ namespace eagine::app {
 tiling_viewer_programs::tiling_viewer_programs(
   execution_context& ctx,
   video_context& video) {
-    load("Default", url{"json:///DfaultProg"}, ctx, video);
+    const std::array<std::tuple<std::string, url>, 1> args{
+      {{"Default", url{"json:///DfaultProg"}}}};
+
+    for(const auto& [name, loc] : args) {
+        load(name, loc, ctx, video);
+    }
 }
 //------------------------------------------------------------------------------
 auto tiling_viewer_programs::apply_bindings(
