@@ -1,7 +1,7 @@
-{"levels":8
-,"width":128
-,"height":128
-,"depth":16
+{"levels":9
+,"width":256
+,"height":256
+,"depth":768
 ,"channels":1
 ,"data_type":"unsigned_byte"
 ,"format":"red"
@@ -13,5 +13,5 @@
 ,"wrap_s":"repeat"
 ,"wrap_t":"repeat"
 ,"wrap_r":"repeat"
-,"images":[{"url":"eagitexi:///TSCon16Img"}]
+,"images":[{"url":"eagitexi:///TSPCBImg"}]
 ,"generate_mipmap":true}

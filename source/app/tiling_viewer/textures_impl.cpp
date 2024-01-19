@@ -80,6 +80,13 @@ tiling_viewer_tilesets::tiling_viewer_tilesets(
         }
 
         load(
+          "PCB",
+          url{"eagitex:///TSPCBTex"},
+          ctx,
+          video,
+          GL.texture_2d_array,
+          tex_unit++);
+        load(
           "Connections",
           url{"eagitex:///TSCon16Tex"},
           ctx,

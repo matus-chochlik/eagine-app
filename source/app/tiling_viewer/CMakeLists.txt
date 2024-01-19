@@ -101,6 +101,8 @@ eagine_embed_target_resources(
 		TSNds16Tex "tilesets/nodes16.eagitex"
 		TSCon16Img "tilesets/connections16.eagitexi"
 		TSCon16Tex "tilesets/connections16.eagitex"
+		TSPCBImg   "tilesets/pcb.eagitexi"
+		TSPCBTex   "tilesets/pcb.eagitex"
 	PACKED
 	ENABLE_SEARCH)
 eagine_add_exe_analysis(eagine-app-tiling-viewer)

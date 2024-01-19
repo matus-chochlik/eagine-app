@@ -12,5 +12,6 @@
 ,"mag_filter":"linear"
 ,"wrap_s":"repeat"
 ,"wrap_t":"repeat"
+,"wrap_r":"repeat"
 ,"images":[{"url":"eagitexi:///TSBlk16Img"}]
 ,"generate_mipmap":true}
