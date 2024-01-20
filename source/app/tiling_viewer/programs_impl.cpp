@@ -46,21 +46,21 @@ auto tiling_viewer_programs::set_camera(
 //------------------------------------------------------------------------------
 auto tiling_viewer_programs::set_tiling_unit(
   video_context& video,
-  oglplus::texture_unit::value_type tu) -> tiling_viewer_programs& {
+  oglplus::texture_unit tu) -> tiling_viewer_programs& {
     current().set_tiling_unit(video, tu);
     return *this;
 }
 //------------------------------------------------------------------------------
 auto tiling_viewer_programs::set_transition_unit(
   video_context& video,
-  oglplus::texture_unit::value_type tu) -> tiling_viewer_programs& {
+  oglplus::texture_unit tu) -> tiling_viewer_programs& {
     current().set_transition_unit(video, tu);
     return *this;
 }
 //------------------------------------------------------------------------------
 auto tiling_viewer_programs::set_tileset_unit(
   video_context& video,
-  oglplus::texture_unit::value_type tu) -> tiling_viewer_programs& {
+  oglplus::texture_unit tu) -> tiling_viewer_programs& {
     current().set_tileset_unit(video, tu);
     return *this;
 }

@@ -27,20 +27,27 @@ tiling_viewer_tilings::tiling_viewer_tilings(
   video_context& video) {
     video.with_gl([&, this](auto&, auto& GL) {
         for(auto arg : ctx.main_context().args().all_like("--tiling")) {
-            load(arg, ctx, video, GL.texture_2d_array, tex_unit++);
+            load(
+              arg, ctx, video, GL.texture_2d_array, GL.texture0 + tex_unit++);
         }
 
         const std::array<std::tuple<std::string, url>, 1> args{
           {{"Default", url{"eagitex:///Tlg1024Tex"}}}};
 
         for(const auto& [name, loc] : args) {
-            load(name, loc, ctx, video, GL.texture_2d_array, tex_unit++);
+            load(
+              name,
+              loc,
+              ctx,
+              video,
+              GL.texture_2d_array,
+              GL.texture0 + tex_unit++);
         }
     });
 }
 //------------------------------------------------------------------------------
 auto tiling_viewer_tilings::texture_unit(video_context& video)
-  -> oglplus::texture_unit::value_type {
+  -> oglplus::texture_unit {
     return current().texture_unit(video);
 }
 //------------------------------------------------------------------------------
@@ -51,20 +58,27 @@ tiling_viewer_transitions::tiling_viewer_transitions(
   video_context& video) {
     video.with_gl([&, this](auto&, auto& GL) {
         for(auto arg : ctx.main_context().args().all_like("--transition")) {
-            load(arg, ctx, video, GL.texture_2d_array, tex_unit++);
+            load(
+              arg, ctx, video, GL.texture_2d_array, GL.texture0 + tex_unit++);
         }
 
         const std::array<std::tuple<std::string, url>, 1> args{
           {{"PCB", url{"eagitex:///TrnsPCBTex"}}}};
 
         for(const auto& [name, loc] : args) {
-            load(name, loc, ctx, video, GL.texture_2d_array, tex_unit++);
+            load(
+              name,
+              loc,
+              ctx,
+              video,
+              GL.texture_2d_array,
+              GL.texture0 + tex_unit++);
         }
     });
 }
 //------------------------------------------------------------------------------
 auto tiling_viewer_transitions::texture_unit(video_context& video)
-  -> oglplus::texture_unit::value_type {
+  -> oglplus::texture_unit {
     return current().texture_unit(video);
 }
 //------------------------------------------------------------------------------
@@ -75,7 +89,8 @@ tiling_viewer_tilesets::tiling_viewer_tilesets(
   video_context& video) {
     video.with_gl([&, this](auto&, auto& GL) {
         for(auto arg : ctx.main_context().args().all_like("--tileset")) {
-            load(arg, ctx, video, GL.texture_2d_array, tex_unit++);
+            load(
+              arg, ctx, video, GL.texture_2d_array, GL.texture0 + tex_unit++);
         }
 
         const std::array<std::tuple<std::string, url>, 4> args{
@@ -85,13 +100,19 @@ tiling_viewer_tilesets::tiling_viewer_tilesets(
            {"Blocks", url{"eagitex:///TSBlk16Tex"}}}};
 
         for(const auto& [name, loc] : args) {
-            load(name, loc, ctx, video, GL.texture_2d_array, tex_unit++);
+            load(
+              name,
+              loc,
+              ctx,
+              video,
+              GL.texture_2d_array,
+              GL.texture0 + tex_unit++);
         }
     });
 }
 //------------------------------------------------------------------------------
 auto tiling_viewer_tilesets::texture_unit(video_context& video)
-  -> oglplus::texture_unit::value_type {
+  -> oglplus::texture_unit {
     return current().texture_unit(video);
 }
 //------------------------------------------------------------------------------

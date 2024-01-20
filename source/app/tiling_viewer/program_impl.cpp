@@ -39,7 +39,7 @@ auto tiling_viewer_program::set_camera(
 //------------------------------------------------------------------------------
 auto tiling_viewer_program::set_tiling_unit(
   video_context& video,
-  oglplus::texture_unit::value_type tu) -> tiling_viewer_program& {
+  oglplus::texture_unit tu) -> tiling_viewer_program& {
     assert(_impl);
     _impl->set_tiling_unit(video, tu);
     return *this;
@@ -47,7 +47,7 @@ auto tiling_viewer_program::set_tiling_unit(
 //------------------------------------------------------------------------------
 auto tiling_viewer_program::set_transition_unit(
   video_context& video,
-  oglplus::texture_unit::value_type tu) -> tiling_viewer_program& {
+  oglplus::texture_unit tu) -> tiling_viewer_program& {
     assert(_impl);
     _impl->set_transition_unit(video, tu);
     return *this;
@@ -55,7 +55,7 @@ auto tiling_viewer_program::set_transition_unit(
 //------------------------------------------------------------------------------
 auto tiling_viewer_program::set_tileset_unit(
   video_context& video,
-  oglplus::texture_unit::value_type tu) -> tiling_viewer_program& {
+  oglplus::texture_unit tu) -> tiling_viewer_program& {
     assert(_impl);
     _impl->set_tileset_unit(video, tu);
     return *this;
@@ -77,12 +77,9 @@ public:
     void apply_bindings(video_context&, const oglplus::vertex_attrib_bindings&)
       final;
     void set_camera(video_context&, const mat4&) final;
-    void set_tiling_unit(video_context&, oglplus::texture_unit::value_type)
-      final;
-    void set_transition_unit(video_context&, oglplus::texture_unit::value_type)
-      final;
-    void set_tileset_unit(video_context&, oglplus::texture_unit::value_type)
-      final;
+    void set_tiling_unit(video_context&, oglplus::texture_unit) final;
+    void set_transition_unit(video_context&, oglplus::texture_unit) final;
+    void set_tileset_unit(video_context&, oglplus::texture_unit) final;
     void clean_up(execution_context&, video_context&) final;
 
 private:
@@ -139,20 +136,20 @@ void tiling_viewer_program_resource::set_camera(
 //------------------------------------------------------------------------------
 void tiling_viewer_program_resource::set_tiling_unit(
   video_context& video,
-  oglplus::texture_unit::value_type tu) {
-    set(video, _tiling_loc, int(tu));
+  oglplus::texture_unit tu) {
+    set(video, _tiling_loc, tu);
 }
 //------------------------------------------------------------------------------
 void tiling_viewer_program_resource::set_transition_unit(
   video_context& video,
-  oglplus::texture_unit::value_type tu) {
-    set(video, _trans_loc, int(tu));
+  oglplus::texture_unit tu) {
+    set(video, _trans_loc, tu);
 }
 //------------------------------------------------------------------------------
 void tiling_viewer_program_resource::set_tileset_unit(
   video_context& video,
-  oglplus::texture_unit::value_type tu) {
-    set(video, _tileset_loc, int(tu));
+  oglplus::texture_unit tu) {
+    set(video, _tileset_loc, tu);
 }
 //------------------------------------------------------------------------------
 void tiling_viewer_program_resource::clean_up(

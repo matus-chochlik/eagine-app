@@ -126,13 +126,13 @@ void model_viewer_program_resource::set_camera(
 void model_viewer_program_resource::set_cube_map_unit(
   video_context& video,
   oglplus::texture_unit tu) {
-    set(video, _cube_map_loc, int(tu));
+    set(video, _cube_map_loc, tu);
 }
 //------------------------------------------------------------------------------
 void model_viewer_program_resource::set_texture_unit(
   video_context& video,
   oglplus::texture_unit tu) {
-    set(video, _texture0_loc, int(tu));
+    set(video, _texture0_loc, tu);
 }
 //------------------------------------------------------------------------------
 void model_viewer_program_resource::clean_up(

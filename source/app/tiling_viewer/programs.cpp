@@ -27,13 +27,13 @@ public:
     auto set_camera(video_context&, orbiting_camera& camera)
       -> tiling_viewer_programs&;
 
-    auto set_tiling_unit(video_context&, oglplus::texture_unit::value_type)
+    auto set_tiling_unit(video_context&, oglplus::texture_unit)
       -> tiling_viewer_programs&;
 
-    auto set_transition_unit(video_context&, oglplus::texture_unit::value_type)
+    auto set_transition_unit(video_context&, oglplus::texture_unit)
       -> tiling_viewer_programs&;
 
-    auto set_tileset_unit(video_context&, oglplus::texture_unit::value_type)
+    auto set_tileset_unit(video_context&, oglplus::texture_unit)
       -> tiling_viewer_programs&;
 };
 //------------------------------------------------------------------------------

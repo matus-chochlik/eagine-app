@@ -16,8 +16,7 @@ import :resource;
 namespace eagine::app {
 //------------------------------------------------------------------------------
 struct tiling_viewer_texture_intf : tiling_viewer_resource_intf {
-    virtual auto texture_unit(video_context&)
-      -> oglplus::texture_unit::value_type = 0;
+    virtual auto texture_unit(video_context&) -> oglplus::texture_unit = 0;
 };
 using tiling_viewer_texture_holder = unique_holder<tiling_viewer_texture_intf>;
 //------------------------------------------------------------------------------
@@ -28,7 +27,7 @@ class tiling_viewer_texture
 public:
     using base::base;
 
-    auto texture_unit(video_context&) -> oglplus::texture_unit::value_type;
+    auto texture_unit(video_context&) -> oglplus::texture_unit;
 };
 //------------------------------------------------------------------------------
 auto make_viewer_resource(
@@ -37,6 +36,6 @@ auto make_viewer_resource(
   execution_context&,
   video_context&,
   oglplus::texture_target,
-  oglplus::texture_unit::value_type) -> tiling_viewer_texture_holder;
+  oglplus::texture_unit) -> tiling_viewer_texture_holder;
 //------------------------------------------------------------------------------
 } // namespace eagine::app

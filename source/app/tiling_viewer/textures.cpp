@@ -20,7 +20,7 @@ export class tiling_viewer_tilings
 public:
     tiling_viewer_tilings(execution_context&, video_context&);
 
-    auto texture_unit(video_context&) -> oglplus::texture_unit::value_type;
+    auto texture_unit(video_context&) -> oglplus::texture_unit;
 };
 //------------------------------------------------------------------------------
 export class tiling_viewer_transitions
@@ -28,7 +28,7 @@ export class tiling_viewer_transitions
 public:
     tiling_viewer_transitions(execution_context&, video_context&);
 
-    auto texture_unit(video_context&) -> oglplus::texture_unit::value_type;
+    auto texture_unit(video_context&) -> oglplus::texture_unit;
 };
 //------------------------------------------------------------------------------
 export class tiling_viewer_tilesets
@@ -36,7 +36,7 @@ export class tiling_viewer_tilesets
 public:
     tiling_viewer_tilesets(execution_context&, video_context&);
 
-    auto texture_unit(video_context&) -> oglplus::texture_unit::value_type;
+    auto texture_unit(video_context&) -> oglplus::texture_unit;
 };
 //------------------------------------------------------------------------------
 } // namespace eagine::app
