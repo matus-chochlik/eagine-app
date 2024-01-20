@@ -39,7 +39,7 @@ auto model_viewer_program::set_camera(
 //------------------------------------------------------------------------------
 auto model_viewer_program::set_cube_map_unit(
   video_context& video,
-  oglplus::texture_unit::value_type tu) -> model_viewer_program& {
+  oglplus::texture_unit tu) -> model_viewer_program& {
     assert(_impl);
     _impl->set_cube_map_unit(video, tu);
     return *this;
@@ -47,7 +47,7 @@ auto model_viewer_program::set_cube_map_unit(
 //------------------------------------------------------------------------------
 auto model_viewer_program::set_texture_unit(
   video_context& video,
-  oglplus::texture_unit::value_type tu) -> model_viewer_program& {
+  oglplus::texture_unit tu) -> model_viewer_program& {
     assert(_impl);
     _impl->set_texture_unit(video, tu);
     return *this;
@@ -69,10 +69,8 @@ public:
     void apply_bindings(video_context&, const oglplus::vertex_attrib_bindings&)
       final;
     void set_camera(video_context&, const mat4&) final;
-    void set_cube_map_unit(video_context&, oglplus::texture_unit::value_type)
-      final;
-    void set_texture_unit(video_context&, oglplus::texture_unit::value_type)
-      final;
+    void set_cube_map_unit(video_context&, oglplus::texture_unit) final;
+    void set_texture_unit(video_context&, oglplus::texture_unit) final;
     void clean_up(execution_context&, video_context&) final;
 
 private:
@@ -127,13 +125,13 @@ void model_viewer_program_resource::set_camera(
 //------------------------------------------------------------------------------
 void model_viewer_program_resource::set_cube_map_unit(
   video_context& video,
-  oglplus::texture_unit::value_type tu) {
+  oglplus::texture_unit tu) {
     set(video, _cube_map_loc, int(tu));
 }
 //------------------------------------------------------------------------------
 void model_viewer_program_resource::set_texture_unit(
   video_context& video,
-  oglplus::texture_unit::value_type tu) {
+  oglplus::texture_unit tu) {
     set(video, _texture0_loc, int(tu));
 }
 //------------------------------------------------------------------------------

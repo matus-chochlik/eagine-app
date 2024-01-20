@@ -22,6 +22,14 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 //  Wrapper
 //------------------------------------------------------------------------------
+auto model_viewer_background::set_skybox_unit(
+  video_context& video,
+  oglplus::texture_unit tu) -> model_viewer_background& {
+    assert(_impl);
+    _impl->set_skybox_unit(video, tu);
+    return *this;
+}
+//------------------------------------------------------------------------------
 auto model_viewer_background::clear(
   video_context& video,
   orbiting_camera& camera) -> model_viewer_background& {
@@ -39,6 +47,7 @@ public:
     auto is_loaded() noexcept -> bool final;
     void load_if_needed(execution_context&, video_context&) final;
     void use(video_context&) final;
+    void set_skybox_unit(video_context&, oglplus::texture_unit) final;
     void clear(video_context&, const mat4& camera, const float distance) final;
     void clean_up(execution_context&, video_context&) final;
     auto settings_height() -> float final;
@@ -88,6 +97,10 @@ void model_viewer_default_background::load_if_needed(
   video_context&) {}
 //------------------------------------------------------------------------------
 void model_viewer_default_background::use(video_context&) {}
+//------------------------------------------------------------------------------
+void model_viewer_default_background::set_skybox_unit(
+  video_context&,
+  oglplus::texture_unit) {}
 //------------------------------------------------------------------------------
 void model_viewer_default_background::clear(
   video_context& video,
@@ -153,6 +166,7 @@ public:
     auto is_loaded() noexcept -> bool final;
     void load_if_needed(execution_context&, video_context&) final;
     void use(video_context&) final;
+    void set_skybox_unit(video_context&, oglplus::texture_unit) final;
     void clear(video_context&, const mat4& camera, const float distance) final;
     void clean_up(execution_context&, video_context&) final;
     auto settings_height() -> float final;
@@ -176,6 +190,12 @@ void model_viewer_skybox_background::load_if_needed(
   video_context&) {}
 //------------------------------------------------------------------------------
 void model_viewer_skybox_background::use(video_context&) {}
+//------------------------------------------------------------------------------
+void model_viewer_skybox_background::set_skybox_unit(
+  video_context& video,
+  oglplus::texture_unit tu) {
+    _bg.set_skybox_unit(video, tu);
+}
 //------------------------------------------------------------------------------
 void model_viewer_skybox_background::clear(
   video_context& video,

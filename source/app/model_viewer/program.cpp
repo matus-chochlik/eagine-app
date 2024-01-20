@@ -21,12 +21,8 @@ struct model_viewer_program_intf : model_viewer_resource_intf {
       video_context&,
       const oglplus::vertex_attrib_bindings&) = 0;
     virtual void set_camera(video_context&, const mat4&) = 0;
-    virtual void set_cube_map_unit(
-      video_context&,
-      oglplus::texture_unit::value_type) = 0;
-    virtual void set_texture_unit(
-      video_context&,
-      oglplus::texture_unit::value_type) = 0;
+    virtual void set_cube_map_unit(video_context&, oglplus::texture_unit) = 0;
+    virtual void set_texture_unit(video_context&, oglplus::texture_unit) = 0;
 };
 using model_viewer_program_holder = unique_holder<model_viewer_program_intf>;
 //------------------------------------------------------------------------------
@@ -45,10 +41,10 @@ public:
     auto set_camera(video_context&, orbiting_camera& camera)
       -> model_viewer_program&;
 
-    auto set_cube_map_unit(video_context&, oglplus::texture_unit::value_type)
+    auto set_cube_map_unit(video_context&, oglplus::texture_unit)
       -> model_viewer_program&;
 
-    auto set_texture_unit(video_context&, oglplus::texture_unit::value_type)
+    auto set_texture_unit(video_context&, oglplus::texture_unit)
       -> model_viewer_program&;
 };
 //------------------------------------------------------------------------------

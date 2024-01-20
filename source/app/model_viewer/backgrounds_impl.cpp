@@ -24,6 +24,13 @@ model_viewer_backgrounds::model_viewer_backgrounds(
     load("Skybox", url{"eagibg:///Skybox"}, ctx, video);
 }
 //------------------------------------------------------------------------------
+auto model_viewer_backgrounds::set_skybox_unit(
+  video_context& video,
+  oglplus::texture_unit tu) -> model_viewer_backgrounds& {
+    current().set_skybox_unit(video, tu);
+    return *this;
+}
+//------------------------------------------------------------------------------
 auto model_viewer_backgrounds::clear(
   video_context& video,
   orbiting_camera& camera) -> model_viewer_backgrounds& {

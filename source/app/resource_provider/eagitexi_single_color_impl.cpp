@@ -46,14 +46,23 @@ struct single_rgb8_pixel_provider_factory : pixel_provider_factory_interface {
 
     auto has_resource(const url& locator) noexcept -> bool final {
         const auto& q{locator.query()};
-        return valid_clr(q.arg_value_as<int>("r").value_or(0)) and
-               valid_clr(q.arg_value_as<int>("g").value_or(0)) and
+        using math::name_to_rgb;
+        if(q.decoded_arg_value("color").and_then(name_to_rgb).has_value()) {
+            return true;
+        }
+        return valid_clr(q.arg_value_as<int>("r").value_or(0)) or
+               valid_clr(q.arg_value_as<int>("g").value_or(0)) or
                valid_clr(q.arg_value_as<int>("b").value_or(0));
     }
 
     auto make_provider(const url& locator)
       -> unique_holder<pixel_provider_interface> final {
         const auto& q{locator.query()};
+        using math::name_to_rgb_int;
+        if(const auto rgb{q.arg_value("color").and_then(name_to_rgb_int)}) {
+            const auto [r, g, b] = *rgb;
+            return {hold<single_rgb8_pixel_provider>, r, g, b};
+        }
         return {
           hold<single_rgb8_pixel_provider>,
           q.arg_value_as<int>("r").value_or(1),
@@ -140,11 +149,17 @@ auto single_rgb8_eagitex_provider::has_resource(const url& locator) noexcept
     if(locator.has_scheme("eagitex") and locator.has_path("/2d_single_rgb8")) {
         const auto& q{locator.query()};
         const bool args_ok =
-          valid_color(q.arg_value_as<int>("r").value_or(0)) and
-          valid_color(q.arg_value_as<int>("g").value_or(0)) and
-          valid_color(q.arg_value_as<int>("b").value_or(0)) and
           valid_dimension(q.arg_value_as<int>("size").value_or(1));
-        return args_ok;
+        using math::name_to_rgb;
+        if(q.decoded_arg_value("color").and_then(name_to_rgb).has_value()) {
+            return args_ok;
+        }
+        if(
+          valid_color(q.arg_value_as<int>("r").value_or(0)) or
+          valid_color(q.arg_value_as<int>("g").value_or(0)) or
+          valid_color(q.arg_value_as<int>("b").value_or(0))) {
+            return args_ok;
+        }
     }
     return false;
 }
@@ -152,10 +167,16 @@ auto single_rgb8_eagitex_provider::has_resource(const url& locator) noexcept
 auto single_rgb8_eagitex_provider::get_resource_io(const url& locator)
   -> unique_holder<msgbus::source_blob_io> {
     const auto& q{locator.query()};
+    const auto size{q.arg_value_as<int>("size").value_or(64)};
+    using math::name_to_rgb_int;
+    if(const auto rgb{q.decoded_arg_value("color").and_then(name_to_rgb_int)}) {
+        const auto [r, g, b] = *rgb;
+        return {hold<single_rgb8_eagitex_io>, as_parent(), size, r, g, b};
+    }
     return {
       hold<single_rgb8_eagitex_io>,
       as_parent(),
-      q.arg_value_as<int>("size").value_or(0),
+      size,
       q.arg_value_as<int>("r").value_or(0),
       q.arg_value_as<int>("g").value_or(0),
       q.arg_value_as<int>("b").value_or(0)};

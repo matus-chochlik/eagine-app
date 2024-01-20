@@ -16,8 +16,7 @@ import :resource;
 namespace eagine::app {
 //------------------------------------------------------------------------------
 struct model_viewer_texture_intf : model_viewer_resource_intf {
-    virtual auto texture_unit(video_context&)
-      -> oglplus::texture_unit::value_type = 0;
+    virtual auto texture_unit(video_context&) -> oglplus::texture_unit = 0;
 };
 using model_viewer_texture_holder = unique_holder<model_viewer_texture_intf>;
 //------------------------------------------------------------------------------
@@ -28,7 +27,7 @@ class model_viewer_texture
 public:
     using base::base;
 
-    auto texture_unit(video_context&) -> oglplus::texture_unit::value_type;
+    auto texture_unit(video_context&) -> oglplus::texture_unit;
 };
 //------------------------------------------------------------------------------
 auto make_viewer_resource(
@@ -37,6 +36,6 @@ auto make_viewer_resource(
   execution_context&,
   video_context&,
   oglplus::texture_target,
-  oglplus::texture_unit::value_type) -> model_viewer_texture_holder;
+  oglplus::texture_unit) -> model_viewer_texture_holder;
 //------------------------------------------------------------------------------
 } // namespace eagine::app

@@ -79,10 +79,11 @@ void model_viewer::_on_loaded() noexcept {
 void model_viewer::_on_selected() noexcept {
     if(_backgrounds and _models and _programs and _cube_maps and _textures) {
         _init_camera(_models.bounding_sphere());
-        _programs.use(_video);
-        _programs.apply_bindings(_video, _models.attrib_bindings());
+        _backgrounds.set_skybox_unit(_video, _cube_maps.texture_unit(_video));
         _cube_maps.use(_video);
         _textures.use(_video);
+        _programs.use(_video);
+        _programs.apply_bindings(_video, _models.attrib_bindings());
         _programs.set_cube_map_unit(_video, _cube_maps.texture_unit(_video));
         _programs.set_texture_unit(_video, _textures.texture_unit(_video));
     }
