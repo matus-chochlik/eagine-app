@@ -34,7 +34,7 @@ public:
     static auto is_valid_locator(const url& locator) noexcept -> bool;
 
     auto prepare() noexcept -> bool final {
-        return false;
+        return true;
     }
 
     auto get_width() noexcept -> valid_if_positive<int> final {
@@ -118,7 +118,7 @@ auto tiling_transition_mask_factory::make_mask(const url& locator)
 // tiling transition image I/O
 //------------------------------------------------------------------------------
 class eagitexi_tiling_transition_io final
-  : public simple_buffer_source_blob_io {
+  : public compressed_buffer_source_blob_io {
 public:
     eagitexi_tiling_transition_io(
       main_ctx_parent,
@@ -151,15 +151,25 @@ private:
     int _height;
     int _x{0};
     int _y{0};
+    bool _done{false};
 };
 //------------------------------------------------------------------------------
 eagitexi_tiling_transition_io::eagitexi_tiling_transition_io(
   main_ctx_parent parent,
   shared_holder<tiling_transition_mask> mask) noexcept
-  : simple_buffer_source_blob_io{"TiTrTexIO", parent, _buf_size(mask)}
+  : compressed_buffer_source_blob_io{"TiTrTexIO", parent, _buf_size(mask)}
   , _mask{std::move(mask)}
   , _width{_w(_mask)}
-  , _height{_h(_mask)} {}
+  , _height{_h(_mask)} {
+    append(R"({"level":0,"channels":1,"data_type":"unsigned_byte")");
+    append(R"(,"tag":["transition"])");
+    append(R"(,"format":"red_integer","iformat":"r8ui")");
+    std::stringstream hdr;
+    hdr << R"(,"width":)" << _width;
+    hdr << R"(,"height":)" << _height;
+    append(hdr.str());
+    append(R"(,"data_filter":"zlib"})");
+}
 //------------------------------------------------------------------------------
 auto eagitexi_tiling_transition_io::level(int x, int y, int ox, int oy) noexcept
   -> bool {
@@ -211,16 +221,22 @@ auto eagitexi_tiling_transition_io::_element(int x, int y) noexcept -> byte {
 }
 //------------------------------------------------------------------------------
 auto eagitexi_tiling_transition_io::prepare() noexcept -> bool {
-    if(not _mask.transform(&tiling_transition_mask::prepare).or_false()) {
+    if(_mask->prepare()) {
         for(int i = 0; i < 1000; ++i) {
             if(_y >= _height) {
-                return false;
+                if(_done) {
+                    return false;
+                } else {
+                    finish();
+                    _done = true;
+                    break;
+                }
             }
-        }
-        append(_element(_x, _y));
-        if(++_x >= _width) {
-            _x = 0;
-            ++_y;
+            compress(_element(_x, _y));
+            if(++_x >= _width) {
+                _x = 0;
+                ++_y;
+            }
         }
     }
 

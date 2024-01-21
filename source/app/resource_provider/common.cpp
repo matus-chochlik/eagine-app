@@ -60,6 +60,30 @@ private:
     main_ctx_buffer _content;
 };
 //------------------------------------------------------------------------------
+struct compressed_buffer_source_blob_io : simple_buffer_source_blob_io {
+protected:
+    compressed_buffer_source_blob_io(
+      identifier id,
+      main_ctx_parent parent,
+      span_size_t size) noexcept;
+
+    compressed_buffer_source_blob_io(
+      identifier id,
+      main_ctx_parent parent,
+      span_size_t size,
+      std::function<memory::buffer(memory::buffer)>) noexcept;
+
+    void compress(const memory::const_block) noexcept;
+    void compress(const string_view) noexcept;
+    void compress(const byte) noexcept;
+    void finish() noexcept;
+
+private:
+    auto _append_compressed(const memory::const_block) noexcept -> bool;
+    auto _compress_handler() noexcept;
+    stream_compression _compress;
+};
+//------------------------------------------------------------------------------
 class ostream_io final : public msgbus::source_blob_io {
 public:
     auto ostream() noexcept -> std::ostream&;

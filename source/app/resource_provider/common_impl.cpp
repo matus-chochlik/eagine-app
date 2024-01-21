@@ -77,6 +77,59 @@ auto simple_buffer_source_blob_io::fetch_fragment(
     return copy(head(skip(view(_content), offs), dst.size()), dst).size();
 }
 //------------------------------------------------------------------------------
+// compressed_buffer_source_blob_io
+//------------------------------------------------------------------------------
+auto compressed_buffer_source_blob_io::_append_compressed(
+  const memory::const_block packed) noexcept -> bool {
+    this->append(packed);
+    return true;
+}
+//------------------------------------------------------------------------------
+auto compressed_buffer_source_blob_io::_compress_handler() noexcept {
+    return data_compressor::data_handler{
+      this,
+      member_function_constant_t<
+        &compressed_buffer_source_blob_io::_append_compressed>{}};
+}
+//------------------------------------------------------------------------------
+compressed_buffer_source_blob_io::compressed_buffer_source_blob_io(
+  identifier id,
+  main_ctx_parent parent,
+  span_size_t size) noexcept
+  : simple_buffer_source_blob_io{id, parent, size}
+  , _compress{
+      main_context().compressor(),
+      _compress_handler(),
+      default_data_compression_method()} {}
+//------------------------------------------------------------------------------
+compressed_buffer_source_blob_io::compressed_buffer_source_blob_io(
+  identifier id,
+  main_ctx_parent parent,
+  span_size_t size,
+  std::function<memory::buffer(memory::buffer)> func) noexcept
+  : simple_buffer_source_blob_io{id, parent, size, func}
+  , _compress{
+      main_context().compressor(),
+      _compress_handler(),
+      default_data_compression_method()} {}
+//------------------------------------------------------------------------------
+void compressed_buffer_source_blob_io::compress(
+  const memory::const_block blk) noexcept {
+    _compress.next(blk, data_compression_level::highest);
+}
+//------------------------------------------------------------------------------
+void compressed_buffer_source_blob_io::compress(const string_view str) noexcept {
+    compress(as_bytes(str));
+}
+//------------------------------------------------------------------------------
+void compressed_buffer_source_blob_io::compress(const byte byt) noexcept {
+    compress(view_one(byt));
+}
+//------------------------------------------------------------------------------
+void compressed_buffer_source_blob_io::finish() noexcept {
+    _compress.finish();
+}
+//------------------------------------------------------------------------------
 // ostream_io
 //------------------------------------------------------------------------------
 auto ostream_io::ostream() noexcept -> std::ostream& {
