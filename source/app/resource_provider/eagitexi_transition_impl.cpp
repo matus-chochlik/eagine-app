@@ -134,9 +134,14 @@ public:
 private:
     auto value(int x, int y, int ox, int oy) noexcept -> bool;
 
-    auto _code(const std::array<std::array<bool, 3>, 3>& k) noexcept -> byte;
+    static auto _code(const std::array<std::array<bool, 3>, 3>& k) noexcept
+      -> byte;
+
+    auto _code_index(byte c) noexcept -> byte;
 
     auto _element(int x, int y) noexcept -> byte;
+
+    static auto _make_code_map() noexcept -> flat_set<byte>;
 
     static auto _w(const shared_holder<tiling_transition_mask>& m) noexcept {
         return m.member(&tiling_transition_mask::get_width).value_or(64);
@@ -151,9 +156,10 @@ private:
         return _w(m) * _h(m);
     }
 
-    shared_holder<tiling_transition_mask> _mask;
-    int _width;
-    int _height;
+    const flat_set<byte> _code_map{_make_code_map()};
+    const shared_holder<tiling_transition_mask> _mask;
+    const int _width;
+    const int _height;
     int _x{0};
     int _y{0};
     bool _done{false};
@@ -167,7 +173,7 @@ eagitexi_tiling_transition_io::eagitexi_tiling_transition_io(
   , _width{_w(_mask)}
   , _height{_h(_mask)} {
     append(R"({"level":0,"channels":1,"data_type":"unsigned_byte")");
-    append(R"(,"tag":["transition"])");
+    append(R"(,"tag":["generator","transition"])");
     append(R"(,"format":"red_integer","iformat":"r8ui")");
     std::stringstream hdr;
     hdr << R"(,"width":)" << _width;
@@ -181,6 +187,24 @@ auto eagitexi_tiling_transition_io::value(int x, int y, int ox, int oy) noexcept
     assert(_mask);
     return _mask->value(
       (x + _width + ox) % _width, (y + _height + oy) % _height);
+}
+//------------------------------------------------------------------------------
+auto eagitexi_tiling_transition_io::_make_code_map() noexcept
+  -> flat_set<byte> {
+    flat_set<byte> result;
+    result.reserve(48);
+
+    std::array<std::array<bool, 3>, 3> k{};
+    for(std::size_t i = 0; i < 512; ++i) {
+        for(std::size_t by = 0; by < 3; ++by) {
+            for(std::size_t bx = 0; bx < 3; ++bx) {
+                const std::size_t b{(0x1U << (by * 3U + bx))};
+                k[bx][by] = ((i & b) == b);
+            }
+        }
+        result.insert(_code(k));
+    }
+    return result;
 }
 //------------------------------------------------------------------------------
 auto eagitexi_tiling_transition_io::_code(
@@ -218,11 +242,16 @@ auto eagitexi_tiling_transition_io::_code(
     return b;
 }
 //------------------------------------------------------------------------------
+auto eagitexi_tiling_transition_io::_code_index(byte c) noexcept -> byte {
+    using std::distance;
+    return limit_cast<byte>(distance(_code_map.begin(), _code_map.find(c)));
+}
+//------------------------------------------------------------------------------
 auto eagitexi_tiling_transition_io::_element(int x, int y) noexcept -> byte {
-    return _code(
+    return _code_index(_code(
       {{{{value(x, y, -1, -1), value(x, y, -1, 0), value(x, y, -1, 1)}},
         {{value(x, y, 0, -1), value(x, y, 0, 0), value(x, y, 0, 1)}},
-        {{value(x, y, 1, -1), value(x, y, 1, 0), value(x, y, 1, 1)}}}});
+        {{value(x, y, 1, -1), value(x, y, 1, 0), value(x, y, 1, 1)}}}}));
 }
 //------------------------------------------------------------------------------
 auto eagitexi_tiling_transition_io::prepare() noexcept -> bool {
