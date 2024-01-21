@@ -21,7 +21,8 @@ struct tiling_transition_mask : interface<tiling_transition_mask> {
     virtual auto prepare() noexcept -> bool = 0;
     virtual auto get_width() noexcept -> valid_if_positive<int> = 0;
     virtual auto get_height() noexcept -> valid_if_positive<int> = 0;
-    virtual auto level(int x, int y) noexcept -> bool = 0;
+    virtual auto batch_size() noexcept -> int = 0;
+    virtual auto value(int x, int y) noexcept -> bool = 0;
 };
 //------------------------------------------------------------------------------
 class tiling_transition_checker final : public tiling_transition_mask {
@@ -43,8 +44,13 @@ public:
     auto get_height() noexcept -> valid_if_positive<int> final {
         return _height;
     }
-    auto level(int x, int y) noexcept -> bool final {
-        return (x / 4) + (y / 4) % 2 != 0;
+    auto batch_size() noexcept -> int final {
+        return 25000;
+    }
+    auto value(int x, int y) noexcept -> bool final {
+        x /= 4;
+        y /= 4;
+        return ((x % 2) + (y % 2)) % 2 != 0;
     }
 
 private:
@@ -62,8 +68,7 @@ tiling_transition_checker::tiling_transition_checker(
 auto tiling_transition_checker::is_valid_locator(const url& locator) noexcept
   -> bool {
     const auto& q{locator.query()};
-    return q.arg_has_value("source", "checker") and q.has_arg<int>("width") and
-           q.has_arg<int>("height");
+    return q.arg_has_value("source", "checker");
 }
 //------------------------------------------------------------------------------
 // transition mask factory
@@ -127,7 +132,7 @@ public:
     auto prepare() noexcept -> bool final;
 
 private:
-    auto level(int x, int y, int ox, int oy) noexcept -> bool;
+    auto value(int x, int y, int ox, int oy) noexcept -> bool;
 
     auto _code(const std::array<std::array<bool, 3>, 3>& k) noexcept -> byte;
 
@@ -171,10 +176,10 @@ eagitexi_tiling_transition_io::eagitexi_tiling_transition_io(
     append(R"(,"data_filter":"zlib"})");
 }
 //------------------------------------------------------------------------------
-auto eagitexi_tiling_transition_io::level(int x, int y, int ox, int oy) noexcept
+auto eagitexi_tiling_transition_io::value(int x, int y, int ox, int oy) noexcept
   -> bool {
     assert(_mask);
-    return _mask->level(
+    return _mask->value(
       (x + _width + ox) % _width, (y + _height + oy) % _height);
 }
 //------------------------------------------------------------------------------
@@ -215,14 +220,14 @@ auto eagitexi_tiling_transition_io::_code(
 //------------------------------------------------------------------------------
 auto eagitexi_tiling_transition_io::_element(int x, int y) noexcept -> byte {
     return _code(
-      {{{{level(x, y, -1, -1), level(x, y, -1, 0), level(x, y, -1, 1)}},
-        {{level(x, y, 0, -1), level(x, y, 0, 0), level(x, y, 0, 1)}},
-        {{level(x, y, 1, -1), level(x, y, 1, 0), level(x, y, 1, 1)}}}});
+      {{{{value(x, y, -1, -1), value(x, y, -1, 0), value(x, y, -1, 1)}},
+        {{value(x, y, 0, -1), value(x, y, 0, 0), value(x, y, 0, 1)}},
+        {{value(x, y, 1, -1), value(x, y, 1, 0), value(x, y, 1, 1)}}}});
 }
 //------------------------------------------------------------------------------
 auto eagitexi_tiling_transition_io::prepare() noexcept -> bool {
     if(_mask->prepare()) {
-        for(int i = 0; i < 1000; ++i) {
+        for(int i = 0, n = _mask->batch_size(); i < n; ++i) {
             if(_y >= _height) {
                 if(_done) {
                     return false;
