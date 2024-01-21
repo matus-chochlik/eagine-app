@@ -37,6 +37,8 @@ auto provider_eagitexi_tiling(const provider_parameters&)
   -> unique_holder<resource_provider_interface>;
 auto provider_eagitexi_tiling_noise(const provider_parameters&)
   -> unique_holder<resource_provider_interface>;
+auto provider_eagitexi_tiling_transition(const provider_parameters& p)
+  -> unique_holder<resource_provider_interface>;
 //------------------------------------------------------------------------------
 auto provider_eagitexi_2d_checks_r8(const provider_parameters& parent)
   -> unique_holder<resource_provider_interface>;

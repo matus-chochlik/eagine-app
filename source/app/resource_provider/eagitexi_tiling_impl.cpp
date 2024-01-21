@@ -225,7 +225,6 @@ void eagitexi_tiling_provider::for_each_locator(
     callback("eagitexi:///tiling");
 }
 //------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
 // tiling image provider
 //------------------------------------------------------------------------------
 auto provider_eagitexi_tiling(const provider_parameters& p)

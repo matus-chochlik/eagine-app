@@ -50,6 +50,7 @@ eagine_add_module(
 		eagitexi_checks
 		eagitexi_stripes
 		eagitexi_tiling
+		eagitexi_transition
 		eagitexi_sphere_volume
 		text_lorem_ipsum
 		text_resource_list
