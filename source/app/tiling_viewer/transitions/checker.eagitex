@@ -1,0 +1,13 @@
+{"levels":1
+,"width":1024
+,"height":1024
+,"channels":1
+,"data_type":"unsigned_byte"
+,"min_filter":"nearest"
+,"mag_filter":"nearest"
+,"wrap_s":"repeat"
+,"wrap_t":"repeat"
+,"format":"red_integer"
+,"iformat":"r8ui"
+,"images":[{"url":"eagitexi:///tiling_transition?source=checker+width=1024+height=1024"}]
+}

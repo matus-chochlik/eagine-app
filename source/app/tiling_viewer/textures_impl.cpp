@@ -62,8 +62,9 @@ tiling_viewer_transitions::tiling_viewer_transitions(
               arg, ctx, video, GL.texture_2d_array, GL.texture0 + tex_unit++);
         }
 
-        const std::array<std::tuple<std::string, url>, 1> args{
-          {{"PCB", url{"eagitex:///TrnsPCBTex"}}}};
+        const std::array<std::tuple<std::string, url>, 2> args{
+          {{"PCB", url{"eagitex:///TrnsPCBTex"}},
+           {"Checker", url{"eagitex:///TrnsCkrTex"}}}};
 
         for(const auto& [name, loc] : args) {
             load(
