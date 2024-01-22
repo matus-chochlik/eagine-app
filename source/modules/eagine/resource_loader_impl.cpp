@@ -715,6 +715,14 @@ auto pending_resource_info::_finish_gl_texture(
                 }
             }
 
+            if(pgts.generate_mipmap) {
+                if(gl.generate_texture_mipmap) {
+                    gl.generate_texture_mipmap(pgts.tex);
+                } else {
+                    gl.generate_mipmap(pgts.tex_target);
+                }
+            }
+
             _parent.log_info("loaded and set-up GL texture object")
               .arg("requestId", _request_id)
               .arg("levels", pgts.levels)

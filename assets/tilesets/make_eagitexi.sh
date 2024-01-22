@@ -6,11 +6,11 @@
 tileset=${1:-$(basename $(realpath .))}
 rank=4
 toolname="png_to_eagitexi.py"
-tooldir="$(realpath $(dirname ${0})/../../../../submodules/eagine-oglplus/source/tools)"
+tooldir="$(realpath $(dirname ${0})/../../../../submodules/eagine-oglplus/source/app)"
 if [[ -f "${tooldir}/${toolname}" ]]
 then convtool="${tooldir}/${toolname}"
 else
-	tooldir="$(realpath $(dirname ${0})/../../submodules/eagine-oglplus/source/tools)"
+	tooldir="$(realpath $(dirname ${0})/../../submodules/eagine-oglplus/source/app)"
 	if [[ -f "${tooldir}/${toolname}" ]]
 	then convtool="${tooldir}/${toolname}"
 	else

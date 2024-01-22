@@ -1,0 +1,17 @@
+{"levels":8
+,"width":128
+,"height":128
+,"depth":16
+,"channels":1
+,"data_type":"unsigned_byte"
+,"format":"red"
+,"iformat":"r8"
+,"swizzle_g":"red"
+,"swizzle_b":"red"
+,"min_filter":"linear_mipmap_linear"
+,"mag_filter":"linear"
+,"wrap_s":"repeat"
+,"wrap_t":"repeat"
+,"wrap_r":"repeat"
+,"images":[{"url":"eagitexi:///TSCon16Img"}]
+,"generate_mipmap":true}

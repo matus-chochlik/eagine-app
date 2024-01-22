@@ -50,6 +50,7 @@ eagine_add_module(
 		eagitexi_checks
 		eagitexi_stripes
 		eagitexi_tiling
+		eagitexi_transition
 		eagitexi_sphere_volume
 		text_lorem_ipsum
 		text_resource_list
@@ -98,11 +99,14 @@ eagine_embed_target_resources(
 		YBStrpImg8 "textures/yb_stripes_8.eagitexi"
 		YBStrpImg9 "textures/yb_stripes_9.eagitexi"
 		YBStrpsTex "textures/yb_stripes.eagitex"
+		ZebraImg   "textures/zebra_fur.eagitexi"
+		ZebraTex   "textures/zebra_fur.eagitex"
 		LvlGrdtTex "textures/level_gradient.eagitex"
 		RandomTex  "textures/random.eagitex"
 		OGLplusTex "textures/oglplus.eagitex"
 		RandomCube "textures/random_cube.eagitex"
 		ColorCube  "textures/color_cube.eagitex"
+		PnkGryCube "textures/pink_gray_cube.eagitex"
 		GreenCube  "textures/green_cube.eagitex"
 		GrenCubImg "textures/green_cube.eagitexi"
 		YBStrpCube "textures/yb_stripes_cube.eagitex"

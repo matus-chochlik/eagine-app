@@ -52,6 +52,7 @@ void resource_provider_driver::_populate(
     _add(provider_eagitexi_random(parameters));
     _add(provider_eagitexi_tiling(parameters));
     _add(provider_eagitexi_tiling_noise(parameters));
+    _add(provider_eagitexi_tiling_transition(parameters));
     _add(provider_eagitexi_2d_single_rgb8(parameters));
     _add(provider_eagitex_2d_single_rgb8(parameters));
     _add(provider_eagitexi_sphere_volume(parameters));

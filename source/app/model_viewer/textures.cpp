@@ -20,7 +20,7 @@ export class model_viewer_cube_maps
 public:
     model_viewer_cube_maps(execution_context&, video_context&);
 
-    auto texture_unit(video_context&) -> oglplus::texture_unit::value_type;
+    auto texture_unit(video_context&) -> oglplus::texture_unit;
 };
 //------------------------------------------------------------------------------
 export class model_viewer_textures
@@ -28,7 +28,7 @@ export class model_viewer_textures
 public:
     model_viewer_textures(execution_context&, video_context&);
 
-    auto texture_unit(video_context&) -> oglplus::texture_unit::value_type;
+    auto texture_unit(video_context&) -> oglplus::texture_unit;
 };
 //------------------------------------------------------------------------------
 } // namespace eagine::app

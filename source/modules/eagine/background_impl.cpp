@@ -369,6 +369,15 @@ background_skybox::background_skybox(
       [&, this](auto& gl, auto& GL, auto& api) { _init(gl, GL, api); });
 }
 //------------------------------------------------------------------------------
+auto background_skybox::set_skybox_unit(
+  video_context& video,
+  oglplus::texture_unit tu) noexcept -> background_skybox& {
+    video.with_gl([&, this](auto&, auto&, auto& glapi) {
+        glapi.set_uniform(_prog, _tex_loc, int(tu));
+    });
+    return *this;
+}
+//------------------------------------------------------------------------------
 void background_skybox::_clean_up(auto& gl) noexcept {
     gl.delete_program(std::move(_prog));
     gl.delete_buffers(std::move(_indices));

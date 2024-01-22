@@ -19,6 +19,9 @@ export class model_viewer_backgrounds
 public:
     model_viewer_backgrounds(execution_context&, video_context&);
 
+    auto set_skybox_unit(video_context&, oglplus::texture_unit)
+      -> model_viewer_backgrounds&;
+
     auto clear(video_context&, orbiting_camera&) -> model_viewer_backgrounds&;
 };
 //------------------------------------------------------------------------------

@@ -13,6 +13,7 @@ function _eagine_app_model_viewer()
         --model \
         --program \
         --texture \
+        --cube-map \
     "
 
     local opts=""
@@ -46,6 +47,8 @@ function _eagine_app_model_viewer()
         --program)
             COMPREPLY=( "ProgramId eagiprog://domain/path" );;
         --texture)
+            COMPREPLY=( "TextureId eagitex://domain/path" );;
+        --cube-map)
             COMPREPLY=( "TextureId eagitex://domain/path" );;
         *)
             COMPREPLY=($(compgen -W "${opts}" -- "${curr}"));;

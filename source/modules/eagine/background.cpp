@@ -166,6 +166,9 @@ public:
       video_context&,
       oglplus::gl_types::enum_type tex_unit) noexcept;
 
+    auto set_skybox_unit(video_context&, oglplus::texture_unit) noexcept
+      -> background_skybox&;
+
     auto clean_up(video_context& vc) noexcept -> background_skybox&;
 
     auto clear(video_context& vc, const mat4&, const float) noexcept

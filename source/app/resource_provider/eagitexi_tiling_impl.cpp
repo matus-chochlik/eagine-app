@@ -225,7 +225,6 @@ void eagitexi_tiling_provider::for_each_locator(
     callback("eagitexi:///tiling");
 }
 //------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
 // tiling image provider
 //------------------------------------------------------------------------------
 auto provider_eagitexi_tiling(const provider_parameters& p)
@@ -667,7 +666,6 @@ void eagitexi_tiling_noise_provider::for_each_locator(
   callable_ref<void(string_view) noexcept> callback) noexcept {
     callback("eagitexi:///tiling_noise");
 }
-//------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 // noise image provider
 //------------------------------------------------------------------------------

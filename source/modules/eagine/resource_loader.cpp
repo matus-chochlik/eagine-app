@@ -181,6 +181,7 @@ public:
     void handle_gl_texture_i_param(
       const oglplus::texture_parameter param,
       const oglplus::gl_types::int_type value) noexcept;
+    void handle_gl_texture_generate_mipmap() noexcept;
     void handle_gl_texture_image(
       const oglplus::texture_target,
       resource_gl_texture_image_params&,
@@ -271,6 +272,7 @@ private:
         oglplus::texture_target tex_target;
         oglplus::texture_unit tex_unit;
         oglplus::owned_texture_name tex;
+        bool generate_mipmap{false};
         bool loaded{false};
     };
 
