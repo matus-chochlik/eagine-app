@@ -26,7 +26,7 @@ public:
       msgbus::resource_data_consumer_node&,
       url);
 
-    auto prepare() noexcept -> bool final;
+    auto prepare() noexcept -> msgbus::blob_preparation final;
 
 private:
     auto _process_packed(memory::const_block) noexcept -> bool;
@@ -80,8 +80,10 @@ eagitexi_tiling_io::eagitexi_tiling_io(
     append(R"(,"format":"red_integer","iformat":"r8ui")");
 }
 //------------------------------------------------------------------------------
-auto eagitexi_tiling_io::prepare() noexcept -> bool {
-    const bool result = not(_finished or _canceled);
+auto eagitexi_tiling_io::prepare() noexcept -> msgbus::blob_preparation {
+    const auto result = (_finished or _canceled)
+                          ? msgbus::blob_preparation::finished
+                          : msgbus::blob_preparation::working;
     if(_last) {
         _finished = true;
     }
@@ -499,7 +501,7 @@ public:
       span_size_t height,
       url);
 
-    auto prepare() noexcept -> bool final;
+    auto prepare() noexcept -> msgbus::blob_preparation final;
 
 private:
     auto _get_noise(float x, float y, std::size_t i) const noexcept -> float;
@@ -537,9 +539,9 @@ auto eagitexi_tiling_noise_io::_get_noise(float x, float y, std::size_t i)
     return data.get(x / div, y / div);
 }
 //------------------------------------------------------------------------------
-auto eagitexi_tiling_noise_io::prepare() noexcept -> bool {
+auto eagitexi_tiling_noise_io::prepare() noexcept -> msgbus::blob_preparation {
     if(not _tiling.is_loaded()) {
-        return true;
+        return msgbus::blob_preparation::working;
     }
     if(_width == 0) {
         _width = _tiling.width();
@@ -549,11 +551,11 @@ auto eagitexi_tiling_noise_io::prepare() noexcept -> bool {
     }
     if(_octaves.empty()) {
         _octaves.emplace_back(1.F, _tiling.whole());
-        return true;
+        return msgbus::blob_preparation::working;
     }
     if(_noise.empty()) {
         _noise.resize(std_size(_tiling.width() * _tiling.height()));
-        return true;
+        return msgbus::blob_preparation::working;
     }
     if(_pixel_index < _noise.size()) {
         for(int i = 0; i < 256 and _pixel_index < _noise.size();
@@ -564,7 +566,7 @@ auto eagitexi_tiling_noise_io::prepare() noexcept -> bool {
                 _noise[_pixel_index] = _get_noise(x, y, o);
             }
         }
-        return true;
+        return msgbus::blob_preparation::working;
     }
     if(not _header_done) {
         std::stringstream header;
@@ -575,7 +577,7 @@ auto eagitexi_tiling_noise_io::prepare() noexcept -> bool {
         append(header.str());
 
         _header_done = true;
-        return true;
+        return msgbus::blob_preparation::working;
     }
 
     if(_value_index < _noise.size()) {
@@ -586,16 +588,16 @@ auto eagitexi_tiling_noise_io::prepare() noexcept -> bool {
             }
             append(std::to_string(_noise[_value_index]));
         }
-        return true;
+        return msgbus::blob_preparation::working;
     }
 
     if(not _values_done) {
         append("]}");
         _values_done = true;
-        return true;
+        return msgbus::blob_preparation::working;
     }
 
-    return false;
+    return msgbus::blob_preparation::finished;
 }
 //------------------------------------------------------------------------------
 // noise image provider

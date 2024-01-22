@@ -20,7 +20,7 @@ namespace eagine::app {
 // transition mask interface
 //------------------------------------------------------------------------------
 struct tiling_transition_mask : interface<tiling_transition_mask> {
-    virtual auto prepare() noexcept -> bool = 0;
+    virtual auto prepare() noexcept -> msgbus::blob_preparation = 0;
     virtual auto width() noexcept -> valid_if_positive<int> = 0;
     virtual auto height() noexcept -> valid_if_positive<int> = 0;
     virtual auto batch_size() noexcept -> int = 0;
@@ -38,8 +38,8 @@ public:
 
     static auto is_valid_locator(const url& locator) noexcept -> bool;
 
-    auto prepare() noexcept -> bool final {
-        return true;
+    auto prepare() noexcept -> msgbus::blob_preparation final {
+        return msgbus::blob_preparation::finished;
     }
 
     auto width() noexcept -> valid_if_positive<int> final {
@@ -88,7 +88,7 @@ public:
 
     static auto is_valid_locator(const url& locator) noexcept -> bool;
 
-    auto prepare() noexcept -> bool final;
+    auto prepare() noexcept -> msgbus::blob_preparation final;
 
     auto width() noexcept -> valid_if_positive<int> final;
     auto height() noexcept -> valid_if_positive<int> final;
@@ -149,8 +149,10 @@ auto tiling_transition_tiling::is_valid_locator(const url& locator) noexcept
     return false;
 }
 //------------------------------------------------------------------------------
-auto tiling_transition_tiling::prepare() noexcept -> bool {
-    const bool result = not(_finished or _canceled);
+auto tiling_transition_tiling::prepare() noexcept -> msgbus::blob_preparation {
+    const auto result = (_finished or _canceled)
+                          ? msgbus::blob_preparation::finished
+                          : msgbus::blob_preparation::working;
     if(_last) {
         _finished = true;
     }
@@ -290,7 +292,7 @@ public:
       main_ctx_parent,
       shared_holder<tiling_transition_mask>) noexcept;
 
-    auto prepare() noexcept -> bool final;
+    auto prepare() noexcept -> msgbus::blob_preparation final;
 
 private:
     auto value(int x, int y, int ox, int oy) noexcept -> bool;
@@ -415,12 +417,13 @@ auto eagitexi_tiling_transition_io::_element(int x, int y) noexcept -> byte {
         {{value(x, y, 1, -1), value(x, y, 1, 0), value(x, y, 1, 1)}}}}));
 }
 //------------------------------------------------------------------------------
-auto eagitexi_tiling_transition_io::prepare() noexcept -> bool {
-    if(_mask->prepare()) {
+auto eagitexi_tiling_transition_io::prepare() noexcept
+  -> msgbus::blob_preparation {
+    if(_mask->prepare() == msgbus::blob_preparation::finished) {
         for(int i = 0, n = _mask->batch_size(); i < n; ++i) {
             if(_y >= _height) {
                 if(_done) {
-                    return false;
+                    return msgbus::blob_preparation::finished;
                 } else {
                     finish();
                     _done = true;
@@ -435,7 +438,7 @@ auto eagitexi_tiling_transition_io::prepare() noexcept -> bool {
         }
     }
 
-    return true;
+    return msgbus::blob_preparation::working;
 }
 //------------------------------------------------------------------------------
 // tiling transition image provider

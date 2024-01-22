@@ -17,7 +17,7 @@ class resource_list_io final : public simple_buffer_source_blob_io {
 public:
     resource_list_io(resource_provider_driver& driver) noexcept;
 
-    auto prepare() noexcept -> bool final;
+    auto prepare() noexcept -> msgbus::blob_preparation final;
 
 private:
     resource_provider_driver& _driver;
@@ -30,7 +30,7 @@ resource_list_io::resource_list_io(resource_provider_driver& driver) noexcept
     append("text:///resource_list\n");
 }
 //------------------------------------------------------------------------------
-auto resource_list_io::prepare() noexcept -> bool {
+auto resource_list_io::prepare() noexcept -> msgbus::blob_preparation {
     if(_provider_index < _driver.provider_count()) {
         const auto append_locator{[this](string_view locator) {
             append(locator);
@@ -39,9 +39,9 @@ auto resource_list_io::prepare() noexcept -> bool {
         _driver.provider(_provider_index)
           .for_each_locator({construct_from, append_locator});
         ++_provider_index;
-        return true;
+        return msgbus::blob_preparation::working;
     }
-    return false;
+    return msgbus::blob_preparation::finished;
 }
 //------------------------------------------------------------------------------
 // provider
