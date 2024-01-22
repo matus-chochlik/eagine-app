@@ -17,13 +17,17 @@ import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
+// transition mask interface
+//------------------------------------------------------------------------------
 struct tiling_transition_mask : interface<tiling_transition_mask> {
     virtual auto prepare() noexcept -> bool = 0;
-    virtual auto get_width() noexcept -> valid_if_positive<int> = 0;
-    virtual auto get_height() noexcept -> valid_if_positive<int> = 0;
+    virtual auto width() noexcept -> valid_if_positive<int> = 0;
+    virtual auto height() noexcept -> valid_if_positive<int> = 0;
     virtual auto batch_size() noexcept -> int = 0;
     virtual auto value(int x, int y) noexcept -> bool = 0;
 };
+//------------------------------------------------------------------------------
+// checker transition mask
 //------------------------------------------------------------------------------
 class tiling_transition_checker final : public tiling_transition_mask {
 public:
@@ -38,10 +42,10 @@ public:
         return true;
     }
 
-    auto get_width() noexcept -> valid_if_positive<int> final {
+    auto width() noexcept -> valid_if_positive<int> final {
         return _width;
     }
-    auto get_height() noexcept -> valid_if_positive<int> final {
+    auto height() noexcept -> valid_if_positive<int> final {
         return _height;
     }
     auto batch_size() noexcept -> int final {
@@ -69,6 +73,163 @@ auto tiling_transition_checker::is_valid_locator(const url& locator) noexcept
   -> bool {
     const auto& q{locator.query()};
     return q.arg_has_value("source", "checker");
+}
+//------------------------------------------------------------------------------
+// transition mask from tiling
+//------------------------------------------------------------------------------
+class tiling_transition_tiling final
+  : public main_ctx_object
+  , public tiling_transition_mask {
+public:
+    tiling_transition_tiling(
+      main_ctx_parent,
+      msgbus::resource_data_consumer_node&,
+      const url& locator) noexcept;
+
+    static auto is_valid_locator(const url& locator) noexcept -> bool;
+
+    auto prepare() noexcept -> bool final;
+
+    auto width() noexcept -> valid_if_positive<int> final;
+    auto height() noexcept -> valid_if_positive<int> final;
+    auto batch_size() noexcept -> int final;
+    auto value(int x, int y) noexcept -> bool final;
+
+private:
+    static auto _get_source(const url&) noexcept -> url;
+
+    void _handle_stream_data_appended(
+      const msgbus::blob_stream_chunk& chunk) noexcept;
+    void _handle_stream_finished(const msgbus::blob_id_t) noexcept;
+    void _handle_stream_canceled(const msgbus::blob_id_t) noexcept;
+
+    signal_binding _appended_binding;
+    signal_binding _finished_binding;
+    signal_binding _canceled_binding;
+
+    identifier_t _request_id;
+    std::string _tiling_line;
+    std::vector<std::string> _tiling;
+    int _threshold{8}; // TODO from url
+    bool _first{true};
+    bool _last{false};
+    bool _finished{false};
+    bool _canceled{false};
+};
+//------------------------------------------------------------------------------
+auto tiling_transition_tiling::_get_source(const url& locator) noexcept -> url {
+    return locator.query().arg_url("source");
+}
+//------------------------------------------------------------------------------
+tiling_transition_tiling::tiling_transition_tiling(
+  main_ctx_parent parent,
+  msgbus::resource_data_consumer_node& consumer,
+  const url& locator) noexcept
+  : main_ctx_object{"TlgTrnsTlg", parent}
+  , _appended_binding{consumer.blob_stream_data_appended.bind(
+      {this,
+       member_function_constant_t<
+         &tiling_transition_tiling::_handle_stream_data_appended>{}})}
+  , _finished_binding{consumer.blob_stream_finished.bind(
+      {this,
+       member_function_constant_t<
+         &tiling_transition_tiling::_handle_stream_finished>{}})}
+  , _canceled_binding{consumer.blob_stream_cancelled.bind(
+      {this,
+       member_function_constant_t<
+         &tiling_transition_tiling::_handle_stream_canceled>{}})}
+  , _request_id{std::get<0>(consumer.stream_resource(_get_source(locator)))} {}
+//------------------------------------------------------------------------------
+auto tiling_transition_tiling::is_valid_locator(const url& locator) noexcept
+  -> bool {
+    if(const auto source{locator.query().arg_url("source")}) {
+        return source.has_scheme("text") or source.has_path_suffix(".text") or
+               source.has_path_suffix(".txt");
+    }
+    return false;
+}
+//------------------------------------------------------------------------------
+auto tiling_transition_tiling::prepare() noexcept -> bool {
+    const bool result = not(_finished or _canceled);
+    if(_last) {
+        _finished = true;
+    }
+    return result;
+}
+//------------------------------------------------------------------------------
+auto tiling_transition_tiling::width() noexcept -> valid_if_positive<int> {
+    if(not _tiling.empty()) {
+        return {limit_cast<int>(_tiling.front().size())};
+    }
+    return {};
+}
+//------------------------------------------------------------------------------
+auto tiling_transition_tiling::height() noexcept -> valid_if_positive<int> {
+    return {limit_cast<int>(_tiling.size())};
+}
+//------------------------------------------------------------------------------
+auto tiling_transition_tiling::batch_size() noexcept -> int {
+    return 20000;
+}
+//------------------------------------------------------------------------------
+auto tiling_transition_tiling::value(int x, int y) noexcept -> bool {
+    const auto evaluate{[this](const char c) {
+        const auto compare{[this](const int i) {
+            return i >= _threshold;
+        }};
+        if('0' <= c and c <= '9') {
+            return compare(int(c - '0'));
+        } else if('A' <= c and c <= 'F') {
+            return compare(int(c - 'A' + 10));
+        } else if('a' <= c and c <= 'f') {
+            return compare(int(c - 'a' + 10));
+        } else {
+            return compare(int(0));
+        }
+    }};
+    if(not _tiling.empty()) {
+        y = y % limit_cast<int>(_tiling.size());
+        if(not _tiling[std_size(y)].empty()) {
+            x = x % limit_cast<int>(_tiling[std_size(y)].size());
+            return evaluate(_tiling[std_size(y)][std_size(x)]);
+        }
+    }
+    return false;
+}
+//------------------------------------------------------------------------------
+void tiling_transition_tiling::_handle_stream_data_appended(
+  const msgbus::blob_stream_chunk& chunk) noexcept {
+    if(_request_id == chunk.request_id) {
+        const string_view sep{"\n"};
+        for(const auto blk : chunk.data) {
+            auto text{as_chars(blk)};
+            while(not text.empty()) {
+                if(const auto pos{memory::find_position(text, sep)}) {
+                    append_to(head(text, *pos), _tiling_line);
+                    text = skip(text, *pos + sep.size());
+                    _tiling.emplace_back(std::move(_tiling_line));
+                } else {
+                    append_to(text, _tiling_line);
+                    text = {};
+                }
+            }
+        }
+    }
+}
+//------------------------------------------------------------------------------
+void tiling_transition_tiling::_handle_stream_finished(
+  const msgbus::blob_id_t request_id) noexcept {
+    if(_request_id == request_id) {
+        _tiling.emplace_back(std::move(_tiling_line));
+        _last = true;
+    }
+}
+//------------------------------------------------------------------------------
+void tiling_transition_tiling::_handle_stream_canceled(
+  const msgbus::blob_id_t request_id) noexcept {
+    if(_request_id == request_id) {
+        _canceled = true;
+    }
 }
 //------------------------------------------------------------------------------
 // transition mask factory
@@ -107,7 +268,7 @@ private:
     }
 
     msgbus::resource_data_consumer_node& _consumer;
-    mp_list<tiling_transition_checker> _masks{};
+    mp_list<tiling_transition_checker, tiling_transition_tiling> _masks{};
 };
 //------------------------------------------------------------------------------
 auto tiling_transition_mask_factory::is_valid_locator(
@@ -144,11 +305,11 @@ private:
     static auto _make_code_map() noexcept -> flat_set<byte>;
 
     static auto _w(const shared_holder<tiling_transition_mask>& m) noexcept {
-        return m.member(&tiling_transition_mask::get_width).value_or(64);
+        return m.member(&tiling_transition_mask::width).value_or(64);
     }
 
     static auto _h(const shared_holder<tiling_transition_mask>& m) noexcept {
-        return m.member(&tiling_transition_mask::get_height).value_or(64);
+        return m.member(&tiling_transition_mask::height).value_or(64);
     }
 
     static auto _buf_size(
