@@ -97,6 +97,7 @@ public:
 
 private:
     static auto _get_source(const url&) noexcept -> url;
+    static auto _get_threshold(const url&) noexcept -> int;
 
     void _handle_stream_data_appended(
       const msgbus::blob_stream_chunk& chunk) noexcept;
@@ -110,7 +111,7 @@ private:
     identifier_t _request_id;
     std::string _tiling_line;
     std::vector<std::string> _tiling;
-    int _threshold{8}; // TODO from url
+    int _threshold;
     bool _first{true};
     bool _last{false};
     bool _finished{false};
@@ -119,6 +120,11 @@ private:
 //------------------------------------------------------------------------------
 auto tiling_transition_tiling::_get_source(const url& locator) noexcept -> url {
     return locator.query().arg_url("source");
+}
+//------------------------------------------------------------------------------
+auto tiling_transition_tiling::_get_threshold(const url& locator) noexcept
+  -> int {
+    return locator.query().arg_value_as<int>("threshold").value_or(8);
 }
 //------------------------------------------------------------------------------
 tiling_transition_tiling::tiling_transition_tiling(
@@ -138,7 +144,8 @@ tiling_transition_tiling::tiling_transition_tiling(
       {this,
        member_function_constant_t<
          &tiling_transition_tiling::_handle_stream_canceled>{}})}
-  , _request_id{std::get<0>(consumer.stream_resource(_get_source(locator)))} {}
+  , _request_id{std::get<0>(consumer.stream_resource(_get_source(locator)))}
+  , _threshold{_get_threshold(locator)} {}
 //------------------------------------------------------------------------------
 auto tiling_transition_tiling::is_valid_locator(const url& locator) noexcept
   -> bool {
