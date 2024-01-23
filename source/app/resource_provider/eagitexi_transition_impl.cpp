@@ -209,7 +209,9 @@ void tiling_transition_tiling::_handle_stream_data_appended(
                 if(const auto pos{memory::find_position(text, sep)}) {
                     append_to(head(text, *pos), _tiling_line);
                     text = skip(text, *pos + sep.size());
-                    _tiling.emplace_back(std::move(_tiling_line));
+                    if(not _tiling_line.empty()) {
+                        _tiling.emplace_back(std::move(_tiling_line));
+                    }
                 } else {
                     append_to(text, _tiling_line);
                     text = {};
@@ -222,7 +224,9 @@ void tiling_transition_tiling::_handle_stream_data_appended(
 void tiling_transition_tiling::_handle_stream_finished(
   const msgbus::blob_id_t request_id) noexcept {
     if(_request_id == request_id) {
-        _tiling.emplace_back(std::move(_tiling_line));
+        if(not _tiling_line.empty()) {
+            _tiling.emplace_back(std::move(_tiling_line));
+        }
         _last = true;
     }
 }
@@ -321,28 +325,22 @@ private:
 
     const flat_set<byte> _code_map{_make_code_map()};
     const shared_holder<tiling_transition_mask> _mask;
-    const int _width;
-    const int _height;
+    int _width{0};
+    int _height{0};
     int _x{0};
     int _y{0};
-    bool _done{false};
+    bool _header_done{false};
+    bool _data_done{false};
 };
 //------------------------------------------------------------------------------
 eagitexi_tiling_transition_io::eagitexi_tiling_transition_io(
   main_ctx_parent parent,
   shared_holder<tiling_transition_mask> mask) noexcept
   : compressed_buffer_source_blob_io{"TiTrTexIO", parent, _buf_size(mask)}
-  , _mask{std::move(mask)}
-  , _width{_w(_mask)}
-  , _height{_h(_mask)} {
+  , _mask{std::move(mask)} {
     append(R"({"level":0,"channels":1,"data_type":"unsigned_byte")");
     append(R"(,"tag":["generator","transition"])");
     append(R"(,"format":"red_integer","iformat":"r8ui")");
-    std::stringstream hdr;
-    hdr << R"(,"width":)" << _width;
-    hdr << R"(,"height":)" << _height;
-    append(hdr.str());
-    append(R"(,"data_filter":"zlib"})");
 }
 //------------------------------------------------------------------------------
 auto eagitexi_tiling_transition_io::value(int x, int y, int ox, int oy) noexcept
@@ -420,13 +418,23 @@ auto eagitexi_tiling_transition_io::_element(int x, int y) noexcept -> byte {
 auto eagitexi_tiling_transition_io::prepare() noexcept
   -> msgbus::blob_preparation {
     if(_mask->prepare() == msgbus::blob_preparation::finished) {
+        if(not _header_done) {
+            _width = _w(_mask);
+            _height = _h(_mask);
+            std::stringstream hdr;
+            hdr << R"(,"width":)" << _width;
+            hdr << R"(,"height":)" << _height;
+            append(hdr.str());
+            append(R"(,"data_filter":"zlib"})");
+            _header_done = true;
+        }
         for(int i = 0, n = _mask->batch_size(); i < n; ++i) {
             if(_y >= _height) {
-                if(_done) {
+                if(_data_done) {
                     return msgbus::blob_preparation::finished;
                 } else {
                     finish();
-                    _done = true;
+                    _data_done = true;
                     break;
                 }
             }
