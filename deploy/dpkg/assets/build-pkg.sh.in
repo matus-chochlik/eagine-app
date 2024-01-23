@@ -1,9 +1,15 @@
-#!/bin/bash
+#!/bin/bash -e
 # Copyright Matus Chochlik.
 # Distributed under the Boost Software License, Version 1.0.
 # See accompanying file LICENSE_1_0.txt or copy at
 #  http://www.boost.org/LICENSE_1_0.txt
 #
+tmp_dir=$(mktemp -d)
+function cleanup() {
+	rm -rf "${tmp_dir}"
+}
+trap cleanup EXIT
+
 src_dir=$(realpath "@SRC_DIR@")
 pkg_dir=$(realpath "@PKG_DIR@")
 
@@ -15,10 +21,33 @@ mkdir -p "${ast_prefix}"
 # ------------------------------------------------------------------------------
 pushd "${src_dir}/assets/tilings" && \
 zip -9 "${ast_prefix}/tilings_app.eagizip" \
-	r4_s256_??.txt \
-	r4_s512_??.txt \
-	r4_s1024_??.txt \
-	r4_s2048_??.txt
+	*.txt
+popd
+# ------------------------------------------------------------------------------
+pushd "${tmp_dir}"
+for txt in "${src_dir}/assets/tilings"/r?_s*_??.txt
+do
+txt=$(basename "${txt}" .txt)
+side=$(echo ${txt} | sed -n 's/r[23456]_s\([0-9]\+\)_[0-9][0-9]/\1/gp')
+cat << EAGITEXI > "${txt}.eagitex"
+{"levels":1
+,"width":${side}
+,"height":${side}
+,"channels":1
+,"data_type":"unsigned_byte"
+,"min_filter":"nearest"
+,"mag_filter":"nearest"
+,"wrap_s":"repeat"
+,"wrap_t":"repeat"
+,"format":"red_integer"
+,"iformat":"r8ui"
+,"images":[{"url":"eagitexi:///tiling_transition?source=eagires%3A%2F%2F%2Ftilings_app.eagizip%2F${txt}.txt"}]
+}
+EAGITEXI
+done
+zip -9 "${ast_prefix}/tiling_transitions_app.eagizip" \
+	*.eagitex
+rm *.eagitex
 popd
 # ------------------------------------------------------------------------------
 pushd "${src_dir}/assets/tilesets" && \
