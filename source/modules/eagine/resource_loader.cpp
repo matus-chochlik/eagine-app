@@ -448,6 +448,58 @@ public:
     }
 };
 //------------------------------------------------------------------------------
+// valtree_mapped_struct_builder
+//------------------------------------------------------------------------------
+template <default_mapped_struct O>
+class valtree_mapped_struct_builder
+  : public valtree_builder_base<valtree_mapped_struct_builder<O>> {
+    using base = valtree_builder_base<valtree_mapped_struct_builder<O>>;
+
+public:
+    using base::base;
+    using base::do_add;
+
+    auto max_token_size() noexcept -> span_size_t final {
+        return max_identifier_length(_object);
+    }
+
+    template <typename T>
+    void do_add(const basic_string_path& path, span<const T> data) noexcept {
+        _forwarder.forward_data(path, data, _object);
+    }
+
+    auto finish() noexcept -> bool final;
+
+    void failed() noexcept final;
+
+private:
+    O _object{};
+    valtree::object_builder_data_forwarder _forwarder;
+};
+//------------------------------------------------------------------------------
+template <default_mapped_struct O>
+auto valtree_mapped_struct_builder<O>::finish() noexcept -> bool {
+    if(auto parent{this->_parent.lock()}) {
+        // parent->handle_X(*parent, _object);
+        return true;
+    }
+    return false;
+}
+//------------------------------------------------------------------------------
+template <default_mapped_struct O>
+void valtree_mapped_struct_builder<O>::failed() noexcept {
+    // TODO
+}
+//------------------------------------------------------------------------------
+template <default_mapped_struct O>
+auto make_mapped_struct_builder(
+  const shared_holder<pending_resource_info>& parent) noexcept
+  -> unique_holder<valtree::object_builder> {
+    return {hold<valtree_mapped_struct_builder<O>>, "StrctBuldr", parent};
+}
+//------------------------------------------------------------------------------
+// other builders
+//------------------------------------------------------------------------------
 auto make_valtree_float_vector_builder(
   const shared_holder<pending_resource_info>& parent) noexcept
   -> unique_holder<valtree::object_builder>;
