@@ -251,6 +251,7 @@ eagine_add_module_tests(
 	eagine.app
 	UNITS
 		resource_loader
+		resource_manager
 	IMPORTS
 		eagine.core
 		eagine.app

@@ -42,8 +42,12 @@ public:
         return _ref;
     }
 
+    auto is_loaded() const noexcept -> bool {
+        return _ref.is_loaded();
+    }
+
     explicit operator bool() const noexcept {
-        return bool(_ref);
+        return is_loaded();
     }
 
     operator loaded_resource<Resource>&() const noexcept {
@@ -80,19 +84,33 @@ private:
 //------------------------------------------------------------------------------
 export template <typename... Resources>
 class basic_resource_manager {
-    template <typename L>
-    using _lr_transf =
-      std::vector<unique_holder<std::tuple<L, resource_load_params<L>>>>;
+    template <typename X>
+    struct _adjust_res : std::type_identity<loaded_resource<X>> {};
+
     template <typename R>
-    using _r_transf = _lr_transf<loaded_resource<R>>;
+    struct _adjust_res<loaded_resource<R>>
+      : std::type_identity<loaded_resource<R>> {};
+
+    template <typename R>
+    struct _adjust_res<managed_resource<R>>
+      : std::type_identity<loaded_resource<R>> {};
+
+    template <typename X>
+    using adjust_res_t = typename _adjust_res<X>::type;
+
+    template <typename X>
+    using resource_storage = std::vector<unique_holder<
+      std::tuple<adjust_res_t<X>, resource_load_params<adjust_res_t<X>>>>>;
 
 public:
     basic_resource_manager(execution_context& ctx) noexcept
       : _ctx{ctx} {}
 
     template <typename Resource, typename... Args>
-    auto do_add(std::type_identity<Resource> rtid, url locator, Args&&... args)
-      -> managed_resource<Resource> {
+    [[nodiscard]] auto do_add(
+      std::type_identity<Resource> rtid,
+      url locator,
+      Args&&... args) -> managed_resource<Resource> {
         auto& res_vec{_get(rtid)};
         res_vec.emplace_back(
           std::make_unique<
@@ -104,11 +122,11 @@ public:
         return {res};
     }
 
-    auto context() const noexcept -> execution_context& {
+    [[nodiscard]] auto context() const noexcept -> execution_context& {
         return _ctx;
     }
 
-    auto are_loaded() noexcept -> bool {
+    [[nodiscard]] auto are_loaded() noexcept -> bool {
         return _are_loaded(_resources, _is());
     }
 
@@ -116,28 +134,31 @@ public:
         return _load(_resources, _is());
     }
 
-    auto clean_up() noexcept -> auto& {
+    auto update() noexcept -> basic_resource_manager& {
+        if(not are_loaded()) {
+            load();
+        }
+        return *this;
+    }
+
+    auto clean_up() noexcept -> basic_resource_manager& {
         _clean_up(_resources, _is());
         return *this;
     }
 
 private:
     template <typename Resource>
-    auto _get(std::type_identity<Resource>) noexcept -> _r_transf<Resource>& {
-        return std::get<_r_transf<Resource>>(_resources);
+    auto _get(std::type_identity<Resource>) noexcept
+      -> resource_storage<Resource>& {
+        return std::get<resource_storage<Resource>>(_resources);
     }
 
     static constexpr auto _is() noexcept {
         return std::make_index_sequence<sizeof...(Resources)>();
     }
 
-    template <typename Tup, std::size_t... I>
-    auto _are_loaded(Tup& t, std::index_sequence<I...>) noexcept -> bool {
-        return (... and _are_loaded(std::get<I>(t)));
-    }
-
     template <typename V>
-    auto _are_loaded(V& res_vec) noexcept -> span_size_t {
+    auto _are_loaded(V& res_vec) const noexcept -> span_size_t {
         for(auto& res_info : res_vec) {
             if(not std::get<0>(*res_info).is_loaded()) {
                 return false;
@@ -147,8 +168,8 @@ private:
     }
 
     template <typename Tup, std::size_t... I>
-    auto _load(Tup& t, std::index_sequence<I...>) noexcept -> span_size_t {
-        return (... + _do_load(std::get<I>(t)));
+    auto _are_loaded(Tup& t, std::index_sequence<I...>) const noexcept -> bool {
+        return (... and _are_loaded(std::get<I>(t)));
     }
 
     template <typename V>
@@ -156,9 +177,16 @@ private:
         span_size_t result{0};
         for(auto& res_info : res_vec) {
             auto& [res, params] = *res_info;
-            result += span_size_t{res.load_if_needed(_ctx, params) ? 1 : 0};
+            if(res.load_if_needed(_ctx, params)) {
+                ++result;
+            }
         }
         return result;
+    }
+
+    template <typename Tup, std::size_t... I>
+    auto _load(Tup& t, std::index_sequence<I...>) noexcept -> span_size_t {
+        return (... + _do_load(std::get<I>(t)));
     }
 
     template <typename Tup, std::size_t... I>
@@ -174,7 +202,7 @@ private:
     }
 
     execution_context& _ctx;
-    std::tuple<_lr_transf<Resources>...> _resources;
+    std::tuple<resource_storage<Resources>...> _resources;
 };
 //------------------------------------------------------------------------------
 export using managed_plain_text = managed_resource<std::string>;
@@ -195,7 +223,8 @@ export using managed_gl_program = managed_resource<oglplus::owned_program_name>;
 export using managed_gl_texture = managed_resource<oglplus::owned_texture_name>;
 export using managed_gl_buffer = managed_resource<oglplus::owned_buffer_name>;
 //------------------------------------------------------------------------------
-export using resource_manager = basic_resource_manager<
+export template <typename... Resources>
+using default_resource_manager = basic_resource_manager<
   plain_text_resource,
   string_list_resource,
   url_list_resource,
@@ -208,6 +237,9 @@ export using resource_manager = basic_resource_manager<
   gl_shader_resource,
   gl_program_resource,
   gl_texture_resource,
-  gl_buffer_resource>;
+  gl_buffer_resource,
+  Resources...>;
+//------------------------------------------------------------------------------
+export using resource_manager = default_resource_manager<>;
 //------------------------------------------------------------------------------
 } // namespace eagine::app

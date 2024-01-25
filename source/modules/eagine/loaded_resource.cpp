@@ -262,6 +262,10 @@ public:
         return load_if_needed(ctx.loader());
     }
 
+    auto load_if_needed(execution_context& ctx, std::tuple<>) -> work_done {
+        return load_if_needed(ctx.loader());
+    }
+
 private:
     void _connect(resource_loader& loader) noexcept {
         _sig_key = connect<&loaded_resource::_handle_loaded>(
