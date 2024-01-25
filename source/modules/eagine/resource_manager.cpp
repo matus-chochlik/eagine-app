@@ -12,6 +12,7 @@ import eagine.core.types;
 import eagine.core.math;
 import eagine.core.utility;
 import eagine.core.runtime;
+import eagine.core.identifier;
 import eagine.core.value_tree;
 import eagine.oglplus;
 import :loaded_resource;
@@ -31,12 +32,25 @@ public:
     template <typename... Resources, typename... Args>
     managed_resource(
       basic_resource_manager<Resources...>& manager,
+      identifier resource_id,
       url locator,
       Args&&... args)
       : managed_resource{manager.do_add(
           std::type_identity<Resource>{},
+          resource_id,
           std::move(locator),
           std::forward<Args>(args)...)} {}
+
+    template <typename... Resources, typename... Args>
+    managed_resource(
+      basic_resource_manager<Resources...>& manager,
+      url locator,
+      Args&&... args)
+      : managed_resource{
+          manager,
+          locator.hash_id(),
+          locator,
+          std::forward<Args>(args)...} {}
 
     auto resource() const noexcept -> loaded_resource<Resource>& {
         return _ref;
@@ -109,6 +123,7 @@ public:
     template <typename Resource, typename... Args>
     [[nodiscard]] auto do_add(
       std::type_identity<Resource> rtid,
+      identifier, // TODO (use as map key)
       url locator,
       Args&&... args) -> managed_resource<Resource> {
         auto& res_vec{_get(rtid)};
