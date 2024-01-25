@@ -1054,12 +1054,43 @@ export struct resource_loader_signals {
         mapped_struct_load_info(
           const identifier_t req_id,
           const url& loc,
-          O&) noexcept
+          O& object) noexcept
           : request_id{req_id}
-          , locator{loc} {}
+          , locator{loc}
+          , _typeidx{typeid(std::remove_cv_t<O>)}
+          , _ptr{&object} {}
+
+        template <typename O>
+        auto has_type(std::type_identity<O> = {}) const noexcept -> bool {
+            return (_typeidx == typeid(std::remove_cv_t<O>));
+        }
+
+        template <typename O>
+        auto as(std::type_identity<O> tid = {}) const noexcept
+          -> optional_reference<O> {
+            if(_ptr and has_type(tid)) {
+                return {static_cast<O*>(_ptr)};
+            }
+            return {};
+        }
+
+        template <typename O>
+        auto move_to(O& object) const
+          noexcept(std::is_nothrow_move_assignable_v<O>) -> bool {
+            if(_ptr and has_type<O>()) {
+                object = std::move(*static_cast<O*>(_ptr));
+                return true;
+            }
+            return false;
+        }
 
     private:
+        std::type_index _typeidx;
+        void* _ptr;
     };
+
+    template <typename T>
+    struct get_load_info : std::type_identity<mapped_struct_load_info> {};
 
     /// @brief Emitted when a mapped struct is successfully created and set-up.
     signal<void(const mapped_struct_load_info&) noexcept> mapped_struct_loaded;
@@ -1522,7 +1553,9 @@ void pending_resource_info::handle_mapped_struct(
   const pending_resource_info&,
   T& object) noexcept {
     if(is(resource_kind::mapped_struct)) {
-        _parent.mapped_struct_loaded({_request_id, _kind, object});
+        resource_loader_signals::mapped_struct_load_info info{
+          _request_id, _locator, object};
+        _parent.mapped_struct_loaded(info);
         _parent.resource_loaded(_request_id, _kind, _locator);
     }
     mark_finished();

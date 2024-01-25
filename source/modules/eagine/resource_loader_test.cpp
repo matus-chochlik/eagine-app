@@ -636,10 +636,122 @@ struct test_request_shape_generator : eagitest::app_case {
     bool content_is_ok{false};
 };
 //------------------------------------------------------------------------------
+// mapped struct
+//------------------------------------------------------------------------------
+namespace eagine {
+//------------------------------------------------------------------------------
+struct test_point {
+    int x{}, y{}, z{};
+};
+
+template <identifier_t Id>
+constexpr auto data_member_mapping(
+  const std::type_identity<test_point>,
+  const selector<Id>) noexcept {
+    return make_data_member_mapping<test_point, int, int, int>(
+      {"x", &test_point::x}, {"y", &test_point::y}, {"z", &test_point::z});
+}
+//------------------------------------------------------------------------------
+struct test_triangle {
+    test_point a{}, b{}, c{};
+};
+
+template <identifier_t Id>
+constexpr auto data_member_mapping(
+  const std::type_identity<test_triangle>,
+  const selector<Id>) noexcept {
+    return make_data_member_mapping<
+      test_triangle,
+      test_point,
+      test_point,
+      test_point>(
+      {"a", &test_triangle::a},
+      {"b", &test_triangle::b},
+      {"c", &test_triangle::c});
+}
+//------------------------------------------------------------------------------
+struct test_tetrahedron {
+    test_triangle base{};
+    test_point apex{};
+};
+
+template <identifier_t Id>
+constexpr auto data_member_mapping(
+  const std::type_identity<test_tetrahedron>,
+  const selector<Id>) noexcept {
+    return make_data_member_mapping<test_tetrahedron, test_triangle, test_point>(
+      {"base", &test_tetrahedron::base}, {"apex", &test_tetrahedron::apex});
+}
+} // namespace eagine
+//------------------------------------------------------------------------------
+struct test_request_mapped_struct : eagitest::app_case {
+    using launcher = eagitest::launcher<test_request_mapped_struct>;
+
+    test_request_mapped_struct(auto& s, auto& ec)
+      : eagitest::app_case{s, ec, 10, "mapped struct"}
+      , object{eagine::url{"json:///TestThdn"}, ec} {
+        object.loaded.connect(
+          make_callable_ref<&test_request_mapped_struct::on_loaded>(this));
+        too_long.reset();
+    }
+
+    void on_loaded(
+      const eagine::app::loaded_resource<eagine::test_tetrahedron>::load_info&
+        info) noexcept {
+        load_signal_received = true;
+        locator_is_ok = info.base.locator.has_scheme("json") and
+                        info.base.locator.has_path("/TestThdn");
+
+        using eagine::are_equal;
+        content_is_ok = true;
+        content_is_ok = content_is_ok and are_equal(object.apex.x, 2);
+        content_is_ok = content_is_ok and are_equal(object.apex.y, 3);
+        content_is_ok = content_is_ok and are_equal(object.apex.z, 4);
+        content_is_ok = content_is_ok and are_equal(object.base.a.x, 1);
+        content_is_ok = content_is_ok and are_equal(object.base.a.y, 0);
+        content_is_ok = content_is_ok and are_equal(object.base.a.z, 0);
+        content_is_ok = content_is_ok and are_equal(object.base.b.x, 0);
+        content_is_ok = content_is_ok and are_equal(object.base.b.y, 1);
+        content_is_ok = content_is_ok and are_equal(object.base.b.z, 0);
+        content_is_ok = content_is_ok and are_equal(object.base.c.x, 0);
+        content_is_ok = content_is_ok and are_equal(object.base.c.y, 0);
+        content_is_ok = content_is_ok and are_equal(object.base.c.z, 1);
+    }
+
+    auto is_loaded() const noexcept {
+        return load_signal_received and locator_is_ok and content_is_ok;
+    }
+
+    auto is_done() noexcept -> bool final {
+        return too_long or is_loaded();
+    }
+
+    void update() noexcept final {
+        if(not object) {
+            object.load_if_needed(context());
+        }
+    }
+
+    void clean_up() noexcept final {
+        check(object.is_loaded(), "values are loaded");
+        check(load_signal_received, "load signal received");
+        check(locator_is_ok, "locator is ok");
+        check(content_is_ok, "content is ok");
+
+        object.clean_up(context());
+    }
+
+    eagine::timeout too_long{std::chrono::seconds{15}};
+    eagine::app::loaded_resource<eagine::test_tetrahedron> object;
+    bool load_signal_received{false};
+    bool locator_is_ok{false};
+    bool content_is_ok{false};
+};
+//------------------------------------------------------------------------------
 // main
 //------------------------------------------------------------------------------
 auto test_main(eagine::test_ctx& ctx) -> int {
-    eagitest::app_suite test{ctx, "resource loader", 9};
+    eagitest::app_suite test{ctx, "resource loader", 10};
     test.once<test_request_plain_text>();
     test.once<test_request_string_list>();
     test.once<test_request_url_list>();
@@ -649,6 +761,7 @@ auto test_main(eagine::test_ctx& ctx) -> int {
     test.once<test_request_mat4_vector>();
     test.once<test_request_value_tree>();
     test.once<test_request_shape_generator>();
+    test.once<test_request_mapped_struct>();
     return test.exit_code();
 }
 //------------------------------------------------------------------------------

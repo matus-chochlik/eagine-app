@@ -163,6 +163,25 @@ struct resource_load_utils<Resource, std::tuple<video_context&, P...>> {
 };
 //------------------------------------------------------------------------------
 export template <typename Resource>
+class loaded_resource;
+
+export template <typename Resource>
+struct resource_load_info {
+    using base_load_info = typename resource_loader::load_info_t<Resource>;
+
+    /// @brief The base info from the loader signal.
+    const base_load_info& base;
+    /// @brief The loaded resource.
+    const loaded_resource<Resource>& resource;
+
+    resource_load_info(
+      const base_load_info& info,
+      loaded_resource<Resource>& parent) noexcept
+      : base{info}
+      , resource{parent} {}
+};
+//------------------------------------------------------------------------------
+export template <typename Resource>
 class loaded_resource
   : public Resource
   , public loaded_resource_base
@@ -172,8 +191,14 @@ class loaded_resource
     using utils = resource_load_utils<Resource>;
 
 public:
-    using base_load_info =
-      typename resource_loader::load_info_t<valtree::compound>;
+    /// @brief Type of the base_loaded signal parameter.
+    using base_load_info = typename resource_loader::load_info_t<Resource>;
+
+    /// @brief Type of the loaded signal parameter.
+    using load_info = resource_load_info<Resource>;
+
+    /// @brief Signal emitted when the resource is successfully loaded.
+    signal<void(const load_info&) noexcept> loaded;
 
     /// @brief Returns a reference to the underlying resource.
     auto resource() noexcept -> Resource& {
@@ -202,7 +227,6 @@ public:
 
     /// @brief Cleans up this resource.
     void clean_up(resource_loader& loader) {
-        this->resource().clear();
         _disconnect(loader);
     }
 
@@ -241,20 +265,23 @@ public:
 private:
     void _connect(resource_loader& loader) noexcept {
         _sig_key = connect<&loaded_resource::_handle_loaded>(
-          this, loader.value_tree_loaded);
+          this, loader.mapped_struct_loaded);
     }
 
     void _disconnect(resource_loader& loader) noexcept {
         if(_sig_key) {
-            loader.value_tree_loaded.disconnect(_sig_key);
+            loader.mapped_struct_loaded.disconnect(_sig_key);
             _sig_key = {};
         }
     }
 
     void _handle_loaded(const base_load_info& info) noexcept {
         if(info.request_id == _request_id) {
-            _loaded = info.load(resource());
-            base_loaded(*this);
+            _loaded = info.move_to(resource());
+            if(_loaded) {
+                loaded(load_info(info, *this));
+                base_loaded(*this);
+            }
             _request_id = 0;
         }
     }
@@ -263,25 +290,6 @@ private:
     bool _loaded{false};
 };
 //------------------------------------------------------------------------------
-export template <typename Resource>
-class loaded_resource;
-
-export template <typename Resource>
-struct resource_load_info {
-    using base_load_info = typename resource_loader::load_info_t<Resource>;
-
-    /// @brief The base info from the loader signal.
-    const base_load_info& base;
-    /// @brief The loaded resource.
-    const loaded_resource<Resource>& resource;
-
-    resource_load_info(
-      const base_load_info& info,
-      loaded_resource<Resource>& parent) noexcept
-      : base{info}
-      , resource{parent} {}
-};
-
 export template <
   typename Derived,
   typename Params = resource_load_params<Derived>,
