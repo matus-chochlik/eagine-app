@@ -8,6 +8,7 @@
 
 #include <eagine/testing/unit_begin_app.hpp>
 import eagine.core;
+import eagine.msgbus;
 
 //------------------------------------------------------------------------------
 namespace eagine {
@@ -114,6 +115,9 @@ private:
 // main
 //------------------------------------------------------------------------------
 auto test_main(eagine::test_ctx& ctx) -> int {
+    enable_message_bus(ctx);
+    ctx.preinitialize();
+
     eagitest::app_suite test{ctx, "resource manager", 1};
     test.once<test_manage_mapped_struct>();
     return test.exit_code();

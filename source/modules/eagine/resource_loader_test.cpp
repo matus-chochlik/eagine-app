@@ -9,6 +9,7 @@
 #include <eagine/testing/unit_begin_app.hpp>
 import eagine.core;
 import eagine.shapes;
+import eagine.msgbus;
 //------------------------------------------------------------------------------
 // plain text
 //------------------------------------------------------------------------------
@@ -751,6 +752,9 @@ struct test_request_mapped_struct : eagitest::app_case {
 // main
 //------------------------------------------------------------------------------
 auto test_main(eagine::test_ctx& ctx) -> int {
+    enable_message_bus(ctx);
+    ctx.preinitialize();
+
     eagitest::app_suite test{ctx, "resource loader", 10};
     test.once<test_request_plain_text>();
     test.once<test_request_string_list>();

@@ -255,6 +255,7 @@ eagine_add_module_tests(
 		resource_manager
 	IMPORTS
 		eagine.core
+		eagine.msgbus
 		eagine.app
 	PRIVATE_LINK_LIBRARIES
 		eagine-app-testing-headers
