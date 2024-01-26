@@ -126,13 +126,12 @@ public:
       identifier, // TODO (use as map key)
       url locator,
       Args&&... args) -> managed_resource<Resource> {
+        using lr_t = loaded_resource<Resource>;
+        using rlp_t = resource_load_params<Resource>;
         auto& res_vec{_get(rtid)};
-        res_vec.emplace_back(
-          std::make_unique<
-            std::tuple<loaded_resource<Resource>, resource_load_params<Resource>>>(
-            std::move(locator),
-            resource_load_params<Resource>{std::forward<Args>(args)...}));
-        auto& res = std::get<0>(*res_vec.back());
+        res_vec.emplace_back(std::make_unique<std::tuple<lr_t, rlp_t>>(
+          std::move(locator), rlp_t{std::forward<Args>(args)...}));
+        auto& res{std::get<0>(*res_vec.back())};
         res.init(_ctx);
         return {res};
     }

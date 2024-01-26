@@ -55,20 +55,21 @@ constexpr auto data_member_mapping(
     return make_data_member_mapping<test_tetrahedron, test_triangle, test_point>(
       {"base", &test_tetrahedron::base}, {"apex", &test_tetrahedron::apex});
 }
+//------------------------------------------------------------------------------
 } // namespace eagine
 //------------------------------------------------------------------------------
-struct test_manage_mapped_struct : eagitest::app_case {
-    using launcher = eagitest::launcher<test_manage_mapped_struct>;
+struct test_manage_mapped_struct_1 : eagitest::app_case {
+    using launcher = eagitest::launcher<test_manage_mapped_struct_1>;
 
-    test_manage_mapped_struct(auto& s, auto& ec)
-      : eagitest::app_case{s, ec, 1, "mapped struct"}
+    test_manage_mapped_struct_1(auto& s, auto& ec)
+      : eagitest::app_case{s, ec, 1, "mapped struct is loaded"}
       , manager{ec}
       , object{manager, eagine::url{"json:///TestThdn"}} {
         too_long.reset();
     }
 
     auto is_loaded() const noexcept {
-        return content_is_ok;
+        return object.is_loaded() and content_is_ok;
     }
 
     auto is_done() noexcept -> bool final {
@@ -76,9 +77,8 @@ struct test_manage_mapped_struct : eagitest::app_case {
     }
 
     void update() noexcept final {
-        if(not object) {
-            manager.update();
-        } else if(not content_is_ok) {
+        manager.update();
+        if(object.is_loaded() and not content_is_ok) {
             using eagine::are_equal;
             content_is_ok = true;
             content_is_ok = content_is_ok and are_equal(object->apex.x, 2);
@@ -112,14 +112,82 @@ private:
     bool content_is_ok{false};
 };
 //------------------------------------------------------------------------------
+struct test_manage_mapped_struct_2 : eagitest::app_case {
+    using launcher = eagitest::launcher<test_manage_mapped_struct_2>;
+
+    test_manage_mapped_struct_2(auto& s, auto& ec)
+      : eagitest::app_case{s, ec, 2, "mapped struct signal"}
+      , manager{ec}
+      , object{manager, eagine::url{"json:///TestThdn"}} {
+        object.connect(
+          make_callable_ref<&test_manage_mapped_struct_2::on_loaded>(this));
+        too_long.reset();
+    }
+
+    void on_loaded(
+      const eagine::app::loaded_resource<eagine::test_tetrahedron>::load_info&
+        info) noexcept {
+        load_signal_received = true;
+        locator_is_ok = info.base.locator.has_scheme("json") and
+                        info.base.locator.has_path("/TestThdn");
+
+        using eagine::are_equal;
+        content_is_ok = true;
+        content_is_ok = content_is_ok and are_equal(object->apex.x, 2);
+        content_is_ok = content_is_ok and are_equal(object->apex.y, 3);
+        content_is_ok = content_is_ok and are_equal(object->apex.z, 4);
+        content_is_ok = content_is_ok and are_equal(object->base.a.x, 1);
+        content_is_ok = content_is_ok and are_equal(object->base.a.y, 0);
+        content_is_ok = content_is_ok and are_equal(object->base.a.z, 0);
+        content_is_ok = content_is_ok and are_equal(object->base.b.x, 0);
+        content_is_ok = content_is_ok and are_equal(object->base.b.y, 1);
+        content_is_ok = content_is_ok and are_equal(object->base.b.z, 0);
+        content_is_ok = content_is_ok and are_equal(object->base.c.x, 0);
+        content_is_ok = content_is_ok and are_equal(object->base.c.y, 0);
+        content_is_ok = content_is_ok and are_equal(object->base.c.z, 1);
+    }
+
+    auto is_loaded() const noexcept {
+        return object.is_loaded() and content_is_ok;
+    }
+
+    auto is_done() noexcept -> bool final {
+        return too_long or is_loaded();
+    }
+
+    void update() noexcept final {
+        manager.update();
+    }
+
+    void clean_up() noexcept final {
+        check(object.is_loaded(), "values are loaded");
+        check(load_signal_received, "load signal received");
+        check(locator_is_ok, "locator is ok");
+        check(content_is_ok, "content is ok");
+
+        manager.clean_up();
+    }
+
+private:
+    using resource_t = eagine::app::managed_resource<eagine::test_tetrahedron>;
+
+    eagine::timeout too_long{std::chrono::seconds{15}};
+    eagine::app::basic_resource_manager<resource_t> manager;
+    resource_t object;
+    bool load_signal_received{false};
+    bool locator_is_ok{false};
+    bool content_is_ok{false};
+};
+//------------------------------------------------------------------------------
 // main
 //------------------------------------------------------------------------------
 auto test_main(eagine::test_ctx& ctx) -> int {
     enable_message_bus(ctx);
     ctx.preinitialize();
 
-    eagitest::app_suite test{ctx, "resource manager", 1};
-    test.once<test_manage_mapped_struct>();
+    eagitest::app_suite test{ctx, "resource manager", 2};
+    test.once<test_manage_mapped_struct_1>();
+    test.once<test_manage_mapped_struct_2>();
     return test.exit_code();
 }
 //------------------------------------------------------------------------------
