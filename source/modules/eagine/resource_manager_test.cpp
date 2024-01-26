@@ -169,11 +169,9 @@ struct test_manage_mapped_struct_2 : eagitest::app_case {
     }
 
 private:
-    using resource_t = eagine::app::managed_resource<eagine::test_tetrahedron>;
-
     eagine::timeout too_long{std::chrono::seconds{15}};
-    eagine::app::basic_resource_manager<resource_t> manager;
-    resource_t object;
+    eagine::app::basic_resource_manager<eagine::test_tetrahedron> manager;
+    eagine::app::managed_resource<eagine::test_tetrahedron> object;
     bool load_signal_received{false};
     bool locator_is_ok{false};
     bool content_is_ok{false};

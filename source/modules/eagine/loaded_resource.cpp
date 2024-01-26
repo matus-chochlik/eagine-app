@@ -368,10 +368,9 @@ public:
     }
 
     /// @brief Updates the resource, possibly doing resource load request.
-    auto load_if_needed(resource_loader& loader, P... params) -> work_done {
+    auto load_if_needed(resource_loader& ldr, P... params) -> work_done {
         if(not derived().is_loaded() and not is_loading()) {
-            if(const auto request{
-                 utils::request(loader, locator(), params...)}) {
+            if(const auto request{utils::request(ldr, locator(), params...)}) {
                 _request_id = request.request_id();
                 return true;
             }

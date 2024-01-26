@@ -277,3 +277,12 @@ eagine_embed_target_resources(
 )
 set_tests_properties(execute-test.eagine.app.resource_loader PROPERTIES COST 10)
 
+eagine_embed_target_resources(
+	TARGET test.eagine.app.resource_manager
+	RESOURCES
+		TestThdn1 "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_thdn1.json"
+		TestThdn2 "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_thdn2.json"
+	PACKED ENABLE_SEARCH
+)
+set_tests_properties(execute-test.eagine.app.resource_manager PROPERTIES COST 10)
+
