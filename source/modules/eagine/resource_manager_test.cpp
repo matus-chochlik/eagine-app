@@ -64,7 +64,7 @@ struct test_manage_mapped_struct_1 : eagitest::app_case {
     test_manage_mapped_struct_1(auto& s, auto& ec)
       : eagitest::app_case{s, ec, 1, "mapped struct is loaded"}
       , manager{ec}
-      , object{manager, eagine::url{"json:///TestThdn"}} {
+      , object{manager, eagine::url{"json:///TestThdn1"}} {
         too_long.reset();
     }
 
@@ -118,7 +118,7 @@ struct test_manage_mapped_struct_2 : eagitest::app_case {
     test_manage_mapped_struct_2(auto& s, auto& ec)
       : eagitest::app_case{s, ec, 2, "mapped struct signal"}
       , manager{ec}
-      , object{manager, eagine::url{"json:///TestThdn"}} {
+      , object{manager, eagine::url{"json:///TestThdn2"}} {
         object.connect(
           make_callable_ref<&test_manage_mapped_struct_2::on_loaded>(this));
         too_long.reset();
@@ -129,22 +129,22 @@ struct test_manage_mapped_struct_2 : eagitest::app_case {
         info) noexcept {
         load_signal_received = true;
         locator_is_ok = info.base.locator.has_scheme("json") and
-                        info.base.locator.has_path("/TestThdn");
+                        info.base.locator.has_path("/TestThdn2");
 
         using eagine::are_equal;
         content_is_ok = true;
-        content_is_ok = content_is_ok and are_equal(object->apex.x, 2);
-        content_is_ok = content_is_ok and are_equal(object->apex.y, 3);
-        content_is_ok = content_is_ok and are_equal(object->apex.z, 4);
-        content_is_ok = content_is_ok and are_equal(object->base.a.x, 1);
+        content_is_ok = content_is_ok and are_equal(object->apex.x, 5);
+        content_is_ok = content_is_ok and are_equal(object->apex.y, 6);
+        content_is_ok = content_is_ok and are_equal(object->apex.z, 7);
+        content_is_ok = content_is_ok and are_equal(object->base.a.x, 2);
         content_is_ok = content_is_ok and are_equal(object->base.a.y, 0);
         content_is_ok = content_is_ok and are_equal(object->base.a.z, 0);
         content_is_ok = content_is_ok and are_equal(object->base.b.x, 0);
-        content_is_ok = content_is_ok and are_equal(object->base.b.y, 1);
+        content_is_ok = content_is_ok and are_equal(object->base.b.y, 3);
         content_is_ok = content_is_ok and are_equal(object->base.b.z, 0);
         content_is_ok = content_is_ok and are_equal(object->base.c.x, 0);
         content_is_ok = content_is_ok and are_equal(object->base.c.y, 0);
-        content_is_ok = content_is_ok and are_equal(object->base.c.z, 1);
+        content_is_ok = content_is_ok and are_equal(object->base.c.z, 4);
     }
 
     auto is_loaded() const noexcept {

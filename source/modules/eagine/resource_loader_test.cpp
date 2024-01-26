@@ -690,7 +690,7 @@ struct test_request_mapped_struct : eagitest::app_case {
 
     test_request_mapped_struct(auto& s, auto& ec)
       : eagitest::app_case{s, ec, 10, "mapped struct"}
-      , object{eagine::url{"json:///TestThdn"}, ec} {
+      , object{eagine::url{"json:///TestThdn1"}, ec} {
         object.loaded.connect(
           make_callable_ref<&test_request_mapped_struct::on_loaded>(this));
         too_long.reset();
@@ -701,7 +701,7 @@ struct test_request_mapped_struct : eagitest::app_case {
         info) noexcept {
         load_signal_received = true;
         locator_is_ok = info.base.locator.has_scheme("json") and
-                        info.base.locator.has_path("/TestThdn");
+                        info.base.locator.has_path("/TestThdn1");
 
         using eagine::are_equal;
         content_is_ok = true;

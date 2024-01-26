@@ -112,9 +112,25 @@ class basic_resource_manager {
     template <typename X>
     using adjust_res_t = typename _adjust_res<X>::type;
 
+    template <typename Resource>
+    struct resource_and_params {
+        Resource resource;
+        resource_load_params<Resource> params;
+
+        template <typename... Args>
+        resource_and_params(
+          execution_context& ec,
+          url locator,
+          Args&&... args) noexcept
+          : resource{std::move(locator), ec}
+          , params{std::forward<Args>(args)...} {}
+    };
+
     template <typename X>
-    using resource_storage = std::vector<unique_holder<
-      std::tuple<adjust_res_t<X>, resource_load_params<adjust_res_t<X>>>>>;
+    using adj_res_and_params = resource_and_params<adjust_res_t<X>>;
+
+    template <typename X>
+    using resource_storage = std::vector<unique_holder<adj_res_and_params<X>>>;
 
 public:
     basic_resource_manager(execution_context& ctx) noexcept
@@ -126,14 +142,10 @@ public:
       identifier, // TODO (use as map key)
       url locator,
       Args&&... args) -> managed_resource<Resource> {
-        using lr_t = loaded_resource<Resource>;
-        using rlp_t = resource_load_params<Resource>;
         auto& res_vec{_get(rtid)};
-        res_vec.emplace_back(std::make_unique<std::tuple<lr_t, rlp_t>>(
-          std::move(locator), rlp_t{std::forward<Args>(args)...}));
-        auto& res{std::get<0>(*res_vec.back())};
-        res.init(_ctx);
-        return {res};
+        res_vec.emplace_back(std::make_unique<adj_res_and_params<Resource>>(
+          _ctx, std::move(locator), std::forward<Args>(args)...));
+        return {res_vec.back()->resource};
     }
 
     [[nodiscard]] auto context() const noexcept -> execution_context& {
@@ -174,7 +186,7 @@ private:
     template <typename V>
     auto _are_loaded(V& res_vec) const noexcept -> span_size_t {
         for(const auto& res_info : res_vec) {
-            if(not std::get<0>(*res_info).is_loaded()) {
+            if(not res_info->resource.is_loaded()) {
                 return false;
             }
         }
@@ -190,8 +202,7 @@ private:
     auto _do_load(V& res_vec) noexcept -> span_size_t {
         span_size_t result{0};
         for(auto& res_info : res_vec) {
-            auto& [res, params] = *res_info;
-            if(res.load_if_needed(_ctx, params)) {
+            if(res_info->resource.load_if_needed(_ctx, res_info->params)) {
                 ++result;
             }
         }
@@ -211,7 +222,7 @@ private:
     template <typename V>
     void _do_clean_up(V& res_vec) noexcept {
         for(auto& res_info : res_vec) {
-            std::get<0>(*res_info).clean_up(_ctx);
+            res_info->resource.clean_up(_ctx);
         }
     }
 

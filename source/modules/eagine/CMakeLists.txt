@@ -264,14 +264,15 @@ eagine_add_module_tests(
 eagine_embed_target_resources(
 	TARGET test.eagine.app.resource_loader
 	RESOURCES
-		TestText "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_text.txt"
-		TestURLs "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_urls.txt"
-		TestInts "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_ints.json"
-		TestVec3 "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_vec3.json"
-		TestMat4 "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_mat4.json"
-		TestThdn "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_thdn.json"
-		TestPath "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_path.json"
-		TestMesh "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_mesh.json"
+		TestText  "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_text.txt"
+		TestURLs  "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_urls.txt"
+		TestInts  "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_ints.json"
+		TestVec3  "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_vec3.json"
+		TestMat4  "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_mat4.json"
+		TestThdn1 "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_thdn1.json"
+		TestThdn2 "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_thdn2.json"
+		TestPath  "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_path.json"
+		TestMesh  "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_mesh.json"
 	PACKED ENABLE_SEARCH
 )
 set_tests_properties(execute-test.eagine.app.resource_loader PROPERTIES COST 10)
