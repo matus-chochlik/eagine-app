@@ -96,12 +96,12 @@ auto eglplus_opengl_surface::get_context_attribs(
   const video_options& video_opts) const -> eglplus::context_attributes {
     const auto& EGL = _egl_api.constants();
 
-    const auto add_major_version = [&](auto attribs) {
+    const auto add_major_version{[&](auto attribs) {
         return attribs + (EGL.context_major_version |
                           (video_opts.gl_version_major().value_or(3)));
-    };
+    }};
 
-    const auto add_minor_version = [&](auto attribs) {
+    const auto add_minor_version{[&](auto attribs) {
         eglplus::context_attrib_traits::value_type fallback = 0;
         if(gl_otherwise_gles) {
             if(not video_opts.gl_compatibility_context()) {
@@ -110,9 +110,9 @@ auto eglplus_opengl_surface::get_context_attribs(
         }
         return attribs + (EGL.context_minor_version |
                           (video_opts.gl_version_minor().value_or(fallback)));
-    };
+    }};
 
-    const auto add_profile_mask = [&](auto attribs) {
+    const auto add_profile_mask{[&](auto attribs) {
         const auto compat = video_opts.gl_compatibility_context();
         if(compat) {
             return attribs + (EGL.context_opengl_profile_mask |
@@ -121,17 +121,17 @@ auto eglplus_opengl_surface::get_context_attribs(
             return attribs + (EGL.context_opengl_profile_mask |
                               EGL.context_opengl_core_profile_bit);
         }
-    };
+    }};
 
-    const auto add_debugging = [&](auto attribs) {
+    const auto add_debugging{[&](auto attribs) {
         return attribs +
                (EGL.context_opengl_debug | video_opts.gl_debug_context());
-    };
+    }};
 
-    const auto add_robustness = [&](auto attribs) {
+    const auto add_robustness{[&](auto attribs) {
         return attribs + (EGL.context_opengl_robust_access |
                           video_opts.gl_robust_access());
-    };
+    }};
 
     return add_robustness(add_debugging(add_profile_mask(
       add_minor_version(add_major_version(eglplus::context_attributes())))));

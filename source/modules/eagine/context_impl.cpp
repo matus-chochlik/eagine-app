@@ -424,7 +424,7 @@ execution_context::execution_context(main_ctx_parent parent) noexcept
   , _loader{_registry.emplace<resource_loader>("RsrsLoadr")} {}
 //------------------------------------------------------------------------------
 inline auto execution_context::_setup_providers() noexcept -> bool {
-    const auto try_init = [&](auto provider) -> bool {
+    const auto try_init{[&](auto provider) -> bool {
         if(provider->is_initialized()) {
             return true;
         }
@@ -441,7 +441,7 @@ inline auto execution_context::_setup_providers() noexcept -> bool {
             return true;
         }
         return false;
-    };
+    }};
 
     for(auto& video_opts : _options._video_opts) {
         // TODO: proper provider selection
@@ -459,22 +459,22 @@ inline auto execution_context::_setup_providers() noexcept -> bool {
 
     for(auto& provider : _hmi_providers) {
         if(try_init(provider)) {
-            const auto add_input = [&](shared_holder<input_provider> input) {
+            const auto add_input{[&](shared_holder<input_provider> input) {
                 input->input_connect(*this);
                 _input_providers.emplace_back(std::move(input));
-            };
+            }};
             provider->input_enumerate({construct_from, add_input});
 
-            const auto add_video = [&](shared_holder<video_provider> video) {
+            const auto add_video{[&](shared_holder<video_provider> video) {
                 _video_contexts.emplace_back(
                   default_selector, *this, std::move(video));
-            };
+            }};
             provider->video_enumerate({construct_from, add_video});
 
-            const auto add_audio = [&](shared_holder<audio_provider> audio) {
+            const auto add_audio{[&](shared_holder<audio_provider> audio) {
                 _audio_contexts.emplace_back(
                   default_selector, *this, std::move(audio));
-            };
+            }};
             provider->audio_enumerate({construct_from, add_audio});
         }
     }

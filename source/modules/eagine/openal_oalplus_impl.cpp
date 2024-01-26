@@ -67,9 +67,9 @@ auto oalplus_openal_player::get_context_attribs(
     // TODO
     (void)(audio_opts);
 
-    const auto add_sync = [&](auto attribs) {
+    const auto add_sync{[&](auto attribs) {
         return attribs + (ALC.sync | false);
-    };
+    }};
 
     return add_sync(oalplus::context_attributes());
 }

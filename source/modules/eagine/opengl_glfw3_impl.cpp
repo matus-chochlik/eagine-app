@@ -1511,11 +1511,11 @@ auto glfw3_opengl_provider::should_initialize(
 auto glfw3_opengl_provider::initialize(execution_context& exec_ctx) -> bool {
 #if EAGINE_APP_HAS_GLFW3
     if(glfwInit()) {
-        const auto monitors = []() {
+        const auto monitors{[] {
             int monitor_count = 0;
             auto* monitor_list = glfwGetMonitors(&monitor_count);
             return memory::view(monitor_list, monitor_count);
-        }();
+        }()};
 
         log_info("GLFW monitors").arg_func([monitors](logger_backend& backend) {
             for(auto monitor : monitors) {

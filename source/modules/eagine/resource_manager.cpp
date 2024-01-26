@@ -174,7 +174,7 @@ private:
 
     template <typename V>
     auto _are_loaded(V& res_vec) const noexcept -> span_size_t {
-        for(auto& res_info : res_vec) {
+        for(const auto& res_info : res_vec) {
             if(not std::get<0>(*res_info).is_loaded()) {
                 return false;
             }
