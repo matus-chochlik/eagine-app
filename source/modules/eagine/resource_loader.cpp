@@ -3,7 +3,7 @@
 /// Copyright Matus Chochlik.
 /// Distributed under the Boost Software License, Version 1.0.
 /// See accompanying file LICENSE_1_0.txt or copy at
-///  http://www.boost.org/LICENSE_1_0.txt
+/// https://www.boost.org/LICENSE_1_0.txt
 ///
 export module eagine.app:resource_loader;
 
@@ -84,18 +84,20 @@ export enum class resource_kind {
     glsl_source,
     /// @brief GL shader object.
     gl_shader,
-    ///@brief GL program object.
+    /// @brief GL program object.
     gl_program,
-    ///@brief GL texture object.
+    /// @brief GL texture object.
     gl_texture,
-    ///@brief GL texture image parameters and data.
+    /// @brief GL texture image parameters and data.
     gl_texture_image,
-    ///@brief GL texture image update.
+    /// @brief GL texture image update.
     gl_texture_update,
-    ///@brief GL buffer object.
+    /// @brief GL buffer object.
     gl_buffer,
-    ///@brief GL buffer image update.
+    /// @brief GL buffer image update.
     gl_buffer_update,
+    /// @brief
+    mapped_struct,
     /// @brief Marks that resource request is finished.
     finished
 };
@@ -150,6 +152,11 @@ public:
 
     void add_valtree_stream_input(
       valtree::value_tree_stream_input input) noexcept;
+
+    template <default_mapped_struct T>
+    void handle_mapped_struct(
+      const pending_resource_info& source,
+      T& object) noexcept;
 
     void handle_float_vector(
       const pending_resource_info& source,
@@ -414,6 +421,8 @@ private:
     resource_kind _kind{resource_kind::unknown};
 };
 //------------------------------------------------------------------------------
+// value tree builders
+//------------------------------------------------------------------------------
 class valtree_builder_common : public main_ctx_object {
 public:
     valtree_builder_common(
@@ -447,6 +456,52 @@ public:
         }
     }
 };
+//------------------------------------------------------------------------------
+// valtree_mapped_struct_builder
+//------------------------------------------------------------------------------
+template <default_mapped_struct O>
+class valtree_mapped_struct_builder
+  : public valtree_builder_base<valtree_mapped_struct_builder<O>> {
+    using base = valtree_builder_base<valtree_mapped_struct_builder<O>>;
+
+public:
+    using base::base;
+    using base::do_add;
+
+    auto max_token_size() noexcept -> span_size_t final {
+        return max_identifier_length(_object);
+    }
+
+    template <typename T>
+    void do_add(const basic_string_path& path, span<const T> data) noexcept {
+        _forwarder.forward_data(path, data, _object);
+    }
+
+    auto finish() noexcept -> bool final;
+
+private:
+    O _object{};
+    valtree::object_builder_data_forwarder _forwarder;
+};
+//------------------------------------------------------------------------------
+template <default_mapped_struct O>
+auto valtree_mapped_struct_builder<O>::finish() noexcept -> bool {
+    if(auto parent{this->_parent.lock()}) {
+        parent->handle_mapped_struct(*parent, _object);
+        return true;
+    }
+    return false;
+}
+//------------------------------------------------------------------------------
+template <default_mapped_struct O>
+auto make_mapped_struct_builder(
+  const shared_holder<pending_resource_info>& parent,
+  std::type_identity<O> = {}) noexcept
+  -> unique_holder<valtree::object_builder> {
+    return {hold<valtree_mapped_struct_builder<O>>, "StrctBuldr", parent};
+}
+//------------------------------------------------------------------------------
+// other builders
 //------------------------------------------------------------------------------
 auto make_valtree_float_vector_builder(
   const shared_holder<pending_resource_info>& parent) noexcept
@@ -989,6 +1044,61 @@ export struct resource_loader_signals {
       -> auto& {
         return gl_buffer_loaded;
     }
+
+    class mapped_struct_load_info {
+    public:
+        const identifier_t request_id;
+        const url& locator;
+
+        template <typename O>
+        mapped_struct_load_info(
+          const identifier_t req_id,
+          const url& loc,
+          O& object) noexcept
+          : request_id{req_id}
+          , locator{loc}
+          , _typeidx{typeid(std::remove_cv_t<O>)}
+          , _ptr{&object} {}
+
+        template <typename O>
+        auto has_type(std::type_identity<O> = {}) const noexcept -> bool {
+            return (_typeidx == typeid(std::remove_cv_t<O>));
+        }
+
+        template <typename O>
+        auto as(std::type_identity<O> tid = {}) const noexcept
+          -> optional_reference<O> {
+            if(_ptr and has_type(tid)) {
+                return {static_cast<O*>(_ptr)};
+            }
+            return {};
+        }
+
+        template <typename O>
+        auto move_to(O& object) const
+          noexcept(std::is_nothrow_move_assignable_v<O>) -> bool {
+            if(_ptr and has_type<O>()) {
+                object = std::move(*static_cast<O*>(_ptr));
+                return true;
+            }
+            return false;
+        }
+
+    private:
+        std::type_index _typeidx;
+        void* _ptr;
+    };
+
+    template <typename T>
+    struct get_load_info : std::type_identity<mapped_struct_load_info> {};
+
+    /// @brief Emitted when a mapped struct is successfully created and set-up.
+    signal<void(const mapped_struct_load_info&) noexcept> mapped_struct_loaded;
+
+    template <default_mapped_struct O>
+    auto load_signal(std::type_identity<O>) noexcept -> auto& {
+        return mapped_struct_loaded;
+    }
 };
 //------------------------------------------------------------------------------
 template <typename T>
@@ -1371,6 +1481,26 @@ public:
         return request_gl_buffer(std::move(locator), video, buf_target);
     }
 
+    /// @brief Requests a mapped structure
+    template <default_mapped_struct O>
+    auto request_mapped_struct(
+      url locator,
+      std::type_identity<O> tid = {}) noexcept -> resource_request_result {
+        auto new_request{_new_resource(locator, resource_kind::mapped_struct)};
+
+        if(const auto src_request{request_value_tree_traversal(
+             locator, make_mapped_struct_builder(new_request, tid))}) {
+            return new_request;
+        }
+        new_request.info().mark_finished();
+        return _cancelled_resource(locator, resource_kind::mapped_struct);
+    }
+
+    template <default_mapped_struct O>
+    auto request(std::type_identity<O> tid, url locator) noexcept {
+        return request_mapped_struct(std::move(locator), tid);
+    }
+
 private:
     friend class pending_resource_info;
 
@@ -1417,6 +1547,19 @@ private:
     flat_map<identifier_t, shared_holder<pending_resource_info>> _finished;
     flat_map<identifier_t, shared_holder<pending_resource_info>> _cancelled;
 };
+//------------------------------------------------------------------------------
+template <default_mapped_struct T>
+void pending_resource_info::handle_mapped_struct(
+  const pending_resource_info&,
+  T& object) noexcept {
+    if(is(resource_kind::mapped_struct)) {
+        resource_loader_signals::mapped_struct_load_info info{
+          _request_id, _locator, object};
+        _parent.mapped_struct_loaded(info);
+        _parent.resource_loaded(_request_id, _kind, _locator);
+    }
+    mark_finished();
+}
 //------------------------------------------------------------------------------
 /// @brief Class tracking specific pending resource load requests.
 /// @see resource_loader

@@ -3,7 +3,7 @@
 /// Copyright Matus Chochlik.
 /// Distributed under the Boost Software License, Version 1.0.
 /// See accompanying file LICENSE_1_0.txt or copy at
-///  http://www.boost.org/LICENSE_1_0.txt
+/// https://www.boost.org/LICENSE_1_0.txt
 ///
 module;
 
@@ -19,17 +19,16 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 // tiling I/O
 //------------------------------------------------------------------------------
-class eagitexi_tiling_io final : public simple_buffer_source_blob_io {
+class eagitexi_tiling_io final : public compressed_buffer_source_blob_io {
 public:
     eagitexi_tiling_io(
       main_ctx_parent,
       msgbus::resource_data_consumer_node&,
       url);
 
-    auto prepare() noexcept -> bool final;
+    auto prepare() noexcept -> msgbus::blob_preparation final;
 
 private:
-    auto _process_packed(memory::const_block) noexcept -> bool;
     void _process_cell(const byte);
     void _process_line(const string_view);
 
@@ -44,7 +43,6 @@ private:
 
     identifier_t _request_id;
 
-    stream_compression _compress;
     std::string _tiling_line;
     bool _first{true};
     bool _last{false};
@@ -56,7 +54,7 @@ eagitexi_tiling_io::eagitexi_tiling_io(
   main_ctx_parent parent,
   msgbus::resource_data_consumer_node& consumer,
   url source)
-  : simple_buffer_source_blob_io{"ITxTlng", parent, 1024 * 1024}
+  : compressed_buffer_source_blob_io{"ITxTlng", parent, 1024 * 1024}
   , _appended_binding{consumer.blob_stream_data_appended.bind(
       {this,
        member_function_constant_t<
@@ -69,33 +67,24 @@ eagitexi_tiling_io::eagitexi_tiling_io(
       {this,
        member_function_constant_t<
          &eagitexi_tiling_io::_handle_stream_canceled>{}})}
-  , _request_id{std::get<0>(consumer.stream_resource(std::move(source)))}
-  , _compress{
-      main_context().compressor(),
-      {this,
-       member_function_constant_t<&eagitexi_tiling_io::_process_packed>{}},
-      default_data_compression_method()} {
+  , _request_id{std::get<0>(consumer.stream_resource(std::move(source)))} {
     append(R"({"level":0,"channels":1,"data_type":"unsigned_byte")");
     append(R"(,"tag":["tiling"])");
     append(R"(,"format":"red_integer","iformat":"r8ui")");
 }
 //------------------------------------------------------------------------------
-auto eagitexi_tiling_io::prepare() noexcept -> bool {
-    const bool result = not(_finished or _canceled);
+auto eagitexi_tiling_io::prepare() noexcept -> msgbus::blob_preparation {
+    const auto result = (_finished or _canceled)
+                          ? msgbus::blob_preparation::finished
+                          : msgbus::blob_preparation::working;
     if(_last) {
         _finished = true;
     }
     return result;
 }
 //------------------------------------------------------------------------------
-auto eagitexi_tiling_io::_process_packed(memory::const_block packed) noexcept
-  -> bool {
-    append(packed);
-    return true;
-}
-//------------------------------------------------------------------------------
 void eagitexi_tiling_io::_process_cell(const byte b) {
-    _compress.next(view_one(b), data_compression_level::highest);
+    compress(view_one(b));
 }
 //------------------------------------------------------------------------------
 void eagitexi_tiling_io::_process_line(const string_view line) {
@@ -149,7 +138,7 @@ void eagitexi_tiling_io::_handle_stream_finished(
     if(_request_id == request_id) {
         _process_line(_tiling_line);
         _tiling_line.clear();
-        _compress.finish();
+        finish();
         _last = true;
     }
 }
@@ -499,7 +488,7 @@ public:
       span_size_t height,
       url);
 
-    auto prepare() noexcept -> bool final;
+    auto prepare() noexcept -> msgbus::blob_preparation final;
 
 private:
     auto _get_noise(float x, float y, std::size_t i) const noexcept -> float;
@@ -537,9 +526,9 @@ auto eagitexi_tiling_noise_io::_get_noise(float x, float y, std::size_t i)
     return data.get(x / div, y / div);
 }
 //------------------------------------------------------------------------------
-auto eagitexi_tiling_noise_io::prepare() noexcept -> bool {
+auto eagitexi_tiling_noise_io::prepare() noexcept -> msgbus::blob_preparation {
     if(not _tiling.is_loaded()) {
-        return true;
+        return msgbus::blob_preparation::working;
     }
     if(_width == 0) {
         _width = _tiling.width();
@@ -549,11 +538,11 @@ auto eagitexi_tiling_noise_io::prepare() noexcept -> bool {
     }
     if(_octaves.empty()) {
         _octaves.emplace_back(1.F, _tiling.whole());
-        return true;
+        return msgbus::blob_preparation::working;
     }
     if(_noise.empty()) {
         _noise.resize(std_size(_tiling.width() * _tiling.height()));
-        return true;
+        return msgbus::blob_preparation::working;
     }
     if(_pixel_index < _noise.size()) {
         for(int i = 0; i < 256 and _pixel_index < _noise.size();
@@ -564,7 +553,7 @@ auto eagitexi_tiling_noise_io::prepare() noexcept -> bool {
                 _noise[_pixel_index] = _get_noise(x, y, o);
             }
         }
-        return true;
+        return msgbus::blob_preparation::working;
     }
     if(not _header_done) {
         std::stringstream header;
@@ -575,7 +564,7 @@ auto eagitexi_tiling_noise_io::prepare() noexcept -> bool {
         append(header.str());
 
         _header_done = true;
-        return true;
+        return msgbus::blob_preparation::working;
     }
 
     if(_value_index < _noise.size()) {
@@ -586,16 +575,16 @@ auto eagitexi_tiling_noise_io::prepare() noexcept -> bool {
             }
             append(std::to_string(_noise[_value_index]));
         }
-        return true;
+        return msgbus::blob_preparation::working;
     }
 
     if(not _values_done) {
         append("]}");
         _values_done = true;
-        return true;
+        return msgbus::blob_preparation::working;
     }
 
-    return false;
+    return msgbus::blob_preparation::finished;
 }
 //------------------------------------------------------------------------------
 // noise image provider

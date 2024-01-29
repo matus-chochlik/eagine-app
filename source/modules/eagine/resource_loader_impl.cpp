@@ -3,7 +3,7 @@
 /// Copyright Matus Chochlik.
 /// Distributed under the Boost Software License, Version 1.0.
 /// See accompanying file LICENSE_1_0.txt or copy at
-///  http://www.boost.org/LICENSE_1_0.txt
+/// https://www.boost.org/LICENSE_1_0.txt
 ///
 module;
 
@@ -1172,9 +1172,9 @@ auto resource_loader::request_gl_shader(
   video_context& video) noexcept -> resource_request_result {
     if(const auto type_arg{locator.argument("shader_type")}) {
         const auto& GL = video.gl_api().constants();
-        const auto delegate = [&GL, &locator, &video, this](auto shdr_type) {
+        const auto delegate{[&GL, &locator, &video, this](auto shdr_type) {
             return request_gl_shader(std::move(locator), video, shdr_type);
-        };
+        }};
         if(type_arg == string_view{"fragment"}) {
             return delegate(GL.fragment_shader);
         }

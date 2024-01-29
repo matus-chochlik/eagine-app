@@ -3,7 +3,7 @@
 /// Copyright Matus Chochlik.
 /// Distributed under the Boost Software License, Version 1.0.
 /// See accompanying file LICENSE_1_0.txt or copy at
-///  http://www.boost.org/LICENSE_1_0.txt
+/// https://www.boost.org/LICENSE_1_0.txt
 ///
 module eagine.app;
 
@@ -67,9 +67,9 @@ auto oalplus_openal_player::get_context_attribs(
     // TODO
     (void)(audio_opts);
 
-    const auto add_sync = [&](auto attribs) {
+    const auto add_sync{[&](auto attribs) {
         return attribs + (ALC.sync | false);
-    };
+    }};
 
     return add_sync(oalplus::context_attributes());
 }

@@ -3,7 +3,7 @@
 /// Copyright Matus Chochlik.
 /// Distributed under the Boost Software License, Version 1.0.
 /// See accompanying file LICENSE_1_0.txt or copy at
-///  http://www.boost.org/LICENSE_1_0.txt
+/// https://www.boost.org/LICENSE_1_0.txt
 ///
 module;
 
@@ -186,16 +186,11 @@ private:
       -> std::tuple<optional_reference<zip_archive>, std::string>;
     auto _search_archive_file(std::filesystem::path, const url&) noexcept
       -> shared_holder<zipped_file>;
-    auto _search_archive_file(const url&) noexcept
-      -> shared_holder<zipped_file>;
 
     auto _is_zip_archive(const std::filesystem::path& path) noexcept -> bool;
 
     auto _has_resource(std::filesystem::path, const url& locator) noexcept
       -> bool;
-
-    auto _get_resource_io(std::filesystem::path, const url& locator) noexcept
-      -> unique_holder<msgbus::source_blob_io>;
 
     void _for_each_locator(
       const std::filesystem::path&,
@@ -292,16 +287,6 @@ auto zip_archive_provider::_search_archive_file(
     return {};
 }
 //------------------------------------------------------------------------------
-auto zip_archive_provider::_search_archive_file(const url& locator) noexcept
-  -> shared_holder<zipped_file> {
-    for(auto search_path : _search_paths) {
-        if(auto file{_search_archive_file(search_path, locator)}) {
-            return file;
-        }
-    }
-    return {};
-}
-//------------------------------------------------------------------------------
 auto zip_archive_provider::_has_resource(
   std::filesystem::path archive_path,
   const url& locator) noexcept -> bool {
@@ -324,19 +309,11 @@ auto zip_archive_provider::has_resource(const url& locator) noexcept -> bool {
     return false;
 }
 //------------------------------------------------------------------------------
-auto zip_archive_provider::_get_resource_io(
-  std::filesystem::path search_path,
-  const url& locator) noexcept -> unique_holder<msgbus::source_blob_io> {
-    return {
-      hold<zip_archive_io>,
-      _search_archive_file(std::move(search_path), locator)};
-}
-//------------------------------------------------------------------------------
 auto zip_archive_provider::get_resource_io(const url& locator)
   -> unique_holder<msgbus::source_blob_io> {
     for(const auto& search_path : _search_paths) {
-        if(auto io{_get_resource_io(search_path, locator)}) {
-            return io;
+        if(auto zip{_search_archive_file(std::move(search_path), locator)}) {
+            return {hold<zip_archive_io>, std::move(zip)};
         }
     }
     return {};

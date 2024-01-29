@@ -3,7 +3,7 @@
 # Copyright Matus Chochlik.
 # Distributed under the Boost Software License, Version 1.0.
 # See accompanying file LICENSE_1_0.txt or copy at
-#  http://www.boost.org/LICENSE_1_0.txt
+# https://www.boost.org/LICENSE_1_0.txt
 #
 import os
 import re
@@ -323,11 +323,11 @@ class FramedumpArgumentParser(argparse.ArgumentParser):
                     self.max_bytes = "14500k"
                 elif self.mastodon_vid:
                     self.gif_output = False
-                    self.frame_size[0] = 420
-                    self.frame_size[1] = 240
-                    self.fps = 20
+                    self.frame_size[0] = 640
+                    self.frame_size[1] = 360
+                    self.fps = 25
                     self.render_scale = 2
-                    self.max_bytes = "10000k"
+                    self.max_bytes = "90000k"
 
                 self.frame_width, self.frame_height = self.frame_size
 
