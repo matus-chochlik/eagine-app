@@ -154,5 +154,53 @@ eagitex_provider_base::eagitex_provider_base(
   main_ctx_parent parent) noexcept
   : main_ctx_object{id, parent} {}
 //------------------------------------------------------------------------------
+// filesystem_search_paths
+//------------------------------------------------------------------------------
+filesystem_search_paths::filesystem_search_paths(
+  identifier id,
+  main_ctx_parent parent) noexcept
+  : main_ctx_object{id, parent} {
+    std::vector<std::string> paths;
+    main_context().config().fetch("app.resource_provider.root_path", paths);
+    main_context().config().fetch("app.resource_provider.root_paths", paths);
+
+    using fspath = std::filesystem::path;
+
+    if(const auto path{build_info()
+                         .install_prefix()
+                         .transform(_1.cast_to<std::string>())
+                         .transform(_1.cast_to<fspath>())
+                         .transform([](auto prefix) {
+                             return prefix / "share" / "eagine" / "assets";
+                         })}) {
+        if(std::filesystem::is_directory(*path)) {
+            this->emplace_back(*path);
+        }
+    }
+
+    if(const fspath path{"/usr/share/eagine/assets"}; is_directory(path)) {
+        if(not find(*this, path)) {
+            this->emplace_back(path);
+        }
+    }
+
+    for(const auto& path : paths) {
+        if(is_directory(path)) {
+            if(not find(*this, path)) {
+                this->emplace_back(path);
+            }
+        } else {
+            log_warning("'${path}' is not a path to existing directory")
+              .arg("path", "FsPath", path);
+        }
+    }
+    log_info("configured resource directories: ${path}")
+      .arg_func([&](logger_backend& backend) {
+          for(auto& path : *this) {
+              backend.add_string("path", "FsPath", path.string());
+          }
+      });
+}
+//------------------------------------------------------------------------------
 } // namespace eagine::app
 

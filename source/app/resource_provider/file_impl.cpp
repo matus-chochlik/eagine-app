@@ -80,31 +80,13 @@ private:
 
     std::string _hostname;
     application_config_value<bool> _allow_symlinks;
-    std::vector<std::filesystem::path> _search_paths;
+    filesystem_search_paths _search_paths;
 };
 //------------------------------------------------------------------------------
 file_provider::file_provider(const provider_parameters& params)
   : main_ctx_object{"FilePrvdr", params.parent}
-  , _allow_symlinks{*this, "app.resource_provider.allow_symlinks", false} {
-
-    std::vector<std::string> paths;
-    main_context().config().fetch("app.resource_provider.root_path", paths);
-    main_context().config().fetch("app.resource_provider.root_paths", paths);
-    for(const auto& path : paths) {
-        if(std::filesystem::is_directory(path)) {
-            _search_paths.emplace_back(path);
-        } else {
-            log_warning("'${path}' is not a path to existing directory")
-              .arg("path", "FsPath", path);
-        }
-    }
-    log_info("configured resource directories: ${path}")
-      .arg_func([&](logger_backend& backend) {
-          for(auto& path : _search_paths) {
-              backend.add_string("path", "FsPath", path.string());
-          }
-      });
-}
+  , _allow_symlinks{*this, "app.resource_provider.allow_symlinks", false}
+  , _search_paths{"FilSrchPth", as_parent()} {}
 //------------------------------------------------------------------------------
 auto file_provider::_has_resource(
   const std::filesystem::path& prefix,

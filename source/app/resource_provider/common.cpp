@@ -116,5 +116,14 @@ protected:
     }
 };
 //------------------------------------------------------------------------------
+class filesystem_search_paths
+  : public main_ctx_object
+  , public std::vector<std::filesystem::path> {
+public:
+    filesystem_search_paths(identifier id, main_ctx_parent parent) noexcept;
+
+private:
+};
+//------------------------------------------------------------------------------
 } // namespace eagine::app
 
