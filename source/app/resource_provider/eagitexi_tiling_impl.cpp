@@ -516,7 +516,7 @@ eagitexi_tiling_noise_io::eagitexi_tiling_noise_io(
   , _height{height}
   , _tiling{as_parent(), consumer, std::move(locator)} {
     append(R"({"level":0,"channels":1,"data_type":"float")"
-           R"(,"format":"red","iformat":"red")"
+           R"(,"format":"red","iformat":"r32f")"
            R"(,"tag":["generated","noise","sudoku"])");
 }
 //------------------------------------------------------------------------------
@@ -568,12 +568,24 @@ auto eagitexi_tiling_noise_io::prepare() noexcept -> msgbus::blob_preparation {
     }
 
     if(_value_index < _noise.size()) {
+        const auto strip_trailing_zeroes{[](std::string str) {
+            while(not str.empty() and str.back() == '0') {
+                str.pop_back();
+            }
+            if(not str.empty() and str.back() == '.') {
+                str.push_back('0');
+            }
+            return str;
+        }};
+        const auto elem_str{[&](float elem) {
+            return strip_trailing_zeroes(std::to_string(elem));
+        }};
         for(int i = 0; i < 4096 and _value_index < _noise.size();
             ++i, ++_value_index) {
             if(_value_index) {
                 append(",");
             }
-            append(std::to_string(_noise[_value_index]));
+            append(elem_str(_noise[_value_index]));
         }
         return msgbus::blob_preparation::working;
     }

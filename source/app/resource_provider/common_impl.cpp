@@ -184,14 +184,14 @@ filesystem_search_paths::filesystem_search_paths(
         }
     }
 
-    for(const auto& path : paths) {
+    for(fspath path : paths) {
         if(is_directory(path)) {
             if(not find(*this, path)) {
-                this->emplace_back(path);
+                this->emplace_back(std::move(path));
             }
         } else {
             log_warning("'${path}' is not a path to existing directory")
-              .arg("path", "FsPath", path);
+              .arg("path", "FsPath", path.string());
         }
     }
     log_info("configured resource directories: ${path}")
