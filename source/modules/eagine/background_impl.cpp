@@ -237,7 +237,7 @@ void background_skybox::_init(auto& gl, auto& GL, auto& api) noexcept {
             #version 330
 
             layout(triangles) in;
-            layout(triangle_strip, max_vertices = 48) out;
+            layout(triangle_strip, max_vertices = 192) out;
             in vec3 vertCoord[3];
             out vec3 geomCoord;
             uniform mat4 Camera;
@@ -254,6 +254,7 @@ void background_skybox::_init(auto& gl, auto& GL, auto& api) noexcept {
                     vertCoord[0] * bary.x+
                     vertCoord[1] * bary.y+
                     vertCoord[2] * bary.z;
+				geomCoord = normalize(geomCoord);
                 EmitVertex();
             }
 
@@ -265,21 +266,28 @@ void background_skybox::_init(auto& gl, auto& GL, auto& api) noexcept {
             }
 
             void subdivide1(vec3 a, vec3 b, vec3 c) {
-                subdivide0(a, (a + b)/2, (c + a)/2);
-                subdivide0(b, (b + c)/2, (a + b)/2);
-                subdivide0(c, (c + a)/2, (b + c)/2);
-                subdivide0((a + b)/2, (b + c)/2, (c + a)/2);
+                subdivide0(a, (a + b) * 0.5, (c + a) * 0.5);
+                subdivide0(b, (b + c) * 0.5, (a + b) * 0.5);
+                subdivide0(c, (c + a) * 0.5, (b + c) * 0.5);
+                subdivide0((a + b) * 0.5, (b + c) * 0.5, (c + a) * 0.5);
             }
 
             void subdivide2(vec3 a, vec3 b, vec3 c) {
-                subdivide1(a, (a + b)/2, (c + a)/2);
-                subdivide1(b, (b + c)/2, (a + b)/2);
-                subdivide1(c, (c + a)/2, (b + c)/2);
-                subdivide1((a + b)/2, (b + c)/2, (c + a)/2);
+                subdivide1(a, (a + b) * 0.5, (c + a) * 0.5);
+                subdivide1(b, (b + c) * 0.5, (a + b) * 0.5);
+                subdivide1(c, (c + a) * 0.5, (b + c) * 0.5);
+                subdivide1((a + b) * 0.5, (b + c) * 0.5, (c + a) * 0.5);
+            }
+
+            void subdivide3(vec3 a, vec3 b, vec3 c) {
+                subdivide2(a, (a + b) * 0.5, (c + a) * 0.5);
+                subdivide2(b, (b + c) * 0.5, (a + b) * 0.5);
+                subdivide2(c, (c + a) * 0.5, (b + c) * 0.5);
+                subdivide2((a + b) * 0.5, (b + c) * 0.5, (c + a) * 0.5);
             }
 
             void main() {
-                subdivide2(
+                subdivide3(
                     vec3(1.0, 0.0, 0.0),
                     vec3(0.0, 1.0, 0.0),
                     vec3(0.0, 0.0, 1.0));
