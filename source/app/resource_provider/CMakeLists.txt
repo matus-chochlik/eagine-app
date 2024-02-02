@@ -69,6 +69,7 @@ eagine_embed_target_resources(
 	RESOURCES
 		BoostLcnse "../../../LICENSE_1_0.txt"
 		BashCmpltn "other/eagine-app-resource-provider.bco"
+		Manual     "other/eagine-app-resource-provider.man"
 		EdgeDVert  "glsl/edges_default_vert.glsl"
 		EdgeDGeom  "glsl/edges_default_geom.glsl"
 		EdgeDFrag  "glsl/edges_default_frag.glsl"

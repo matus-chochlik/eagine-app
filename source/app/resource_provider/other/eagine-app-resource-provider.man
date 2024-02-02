@@ -1,0 +1,29 @@
+.TH EAGINE-APP-RESOURCE-PROVIDER 1 "2024-01-05" "EAGine resource provider/server"
+.SH "NAME"
+eagine-app-resource-provider \- Server providing resources over the message bus.
+.SH "SYNOPSIS"
+.B eagine-app-resource-provider
+[
+OPTIONS
+]
+.SH "DESCRIPTION"
+This executable listens on the message bus for request of various resources
+like texture images, GLSL shader sources, model geometry, etc. and provides
+them.
+.SH "OPTIONS"
+.TP
+\fB-h\fR, \fB--help\fR
+show a help message and exit.
+.TP
+\fB--version\fR
+print the version number and exit.
+.TP
+\fB--version-at-least\fR <\fIMAJOR.MINOR[.PATCH[.COMMIT]]\fR>
+.SH "AUTHOR"
+Matus Chochlik, chochlik@gmail.com
+.SH "COPYRIGHT"
+Copyright (c) 2023-2024 Matus Chochlik
+.PP
+Permission is granted to copy, distribute and/or modify this document
+under the terms of the Boost Software License, Version 1.0.
+(See a copy at https://www.boost.org/LICENSE_1_0.txt)
