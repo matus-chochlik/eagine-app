@@ -28,6 +28,8 @@ public:
     auto gl() noexcept -> optional_reference<oglplus::gl_api>;
 
 private:
+    unique_holder<eglplus::egl_api> _egl;
+    unique_holder<oglplus::gl_api> _gl;
 };
 //------------------------------------------------------------------------------
 } // namespace eagine::app
