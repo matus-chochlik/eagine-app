@@ -13,6 +13,7 @@ import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
+export class external_apis;
 export struct resource_provider_interface
   : abstract<resource_provider_interface> {
     virtual auto has_resource(const url&) noexcept -> bool = 0;
@@ -37,6 +38,7 @@ export class resource_provider_driver final
 public:
     resource_provider_driver(
       main_ctx_parent,
+      external_apis&,
       msgbus::resource_data_consumer_node&);
 
     auto find_provider_of(const url&) noexcept
@@ -63,7 +65,7 @@ public:
 
 private:
     void _add(unique_holder<resource_provider_interface>);
-    void _populate(msgbus::resource_data_consumer_node&);
+    void _populate(external_apis&, msgbus::resource_data_consumer_node&);
 
     std::vector<unique_holder<resource_provider_interface>> _providers;
 };

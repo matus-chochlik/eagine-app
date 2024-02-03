@@ -13,8 +13,10 @@ import :driver;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
+export class external_apis;
 struct provider_parameters {
     main_ctx_parent parent;
+    external_apis& apis;
     resource_provider_driver& driver;
     msgbus::resource_data_consumer_node& consumer;
 };

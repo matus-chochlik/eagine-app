@@ -8,6 +8,7 @@
 export module eagine.app.resource_provider;
 
 export import :special_args;
+export import :external_apis;
 export import :driver;
 export import :providers;
 export import :common;

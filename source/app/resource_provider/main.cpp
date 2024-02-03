@@ -25,11 +25,16 @@ public:
     void finish();
 
 private:
+    app::external_apis _apis{as_parent()};
+
     msgbus::endpoint _consumer_bus{"ResConEndp", as_parent()};
     msgbus::endpoint _provider_bus{"ResProEndp", as_parent()};
 
     msgbus::resource_data_consumer_node _resource_consumer{_consumer_bus};
-    app::resource_provider_driver _driver{as_parent(), _resource_consumer};
+    app::resource_provider_driver _driver{
+      as_parent(),
+      _apis,
+      _resource_consumer};
     msgbus::resource_data_server_node _resource_server{_provider_bus, _driver};
 
     auto _get_timeout() noexcept -> std::optional<timeout>;

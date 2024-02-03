@@ -7,6 +7,14 @@ eagine_add_module(
 	IMPORTS std eagine.core)
 
 eagine_add_module(
+	eagine.app.resource_provider PARTITION external_apis
+	IMPORTS
+		std
+		eagine.core
+		eagine.eglplus
+		eagine.oglplus)
+
+eagine_add_module(
 	eagine.app.resource_provider PARTITION driver
 	IMPORTS
 		std
@@ -38,6 +46,7 @@ eagine_add_module(
 	eagine.app.resource_provider
 	SOURCES
 		special_args
+		external_apis
 		driver
 		common
 		file
@@ -59,6 +68,8 @@ eagine_add_module(
 		eagine.core
 		eagine.shapes
 		eagine.msgbus
+		eagine.eglplus
+		eagine.oglplus
 	PRIVATE_LINK_LIBRARIES
 		EAGine::Deps::Zip)
 
