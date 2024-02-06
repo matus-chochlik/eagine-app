@@ -22,10 +22,10 @@ public:
     void clean_up() noexcept final;
 
 private:
-    void _on_resource_loaded(const loaded_resource_base&) noexcept;
+    void _on_load_event(const loaded_resource_base&) noexcept;
 
     auto _load_handler() noexcept {
-        return make_callable_ref<&example_cel::_on_resource_loaded>(this);
+        return make_callable_ref<&example_cel::_on_load_event>(this);
     }
 
     video_context& _video;
@@ -42,8 +42,8 @@ example_cel::example_cel(execution_context& ec, video_context& vc)
   , _shape{context()}
   , _prog{context()}
   , _bg{_video, {0.1F, 0.1F, 0.1F, 1.0F}, {0.4F, 0.4F, 0.4F, 0.0F}, 1.F} {
-    _shape.base_loaded.connect(_load_handler());
-    _prog.base_loaded.connect(_load_handler());
+    _shape.load_event.connect(_load_handler());
+    _prog.load_event.connect(_load_handler());
 
     _camera.set_near(0.1F)
       .set_far(50.F)
@@ -61,7 +61,7 @@ example_cel::example_cel(execution_context& ec, video_context& vc)
     gl.cull_face(GL.back);
 }
 //------------------------------------------------------------------------------
-void example_cel::_on_resource_loaded(const loaded_resource_base&) noexcept {
+void example_cel::_on_load_event(const loaded_resource_base&) noexcept {
     if(_shape and _prog) {
         _prog.apply_input_bindings(_video, _shape);
         _prog.set_projection(_video, _camera);

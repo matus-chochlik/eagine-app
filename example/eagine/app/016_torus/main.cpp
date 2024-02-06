@@ -23,10 +23,10 @@ public:
     void clean_up() noexcept final;
 
 private:
-    void _on_resource_loaded(const loaded_resource_base&) noexcept;
+    void _on_load_event(const loaded_resource_base&) noexcept;
 
     auto _load_handler() noexcept {
-        return make_callable_ref<&example_torus::_on_resource_loaded>(this);
+        return make_callable_ref<&example_torus::_on_load_event>(this);
     }
 
     video_context& _video;
@@ -41,8 +41,8 @@ example_torus::example_torus(execution_context& ec, video_context& vc)
   , _video{vc}
   , torus{context()}
   , prog{context()} {
-    torus.base_loaded.connect(_load_handler());
-    prog.base_loaded.connect(_load_handler());
+    torus.load_event.connect(_load_handler());
+    prog.load_event.connect(_load_handler());
 
     camera.set_near(0.1F)
       .set_far(50.F)
@@ -63,7 +63,7 @@ example_torus::example_torus(execution_context& ec, video_context& vc)
     gl.cull_face(GL.back);
 }
 //------------------------------------------------------------------------------
-void example_torus::_on_resource_loaded(const loaded_resource_base&) noexcept {
+void example_torus::_on_load_event(const loaded_resource_base&) noexcept {
     if(torus and prog) {
         prog.apply_input_bindings(_video, torus);
         reset_timeout();

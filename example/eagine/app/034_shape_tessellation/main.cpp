@@ -88,8 +88,8 @@ example_tess::example_tess(execution_context& ec, video_context& vc)
   , _prog{ec}
   , _geom{_shape_url(_shape_id()), ec}
   , _other{ec} {
-    _prog.base_loaded.connect(_load_handler());
-    _geom.base_loaded.connect(_load_handler());
+    _prog.load_event.connect(_load_handler());
+    _geom.load_event.connect(_load_handler());
     _other.add(ec.loader().request_input_setup(url{"json:///Inputs"}, ec));
 
     _camera.connect_inputs(ec).basic_input_mapping(ec);

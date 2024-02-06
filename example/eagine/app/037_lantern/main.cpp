@@ -24,10 +24,10 @@ public:
     void clean_up() noexcept final;
 
 private:
-    void _on_resource_loaded(const loaded_resource_base&) noexcept;
+    void _on_load_event(const loaded_resource_base&) noexcept;
 
     auto _load_handler() noexcept {
-        return make_callable_ref<&example_lantern::_on_resource_loaded>(this);
+        return make_callable_ref<&example_lantern::_on_load_event>(this);
     }
 
     puzzle_progress<5> _load_progress;
@@ -53,11 +53,11 @@ example_lantern::example_lantern(execution_context& ec, video_context& vc)
   , draw_prog{ec}
   , screen_prog{ec} {
 
-    pumpkin_tex.base_loaded.connect(_load_handler());
-    pumpkin.base_loaded.connect(_load_handler());
-    screen.base_loaded.connect(_load_handler());
-    draw_prog.base_loaded.connect(_load_handler());
-    screen_prog.base_loaded.connect(_load_handler());
+    pumpkin_tex.load_event.connect(_load_handler());
+    pumpkin.load_event.connect(_load_handler());
+    screen.load_event.connect(_load_handler());
+    draw_prog.load_event.connect(_load_handler());
+    screen_prog.load_event.connect(_load_handler());
 
     draw_bufs.init(_video);
 
@@ -73,10 +73,10 @@ example_lantern::example_lantern(execution_context& ec, video_context& vc)
     ec.setup_inputs().switch_input_mapping();
 }
 //------------------------------------------------------------------------------
-void example_lantern::_on_resource_loaded(
+void example_lantern::_on_load_event(
   const loaded_resource_base& loaded) noexcept {
 
-    if(loaded.is(pumpkin)) {
+    if(loaded.is_loaded(pumpkin)) {
         const auto bs = pumpkin.bounding_sphere();
         const auto sr = bs.radius();
         camera.set_target(bs.center())

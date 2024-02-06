@@ -40,6 +40,18 @@ struct resource_gl_texture_params;
 struct resource_gl_buffer_data_params;
 struct resource_gl_buffer_params;
 //------------------------------------------------------------------------------
+/// @brief Resource loading status.
+/// @see resource_loader
+/// @see loaded resource
+/// @see resource_loader_signals
+export enum class resource_load_status : std::uint8_t {
+    loading,
+    loaded,
+    cancelled,
+    not_found,
+    error
+};
+//------------------------------------------------------------------------------
 /// @brief Resource kind enumeration.
 /// @see resource_loader
 /// @see resource_loader_signals
@@ -600,13 +612,26 @@ private:
 /// @brief Collection of signals emitted by the resource loader.
 /// @see resource_loader
 export struct resource_loader_signals {
-    /// @brief Emitted then the loading of a resource is cancelled.
-    signal<void(identifier_t, resource_kind, const url&) noexcept>
-      resource_cancelled;
+    /// @brief Emitted when the status of resource loading changed.
+    signal<
+      void(resource_load_status, identifier_t, resource_kind, const url&) noexcept>
+      load_status_changed;
 
-    /// @brief Emitted when any resource is successfully loaded
-    signal<void(identifier_t, resource_kind, const url&) noexcept>
-      resource_loaded;
+    void resource_loaded(
+      identifier_t request_id,
+      resource_kind kind,
+      const url& locator) noexcept {
+        load_status_changed(
+          resource_load_status::loaded, request_id, kind, locator);
+    }
+
+    void resource_cancelled(
+      identifier_t request_id,
+      resource_kind kind,
+      const url& locator) noexcept {
+        load_status_changed(
+          resource_load_status::cancelled, request_id, kind, locator);
+    }
 
     template <typename T>
     struct get_load_info;
@@ -1102,12 +1127,13 @@ export struct resource_loader_signals {
 };
 //------------------------------------------------------------------------------
 template <typename T>
-concept resource_cancelled_observer = requires(
+concept resource_load_event_observer = requires(
   T v,
+  resource_load_status status,
   identifier_t request_id,
   resource_kind kind,
   const url& locator) {
-    v.handle_resource_cancelled(request_id, kind, locator);
+    v.handle_resource_load_event(status, request_id, kind, locator);
 };
 
 template <typename T>
@@ -1193,9 +1219,9 @@ public:
             connect<&O::handle_blob_stream_data_appended>(
               &observer, this->blob_stream_data_appended);
         }
-        if constexpr(resource_cancelled_observer<O>) {
-            connect<&O::handle_resource_cancelled>(
-              &observer, this->resource_cancelled);
+        if constexpr(resource_load_event_observer<O>) {
+            connect<&O::handle_resource_load_event>(
+              &observer, &this->load_status_changed);
         }
         if constexpr(resource_shape_generator_loaded_observer<O>) {
             connect<&O::handle_shape_generator_loaded>(
@@ -1596,12 +1622,11 @@ public:
     }
 
 private:
-    void _handle_loaded(
+    void _handle_load_status(
+      resource_load_status,
       const identifier_t request_id,
       resource_kind,
-      const url&) noexcept {
-        _request_ids.erase(request_id);
-    }
+      const url&) noexcept;
 
     signal_binding _sig_bind;
     flat_set<identifier_t> _request_ids;

@@ -21,10 +21,10 @@ example::example(execution_context& ec, video_context& vc)
   , _emit_prog{*this}
   , _draw_prog{*this}
   , _path{*this} {
-    _emit_prog.base_loaded.connect(
-      make_callable_ref<&example::_on_resource_loaded>(this));
-    _draw_prog.base_loaded.connect(
-      make_callable_ref<&example::_on_resource_loaded>(this));
+    _emit_prog.load_event.connect(
+      make_callable_ref<&example::_on_load_event>(this));
+    _draw_prog.load_event.connect(
+      make_callable_ref<&example::_on_load_event>(this));
 
     _particles.init(*this);
 
@@ -44,14 +44,14 @@ example::example(execution_context& ec, video_context& vc)
     gl.disable(GL.cull_face);
 }
 //------------------------------------------------------------------------------
-void example::_on_resource_loaded(const loaded_resource_base& loaded) noexcept {
-    if(loaded.is(_emit_prog)) {
+void example::_on_load_event(const loaded_resource_base& loaded) noexcept {
+    if(loaded.is_loaded(_emit_prog)) {
         _emit_prog.bind_random(*this, _particles.random_binding());
         _emit_prog.bind_offsets(*this, _particles.offsets_binding());
         _emit_prog.bind_velocities(*this, _particles.velocities_binding());
         _emit_prog.bind_ages(*this, _particles.ages_binding());
     }
-    if(loaded.is(_draw_prog)) {
+    if(loaded.is_loaded(_draw_prog)) {
         _draw_prog.bind_origin_location(*this, _particles.origin_loc());
         _draw_prog.bind_offsets(*this, _particles.offsets_binding());
         _draw_prog.bind_ages(*this, _particles.ages_binding());

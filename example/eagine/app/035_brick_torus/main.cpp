@@ -22,10 +22,10 @@ public:
     void clean_up() noexcept final;
 
 private:
-    void _on_resource_loaded(const loaded_resource_base&) noexcept;
+    void _on_load_event(const loaded_resource_base&) noexcept;
 
     auto _load_handler() noexcept {
-        return make_callable_ref<&example_parallax::_on_resource_loaded>(this);
+        return make_callable_ref<&example_parallax::_on_load_event>(this);
     }
 
     void _apply_texture() noexcept;
@@ -56,10 +56,10 @@ example_parallax::example_parallax(execution_context& ec, video_context& vc)
         _use_stones_tex = true;
     }
 
-    _prog.base_loaded.connect(_load_handler());
-    _torus.base_loaded.connect(_load_handler());
-    _bricks.base_loaded.connect(_load_handler());
-    _stones.base_loaded.connect(_load_handler());
+    _prog.load_event.connect(_load_handler());
+    _torus.load_event.connect(_load_handler());
+    _bricks.load_event.connect(_load_handler());
+    _stones.load_event.connect(_load_handler());
 
     _camera.set_near(0.1F)
       .set_far(50.F)
@@ -85,8 +85,7 @@ example_parallax::example_parallax(execution_context& ec, video_context& vc)
     gl.enable(GL.clip_distance0 + 2);
 }
 //------------------------------------------------------------------------------
-void example_parallax::_on_resource_loaded(
-  const loaded_resource_base&) noexcept {
+void example_parallax::_on_load_event(const loaded_resource_base&) noexcept {
     if(_prog and _torus) {
         _prog.apply_input_bindings(_video, _torus);
     }

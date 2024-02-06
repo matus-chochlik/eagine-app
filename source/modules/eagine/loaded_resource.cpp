@@ -37,8 +37,8 @@ public:
     auto operator=(const loaded_resource_base&) = delete;
     ~loaded_resource_base() noexcept = default;
 
-    /// @brief Signal emitted when the resource is successfully loaded.
-    signal<void(const loaded_resource_base&) noexcept> base_loaded;
+    /// @brief Signal emitted when the resource load status changes.
+    signal<void(const loaded_resource_base&) noexcept> load_event;
 
     /// @brief Returns this resource's URL.
     auto locator() const noexcept -> url {
@@ -47,7 +47,12 @@ public:
 
     /// @brief Indicates if this resource is currently loading.
     auto is_loading() const noexcept -> bool {
-        return _request_id != 0;
+        return _request_id != 0 and _status == resource_load_status::loading;
+    }
+
+    /// @brief Indicates if this resource is loaded.
+    auto is_loaded() const noexcept -> bool {
+        return _status == resource_load_status::loaded;
     }
 
     /// @brief Compares resources for equality.
@@ -60,6 +65,11 @@ public:
         return (*this) == that;
     }
 
+    /// @brief Indicates if this resource is the same as that resource and it's loaded.
+    auto is_loaded(const loaded_resource_base& that) const noexcept -> bool {
+        return is_loaded() and (*this) == that;
+    }
+
     /// @brief Indicates if this resource is one in the specified collection.
     template <std::derived_from<loaded_resource_base>... R>
     auto is_one_of(const R&... those) const noexcept -> bool {
@@ -69,6 +79,7 @@ public:
 protected:
     std::string _locator_str;
     identifier_t _request_id{0};
+    resource_load_status _status{resource_load_status::loading};
 };
 //------------------------------------------------------------------------------
 export template <typename Resource>
@@ -191,7 +202,7 @@ class loaded_resource
     using utils = resource_load_utils<Resource>;
 
 public:
-    /// @brief Type of the base_loaded signal parameter.
+    /// @brief Type of the load_event signal parameter.
     using base_load_info = typename resource_loader::load_info_t<Resource>;
 
     /// @brief Type of the loaded signal parameter.
@@ -247,11 +258,6 @@ public:
     }
 
     /// @brief Indicates if this resource is loaded.
-    auto is_loaded() const noexcept -> bool {
-        return _loaded;
-    }
-
-    /// @brief Indicates if this resource is loaded.
     /// @see is_loaded
     explicit operator bool() const noexcept {
         return is_loaded();
@@ -292,17 +298,18 @@ private:
 
     void _handle_loaded(const base_load_info& info) noexcept {
         if(info.request_id == _request_id) {
-            _loaded = info.move_to(resource());
-            if(_loaded) {
+            if(info.move_to(resource())) {
+                _status = resource_load_status::loaded;
                 loaded(load_info(info, *this));
-                base_loaded(*this);
+            } else {
+                _status = resource_load_status::error;
             }
+            load_event(*this);
             _request_id = 0;
         }
     }
 
     signal_binding_key _sig_key{};
-    bool _loaded{false};
 };
 //------------------------------------------------------------------------------
 export template <
@@ -338,7 +345,7 @@ public:
         return {};
     }
 
-    /// @brief Type of the base_loaded signal parameter.
+    /// @brief Type of the load_event signal parameter.
     using base_load_info = typename resource_loader::load_info_t<Resource>;
 
     /// @brief Type of the loaded signal parameter.
@@ -450,10 +457,13 @@ private:
     void _handle_loaded(const base_load_info& info) noexcept {
         if(info.request_id == _request_id) {
             if(derived().assign(info)) {
+                _status = resource_load_status::loaded;
                 loaded(load_info(info, derived()));
-                base_loaded(*this);
-                _request_id = 0;
+            } else {
+                _status = resource_load_status::error;
             }
+            load_event(*this);
+            _request_id = 0;
         }
     }
 

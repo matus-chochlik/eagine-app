@@ -26,10 +26,10 @@ public:
     void clean_up() noexcept final;
 
 private:
-    void _on_resource_loaded(const loaded_resource_base&) noexcept;
+    void _on_load_event(const loaded_resource_base&) noexcept;
 
     auto _load_handler() noexcept {
-        return make_callable_ref<&example_arrow::_on_resource_loaded>(this);
+        return make_callable_ref<&example_arrow::_on_load_event>(this);
     }
 
     video_context& _video;
@@ -50,8 +50,8 @@ example_arrow::example_arrow(
   , _video{vc}
   , _depth_prog{ec}
   , _draw_prog{ec} {
-    _depth_prog.base_loaded.connect(_load_handler());
-    _draw_prog.base_loaded.connect(_load_handler());
+    _depth_prog.load_event.connect(_load_handler());
+    _draw_prog.load_event.connect(_load_handler());
 
     _shape.init(gen, vc);
     _depth_tex.init(ec, vc);
@@ -77,12 +77,11 @@ example_arrow::example_arrow(
     gl.cull_face(GL.back);
 }
 //------------------------------------------------------------------------------
-void example_arrow::_on_resource_loaded(
-  const loaded_resource_base& loaded) noexcept {
-    if(loaded.is(_depth_prog)) {
+void example_arrow::_on_load_event(const loaded_resource_base& loaded) noexcept {
+    if(loaded.is_loaded(_depth_prog)) {
         _depth_prog.apply_input_bindings(_video, _shape);
     }
-    if(loaded.is(_draw_prog)) {
+    if(loaded.is_loaded(_draw_prog)) {
         _draw_prog.apply_input_bindings(_video, _shape);
     }
 }

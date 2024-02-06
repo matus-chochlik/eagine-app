@@ -1315,11 +1315,22 @@ auto resource_loader::update_and_process_all() noexcept -> work_done {
 //------------------------------------------------------------------------------
 pending_resource_requests::pending_resource_requests(
   resource_loader& loader) noexcept
-  : _sig_bind{loader.resource_loaded.bind(
-      make_callable_ref<&pending_resource_requests::_handle_loaded>(this))} {}
+  : _sig_bind{loader.load_status_changed.bind(
+      make_callable_ref<&pending_resource_requests::_handle_load_status>(
+        this))} {}
 //------------------------------------------------------------------------------
 pending_resource_requests::pending_resource_requests(
   execution_context& ctx) noexcept
   : pending_resource_requests{ctx.loader()} {}
+//------------------------------------------------------------------------------
+void pending_resource_requests::_handle_load_status(
+  resource_load_status status,
+  const identifier_t request_id,
+  resource_kind,
+  const url&) noexcept {
+    if(status != resource_load_status::loading) {
+        _request_ids.erase(request_id);
+    }
+}
 //------------------------------------------------------------------------------
 } // namespace eagine::app

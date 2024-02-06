@@ -38,7 +38,7 @@ public:
     }
 
 private:
-    void _on_resource_loaded(const loaded_resource_base&) noexcept;
+    void _on_load_event(const loaded_resource_base&) noexcept;
 
     cleanup_group _cleanup;
     video_context& _video;

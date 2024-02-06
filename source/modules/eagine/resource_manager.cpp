@@ -75,7 +75,7 @@ public:
     auto connect(
       callable_ref<void(const loaded_resource_base&) noexcept> handler) noexcept
       -> managed_resource& {
-        _ref.base_loaded.connect(std::move(handler));
+        _ref.load_event.connect(std::move(handler));
         return *this;
     }
 

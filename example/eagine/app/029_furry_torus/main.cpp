@@ -64,13 +64,13 @@ example_fur::example_fur(execution_context& ec, video_context& vc)
   , _surf_prog{context()}
   , _shape_tex{_tex_url(), context()}
   , _shape_gen{_gen_url(), context()} {
-    _hair_prog.base_loaded.connect(
+    _hair_prog.load_event.connect(
       make_callable_ref<&example_fur::_on_loaded>(this));
-    _surf_prog.base_loaded.connect(
+    _surf_prog.load_event.connect(
       make_callable_ref<&example_fur::_on_loaded>(this));
-    _shape_tex.base_loaded.connect(
+    _shape_tex.load_event.connect(
       make_callable_ref<&example_fur::_on_loaded>(this));
-    _shape_gen.base_loaded.connect(
+    _shape_gen.load_event.connect(
       make_callable_ref<&example_fur::_on_loaded>(this));
 
     prev_model = oglplus::matrix_rotation_y(radians_(0.F)) *
