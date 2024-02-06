@@ -215,8 +215,19 @@ public:
       : loaded_resource_base{std::move(locator)} {}
 
     /// @brief Delay-initializes the resource.
+    void init(resource_loader& loader) noexcept {
+        _connect(loader);
+    }
+
+    /// @brief Delay-initializes the resource.
     void init(execution_context& ctx) noexcept {
         _connect(ctx.loader());
+    }
+
+    /// @brief Constructor specifying the locator and initializing the resource.
+    loaded_resource(url locator, resource_loader& loader)
+      : loaded_resource_base{std::move(locator)} {
+        init(loader);
     }
 
     /// @brief Constructor specifying the locator and initializing the resource.
@@ -341,6 +352,12 @@ public:
       : loaded_resource_base{std::move(locator)} {}
 
     /// @brief Constructor specifying the resource locator.
+    loaded_resource_common(url locator, resource_loader& loader) noexcept
+      : loaded_resource_base{std::move(locator)} {
+        derived().init(loader);
+    }
+
+    /// @brief Constructor specifying the resource locator.
     loaded_resource_common(url locator, execution_context& ctx) noexcept
       : loaded_resource_base{std::move(locator)} {
         derived().init(ctx);
@@ -350,6 +367,11 @@ public:
     /// @see is_loaded
     explicit operator bool() const noexcept {
         return derived().is_loaded();
+    }
+
+    /// @brief Delay-initializes the resource.
+    void init(resource_loader& loader) noexcept {
+        _connect(loader);
     }
 
     /// @brief Delay-initializes the resource.
