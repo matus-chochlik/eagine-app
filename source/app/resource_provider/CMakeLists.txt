@@ -19,14 +19,15 @@ eagine_add_module(
 	IMPORTS
 		std
 		eagine.core
-		eagine.msgbus)
+		eagine.msgbus
+		eagine.app)
 
 eagine_add_module(
 	eagine.app.resource_provider PARTITION providers
 	IMPORTS
 		driver std
 		eagine.core
-		eagine.msgbus)
+		eagine.app)
 
 eagine_add_module(
 	eagine.app.resource_provider PARTITION common
@@ -71,6 +72,7 @@ eagine_add_module(
 		eagine.msgbus
 		eagine.eglplus
 		eagine.oglplus
+		eagine.app
 	PRIVATE_LINK_LIBRARIES
 		EAGine::Deps::Zip)
 

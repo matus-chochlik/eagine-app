@@ -9,6 +9,7 @@ module eagine.app.resource_provider;
 
 import eagine.core;
 import eagine.msgbus;
+import eagine.app;
 import std;
 
 namespace eagine::app {
@@ -53,14 +54,14 @@ private:
     static auto valid_samples(int s) noexcept -> bool;
 
     external_apis& _apis;
-    msgbus::resource_data_consumer_node& _consumer;
+    resource_loader& _loader;
 };
 //------------------------------------------------------------------------------
 eagitexi_cubemap_blur_provider::eagitexi_cubemap_blur_provider(
   const provider_parameters& params) noexcept
   : main_ctx_object{"PTxCubBlur", params.parent}
   , _apis{params.apis}
-  , _consumer{params.consumer} {}
+  , _loader{params.loader} {}
 //------------------------------------------------------------------------------
 auto eagitexi_cubemap_blur_provider::is_valid_locator(
   const url& locator) noexcept -> bool {

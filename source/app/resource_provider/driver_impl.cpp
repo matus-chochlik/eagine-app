@@ -12,6 +12,7 @@ module eagine.app.resource_provider;
 
 import eagine.core;
 import eagine.msgbus;
+import eagine.app;
 import std;
 
 namespace eagine::app {
@@ -43,12 +44,9 @@ void resource_provider_driver::_add(
 //------------------------------------------------------------------------------
 void resource_provider_driver::_populate(
   external_apis& apis,
-  msgbus::resource_data_consumer_node& consumer) {
+  resource_loader& loader) {
     const provider_parameters parameters{
-      .parent = as_parent(),
-      .apis = apis,
-      .driver = *this,
-      .consumer = consumer};
+      .parent = as_parent(), .apis = apis, .driver = *this, .loader = loader};
 
     _add(provider_zip_archive(parameters));
     _add(provider_file(parameters));
@@ -70,9 +68,9 @@ void resource_provider_driver::_populate(
 resource_provider_driver::resource_provider_driver(
   main_ctx_parent parent,
   external_apis& apis,
-  msgbus::resource_data_consumer_node& consumer)
+  resource_loader& loader)
   : main_ctx_object{"RsrcPrDrvr", parent} {
-    _populate(apis, consumer);
+    _populate(apis, loader);
 }
 //------------------------------------------------------------------------------
 auto resource_provider_driver::find_provider_of(const url& locator) noexcept

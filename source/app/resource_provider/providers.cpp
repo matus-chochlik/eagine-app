@@ -8,7 +8,7 @@
 export module eagine.app.resource_provider:providers;
 
 import eagine.core;
-import eagine.msgbus;
+import eagine.app;
 import :driver;
 
 namespace eagine::app {
@@ -18,7 +18,7 @@ struct provider_parameters {
     main_ctx_parent parent;
     external_apis& apis;
     resource_provider_driver& driver;
-    msgbus::resource_data_consumer_node& consumer;
+    resource_loader& loader;
 };
 //------------------------------------------------------------------------------
 auto provider_zip_archive(const provider_parameters&)

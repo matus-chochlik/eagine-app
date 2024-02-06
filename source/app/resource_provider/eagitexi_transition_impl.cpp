@@ -13,6 +13,7 @@ module eagine.app.resource_provider;
 
 import eagine.core;
 import eagine.msgbus;
+import eagine.app;
 import std;
 
 namespace eagine::app {
@@ -33,7 +34,7 @@ class tiling_transition_checker final : public tiling_transition_mask {
 public:
     tiling_transition_checker(
       main_ctx_parent,
-      msgbus::resource_data_consumer_node&,
+      resource_loader&,
       const url& locator) noexcept;
 
     static auto is_valid_locator(const url& locator) noexcept -> bool;
@@ -64,7 +65,7 @@ private:
 //------------------------------------------------------------------------------
 tiling_transition_checker::tiling_transition_checker(
   main_ctx_parent,
-  msgbus::resource_data_consumer_node&,
+  resource_loader&,
   const url& locator) noexcept
   : _width{locator.query().arg_value_as<int>("width").value_or(64)}
   , _height{locator.query().arg_value_as<int>("height").value_or(64)} {}
@@ -83,7 +84,7 @@ class tiling_transition_tiling final
 public:
     tiling_transition_tiling(
       main_ctx_parent,
-      msgbus::resource_data_consumer_node&,
+      resource_loader&,
       const url& locator) noexcept;
 
     static auto is_valid_locator(const url& locator) noexcept -> bool;
@@ -129,22 +130,22 @@ auto tiling_transition_tiling::_get_threshold(const url& locator) noexcept
 //------------------------------------------------------------------------------
 tiling_transition_tiling::tiling_transition_tiling(
   main_ctx_parent parent,
-  msgbus::resource_data_consumer_node& consumer,
+  resource_loader& loader,
   const url& locator) noexcept
   : main_ctx_object{"TlgTrnsTlg", parent}
-  , _appended_binding{consumer.blob_stream_data_appended.bind(
+  , _appended_binding{loader.blob_stream_data_appended.bind(
       {this,
        member_function_constant_t<
          &tiling_transition_tiling::_handle_stream_data_appended>{}})}
-  , _finished_binding{consumer.blob_stream_finished.bind(
+  , _finished_binding{loader.blob_stream_finished.bind(
       {this,
        member_function_constant_t<
          &tiling_transition_tiling::_handle_stream_finished>{}})}
-  , _canceled_binding{consumer.blob_stream_cancelled.bind(
+  , _canceled_binding{loader.blob_stream_cancelled.bind(
       {this,
        member_function_constant_t<
          &tiling_transition_tiling::_handle_stream_canceled>{}})}
-  , _request_id{std::get<0>(consumer.stream_resource(_get_source(locator)))}
+  , _request_id{std::get<0>(loader.stream_resource(_get_source(locator)))}
   , _threshold{_get_threshold(locator)} {}
 //------------------------------------------------------------------------------
 auto tiling_transition_tiling::is_valid_locator(const url& locator) noexcept
@@ -251,9 +252,9 @@ class tiling_transition_mask_factory : public main_ctx_object {
 public:
     tiling_transition_mask_factory(
       main_ctx_parent parent,
-      msgbus::resource_data_consumer_node& consumer) noexcept
+      resource_loader& loader) noexcept
       : main_ctx_object{"TiTrMskFac", parent}
-      , _consumer{consumer} {}
+      , _loader{loader} {}
 
     auto is_valid_locator(const url& locator) noexcept -> bool;
 
@@ -275,12 +276,12 @@ private:
     auto _make_mask(const url& locator, mp_list<M, Ms...>) noexcept
       -> unique_holder<tiling_transition_mask> {
         if(M::is_valid_locator(locator)) {
-            return {hold<M>, as_parent(), _consumer, locator};
+            return {hold<M>, as_parent(), _loader, locator};
         }
         return _make_mask(locator, mp_list<Ms...>{});
     }
 
-    msgbus::resource_data_consumer_node& _consumer;
+    resource_loader& _loader;
     mp_list<tiling_transition_checker, tiling_transition_tiling> _masks{};
 };
 //------------------------------------------------------------------------------
@@ -464,7 +465,7 @@ class eagitexi_tiling_transition_provider final
 public:
     eagitexi_tiling_transition_provider(const provider_parameters& p) noexcept
       : main_ctx_object{"PTxTTrnstn", p.parent}
-      , _mask_factory{as_parent(), p.consumer} {}
+      , _mask_factory{as_parent(), p.loader} {}
 
     auto has_resource(const url& locator) noexcept -> bool final;
 

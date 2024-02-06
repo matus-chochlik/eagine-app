@@ -13,6 +13,7 @@ module eagine.app.resource_provider;
 
 import eagine.core;
 import eagine.msgbus;
+import eagine.app;
 import std;
 
 namespace eagine::app {
@@ -21,10 +22,7 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 class eagitexi_tiling_io final : public compressed_buffer_source_blob_io {
 public:
-    eagitexi_tiling_io(
-      main_ctx_parent,
-      msgbus::resource_data_consumer_node&,
-      url);
+    eagitexi_tiling_io(main_ctx_parent, resource_loader&, url);
 
     auto prepare() noexcept -> msgbus::blob_preparation final;
 
@@ -52,22 +50,22 @@ private:
 //------------------------------------------------------------------------------
 eagitexi_tiling_io::eagitexi_tiling_io(
   main_ctx_parent parent,
-  msgbus::resource_data_consumer_node& consumer,
+  resource_loader& loader,
   url source)
   : compressed_buffer_source_blob_io{"ITxTlng", parent, 1024 * 1024}
-  , _appended_binding{consumer.blob_stream_data_appended.bind(
+  , _appended_binding{loader.blob_stream_data_appended.bind(
       {this,
        member_function_constant_t<
          &eagitexi_tiling_io::_handle_stream_data_appended>{}})}
-  , _finished_binding{consumer.blob_stream_finished.bind(
+  , _finished_binding{loader.blob_stream_finished.bind(
       {this,
        member_function_constant_t<
          &eagitexi_tiling_io::_handle_stream_finished>{}})}
-  , _canceled_binding{consumer.blob_stream_cancelled.bind(
+  , _canceled_binding{loader.blob_stream_cancelled.bind(
       {this,
        member_function_constant_t<
          &eagitexi_tiling_io::_handle_stream_canceled>{}})}
-  , _request_id{std::get<0>(consumer.stream_resource(std::move(source)))} {
+  , _request_id{std::get<0>(loader.stream_resource(std::move(source)))} {
     append(R"({"level":0,"channels":1,"data_type":"unsigned_byte")");
     append(R"(,"tag":["tiling"])");
     append(R"(,"format":"red_integer","iformat":"r8ui")");
@@ -156,11 +154,11 @@ struct eagitexi_tiling_provider final
   : main_ctx_object
   , resource_provider_interface {
 
-    msgbus::resource_data_consumer_node& consumer;
+    resource_loader& loader;
 
     eagitexi_tiling_provider(const provider_parameters& p) noexcept
       : main_ctx_object{"PTxTlng", p.parent}
-      , consumer{p.consumer} {}
+      , loader{p.loader} {}
 
     auto valid_source(const url& locator) noexcept -> bool;
 
@@ -205,7 +203,7 @@ auto eagitexi_tiling_provider::get_resource_io(const url& locator)
     return {
       hold<eagitexi_tiling_io>,
       as_parent(),
-      consumer,
+      loader,
       q.decoded_arg_value("source").or_default()};
 }
 //------------------------------------------------------------------------------
@@ -306,7 +304,7 @@ auto tiling_data_view::get(float x, float y) const noexcept -> float {
 //------------------------------------------------------------------------------
 class tiling_data : public main_ctx_object {
 public:
-    tiling_data(main_ctx_parent, msgbus::resource_data_consumer_node&, url);
+    tiling_data(main_ctx_parent, resource_loader&, url);
 
     auto is_loaded() const noexcept -> bool;
 
@@ -366,19 +364,19 @@ auto tiling_data_view::get_cell(span_size_t x, span_size_t y) const noexcept
 //------------------------------------------------------------------------------
 tiling_data::tiling_data(
   main_ctx_parent parent,
-  msgbus::resource_data_consumer_node& consumer,
+  resource_loader& loader,
   url source)
   : main_ctx_object{"TilingData", parent}
-  , _appended_binding{consumer.blob_stream_data_appended.bind(
+  , _appended_binding{loader.blob_stream_data_appended.bind(
       {this,
        member_function_constant_t<&tiling_data::_handle_stream_data_appended>{}})}
-  , _finished_binding{consumer.blob_stream_finished.bind(
+  , _finished_binding{loader.blob_stream_finished.bind(
       {this,
        member_function_constant_t<&tiling_data::_handle_stream_finished>{}})}
-  , _canceled_binding{consumer.blob_stream_cancelled.bind(
+  , _canceled_binding{loader.blob_stream_cancelled.bind(
       {this,
        member_function_constant_t<&tiling_data::_handle_stream_canceled>{}})}
-  , _request_id{std::get<0>(consumer.stream_resource(std::move(source)))} {
+  , _request_id{std::get<0>(loader.stream_resource(std::move(source)))} {
     _data.reserve(1024U * 1024U);
 }
 //------------------------------------------------------------------------------
@@ -483,7 +481,7 @@ class eagitexi_tiling_noise_io final : public simple_buffer_source_blob_io {
 public:
     eagitexi_tiling_noise_io(
       main_ctx_parent,
-      msgbus::resource_data_consumer_node&,
+      resource_loader&,
       span_size_t width,
       span_size_t height,
       url);
@@ -507,14 +505,14 @@ private:
 //------------------------------------------------------------------------------
 eagitexi_tiling_noise_io::eagitexi_tiling_noise_io(
   main_ctx_parent parent,
-  msgbus::resource_data_consumer_node& consumer,
+  resource_loader& loader,
   span_size_t width,
   span_size_t height,
   url locator)
   : simple_buffer_source_blob_io{"ITxTlgNois", parent, 1024 * 1024}
   , _width{width}
   , _height{height}
-  , _tiling{as_parent(), consumer, std::move(locator)} {
+  , _tiling{as_parent(), loader, std::move(locator)} {
     append(R"({"level":0,"channels":1,"data_type":"float")"
            R"(,"format":"red","iformat":"r32f")"
            R"(,"tag":["generated","noise","sudoku"])");
@@ -605,11 +603,11 @@ struct eagitexi_tiling_noise_provider final
   : main_ctx_object
   , resource_provider_interface {
 
-    msgbus::resource_data_consumer_node& consumer;
+    resource_loader& loader;
 
     eagitexi_tiling_noise_provider(const provider_parameters& p) noexcept
       : main_ctx_object{"PTxTlgNois", p.parent}
-      , consumer{p.consumer} {}
+      , loader{p.loader} {}
 
     auto valid_source(const url& locator) noexcept -> bool;
 
@@ -657,7 +655,7 @@ auto eagitexi_tiling_noise_provider::get_resource_io(const url& locator)
     return {
       hold<eagitexi_tiling_noise_io>,
       as_parent(),
-      consumer,
+      loader,
       q.arg_value_as<span_size_t>("width").value_or(0),
       q.arg_value_as<span_size_t>("height").value_or(0),
       q.decoded_arg_value("source").or_default()};

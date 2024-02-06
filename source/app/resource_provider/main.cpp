@@ -30,11 +30,8 @@ private:
     msgbus::endpoint _consumer_bus{"ResConEndp", as_parent()};
     msgbus::endpoint _provider_bus{"ResProEndp", as_parent()};
 
-    msgbus::resource_data_consumer_node _resource_consumer{_consumer_bus};
-    app::resource_provider_driver _driver{
-      as_parent(),
-      _apis,
-      _resource_consumer};
+    app::resource_loader _resource_loader{_consumer_bus};
+    app::resource_provider_driver _driver{as_parent(), _apis, _resource_loader};
     msgbus::resource_data_server_node _resource_server{_provider_bus, _driver};
 
     auto _get_timeout() noexcept -> std::optional<timeout>;
@@ -64,7 +61,7 @@ resource_provider::resource_provider(main_ctx_parent parent) noexcept
     msgbus::connection_setup conn_setup(ctx);
 
     conn_setup.setup_connectors(_resource_server, address);
-    conn_setup.setup_connectors(_resource_consumer, address);
+    conn_setup.setup_connectors(_resource_loader, address);
 
     if(app_config().is_set("app.resource_provider.with_router")) {
         log_info("starting with message bus router");
@@ -84,7 +81,7 @@ auto resource_provider::is_done() noexcept -> bool {
 void resource_provider::update() {
     _resource_server.update_message_age();
     some_true something_done{_resource_server.update_and_process_all()};
-    something_done(_resource_consumer.update_and_process_all());
+    something_done(_resource_loader.update_and_process_all());
     if(_router) {
         something_done(_router->update(8));
     }
