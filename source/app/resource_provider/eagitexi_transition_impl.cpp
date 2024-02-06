@@ -100,10 +100,9 @@ private:
     static auto _get_source(const url&) noexcept -> url;
     static auto _get_threshold(const url&) noexcept -> int;
 
-    void _loaded(const string_list_resource::load_info& info) noexcept;
+    void _loaded(const loaded_resource_base& info) noexcept;
 
     resource_loader& _loader;
-    std::string _tiling_line;
     string_list_resource _tiling;
     const signal_binding _sig_binding;
     const int _threshold;
@@ -140,10 +139,8 @@ auto tiling_transition_tiling::is_valid_locator(const url& locator) noexcept
 //------------------------------------------------------------------------------
 auto tiling_transition_tiling::prepare() noexcept -> msgbus::blob_preparation {
     _tiling.load_if_needed(_loader);
-    const auto result = (not _tiling.is_loading())
-                          ? msgbus::blob_preparation::finished
-                          : msgbus::blob_preparation::working;
-    return result;
+    return _tiling.is_loading() ? msgbus::blob_preparation::working
+                                : msgbus::blob_preparation::finished;
 }
 //------------------------------------------------------------------------------
 auto tiling_transition_tiling::width() noexcept -> valid_if_positive<int> {
@@ -186,10 +183,7 @@ auto tiling_transition_tiling::value(int x, int y) noexcept -> bool {
     return false;
 }
 //------------------------------------------------------------------------------
-void tiling_transition_tiling::_loaded(
-  const string_list_resource::load_info& info) noexcept {
-    (void)info;
-}
+void tiling_transition_tiling::_loaded(const loaded_resource_base&) noexcept {}
 //------------------------------------------------------------------------------
 // transition mask factory
 //------------------------------------------------------------------------------

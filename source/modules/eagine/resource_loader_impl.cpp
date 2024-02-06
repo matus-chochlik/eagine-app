@@ -891,7 +891,9 @@ void resource_loader::_init() noexcept {
 //------------------------------------------------------------------------------
 auto resource_loader::request_plain_text(url locator) noexcept
   -> resource_request_result {
-    if(locator.has_path_suffix(".txt") or locator.has_scheme("txt")) {
+    if(
+      locator.has_path_suffix(".txt") or locator.has_scheme("txt") or
+      locator.has_scheme("text")) {
         if(const auto src_request{_new_resource(
              fetch_resource_chunks(
                locator,
@@ -910,7 +912,9 @@ auto resource_loader::request_plain_text(url locator) noexcept
 //------------------------------------------------------------------------------
 auto resource_loader::request_string_list(url locator) noexcept
   -> resource_request_result {
-    if(locator.has_path_suffix(".txt") or locator.has_scheme("txt")) {
+    if(
+      locator.has_path_suffix(".txt") or locator.has_scheme("txt") or
+      locator.has_scheme("text")) {
         if(const auto src_request{_new_resource(
              fetch_resource_chunks(
                locator,
