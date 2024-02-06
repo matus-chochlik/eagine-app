@@ -100,23 +100,13 @@ private:
     static auto _get_source(const url&) noexcept -> url;
     static auto _get_threshold(const url&) noexcept -> int;
 
-    void _handle_stream_data_appended(
-      const msgbus::blob_stream_chunk& chunk) noexcept;
-    void _handle_stream_finished(const msgbus::blob_id_t) noexcept;
-    void _handle_stream_canceled(const msgbus::blob_id_t) noexcept;
+    void _loaded(const string_list_resource::load_info& info) noexcept;
 
-    signal_binding _appended_binding;
-    signal_binding _finished_binding;
-    signal_binding _canceled_binding;
-
-    identifier_t _request_id;
+    resource_loader& _loader;
     std::string _tiling_line;
-    std::vector<std::string> _tiling;
-    int _threshold;
-    bool _first{true};
-    bool _last{false};
-    bool _finished{false};
-    bool _canceled{false};
+    string_list_resource _tiling;
+    const signal_binding _sig_binding;
+    const int _threshold;
 };
 //------------------------------------------------------------------------------
 auto tiling_transition_tiling::_get_source(const url& locator) noexcept -> url {
@@ -133,19 +123,10 @@ tiling_transition_tiling::tiling_transition_tiling(
   resource_loader& loader,
   const url& locator) noexcept
   : main_ctx_object{"TlgTrnsTlg", parent}
-  , _appended_binding{loader.blob_stream_data_appended.bind(
-      {this,
-       member_function_constant_t<
-         &tiling_transition_tiling::_handle_stream_data_appended>{}})}
-  , _finished_binding{loader.blob_stream_finished.bind(
-      {this,
-       member_function_constant_t<
-         &tiling_transition_tiling::_handle_stream_finished>{}})}
-  , _canceled_binding{loader.blob_stream_cancelled.bind(
-      {this,
-       member_function_constant_t<
-         &tiling_transition_tiling::_handle_stream_canceled>{}})}
-  , _request_id{std::get<0>(loader.stream_resource(_get_source(locator)))}
+  , _loader{loader}
+  , _tiling{locator, loader}
+  , _sig_binding{_tiling.load_event.bind(
+      {this, member_function_constant_t<&tiling_transition_tiling::_loaded>{}})}
   , _threshold{_get_threshold(locator)} {}
 //------------------------------------------------------------------------------
 auto tiling_transition_tiling::is_valid_locator(const url& locator) noexcept
@@ -158,12 +139,10 @@ auto tiling_transition_tiling::is_valid_locator(const url& locator) noexcept
 }
 //------------------------------------------------------------------------------
 auto tiling_transition_tiling::prepare() noexcept -> msgbus::blob_preparation {
-    const auto result = (_finished or _canceled)
+    _tiling.load_if_needed(_loader);
+    const auto result = (not _tiling.is_loading())
                           ? msgbus::blob_preparation::finished
                           : msgbus::blob_preparation::working;
-    if(_last) {
-        _finished = true;
-    }
     return result;
 }
 //------------------------------------------------------------------------------
@@ -207,43 +186,9 @@ auto tiling_transition_tiling::value(int x, int y) noexcept -> bool {
     return false;
 }
 //------------------------------------------------------------------------------
-void tiling_transition_tiling::_handle_stream_data_appended(
-  const msgbus::blob_stream_chunk& chunk) noexcept {
-    if(_request_id == chunk.request_id) {
-        const string_view sep{"\n"};
-        for(const auto blk : chunk.data) {
-            auto text{as_chars(blk)};
-            while(not text.empty()) {
-                if(const auto pos{memory::find_position(text, sep)}) {
-                    append_to(head(text, *pos), _tiling_line);
-                    text = skip(text, *pos + sep.size());
-                    if(not _tiling_line.empty()) {
-                        _tiling.emplace_back(std::move(_tiling_line));
-                    }
-                } else {
-                    append_to(text, _tiling_line);
-                    text = {};
-                }
-            }
-        }
-    }
-}
-//------------------------------------------------------------------------------
-void tiling_transition_tiling::_handle_stream_finished(
-  const msgbus::blob_id_t request_id) noexcept {
-    if(_request_id == request_id) {
-        if(not _tiling_line.empty()) {
-            _tiling.emplace_back(std::move(_tiling_line));
-        }
-        _last = true;
-    }
-}
-//------------------------------------------------------------------------------
-void tiling_transition_tiling::_handle_stream_canceled(
-  const msgbus::blob_id_t request_id) noexcept {
-    if(_request_id == request_id) {
-        _canceled = true;
-    }
+void tiling_transition_tiling::_loaded(
+  const string_list_resource::load_info& info) noexcept {
+    (void)info;
 }
 //------------------------------------------------------------------------------
 // transition mask factory
