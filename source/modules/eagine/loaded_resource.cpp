@@ -47,7 +47,8 @@ public:
 
     /// @brief Indicates if this resource is currently loading.
     auto is_loading() const noexcept -> bool {
-        return _request_id != 0 and _status == resource_load_status::loading;
+        return (_request_id != 0) and
+               (_status == resource_load_status::loading);
     }
 
     /// @brief Indicates if this resource is loaded.
@@ -55,19 +56,30 @@ public:
         return _status == resource_load_status::loaded;
     }
 
-    /// @brief Compares resources for equality.
-    auto operator==(const loaded_resource_base& that) const noexcept -> bool {
-        return this->_locator_str == that._locator_str;
+    /// @brief Indicates if this resource is cancelled.
+    auto is_cancelled() const noexcept -> bool {
+        return _status == resource_load_status::cancelled;
+    }
+
+    /// @brief Indicates if this resource is loaded.
+    /// @see is_loaded
+    explicit operator bool() const noexcept {
+        return is_loaded();
     }
 
     /// @brief Indicates if this resource is the same as that resource.
     auto is(const loaded_resource_base& that) const noexcept -> bool {
-        return (*this) == that;
+        return this->_locator_str == that._locator_str;
+    }
+
+    /// @brief Compares resources for equality.
+    auto operator==(const loaded_resource_base& that) const noexcept -> bool {
+        return this->is(that);
     }
 
     /// @brief Indicates if this resource is the same as that resource and it's loaded.
     auto is_loaded(const loaded_resource_base& that) const noexcept -> bool {
-        return is_loaded() and (*this) == that;
+        return is_loaded() and this->is(that);
     }
 
     /// @brief Indicates if this resource is one in the specified collection.
@@ -255,12 +267,6 @@ public:
     /// @brief Cleans up this resource.
     void clean_up(execution_context& ctx) {
         clean_up(ctx.loader());
-    }
-
-    /// @brief Indicates if this resource is loaded.
-    /// @see is_loaded
-    explicit operator bool() const noexcept {
-        return is_loaded();
     }
 
     /// @brief Updates the resource, possibly doing resource load request.

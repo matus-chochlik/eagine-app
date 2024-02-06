@@ -348,6 +348,12 @@ void pending_resource_info::_handle_string_list(
       .arg("locator", _locator.str());
 
     std::vector<std::string> strings;
+    resource_loader_signals::string_list_load_info load_info{
+      .request_id = _request_id,
+      .locator = _locator,
+      .strings = strings,
+      .values = strings};
+
     std::string line;
     const string_view sep{"\n"};
     for(const auto chunk : data) {
@@ -357,6 +363,9 @@ void pending_resource_info::_handle_string_list(
                 append_to(head(text, *pos), line);
                 text = skip(text, *pos + sep.size());
                 strings.emplace_back(std::move(line));
+                if(is(resource_kind::string_list)) {
+                    _parent.string_line_loaded(load_info);
+                }
             } else {
                 append_to(text, line);
                 text = {};
@@ -365,6 +374,9 @@ void pending_resource_info::_handle_string_list(
     }
     if(not line.empty()) {
         strings.emplace_back(std::move(line));
+        if(is(resource_kind::string_list)) {
+            _parent.string_line_loaded(load_info);
+        }
     }
 
     if(const auto cont{continuation()}) {
@@ -383,11 +395,7 @@ void pending_resource_info::_handle_string_list(
     }
 
     if(is(resource_kind::string_list)) {
-        _parent.string_list_loaded(
-          {.request_id = _request_id,
-           .locator = _locator,
-           .strings = strings,
-           .values = strings});
+        _parent.string_list_loaded(load_info);
         _parent.resource_loaded(_request_id, _kind, _locator);
     }
     mark_finished();

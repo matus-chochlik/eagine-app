@@ -762,13 +762,15 @@ export struct resource_loader_signals {
     struct string_list_load_info {
         const identifier_t request_id;
         const url& locator;
-        const std::vector<std::string>& strings;
+        std::vector<std::string>& strings;
         const std::vector<std::string>& values{strings};
     };
 
     template <>
     struct get_load_info<std::vector<std::string>>
       : std::type_identity<string_list_load_info> {};
+
+    signal<void(string_list_load_info&) noexcept> string_line_loaded;
 
     /// @brief Emitted when list of strings is loaded.
     signal<void(const string_list_load_info&) noexcept> string_list_loaded;
