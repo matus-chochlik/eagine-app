@@ -29,6 +29,14 @@ public:
     ~gl_geometry_and_bindings() noexcept = default;
 
     gl_geometry_and_bindings(
+      const oglplus::gl_api& glapi,
+      const oglplus::shape_generator& shape,
+      const oglplus::vertex_attrib_bindings& bindings,
+      const shapes::drawing_variant var,
+      memory::buffer& temp) noexcept
+      : base{glapi, shape, bindings, var, temp} {}
+
+    gl_geometry_and_bindings(
       const oglplus::shape_generator& shape,
       const oglplus::vertex_attrib_bindings& bindings,
       const shapes::drawing_variant var,

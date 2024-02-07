@@ -105,7 +105,7 @@ export template <typename Params>
 struct get_resource_load_context_params : std::type_identity<Params> {};
 
 export template <typename... P>
-struct get_resource_load_context_params<std::tuple<video_context&, P...>>
+struct get_resource_load_context_params<std::tuple<const oglplus::gl_api&, P...>>
   : std::type_identity<std::tuple<P...>> {};
 
 export template <typename Params>
@@ -146,15 +146,15 @@ struct resource_load_utils<Resource, std::tuple<P...>> {
 };
 
 export template <typename Resource, typename... P>
-struct resource_load_utils<Resource, std::tuple<video_context&, P...>> {
+struct resource_load_utils<Resource, std::tuple<const oglplus::gl_api&, P...>> {
 
     auto request(
       resource_loader& loader,
       url locator,
-      video_context& video,
+      const oglplus::gl_api& glapi,
       P... params) -> resource_request_result {
         return loader.request(
-          std::type_identity<Resource>{}, std::move(locator), video, params...);
+          std::type_identity<Resource>{}, std::move(locator), glapi, params...);
     }
 
     auto request(execution_context& ctx, url locator, P... params)
@@ -162,7 +162,7 @@ struct resource_load_utils<Resource, std::tuple<video_context&, P...>> {
         return ctx.loader().request(
           std::type_identity<Resource>{},
           std::move(locator),
-          ctx.main_video(),
+          ctx.main_video().gl_api(),
           params...);
     }
 
@@ -170,7 +170,7 @@ struct resource_load_utils<Resource, std::tuple<video_context&, P...>> {
     auto request(
       execution_context& ctx,
       url locator,
-      const std::tuple<video_context&, P...>& params,
+      const std::tuple<const oglplus::gl_api&, P...>& params,
       std::index_sequence<I...> = {}) -> resource_request_result {
         return ctx.loader().request(
           std::type_identity<Resource>{},
@@ -593,7 +593,7 @@ export using shape_generator_resource =
 //------------------------------------------------------------------------------
 template <>
 struct get_resource_load_params<gl_geometry_and_bindings>
-  : std::type_identity<std::tuple<video_context&, span_size_t>> {};
+  : std::type_identity<std::tuple<const oglplus::gl_api&, span_size_t>> {};
 
 export template <>
 class loaded_resource<gl_geometry_and_bindings>
@@ -606,14 +606,19 @@ public:
     using common::common;
 
     /// @brief Cleans up this resource.
-    void clean_up(resource_loader& loader, video_context& video) {
-        resource().clean_up(video);
+    void clean_up(resource_loader& loader, const oglplus::gl_api& glapi) {
+        resource().clean_up(glapi);
         common::_disconnect(loader);
     }
 
     /// @brief Cleans up this resource.
+    void clean_up(resource_loader& loader, video_context& video) {
+        clean_up(loader, video.gl_api());
+    }
+
+    /// @brief Cleans up this resource.
     void clean_up(execution_context& ctx) {
-        clean_up(ctx.loader(), ctx.main_video());
+        clean_up(ctx.loader(), ctx.main_video().gl_api());
     }
 
     using common::load_if_needed;
@@ -686,7 +691,8 @@ export using value_tree_resource = loaded_resource<valtree::compound>;
 //------------------------------------------------------------------------------
 template <>
 struct get_resource_load_params<oglplus::owned_shader_name>
-  : std::type_identity<std::tuple<video_context&, oglplus::shader_type>> {};
+  : std::type_identity<std::tuple<const oglplus::gl_api&, oglplus::shader_type>> {
+};
 
 export template <>
 class loaded_resource<oglplus::owned_shader_name>
@@ -699,14 +705,19 @@ public:
     using common::common;
 
     /// @brief Cleans up this resource.
-    void clean_up(resource_loader& loader, video_context& video) {
-        video.gl_api().clean_up(std::move(resource()));
+    void clean_up(resource_loader& loader, const oglplus::gl_api& glapi) {
+        glapi.clean_up(std::move(resource()));
         common::_disconnect(loader);
     }
 
     /// @brief Cleans up this resource.
+    void clean_up(resource_loader& loader, video_context& video) {
+        clean_up(loader, video.gl_api());
+    }
+
+    /// @brief Cleans up this resource.
     void clean_up(execution_context& ctx) {
-        clean_up(ctx.loader(), ctx.main_video());
+        clean_up(ctx.loader(), ctx.main_video().gl_api());
     }
 
     auto assign(const typename common::base_load_info& info) noexcept -> bool {
@@ -717,7 +728,7 @@ export using gl_shader_resource = loaded_resource<oglplus::owned_shader_name>;
 //------------------------------------------------------------------------------
 template <>
 struct get_resource_load_params<oglplus::owned_program_name>
-  : std::type_identity<std::tuple<video_context&>> {};
+  : std::type_identity<std::tuple<const oglplus::gl_api&>> {};
 
 export template <>
 struct resource_load_info<oglplus::owned_program_name> {
@@ -888,9 +899,14 @@ public:
     }
 
     /// @brief Cleans up this resource.
-    void clean_up(resource_loader& loader, video_context& video) {
-        video.gl_api().clean_up(std::move(resource()));
+    void clean_up(resource_loader& loader, const oglplus::gl_api& glapi) {
+        glapi.clean_up(std::move(resource()));
         common::_disconnect(loader);
+    }
+
+    /// @brief Cleans up this resource.
+    void clean_up(resource_loader& loader, video_context& video) {
+        clean_up(loader, video.gl_api());
     }
 
     /// @brief Cleans up this resource.
@@ -913,9 +929,10 @@ export using gl_program_resource = loaded_resource<oglplus::owned_program_name>;
 //------------------------------------------------------------------------------
 template <>
 struct get_resource_load_params<oglplus::owned_texture_name>
-  : std::type_identity<
-      std::tuple<video_context&, oglplus::texture_target, oglplus::texture_unit>> {
-};
+  : std::type_identity<std::tuple<
+      const oglplus::gl_api&,
+      oglplus::texture_target,
+      oglplus::texture_unit>> {};
 
 export template <>
 struct resource_load_info<oglplus::owned_texture_name> {
@@ -962,14 +979,19 @@ public:
     using common::common;
 
     /// @brief Cleans up this resource.
-    void clean_up(resource_loader& loader, video_context& video) {
-        video.gl_api().clean_up(std::move(resource()));
+    void clean_up(resource_loader& loader, const oglplus::gl_api& glapi) {
+        glapi.clean_up(std::move(resource()));
         common::_disconnect(loader);
     }
 
     /// @brief Cleans up this resource.
+    void clean_up(resource_loader& loader, video_context& video) {
+        clean_up(loader, video.gl_api());
+    }
+
+    /// @brief Cleans up this resource.
     void clean_up(execution_context& ctx) {
-        clean_up(ctx.loader(), ctx.main_video());
+        clean_up(ctx.loader(), ctx.main_video().gl_api());
     }
 
     auto assign(const typename common::base_load_info& info) noexcept -> bool {
@@ -980,7 +1002,8 @@ export using gl_texture_resource = loaded_resource<oglplus::owned_texture_name>;
 //------------------------------------------------------------------------------
 template <>
 struct get_resource_load_params<oglplus::owned_buffer_name>
-  : std::type_identity<std::tuple<video_context&, oglplus::buffer_target>> {};
+  : std::type_identity<
+      std::tuple<const oglplus::gl_api&, oglplus::buffer_target>> {};
 
 export template <>
 class loaded_resource<oglplus::owned_buffer_name>
@@ -991,14 +1014,19 @@ class loaded_resource<oglplus::owned_buffer_name>
 
 public:
     /// @brief Cleans up this resource.
-    void clean_up(resource_loader& loader, video_context& video) {
-        video.gl_api().clean_up(std::move(resource()));
+    void clean_up(resource_loader& loader, const oglplus::gl_api& glapi) {
+        glapi.clean_up(std::move(resource()));
         common::_disconnect(loader);
     }
 
     /// @brief Cleans up this resource.
+    void clean_up(resource_loader& loader, video_context& video) {
+        clean_up(loader, video.gl_api());
+    }
+
+    /// @brief Cleans up this resource.
     void clean_up(execution_context& ctx) {
-        clean_up(ctx.loader(), ctx.main_video());
+        clean_up(ctx.loader(), ctx.main_video().gl_api());
     }
 
     auto assign(const typename common::base_load_info& info) noexcept -> bool {
