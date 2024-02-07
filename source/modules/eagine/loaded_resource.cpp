@@ -61,12 +61,6 @@ public:
         return _status == resource_load_status::cancelled;
     }
 
-    /// @brief Indicates if this resource is loaded.
-    /// @see is_loaded
-    explicit operator bool() const noexcept {
-        return is_loaded();
-    }
-
     /// @brief Indicates if this resource is the same as that resource.
     auto is(const loaded_resource_base& that) const noexcept -> bool {
         return this->_locator_str == that._locator_str;
@@ -223,6 +217,12 @@ public:
     /// @brief Signal emitted when the resource is successfully loaded.
     signal<void(const load_info&) noexcept> loaded;
 
+    /// @brief Indicates if this resource is loaded.
+    /// @see is_loaded
+    explicit operator bool() const noexcept {
+        return is_loaded();
+    }
+
     /// @brief Returns a reference to the underlying resource.
     auto resource() noexcept -> Resource& {
         return *this;
@@ -274,7 +274,7 @@ public:
         if(not is_loaded() and not is_loading()) {
             if(const auto request{utils::request(loader, locator())}) {
                 _request_id = request.request_id();
-                return true;
+                return is_loading();
             }
         }
         return false;
@@ -376,12 +376,6 @@ public:
         derived().init(ctx);
     }
 
-    /// @brief Indicates if this resource is loaded.
-    /// @see is_loaded
-    explicit operator bool() const noexcept {
-        return derived().is_loaded();
-    }
-
     /// @brief Delay-initializes the resource.
     void init(resource_loader& loader) noexcept {
         _connect(loader);
@@ -390,6 +384,12 @@ public:
     /// @brief Delay-initializes the resource.
     void init(execution_context& ctx) noexcept {
         _connect(ctx.loader());
+    }
+
+    /// @brief Indicates if this resource is loaded.
+    /// @see is_loaded
+    explicit operator bool() const noexcept {
+        return is_loaded();
     }
 
     /// @brief Returns a reference to the underlying resource.
@@ -404,10 +404,10 @@ public:
 
     /// @brief Updates the resource, possibly doing resource load request.
     auto load_if_needed(resource_loader& ldr, P... params) -> work_done {
-        if(not derived().is_loaded() and not is_loading()) {
+        if(not is_loaded() and not is_loading()) {
             if(const auto request{utils::request(ldr, locator(), params...)}) {
                 _request_id = request.request_id();
-                return true;
+                return is_loading();
             }
         }
         return false;
@@ -415,10 +415,10 @@ public:
 
     /// @brief Updates the resource, possibly doing resource load request.
     auto load_if_needed(execution_context& ctx, Cp... params) -> work_done {
-        if(not derived().is_loaded() and not is_loading()) {
+        if(not is_loaded() and not is_loading()) {
             if(const auto request{utils::request(ctx, locator(), params...)}) {
                 _request_id = request.request_id();
-                return true;
+                return is_loading();
             }
         }
         return false;
@@ -427,14 +427,14 @@ public:
     /// @brief Updates the resource, possibly doing resource load request.
     auto load_if_needed(execution_context& ctx, const std::tuple<P...>& params)
       -> work_done {
-        if(not derived().is_loaded() and not is_loading()) {
+        if(not is_loaded() and not is_loading()) {
             if(const auto request{utils::request(
                  ctx,
                  locator(),
                  params,
                  std::make_index_sequence<sizeof...(P)>())}) {
                 _request_id = request.request_id();
-                return true;
+                return is_loading();
             }
         }
         return false;
@@ -456,7 +456,7 @@ protected:
     template <typename R>
     auto _assign(R&& initial) noexcept -> bool {
         resource() = std::forward<R>(initial);
-        return derived().is_loaded();
+        return true;
     }
 
 private:
@@ -495,11 +495,6 @@ public:
         clean_up(ctx.loader());
     }
 
-    /// @brief Indicates if this resource is loaded.
-    auto is_loaded() const noexcept -> bool {
-        return not this->empty();
-    }
-
     auto assign(const typename common::base_load_info& info) noexcept -> bool {
         return this->_assign(info.text);
     }
@@ -524,11 +519,6 @@ public:
     /// @brief Cleans up this resource.
     void clean_up(execution_context& ctx) {
         clean_up(ctx.loader());
-    }
-
-    /// @brief Indicates if this resource is loaded.
-    auto is_loaded() const noexcept -> bool {
-        return not this->empty();
     }
 
     auto assign(const typename common::base_load_info& info) noexcept -> bool {
@@ -565,11 +555,6 @@ public:
         clean_up(ctx.loader());
     }
 
-    /// @brief Indicates if this resource is loaded.
-    auto is_loaded() const noexcept -> bool {
-        return not this->control_points().empty();
-    }
-
     auto assign(const typename common::base_load_info& info) noexcept -> bool {
         return this->_assign(info.curve);
     }
@@ -599,13 +584,8 @@ public:
         clean_up(ctx.loader());
     }
 
-    /// @brief Indicates if this resource is loaded.
-    auto is_loaded() const noexcept -> bool {
-        return bool(resource());
-    }
-
     auto assign(const typename common::base_load_info& info) noexcept -> bool {
-        return this->_assign(info.generator);
+        return this->_assign(info.generator) and info.generator;
     }
 };
 export using shape_generator_resource =
@@ -636,11 +616,6 @@ public:
         clean_up(ctx.loader(), ctx.main_video());
     }
 
-    /// @brief Indicates if this resource is loaded.
-    auto is_loaded() const noexcept -> bool {
-        return this->is_initialized();
-    }
-
     using common::load_if_needed;
 
     /// @brief Updates the resource, possibly doing resource load request.
@@ -649,7 +624,7 @@ public:
     }
 
     auto assign(const typename common::base_load_info& info) noexcept -> bool {
-        return this->_assign(std::move(info.ref));
+        return this->_assign(std::move(info.ref)) and this->is_initialized();
     }
 };
 export using gl_geometry_and_bindings_resource =
@@ -702,13 +677,9 @@ public:
         clean_up(ctx.loader());
     }
 
-    /// @brief Indicates if this resource is loaded.
-    auto is_loaded() const noexcept -> bool {
-        return bool(static_cast<const valtree::compound&>(*this));
-    }
-
     auto assign(const typename common::base_load_info& info) noexcept -> bool {
-        return this->_assign(info.tree);
+        return this->_assign(info.tree) and
+               static_cast<const valtree::compound&>(*this);
     }
 };
 export using value_tree_resource = loaded_resource<valtree::compound>;
@@ -738,13 +709,8 @@ public:
         clean_up(ctx.loader(), ctx.main_video());
     }
 
-    /// @brief Indicates if this resource is loaded.
-    auto is_loaded() const noexcept -> bool {
-        return this->has_value();
-    }
-
     auto assign(const typename common::base_load_info& info) noexcept -> bool {
-        return this->_assign(std::move(info.ref));
+        return this->_assign(std::move(info.ref)) and this->has_value();
     }
 };
 export using gl_shader_resource = loaded_resource<oglplus::owned_shader_name>;
@@ -932,15 +898,10 @@ public:
         return clean_up(ctx.loader(), ctx.main_video());
     }
 
-    /// @brief Indicates if this resource is loaded.
-    auto is_loaded() const noexcept -> bool {
-        return this->has_value();
-    }
-
     auto assign(const typename common::base_load_info& info) noexcept -> bool {
         if(this->_assign(std::move(info.ref))) {
             _inputs = info.input_bindings;
-            return true;
+            return this->has_value();
         }
         return false;
     }
@@ -1011,13 +972,8 @@ public:
         clean_up(ctx.loader(), ctx.main_video());
     }
 
-    /// @brief Indicates if this resource is loaded.
-    auto is_loaded() const noexcept -> bool {
-        return this->has_value();
-    }
-
     auto assign(const typename common::base_load_info& info) noexcept -> bool {
-        return this->_assign(std::move(info.ref));
+        return this->_assign(std::move(info.ref)) and this->has_value();
     }
 };
 export using gl_texture_resource = loaded_resource<oglplus::owned_texture_name>;
@@ -1045,13 +1001,8 @@ public:
         clean_up(ctx.loader(), ctx.main_video());
     }
 
-    /// @brief Indicates if this resource is loaded.
-    auto is_loaded() const noexcept -> bool {
-        return this->has_value();
-    }
-
     auto assign(const typename common::base_load_info& info) noexcept -> bool {
-        return this->_assign(std::move(info.ref));
+        return this->_assign(std::move(info.ref)) and this->has_value();
     }
 };
 export using gl_buffer_resource = loaded_resource<oglplus::owned_buffer_name>;
