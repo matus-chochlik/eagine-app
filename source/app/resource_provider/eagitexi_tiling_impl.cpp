@@ -288,12 +288,10 @@ private:
     void _process_line(const string_view);
 
     void _line_loaded(resource_loader::string_list_load_info& info) noexcept;
-    void _loaded(const loaded_resource_base& info) noexcept;
 
     resource_loader& _loader;
     string_list_resource _tiling;
     const signal_binding _line_binding;
-    const signal_binding _done_binding;
     std::vector<float> _data;
 
     span_size_t _width{0};
@@ -313,9 +311,7 @@ tiling_data::tiling_data(
   , _loader{loader}
   , _tiling{locator, loader}
   , _line_binding{_loader.string_line_loaded.bind(
-      {this, member_function_constant_t<&tiling_data::_line_loaded>{}})}
-  , _done_binding{_tiling.load_event.bind(
-      {this, member_function_constant_t<&tiling_data::_loaded>{}})} {
+      {this, member_function_constant_t<&tiling_data::_line_loaded>{}})} {
     _data.reserve(1024U * 1024U);
 }
 //------------------------------------------------------------------------------
@@ -385,8 +381,6 @@ void tiling_data::_line_loaded(
     }
     info.strings.clear();
 }
-//------------------------------------------------------------------------------
-void tiling_data::_loaded(const loaded_resource_base&) noexcept {}
 //------------------------------------------------------------------------------
 // noise I/O
 //------------------------------------------------------------------------------
