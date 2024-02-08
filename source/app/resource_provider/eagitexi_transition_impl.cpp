@@ -100,8 +100,11 @@ private:
     static auto _get_source(const url&) noexcept -> url;
     static auto _get_threshold(const url&) noexcept -> int;
 
+    void _loaded(const loaded_resource_base& info) noexcept;
+
     resource_loader& _loader;
     string_list_resource _tiling;
+    const signal_binding _sig_binding;
     const int _threshold;
     msgbus::blob_preparation_result _prep_result;
 };
@@ -121,13 +124,16 @@ tiling_transition_tiling::tiling_transition_tiling(
   const url& locator) noexcept
   : main_ctx_object{"TlgTrnsTlg", parent}
   , _loader{loader}
-  , _tiling{locator, loader}
+  , _tiling{_get_source(locator), loader}
+  , _sig_binding{_tiling.load_event.bind(
+      {this, member_function_constant_t<&tiling_transition_tiling::_loaded>{}})}
   , _threshold{_get_threshold(locator)} {}
 //------------------------------------------------------------------------------
 auto tiling_transition_tiling::is_valid_locator(const url& locator) noexcept
   -> bool {
     if(const auto source{locator.query().arg_url("source")}) {
-        return source.has_scheme("text") or source.has_path_suffix(".text") or
+        return source.has_scheme("text") or source.has_scheme("txt") or
+               source.has_path_suffix(".text") or
                source.has_path_suffix(".txt");
     }
     return false;
@@ -175,6 +181,10 @@ auto tiling_transition_tiling::value(int x, int y) noexcept -> bool {
         }
     }
     return false;
+}
+//------------------------------------------------------------------------------
+void tiling_transition_tiling::_loaded(const loaded_resource_base&) noexcept {
+    _tiling.erase_blank_lines();
 }
 //------------------------------------------------------------------------------
 // transition mask factory

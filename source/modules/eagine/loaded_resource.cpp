@@ -207,6 +207,16 @@ class loaded_resource
 
     using utils = resource_load_utils<Resource>;
 
+    using Derived = loaded_resource<Resource>;
+
+    auto derived() noexcept -> Derived& {
+        return *static_cast<Derived*>(this);
+    }
+
+    auto derived() const noexcept -> const Derived& {
+        return *static_cast<const Derived*>(this);
+    }
+
 public:
     /// @brief Type of the load_event signal parameter.
     using base_load_info = typename resource_loader::load_info_t<Resource>;
@@ -266,7 +276,7 @@ public:
 
     /// @brief Cleans up this resource.
     void clean_up(execution_context& ctx) {
-        clean_up(ctx.loader());
+        derived().clean_up(ctx.loader());
     }
 
     /// @brief Updates the resource, possibly doing resource load request.
@@ -436,6 +446,11 @@ public:
         return is_loading();
     }
 
+    /// @brief Cleans up this resource.
+    void clean_up(execution_context& ctx) {
+        derived().clean_up(ctx.loader());
+    }
+
 protected:
     void _connect(resource_loader& loader) noexcept {
         _sig_key = connect<&loaded_resource_common::_handle_loaded>(
@@ -478,17 +493,13 @@ class loaded_resource<std::string>
     using common = loaded_resource_common<loaded_resource<std::string>>;
 
 public:
+    using common::clean_up;
     using common::common;
 
     /// @brief Cleans up this resource.
     void clean_up(resource_loader& loader) {
         this->resource().clear();
         common::_disconnect(loader);
-    }
-
-    /// @brief Cleans up this resource.
-    void clean_up(execution_context& ctx) {
-        clean_up(ctx.loader());
     }
 
     auto assign(const typename common::base_load_info& info) noexcept -> bool {
@@ -504,6 +515,7 @@ class loaded_resource<std::vector<T>>
     using common = loaded_resource_common<loaded_resource<std::vector<T>>>;
 
 public:
+    using common::clean_up;
     using common::common;
 
     /// @brief Cleans up this resource.
@@ -512,13 +524,40 @@ public:
         common::_disconnect(loader);
     }
 
+    auto assign(const typename common::base_load_info& info) noexcept -> bool {
+        return this->_assign(info.values);
+    }
+};
+//------------------------------------------------------------------------------
+export template <>
+class loaded_resource<std::vector<std::string>>
+  : public loaded_resource_common<loaded_resource<std::vector<std::string>>> {
+
+    using common =
+      loaded_resource_common<loaded_resource<std::vector<std::string>>>;
+
+public:
+    using common::clean_up;
+    using common::common;
+
+    /// @brief Removes the blank lines
+    auto erase_blank_lines() {
+        std::erase_if(this->resource(), [](auto& entry) {
+            return entry.empty() or
+                   std::all_of(entry.begin(), entry.end(), [](auto chr) {
+                       return std::isspace(chr);
+                   });
+        });
+    }
+
     /// @brief Cleans up this resource.
-    void clean_up(execution_context& ctx) {
-        clean_up(ctx.loader());
+    void clean_up(resource_loader& loader) {
+        this->resource().clear();
+        common::_disconnect(loader);
     }
 
     auto assign(const typename common::base_load_info& info) noexcept -> bool {
-        return this->_assign(info.values);
+        return this->_assign(std::move(info.strings));
     }
 };
 //------------------------------------------------------------------------------
@@ -538,17 +577,13 @@ class loaded_resource<math::bezier_curves<T, P, O>>
       loaded_resource_common<loaded_resource<math::bezier_curves<T, P, O>>>;
 
 public:
+    using common::clean_up;
     using common::common;
 
     /// @brief Cleans up this resource.
     void clean_up(resource_loader& loader) {
         this->clear();
         common::_disconnect(loader);
-    }
-
-    /// @brief Cleans up this resource.
-    void clean_up(execution_context& ctx) {
-        clean_up(ctx.loader());
     }
 
     auto assign(const typename common::base_load_info& info) noexcept -> bool {
@@ -567,17 +602,13 @@ class loaded_resource<shared_holder<shapes::generator>>
       loaded_resource_common<loaded_resource<shared_holder<shapes::generator>>>;
 
 public:
+    using common::clean_up;
     using common::common;
 
     /// @brief Cleans up this resource.
     void clean_up(resource_loader& loader) {
         resource().reset();
         common::_disconnect(loader);
-    }
-
-    /// @brief Cleans up this resource.
-    void clean_up(execution_context& ctx) {
-        clean_up(ctx.loader());
     }
 
     auto assign(const typename common::base_load_info& info) noexcept -> bool {
@@ -666,16 +697,12 @@ class loaded_resource<valtree::compound>
     using common = loaded_resource_common<loaded_resource<valtree::compound>>;
 
 public:
+    using common::clean_up;
     using common::common;
 
     /// @brief Cleans up this resource.
     void clean_up(resource_loader& loader) {
         common::_disconnect(loader);
-    }
-
-    /// @brief Cleans up this resource.
-    void clean_up(execution_context& ctx) {
-        clean_up(ctx.loader());
     }
 
     auto assign(const typename common::base_load_info& info) noexcept -> bool {
