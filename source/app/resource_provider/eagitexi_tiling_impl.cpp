@@ -36,7 +36,7 @@ private:
     resource_loader& _loader;
     string_list_resource _tiling;
     const signal_binding _line_binding;
-    const signal_binding _sig_binding;
+    const signal_binding _done_binding;
     msgbus::blob_preparation_result _prep_result;
 };
 //------------------------------------------------------------------------------
@@ -49,7 +49,7 @@ eagitexi_tiling_io::eagitexi_tiling_io(
   , _tiling{locator, loader}
   , _line_binding{_loader.string_line_loaded.bind(
       {this, member_function_constant_t<&eagitexi_tiling_io::_line_loaded>{}})}
-  , _sig_binding{_tiling.load_event.bind(
+  , _done_binding{_tiling.load_event.bind(
       {this, member_function_constant_t<&eagitexi_tiling_io::_loaded>{}})} {
     append(R"({"level":0,"channels":1,"data_type":"unsigned_byte")");
     append(R"(,"tag":["tiling"])");
@@ -253,9 +253,9 @@ auto tiling_data_view::get(float x, float y) const noexcept -> float {
 //------------------------------------------------------------------------------
 class tiling_data : public main_ctx_object {
 public:
-    tiling_data(main_ctx_parent, resource_loader&, url);
+    tiling_data(main_ctx_parent, resource_loader&, const url&);
 
-    auto is_loaded() const noexcept -> bool;
+    auto is_loaded() noexcept -> bool;
 
     auto width() const noexcept -> span_size_t {
         return _width;
@@ -287,23 +287,17 @@ private:
     void _process_cell(const byte);
     void _process_line(const string_view);
 
-    void _handle_stream_data_appended(
-      const msgbus::blob_stream_chunk& chunk) noexcept;
-    void _handle_stream_finished(const msgbus::blob_id_t) noexcept;
-    void _handle_stream_canceled(const msgbus::blob_id_t) noexcept;
+    void _line_loaded(resource_loader::string_list_load_info& info) noexcept;
+    void _loaded(const loaded_resource_base& info) noexcept;
 
-    signal_binding _appended_binding;
-    signal_binding _finished_binding;
-    signal_binding _canceled_binding;
-
-    identifier_t _request_id;
-
+    resource_loader& _loader;
+    string_list_resource _tiling;
+    const signal_binding _line_binding;
+    const signal_binding _done_binding;
     std::vector<float> _data;
-    std::string _tiling_line;
+
     span_size_t _width{0};
     span_size_t _height{0};
-    bool _finished{false};
-    bool _canceled{false};
 };
 //------------------------------------------------------------------------------
 auto tiling_data_view::get_cell(span_size_t x, span_size_t y) const noexcept
@@ -314,18 +308,14 @@ auto tiling_data_view::get_cell(span_size_t x, span_size_t y) const noexcept
 tiling_data::tiling_data(
   main_ctx_parent parent,
   resource_loader& loader,
-  url source)
+  const url& locator)
   : main_ctx_object{"TilingData", parent}
-  , _appended_binding{loader.blob_stream_data_appended.bind(
-      {this,
-       member_function_constant_t<&tiling_data::_handle_stream_data_appended>{}})}
-  , _finished_binding{loader.blob_stream_finished.bind(
-      {this,
-       member_function_constant_t<&tiling_data::_handle_stream_finished>{}})}
-  , _canceled_binding{loader.blob_stream_cancelled.bind(
-      {this,
-       member_function_constant_t<&tiling_data::_handle_stream_canceled>{}})}
-  , _request_id{std::get<0>(loader.stream_resource(std::move(source)))} {
+  , _loader{loader}
+  , _tiling{locator, loader}
+  , _line_binding{_loader.string_line_loaded.bind(
+      {this, member_function_constant_t<&tiling_data::_line_loaded>{}})}
+  , _done_binding{_tiling.load_event.bind(
+      {this, member_function_constant_t<&tiling_data::_loaded>{}})} {
     _data.reserve(1024U * 1024U);
 }
 //------------------------------------------------------------------------------
@@ -333,8 +323,9 @@ void tiling_data::_process_cell(const byte b) {
     _data.push_back(float(b) / float(16));
 }
 //------------------------------------------------------------------------------
-auto tiling_data::is_loaded() const noexcept -> bool {
-    return _finished and (_width > 0) and (_height > 0);
+auto tiling_data::is_loaded() noexcept -> bool {
+    _tiling.load_if_needed(_loader);
+    return _tiling.is_loaded() and (_width > 0) and (_height > 0);
 }
 //------------------------------------------------------------------------------
 auto tiling_data::_wrap_coord(
@@ -387,42 +378,15 @@ void tiling_data::_process_line(const string_view line) {
     }
 }
 //------------------------------------------------------------------------------
-void tiling_data::_handle_stream_data_appended(
-  const msgbus::blob_stream_chunk& chunk) noexcept {
-    if(_request_id == chunk.request_id) {
-        const string_view sep{"\n"};
-        for(const auto blk : chunk.data) {
-            auto text{as_chars(blk)};
-            while(not text.empty()) {
-                if(const auto pos{memory::find_position(text, sep)}) {
-                    append_to(head(text, *pos), _tiling_line);
-                    text = skip(text, *pos + sep.size());
-                    _process_line(_tiling_line);
-                    _tiling_line.clear();
-                } else {
-                    append_to(text, _tiling_line);
-                    text = {};
-                }
-            }
-        }
+void tiling_data::_line_loaded(
+  resource_loader::string_list_load_info& info) noexcept {
+    for(const auto& line : info.strings) {
+        _process_line(line);
     }
+    info.strings.clear();
 }
 //------------------------------------------------------------------------------
-void tiling_data::_handle_stream_finished(
-  const msgbus::blob_id_t request_id) noexcept {
-    if(_request_id == request_id) {
-        _process_line(_tiling_line);
-        _tiling_line.clear();
-        _finished = true;
-    }
-}
-//------------------------------------------------------------------------------
-void tiling_data::_handle_stream_canceled(
-  const msgbus::blob_id_t request_id) noexcept {
-    if(_request_id == request_id) {
-        _canceled = true;
-    }
-}
+void tiling_data::_loaded(const loaded_resource_base&) noexcept {}
 //------------------------------------------------------------------------------
 // noise I/O
 //------------------------------------------------------------------------------
