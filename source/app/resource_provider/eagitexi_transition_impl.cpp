@@ -106,6 +106,7 @@ private:
     string_list_resource _tiling;
     const signal_binding _sig_binding;
     const int _threshold;
+    msgbus::blob_preparation_result _prep_result;
 };
 //------------------------------------------------------------------------------
 auto tiling_transition_tiling::_get_source(const url& locator) noexcept -> url {
@@ -138,9 +139,7 @@ auto tiling_transition_tiling::is_valid_locator(const url& locator) noexcept
 }
 //------------------------------------------------------------------------------
 auto tiling_transition_tiling::prepare() noexcept -> msgbus::blob_preparation {
-    _tiling.load_if_needed(_loader);
-    return _tiling.is_loading() ? msgbus::blob_preparation::working
-                                : msgbus::blob_preparation::finished;
+    return _prep_result(_tiling.load_if_needed(_loader));
 }
 //------------------------------------------------------------------------------
 auto tiling_transition_tiling::width() noexcept -> valid_if_positive<int> {

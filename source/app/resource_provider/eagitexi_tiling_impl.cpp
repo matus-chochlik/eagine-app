@@ -37,8 +37,7 @@ private:
     string_list_resource _tiling;
     const signal_binding _line_binding;
     const signal_binding _sig_binding;
-    bool _first{true};
-    bool _finished{false};
+    msgbus::blob_preparation_result _prep_result;
 };
 //------------------------------------------------------------------------------
 eagitexi_tiling_io::eagitexi_tiling_io(
@@ -58,13 +57,7 @@ eagitexi_tiling_io::eagitexi_tiling_io(
 }
 //------------------------------------------------------------------------------
 auto eagitexi_tiling_io::prepare() noexcept -> msgbus::blob_preparation {
-    _tiling.load_if_needed(_loader);
-    const auto result = _finished ? msgbus::blob_preparation::finished
-                                  : msgbus::blob_preparation::working;
-    if(not _tiling.is_loading()) {
-        _finished = true;
-    }
-    return result;
+    return _prep_result(_tiling.load_if_needed(_loader));
 }
 //------------------------------------------------------------------------------
 void eagitexi_tiling_io::_process_cell(const byte b) {
@@ -73,8 +66,7 @@ void eagitexi_tiling_io::_process_cell(const byte b) {
 //------------------------------------------------------------------------------
 void eagitexi_tiling_io::_process_line(const string_view line) {
     if(not line.empty()) {
-        if(_first) {
-            _first = false;
+        if(_prep_result.first()) {
             std::stringstream hdr;
             hdr << R"(,"width":)" << line.size();
             hdr << R"(,"height":)" << line.size();

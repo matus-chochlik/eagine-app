@@ -274,10 +274,9 @@ public:
         if(not is_loaded() and not is_loading()) {
             if(const auto request{utils::request(loader, locator())}) {
                 _request_id = request.request_id();
-                return is_loading();
             }
         }
-        return false;
+        return is_loading();
     }
 
     /// @brief Updates the resource, possibly doing resource load request.
@@ -407,10 +406,9 @@ public:
         if(not is_loaded() and not is_loading()) {
             if(const auto request{utils::request(ldr, locator(), params...)}) {
                 _request_id = request.request_id();
-                return is_loading();
             }
         }
-        return false;
+        return is_loading();
     }
 
     /// @brief Updates the resource, possibly doing resource load request.
@@ -418,10 +416,9 @@ public:
         if(not is_loaded() and not is_loading()) {
             if(const auto request{utils::request(ctx, locator(), params...)}) {
                 _request_id = request.request_id();
-                return is_loading();
             }
         }
-        return false;
+        return is_loading();
     }
 
     /// @brief Updates the resource, possibly doing resource load request.
@@ -434,10 +431,9 @@ public:
                  params,
                  std::make_index_sequence<sizeof...(P)>())}) {
                 _request_id = request.request_id();
-                return is_loading();
             }
         }
-        return false;
+        return is_loading();
     }
 
 protected:
