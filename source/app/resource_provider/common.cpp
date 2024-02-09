@@ -14,6 +14,12 @@ import :driver;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
+// locator check functions
+//------------------------------------------------------------------------------
+auto is_valid_text_resource_url(const url&) noexcept -> bool;
+//------------------------------------------------------------------------------
+// Base I/O implementations
+//------------------------------------------------------------------------------
 struct simple_string_source_blob_io
   : main_ctx_object
   , msgbus::source_blob_io {
@@ -97,6 +103,8 @@ private:
     std::stringstream _content;
 };
 //------------------------------------------------------------------------------
+// base provider implementations
+//------------------------------------------------------------------------------
 struct eagitex_provider_base
   : main_ctx_object
   , resource_provider_interface {
@@ -115,6 +123,8 @@ protected:
         return (l >= 0);
     }
 };
+//------------------------------------------------------------------------------
+// file-system search paths
 //------------------------------------------------------------------------------
 class filesystem_search_paths
   : public main_ctx_object

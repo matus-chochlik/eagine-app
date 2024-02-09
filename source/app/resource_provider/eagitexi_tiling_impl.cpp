@@ -130,10 +130,7 @@ struct eagitexi_tiling_provider final
 //------------------------------------------------------------------------------
 auto eagitexi_tiling_provider::valid_source(const url& locator) noexcept
   -> bool {
-    return locator and
-           (locator.has_scheme("text") or locator.has_scheme("txt") or
-            locator.has_path_suffix(".text") or
-            locator.has_path_suffix(".txt"));
+    return is_valid_text_resource_url(locator);
 }
 //------------------------------------------------------------------------------
 auto eagitexi_tiling_provider::has_resource(const url& locator) noexcept
@@ -534,9 +531,7 @@ struct eagitexi_tiling_noise_provider final
 //------------------------------------------------------------------------------
 auto eagitexi_tiling_noise_provider::valid_source(const url& locator) noexcept
   -> bool {
-    return locator and
-           (locator.has_scheme("text") or locator.has_path_suffix(".text") or
-            locator.has_path_suffix(".txt"));
+    return is_valid_text_resource_url(locator);
 }
 //------------------------------------------------------------------------------
 auto eagitexi_tiling_noise_provider::has_resource(const url& locator) noexcept

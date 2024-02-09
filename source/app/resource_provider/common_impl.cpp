@@ -17,6 +17,15 @@ import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
+// locator check functions
+//------------------------------------------------------------------------------
+auto is_valid_text_resource_url(const url& locator) noexcept -> bool {
+    return locator and
+           (locator.has_scheme("text") or locator.has_scheme("txt") or
+            locator.has_path_suffix(".text") or
+            locator.has_path_suffix(".txt"));
+}
+//------------------------------------------------------------------------------
 // simple_string_source_blob_io
 //------------------------------------------------------------------------------
 simple_string_source_blob_io::simple_string_source_blob_io(

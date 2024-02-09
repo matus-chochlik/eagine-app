@@ -132,9 +132,7 @@ tiling_transition_tiling::tiling_transition_tiling(
 auto tiling_transition_tiling::is_valid_locator(const url& locator) noexcept
   -> bool {
     if(const auto source{locator.query().arg_url("source")}) {
-        return source.has_scheme("text") or source.has_scheme("txt") or
-               source.has_path_suffix(".text") or
-               source.has_path_suffix(".txt");
+        return is_valid_text_resource_url(source);
     }
     return false;
 }
