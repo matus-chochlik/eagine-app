@@ -150,7 +150,7 @@ auto eglplus_opengl_surface::initialize(
     const bool has_gles = apis.has(EGL.opengl_es_bit);
 
     if(not has_gl and not has_gles) {
-        log_info("display does not support any OpenAPI APIs;skipping");
+        log_info("display does not support any OpenGL APIs;skipping");
         return false;
     }
 
