@@ -22,7 +22,7 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 class eagitexi_tiling_io final : public compressed_buffer_source_blob_io {
 public:
-    eagitexi_tiling_io(main_ctx_parent, resource_loader&, const url&);
+    eagitexi_tiling_io(main_ctx_parent, shared_provider_objects&, const url&);
 
     auto prepare() noexcept -> msgbus::blob_preparation final;
 
@@ -33,7 +33,7 @@ private:
     void _line_loaded(resource_loader::string_list_load_info& info) noexcept;
     void _loaded(const loaded_resource_base& info) noexcept;
 
-    resource_loader& _loader;
+    shared_provider_objects& _shared;
     string_list_resource _tiling;
     const signal_binding _line_binding;
     const signal_binding _done_binding;
@@ -42,12 +42,12 @@ private:
 //------------------------------------------------------------------------------
 eagitexi_tiling_io::eagitexi_tiling_io(
   main_ctx_parent parent,
-  resource_loader& loader,
+  shared_provider_objects& shared,
   const url& locator)
   : compressed_buffer_source_blob_io{"ITxTlng", parent, 1024 * 1024}
-  , _loader{loader}
-  , _tiling{locator, loader}
-  , _line_binding{_loader.string_line_loaded.bind(
+  , _shared{shared}
+  , _tiling{locator, shared.loader}
+  , _line_binding{_shared.loader.string_line_loaded.bind(
       {this, member_function_constant_t<&eagitexi_tiling_io::_line_loaded>{}})}
   , _done_binding{_tiling.load_event.bind(
       {this, member_function_constant_t<&eagitexi_tiling_io::_loaded>{}})} {
@@ -57,7 +57,7 @@ eagitexi_tiling_io::eagitexi_tiling_io(
 }
 //------------------------------------------------------------------------------
 auto eagitexi_tiling_io::prepare() noexcept -> msgbus::blob_preparation {
-    return _prep_result(_tiling.load_if_needed(_loader));
+    return _prep_result(_tiling.load_if_needed(_shared.loader));
 }
 //------------------------------------------------------------------------------
 void eagitexi_tiling_io::_process_cell(const byte b) {
@@ -106,11 +106,11 @@ struct eagitexi_tiling_provider final
   : main_ctx_object
   , resource_provider_interface {
 
-    resource_loader& loader;
+    shared_provider_objects& shared;
 
     eagitexi_tiling_provider(const provider_parameters& p) noexcept
       : main_ctx_object{"PTxTlng", p.parent}
-      , loader{p.loader} {}
+      , shared{p.shared} {}
 
     auto valid_source(const url& locator) noexcept -> bool;
 
@@ -153,7 +153,7 @@ auto eagitexi_tiling_provider::has_resource(const url& locator) noexcept
 auto eagitexi_tiling_provider::get_resource_io(const url& locator)
   -> unique_holder<msgbus::source_blob_io> {
     const auto& q{locator.query()};
-    return {hold<eagitexi_tiling_io>, as_parent(), loader, q.arg_url("source")};
+    return {hold<eagitexi_tiling_io>, as_parent(), shared, q.arg_url("source")};
 }
 //------------------------------------------------------------------------------
 void eagitexi_tiling_provider::for_each_locator(
@@ -253,7 +253,7 @@ auto tiling_data_view::get(float x, float y) const noexcept -> float {
 //------------------------------------------------------------------------------
 class tiling_data : public main_ctx_object {
 public:
-    tiling_data(main_ctx_parent, resource_loader&, const url&);
+    tiling_data(main_ctx_parent, shared_provider_objects&, const url&);
 
     auto is_loaded() noexcept -> bool;
 
@@ -289,7 +289,7 @@ private:
 
     void _line_loaded(resource_loader::string_list_load_info& info) noexcept;
 
-    resource_loader& _loader;
+    shared_provider_objects& _shared;
     string_list_resource _tiling;
     const signal_binding _line_binding;
     std::vector<float> _data;
@@ -305,12 +305,12 @@ auto tiling_data_view::get_cell(span_size_t x, span_size_t y) const noexcept
 //------------------------------------------------------------------------------
 tiling_data::tiling_data(
   main_ctx_parent parent,
-  resource_loader& loader,
+  shared_provider_objects& shared,
   const url& locator)
   : main_ctx_object{"TilingData", parent}
-  , _loader{loader}
-  , _tiling{locator, loader}
-  , _line_binding{_loader.string_line_loaded.bind(
+  , _shared{shared}
+  , _tiling{locator, _shared.loader}
+  , _line_binding{_shared.loader.string_line_loaded.bind(
       {this, member_function_constant_t<&tiling_data::_line_loaded>{}})} {
     _data.reserve(1024U * 1024U);
 }
@@ -320,7 +320,7 @@ void tiling_data::_process_cell(const byte b) {
 }
 //------------------------------------------------------------------------------
 auto tiling_data::is_loaded() noexcept -> bool {
-    _tiling.load_if_needed(_loader);
+    _tiling.load_if_needed(_shared.loader);
     return _tiling.is_loaded() and (_width > 0) and (_height > 0);
 }
 //------------------------------------------------------------------------------
@@ -388,7 +388,7 @@ class eagitexi_tiling_noise_io final : public simple_buffer_source_blob_io {
 public:
     eagitexi_tiling_noise_io(
       main_ctx_parent,
-      resource_loader&,
+      shared_provider_objects&,
       span_size_t width,
       span_size_t height,
       url);
@@ -412,14 +412,14 @@ private:
 //------------------------------------------------------------------------------
 eagitexi_tiling_noise_io::eagitexi_tiling_noise_io(
   main_ctx_parent parent,
-  resource_loader& loader,
+  shared_provider_objects& shared,
   span_size_t width,
   span_size_t height,
   url locator)
   : simple_buffer_source_blob_io{"ITxTlgNois", parent, 1024 * 1024}
   , _width{width}
   , _height{height}
-  , _tiling{as_parent(), loader, std::move(locator)} {
+  , _tiling{as_parent(), shared, std::move(locator)} {
     append(R"({"level":0,"channels":1,"data_type":"float")"
            R"(,"format":"red","iformat":"r32f")"
            R"(,"tag":["generated","noise","sudoku"])");
@@ -510,11 +510,11 @@ struct eagitexi_tiling_noise_provider final
   : main_ctx_object
   , resource_provider_interface {
 
-    resource_loader& loader;
+    shared_provider_objects& shared;
 
     eagitexi_tiling_noise_provider(const provider_parameters& p) noexcept
       : main_ctx_object{"PTxTlgNois", p.parent}
-      , loader{p.loader} {}
+      , shared{p.shared} {}
 
     auto valid_source(const url& locator) noexcept -> bool;
 
@@ -562,7 +562,7 @@ auto eagitexi_tiling_noise_provider::get_resource_io(const url& locator)
     return {
       hold<eagitexi_tiling_noise_io>,
       as_parent(),
-      loader,
+      shared,
       q.arg_value_as<span_size_t>("width").value_or(0),
       q.arg_value_as<span_size_t>("height").value_or(0),
       q.decoded_arg_value("source").or_default()};

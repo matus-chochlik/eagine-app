@@ -53,15 +53,13 @@ private:
     static auto is_valid_locator(const url& locator) noexcept -> bool;
     static auto valid_samples(int s) noexcept -> bool;
 
-    external_apis& _apis;
-    resource_loader& _loader;
+    shared_provider_objects& _shared;
 };
 //------------------------------------------------------------------------------
 eagitexi_cubemap_blur_provider::eagitexi_cubemap_blur_provider(
   const provider_parameters& params) noexcept
   : main_ctx_object{"PTxCubBlur", params.parent}
-  , _apis{params.apis}
-  , _loader{params.loader} {}
+  , _shared{params.shared} {}
 //------------------------------------------------------------------------------
 auto eagitexi_cubemap_blur_provider::is_valid_locator(
   const url& locator) noexcept -> bool {

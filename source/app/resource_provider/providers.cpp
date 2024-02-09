@@ -16,9 +16,7 @@ namespace eagine::app {
 export class external_apis;
 struct provider_parameters {
     main_ctx_parent parent;
-    external_apis& apis;
-    resource_provider_driver& driver;
-    resource_loader& loader;
+    shared_provider_objects& shared;
 };
 //------------------------------------------------------------------------------
 auto provider_zip_archive(const provider_parameters&)

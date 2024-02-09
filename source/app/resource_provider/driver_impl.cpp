@@ -42,11 +42,9 @@ void resource_provider_driver::_add(
     _providers.emplace_back(std::move(provider));
 }
 //------------------------------------------------------------------------------
-void resource_provider_driver::_populate(
-  external_apis& apis,
-  resource_loader& loader) {
+void resource_provider_driver::_populate() {
     const provider_parameters parameters{
-      .parent = as_parent(), .apis = apis, .driver = *this, .loader = loader};
+      .parent = as_parent(), .shared = _shared};
 
     _add(provider_zip_archive(parameters));
     _add(provider_file(parameters));
@@ -69,8 +67,9 @@ resource_provider_driver::resource_provider_driver(
   main_ctx_parent parent,
   external_apis& apis,
   resource_loader& loader)
-  : main_ctx_object{"RsrcPrDrvr", parent} {
-    _populate(apis, loader);
+  : main_ctx_object{"RsrcPrDrvr", parent}
+  , _shared{.apis = apis, .driver = *this, .loader = loader} {
+    _populate();
 }
 //------------------------------------------------------------------------------
 auto resource_provider_driver::find_provider_of(const url& locator) noexcept

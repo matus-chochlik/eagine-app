@@ -15,6 +15,8 @@ import std;
 namespace eagine::app {
 //------------------------------------------------------------------------------
 export class external_apis;
+export class resource_provider_driver;
+
 export struct resource_provider_interface
   : abstract<resource_provider_interface> {
     virtual auto has_resource(const url&) noexcept -> bool = 0;
@@ -31,6 +33,12 @@ export struct resource_provider_interface
 
     virtual void for_each_locator(
       callable_ref<void(string_view) noexcept>) noexcept = 0;
+};
+//------------------------------------------------------------------------------
+struct shared_provider_objects {
+    external_apis& apis;
+    resource_provider_driver& driver;
+    resource_loader& loader;
 };
 //------------------------------------------------------------------------------
 export class resource_provider_driver final
@@ -63,8 +71,9 @@ public:
 
 private:
     void _add(unique_holder<resource_provider_interface>);
-    void _populate(external_apis&, resource_loader&);
+    void _populate();
 
+    shared_provider_objects _shared;
     std::vector<unique_holder<resource_provider_interface>> _providers;
 };
 //------------------------------------------------------------------------------

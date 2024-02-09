@@ -15,28 +15,28 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 class resource_list_io final : public simple_buffer_source_blob_io {
 public:
-    resource_list_io(resource_provider_driver& driver) noexcept;
+    resource_list_io(shared_provider_objects& shared) noexcept;
 
     auto prepare() noexcept -> msgbus::blob_preparation final;
 
 private:
-    resource_provider_driver& _driver;
+    shared_provider_objects& _shared;
     span_size_t _provider_index{0};
 };
 //------------------------------------------------------------------------------
-resource_list_io::resource_list_io(resource_provider_driver& driver) noexcept
-  : simple_buffer_source_blob_io{"IResrcList", driver, 16 * 1024}
-  , _driver{driver} {
+resource_list_io::resource_list_io(shared_provider_objects& shared) noexcept
+  : simple_buffer_source_blob_io{"IResrcList", shared.loader.as_parent(), 16 * 1024}
+  , _shared{shared} {
     append("text:///resource_list\n");
 }
 //------------------------------------------------------------------------------
 auto resource_list_io::prepare() noexcept -> msgbus::blob_preparation {
-    if(_provider_index < _driver.provider_count()) {
+    if(_provider_index < _shared.driver.provider_count()) {
         const auto append_locator{[this](string_view locator) {
             append(locator);
             append("\n");
         }};
-        _driver.provider(_provider_index)
+        _shared.driver.provider(_provider_index)
           .for_each_locator({construct_from, append_locator});
         ++_provider_index;
         return msgbus::blob_preparation::working;
@@ -47,10 +47,10 @@ auto resource_list_io::prepare() noexcept -> msgbus::blob_preparation {
 // provider
 //------------------------------------------------------------------------------
 struct resource_list_provider final : resource_provider_interface {
-    resource_provider_driver& _driver;
+    shared_provider_objects& _shared;
 
-    resource_list_provider(resource_provider_driver& driver) noexcept
-      : _driver{driver} {}
+    resource_list_provider(shared_provider_objects& shared) noexcept
+      : _shared{shared} {}
 
     auto has_resource(const url& locator) noexcept -> bool final;
 
@@ -67,7 +67,7 @@ auto resource_list_provider::has_resource(const url& locator) noexcept -> bool {
 //------------------------------------------------------------------------------
 auto resource_list_provider::get_resource_io(const url&)
   -> unique_holder<msgbus::source_blob_io> {
-    return {hold<resource_list_io>, _driver};
+    return {hold<resource_list_io>, _shared};
 }
 //------------------------------------------------------------------------------
 void resource_list_provider::for_each_locator(
@@ -75,7 +75,7 @@ void resource_list_provider::for_each_locator(
 //------------------------------------------------------------------------------
 auto provider_text_resource_list(const provider_parameters& p)
   -> unique_holder<resource_provider_interface> {
-    return {hold<resource_list_provider>, p.driver};
+    return {hold<resource_list_provider>, p.shared};
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

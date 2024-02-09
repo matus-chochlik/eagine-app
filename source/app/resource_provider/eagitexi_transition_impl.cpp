@@ -34,7 +34,7 @@ class tiling_transition_checker final : public tiling_transition_mask {
 public:
     tiling_transition_checker(
       main_ctx_parent,
-      resource_loader&,
+      shared_provider_objects&,
       const url& locator) noexcept;
 
     static auto is_valid_locator(const url& locator) noexcept -> bool;
@@ -65,7 +65,7 @@ private:
 //------------------------------------------------------------------------------
 tiling_transition_checker::tiling_transition_checker(
   main_ctx_parent,
-  resource_loader&,
+  shared_provider_objects&,
   const url& locator) noexcept
   : _width{locator.query().arg_value_as<int>("width").value_or(64)}
   , _height{locator.query().arg_value_as<int>("height").value_or(64)} {}
@@ -84,7 +84,7 @@ class tiling_transition_tiling final
 public:
     tiling_transition_tiling(
       main_ctx_parent,
-      resource_loader&,
+      shared_provider_objects&,
       const url& locator) noexcept;
 
     static auto is_valid_locator(const url& locator) noexcept -> bool;
@@ -102,7 +102,7 @@ private:
 
     void _loaded(const loaded_resource_base& info) noexcept;
 
-    resource_loader& _loader;
+    shared_provider_objects& _shared;
     string_list_resource _tiling;
     const signal_binding _sig_binding;
     const int _threshold;
@@ -120,11 +120,11 @@ auto tiling_transition_tiling::_get_threshold(const url& locator) noexcept
 //------------------------------------------------------------------------------
 tiling_transition_tiling::tiling_transition_tiling(
   main_ctx_parent parent,
-  resource_loader& loader,
+  shared_provider_objects& shared,
   const url& locator) noexcept
   : main_ctx_object{"TlgTrnsTlg", parent}
-  , _loader{loader}
-  , _tiling{_get_source(locator), loader}
+  , _shared{shared}
+  , _tiling{_get_source(locator), _shared.loader}
   , _sig_binding{_tiling.load_event.bind(
       {this, member_function_constant_t<&tiling_transition_tiling::_loaded>{}})}
   , _threshold{_get_threshold(locator)} {}
@@ -140,7 +140,7 @@ auto tiling_transition_tiling::is_valid_locator(const url& locator) noexcept
 }
 //------------------------------------------------------------------------------
 auto tiling_transition_tiling::prepare() noexcept -> msgbus::blob_preparation {
-    return _prep_result(_tiling.load_if_needed(_loader));
+    return _prep_result(_tiling.load_if_needed(_shared.loader));
 }
 //------------------------------------------------------------------------------
 auto tiling_transition_tiling::width() noexcept -> valid_if_positive<int> {
@@ -193,9 +193,9 @@ class tiling_transition_mask_factory : public main_ctx_object {
 public:
     tiling_transition_mask_factory(
       main_ctx_parent parent,
-      resource_loader& loader) noexcept
+      shared_provider_objects& shared) noexcept
       : main_ctx_object{"TiTrMskFac", parent}
-      , _loader{loader} {}
+      , _shared{shared} {}
 
     auto is_valid_locator(const url& locator) noexcept -> bool;
 
@@ -217,12 +217,12 @@ private:
     auto _make_mask(const url& locator, mp_list<M, Ms...>) noexcept
       -> unique_holder<tiling_transition_mask> {
         if(M::is_valid_locator(locator)) {
-            return {hold<M>, as_parent(), _loader, locator};
+            return {hold<M>, as_parent(), _shared, locator};
         }
         return _make_mask(locator, mp_list<Ms...>{});
     }
 
-    resource_loader& _loader;
+    shared_provider_objects& _shared;
     mp_list<tiling_transition_checker, tiling_transition_tiling> _masks{};
 };
 //------------------------------------------------------------------------------
@@ -406,7 +406,7 @@ class eagitexi_tiling_transition_provider final
 public:
     eagitexi_tiling_transition_provider(const provider_parameters& p) noexcept
       : main_ctx_object{"PTxTTrnstn", p.parent}
-      , _mask_factory{as_parent(), p.loader} {}
+      , _mask_factory{as_parent(), p.shared} {}
 
     auto has_resource(const url& locator) noexcept -> bool final;
 
