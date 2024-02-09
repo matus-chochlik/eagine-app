@@ -36,27 +36,23 @@ public:
     auto get_context_attribs(
       execution_context&,
       const bool gl_otherwise_gles,
-      const launch_options&,
       const video_options&) const -> eglplus::context_attributes;
 
     auto initialize(
       execution_context&,
       const eglplus::display_handle,
       const eglplus::egl_types::config_type,
-      const launch_options&,
       const video_options&) -> bool;
 
     auto initialize(
       execution_context&,
       const eglplus::display_handle,
       const valid_if_nonnegative<span_size_t>& device_idx,
-      const launch_options&,
       const video_options&) -> bool;
 
     auto initialize(
       execution_context&,
       const identifier instance,
-      const launch_options&,
       const video_options&) -> bool;
 
     void clean_up();
@@ -92,7 +88,6 @@ private:
 auto eglplus_opengl_surface::get_context_attribs(
   execution_context&,
   const bool gl_otherwise_gles,
-  const launch_options&,
   const video_options& video_opts) const -> eglplus::context_attributes {
     const auto& EGL = _egl_api.constants();
 
@@ -141,7 +136,6 @@ auto eglplus_opengl_surface::initialize(
   execution_context& exec_ctx,
   const eglplus::display_handle display,
   const eglplus::egl_types::config_type config,
-  const launch_options& opts,
   const video_options& video_opts) -> bool {
     const auto& [egl, EGL] = _egl_api;
 
@@ -174,8 +168,8 @@ auto eglplus_opengl_surface::initialize(
                               : eglplus::client_api(EGL.opengl_es_api);
 
         if(const ok bound{egl.bind_api(gl_api)}) {
-            const auto context_attribs = get_context_attribs(
-              exec_ctx, gl_otherwise_gles, opts, video_opts);
+            const auto context_attribs =
+              get_context_attribs(exec_ctx, gl_otherwise_gles, video_opts);
 
             if(ok ctxt{egl.create_context(
                  display, config, eglplus::context_handle{}, context_attribs)}) {
@@ -202,7 +196,6 @@ auto eglplus_opengl_surface::initialize(
   execution_context& exec_ctx,
   const eglplus::display_handle display,
   const valid_if_nonnegative<span_size_t>& device_idx,
-  const launch_options& opts,
   const video_options& video_opts) -> bool {
     const auto& [egl, EGL] = _egl_api;
 
@@ -266,7 +259,7 @@ auto eglplus_opengl_surface::initialize(
               .arg("count", count);
 
             if(const ok config{egl.choose_config(_display, config_attribs)}) {
-                return initialize(exec_ctx, _display, config, opts, video_opts);
+                return initialize(exec_ctx, _display, config, video_opts);
             } else {
                 const string_view dont_care{"-"};
                 log_error("no matching framebuffer configuration found")
@@ -291,7 +284,6 @@ auto eglplus_opengl_surface::initialize(
 auto eglplus_opengl_surface::initialize(
   execution_context& exec_ctx,
   const identifier id,
-  const launch_options& opts,
   const video_options& video_opts) -> bool {
     _instance_id = id;
     const auto& [egl, EGL] = _egl_api;
@@ -389,7 +381,6 @@ auto eglplus_opengl_surface::initialize(
                                  exec_ctx,
                                  display,
                                  signedness_cast(cur_dev_idx),
-                                 opts,
                                  video_opts)) {
                                 return true;
                             } else {
@@ -402,7 +393,7 @@ auto eglplus_opengl_surface::initialize(
         }
     } else {
         if(const ok display{egl.get_display()}) {
-            return initialize(exec_ctx, display, -1, opts, video_opts);
+            return initialize(exec_ctx, display, -1, video_opts);
         } else {
             exec_ctx.log_error("failed to get EGL display")
               .arg("message", (not display).message());
@@ -543,8 +534,7 @@ auto eglplus_opengl_provider::initialize(execution_context& exec_ctx) -> bool {
             if(should_create_surface) {
                 if(auto surface{std::make_shared<eglplus_opengl_surface>(
                      *this, _egl_api)}) {
-                    if(surface->initialize(
-                         exec_ctx, inst, options, video_opts)) {
+                    if(surface->initialize(exec_ctx, inst, video_opts)) {
                         _surfaces[inst] = std::move(surface);
                     } else {
                         surface->clean_up();
