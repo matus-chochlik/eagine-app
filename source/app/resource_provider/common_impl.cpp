@@ -13,6 +13,7 @@ module eagine.app.resource_provider;
 
 import eagine.core;
 import eagine.msgbus;
+import eagine.eglplus;
 import std;
 
 namespace eagine::app {
@@ -147,6 +148,102 @@ void compressed_buffer_source_blob_io::compress(const byte byt) noexcept {
 //------------------------------------------------------------------------------
 void compressed_buffer_source_blob_io::finish() noexcept {
     _compress.finish();
+}
+//------------------------------------------------------------------------------
+// gl_rendered_source_blob_io
+//------------------------------------------------------------------------------
+gl_rendered_source_blob_io::gl_rendered_source_blob_io(
+  identifier id,
+  main_ctx_parent parent,
+  shared_provider_objects& shared,
+  eglplus::initialized_display display,
+  span_size_t size) noexcept
+  : compressed_buffer_source_blob_io{id, parent, size}
+  , _shared{shared}
+  , _display{std::move(display)} {}
+//------------------------------------------------------------------------------
+auto gl_rendered_source_blob_io_display_bind_api(
+  const eglplus::egl_api& eglapi,
+  eglplus::initialized_display display) noexcept
+  -> eglplus::initialized_display {
+    if(display) {
+        const auto& [egl, EGL]{eglapi};
+        const auto apis{egl.get_client_api_bits(display)};
+        const bool has_gl{apis.has(EGL.opengl_bit)};
+        const bool has_gles{apis.has(EGL.opengl_es_bit)};
+        if(has_gl) {
+            egl.bind_api(EGL.opengl_api);
+        } else if(has_gles) {
+            egl.bind_api(EGL.opengl_es_api);
+        } else {
+            display.clean_up();
+        }
+    }
+    return display;
+}
+//------------------------------------------------------------------------------
+auto gl_rendered_source_blob_io_display_choose(
+  const eglplus::egl_api& eglapi,
+  const gl_rendered_source_params& params) noexcept
+  -> eglplus::initialized_display {
+    const bool select_device = params.device_index.has_value();
+    if(select_device) {
+        const auto& egl{eglapi.operations()};
+        if(const ok dev_count{egl.query_devices.count()}) {
+            const auto n{std_size(dev_count)};
+            std::vector<eglplus::egl_types::device_type> devices;
+            devices.resize(n);
+            if(egl.query_devices(cover(devices))) {
+                for(const auto cur_dev_idx : integer_range(n)) {
+                    bool matching_device = true;
+                    auto device = eglplus::device_handle(devices[cur_dev_idx]);
+
+                    if(params.device_index) {
+                        if(std_size(*params.device_index) != cur_dev_idx) {
+                            matching_device = false;
+                        }
+                    }
+
+                    // TODO: try additional parameters (vendor, driver name,...)
+                    if(matching_device) {
+                        return gl_rendered_source_blob_io_display_bind_api(
+                          eglapi, egl.get_open_platform_display(device));
+                    }
+                }
+            }
+        }
+    }
+    return {};
+}
+//------------------------------------------------------------------------------
+auto gl_rendered_source_blob_io::open_display(
+  shared_provider_objects& shared,
+  const gl_rendered_source_params& params) noexcept
+  -> eglplus::initialized_display {
+    if(const auto eglapi{shared.apis.egl()}) {
+        const auto& egl{eglapi->operations()};
+        if(egl.EXT_device_enumeration) {
+            if(auto display{
+                 gl_rendered_source_blob_io_display_choose(*eglapi, params)}) {
+                return display;
+            }
+        }
+        return gl_rendered_source_blob_io_display_bind_api(
+          *eglapi, egl.get_open_display());
+    }
+    return {};
+}
+//------------------------------------------------------------------------------
+auto gl_rendered_source_blob_io::display() const noexcept
+  -> eglplus::display_handle {
+    return _display;
+}
+//------------------------------------------------------------------------------
+auto gl_rendered_source_blob_io::eglapi() const noexcept
+  -> const eglplus::egl_api& {
+    auto ref{_shared.apis.egl()};
+    assert(ref);
+    return *ref;
 }
 //------------------------------------------------------------------------------
 // ostream_io

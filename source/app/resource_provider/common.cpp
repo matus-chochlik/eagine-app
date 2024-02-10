@@ -9,6 +9,7 @@ export module eagine.app.resource_provider:common;
 
 import eagine.core;
 import eagine.msgbus;
+import eagine.eglplus;
 import std;
 import :driver;
 
@@ -68,7 +69,7 @@ private:
     main_ctx_buffer _content;
 };
 //------------------------------------------------------------------------------
-struct compressed_buffer_source_blob_io : simple_buffer_source_blob_io {
+class compressed_buffer_source_blob_io : public simple_buffer_source_blob_io {
 protected:
     compressed_buffer_source_blob_io(
       identifier id,
@@ -90,6 +91,37 @@ private:
     auto _append_compressed(const memory::const_block) noexcept -> bool;
     auto _compress_handler() noexcept;
     stream_compression _compress;
+};
+//------------------------------------------------------------------------------
+struct gl_rendered_source_params {
+    valid_if_nonnegative<span_size_t> device_index{-1};
+};
+//------------------------------------------------------------------------------
+class gl_rendered_source_blob_io : public compressed_buffer_source_blob_io {
+public:
+    static auto open_display(
+      shared_provider_objects& shared,
+      const gl_rendered_source_params&) noexcept
+      -> eglplus::initialized_display;
+
+protected:
+    gl_rendered_source_blob_io(
+      identifier id,
+      main_ctx_parent parent,
+      shared_provider_objects& shared,
+      eglplus::initialized_display display,
+      span_size_t size) noexcept;
+
+    auto shared() const noexcept -> shared_provider_objects& {
+        return _shared;
+    }
+
+    auto display() const noexcept -> eglplus::display_handle;
+    auto eglapi() const noexcept -> const eglplus::egl_api&;
+
+private:
+    shared_provider_objects& _shared;
+    eglplus::initialized_display _display;
 };
 //------------------------------------------------------------------------------
 class ostream_io final : public msgbus::source_blob_io {

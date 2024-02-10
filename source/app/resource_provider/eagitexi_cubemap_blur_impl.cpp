@@ -18,7 +18,7 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 // I/O
 //------------------------------------------------------------------------------
-class eagitexi_cubemap_blur_io final : public compressed_buffer_source_blob_io {
+class eagitexi_cubemap_blur_io final : public gl_rendered_source_blob_io {
 public:
     eagitexi_cubemap_blur_io(
       main_ctx_parent,
@@ -32,14 +32,12 @@ public:
 private:
     void _make_header() noexcept;
 
-    shared_provider_objects& _shared;
-    eglplus::initialized_display _display;
     url _source;
     const int _side;
 };
 //------------------------------------------------------------------------------
 void eagitexi_cubemap_blur_io::_make_header() noexcept {
-    const auto& [egl, EGL]{*_shared.apis.egl()};
+    const auto& [egl, EGL]{eglapi()};
 
     std::stringstream hdr;
     hdr << R"({"level":0)";
@@ -51,13 +49,13 @@ void eagitexi_cubemap_blur_io::_make_header() noexcept {
     hdr << R"(,"iformat":"rgb8")";
     hdr << R"(,"tag":["blur","cubemap"])";
     hdr << R"(,"metadata":{"renderer":{)";
-    if(const auto vendor{egl.query_string(_display, EGL.vendor)}) {
+    if(const auto vendor{egl.query_string(display(), EGL.vendor)}) {
         hdr << R"("vendor":")" << *vendor << R"("})";
-        if(const auto version{egl.query_string(_display, EGL.version)}) {
+        if(const auto version{egl.query_string(display(), EGL.version)}) {
             hdr << R"(,"version":")" << *version << R"("})";
         }
-        if(egl.MESA_query_driver(_display)) {
-            if(const auto driver{egl.get_display_driver_name(_display)}) {
+        if(egl.MESA_query_driver(display())) {
+            if(const auto driver{egl.get_display_driver_name(display())}) {
                 hdr << R"(,"driver":")" << *driver << R"("})";
             }
         }
@@ -74,9 +72,7 @@ eagitexi_cubemap_blur_io::eagitexi_cubemap_blur_io(
   eglplus::initialized_display display,
   url source,
   int side) noexcept
-  : compressed_buffer_source_blob_io{"ITxCubBlur", parent, side * side * 6}
-  , _shared{shared}
-  , _display{std::move(display)}
+  : gl_rendered_source_blob_io{"ITxCubBlur", parent, shared, std::move(display), side * side * 6}
   , _source{std::move(source)}
   , _side{side} {
     _make_header();
@@ -104,19 +100,6 @@ public:
       callable_ref<void(string_view) noexcept>) noexcept final;
 
 private:
-    auto _get_display_io(
-      const url& locator,
-      const eglplus::egl_api&,
-      eglplus::initialized_display) -> unique_holder<msgbus::source_blob_io>;
-
-    auto _get_device_io(
-      const url& locator,
-      const eglplus::egl_api&,
-      eglplus::device_handle) -> unique_holder<msgbus::source_blob_io>;
-
-    auto _get_selected_device_io(const url& locator, const eglplus::egl_api&)
-      -> unique_holder<msgbus::source_blob_io>;
-
     shared_provider_objects& _shared;
 };
 //------------------------------------------------------------------------------
@@ -135,22 +118,12 @@ auto eagitexi_cubemap_blur_provider::has_resource(const url& locator) noexcept
     return false;
 }
 //------------------------------------------------------------------------------
-auto eagitexi_cubemap_blur_provider::_get_display_io(
-  const url& locator,
-  const eglplus::egl_api& eglapi,
-  eglplus::initialized_display display)
+auto eagitexi_cubemap_blur_provider::get_resource_io(const url& locator)
   -> unique_holder<msgbus::source_blob_io> {
-    if(display) {
-        const auto& [egl, EGL]{eglapi};
-        const auto apis{egl.get_client_api_bits(display)};
-        const bool has_gl{apis.has(EGL.opengl_bit)};
-        const bool has_gles{apis.has(EGL.opengl_es_bit)};
-        if(has_gl or has_gles) {
-            if(has_gl) {
-                egl.bind_api(EGL.opengl_api);
-            } else {
-                egl.bind_api(EGL.opengl_es_api);
-            }
+    if(has_resource(locator)) {
+        gl_rendered_source_params params{}; // TODO: params from config
+        if(auto display{
+             eagitexi_cubemap_blur_io::open_display(_shared, params)}) {
             const auto& q{locator.query()};
             return {
               hold<eagitexi_cubemap_blur_io>,
@@ -159,57 +132,6 @@ auto eagitexi_cubemap_blur_provider::_get_display_io(
               std::move(display),
               q.arg_url("source"),
               q.arg_value_as<int>("side").value_or(1024)};
-        }
-    }
-    return {};
-}
-//------------------------------------------------------------------------------
-auto eagitexi_cubemap_blur_provider::_get_device_io(
-  const url& locator,
-  const eglplus::egl_api& eglapi,
-  eglplus::device_handle device) -> unique_holder<msgbus::source_blob_io> {
-    return _get_display_io(
-      locator, eglapi, eglapi.get_open_platform_display(device));
-}
-//------------------------------------------------------------------------------
-auto eagitexi_cubemap_blur_provider::_get_selected_device_io(
-  const url& locator,
-  const eglplus::egl_api& eglapi) -> unique_holder<msgbus::source_blob_io> {
-    bool select_device = false; // TODO
-    if(select_device) {
-        const auto& egl{eglapi.operations()};
-        if(const ok dev_count{egl.query_devices.count()}) {
-            const auto n{std_size(dev_count)};
-            std::vector<eglplus::egl_types::device_type> devices;
-            devices.resize(n);
-            if(egl.query_devices(cover(devices))) {
-                for(const auto cur_dev_idx : integer_range(n)) {
-                    bool matching_device = true;
-                    auto device = eglplus::device_handle(devices[cur_dev_idx]);
-                    // TODO: try to match a device from configuration
-                    if(matching_device) {
-                        if(auto io{_get_device_io(locator, eglapi, device)}) {
-                            return io;
-                        }
-                    }
-                }
-            }
-        }
-    }
-    return {};
-}
-//------------------------------------------------------------------------------
-auto eagitexi_cubemap_blur_provider::get_resource_io(const url& locator)
-  -> unique_holder<msgbus::source_blob_io> {
-    if(has_resource(locator)) {
-        if(const auto eglapi{_shared.apis.egl()}) {
-            const auto& egl{eglapi->operations()};
-            if(egl.EXT_device_enumeration) {
-                if(auto io{_get_selected_device_io(locator, *eglapi)}) {
-                    return io;
-                }
-            }
-            return _get_display_io(locator, *eglapi, egl.get_open_display());
         }
     }
     return {};
