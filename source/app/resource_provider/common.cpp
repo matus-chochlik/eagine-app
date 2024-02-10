@@ -17,6 +17,8 @@ namespace eagine::app {
 // locator check functions
 //------------------------------------------------------------------------------
 auto is_valid_text_resource_url(const url&) noexcept -> bool;
+auto is_valid_eagitex_resource_url(const url&) noexcept -> bool;
+auto is_valid_eagitexi_resource_url(const url&) noexcept -> bool;
 //------------------------------------------------------------------------------
 // Base I/O implementations
 //------------------------------------------------------------------------------

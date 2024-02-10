@@ -22,19 +22,66 @@ class eagitexi_cubemap_blur_io final : public compressed_buffer_source_blob_io {
 public:
     eagitexi_cubemap_blur_io(
       main_ctx_parent,
-      shared_provider_objects& shared) noexcept;
+      shared_provider_objects& shared,
+      eglplus::initialized_display display,
+      url source,
+      int side) noexcept;
 
     auto prepare() noexcept -> msgbus::blob_preparation final;
 
 private:
+    void _make_header() noexcept;
+
     shared_provider_objects& _shared;
+    eglplus::initialized_display _display;
+    url _source;
+    const int _side;
 };
+//------------------------------------------------------------------------------
+void eagitexi_cubemap_blur_io::_make_header() noexcept {
+    const auto& [egl, EGL]{*_shared.apis.egl()};
+
+    std::stringstream hdr;
+    hdr << R"({"level":0)";
+    hdr << R"(,"width":)" << _side;
+    hdr << R"(,"height":)" << _side;
+    hdr << R"(,"channels":3)";
+    hdr << R"(,"data_type":"unsigned_byte")";
+    hdr << R"(,"format":"red")";
+    hdr << R"(,"iformat":"rgb8")";
+    hdr << R"(,"tag":["blur","cubemap"])";
+    hdr << R"(,"metadata":{"renderer":{)";
+    if(const auto vendor{egl.query_string(_display, EGL.vendor)}) {
+        hdr << R"("vendor":")" << *vendor << R"("})";
+        if(const auto version{egl.query_string(_display, EGL.version)}) {
+            hdr << R"(,"version":")" << *version << R"("})";
+        }
+        if(egl.MESA_query_driver(_display)) {
+            if(const auto driver{egl.get_display_driver_name(_display)}) {
+                hdr << R"(,"driver":")" << *driver << R"("})";
+            }
+        }
+    }
+    hdr << R"(}})";
+    hdr << R"(,"data_filter":"zlib")";
+    hdr << '}';
+    append(hdr.str());
+}
 //------------------------------------------------------------------------------
 eagitexi_cubemap_blur_io::eagitexi_cubemap_blur_io(
   main_ctx_parent parent,
-  shared_provider_objects& shared) noexcept
-  : compressed_buffer_source_blob_io{"ITxCubBlur", parent, 1024 * 1024 * 6}
-  , _shared{shared} {}
+  shared_provider_objects& shared,
+  eglplus::initialized_display display,
+  url source,
+  int side) noexcept
+  : compressed_buffer_source_blob_io{"ITxCubBlur", parent, side * side * 6}
+  , _shared{shared}
+  , _display{std::move(display)}
+  , _source{std::move(source)}
+  , _side{side} {
+    _make_header();
+    finish(); // TODO
+}
 //------------------------------------------------------------------------------
 auto eagitexi_cubemap_blur_io::prepare() noexcept -> msgbus::blob_preparation {
     return msgbus::blob_preparation::finished;
@@ -60,7 +107,7 @@ private:
     auto _get_display_io(
       const url& locator,
       const eglplus::egl_api&,
-      eglplus::display_handle) -> unique_holder<msgbus::source_blob_io>;
+      eglplus::initialized_display) -> unique_holder<msgbus::source_blob_io>;
 
     auto _get_device_io(
       const url& locator,
@@ -70,9 +117,6 @@ private:
     auto _get_selected_device_io(const url& locator, const eglplus::egl_api&)
       -> unique_holder<msgbus::source_blob_io>;
 
-    static auto is_valid_locator(const url& locator) noexcept -> bool;
-    static auto valid_samples(int s) noexcept -> bool;
-
     shared_provider_objects& _shared;
 };
 //------------------------------------------------------------------------------
@@ -81,25 +125,12 @@ eagitexi_cubemap_blur_provider::eagitexi_cubemap_blur_provider(
   : main_ctx_object{"PTxCubBlur", params.parent}
   , _shared{params.shared} {}
 //------------------------------------------------------------------------------
-auto eagitexi_cubemap_blur_provider::is_valid_locator(
-  const url& locator) noexcept -> bool {
-    if(const auto source{locator.query().arg_url("source")}) {
-        return source.has_scheme("eagitex") or
-               source.has_path_suffix(".eagitex");
-    }
-    return false;
-}
-//------------------------------------------------------------------------------
-auto eagitexi_cubemap_blur_provider::valid_samples(int s) noexcept -> bool {
-    return s > 0;
-}
-//------------------------------------------------------------------------------
 auto eagitexi_cubemap_blur_provider::has_resource(const url& locator) noexcept
   -> bool {
-    if(locator.has_scheme("eagitex") and locator.has_path("cube_map_blur")) {
-        const auto& q{locator.query()};
-        return is_valid_locator(q.arg_url("source")) and
-               valid_samples(q.arg_value_as<int>("samples").value_or(1));
+    if(
+      is_valid_eagitexi_resource_url(locator) and
+      locator.has_path("cube_map_blur")) {
+        return is_valid_eagitex_resource_url(locator.query().arg_url("source"));
     }
     return false;
 }
@@ -107,14 +138,27 @@ auto eagitexi_cubemap_blur_provider::has_resource(const url& locator) noexcept
 auto eagitexi_cubemap_blur_provider::_get_display_io(
   const url& locator,
   const eglplus::egl_api& eglapi,
-  eglplus::display_handle handle) -> unique_holder<msgbus::source_blob_io> {
-    if(const ok display{handle}) {
+  eglplus::initialized_display display)
+  -> unique_holder<msgbus::source_blob_io> {
+    if(display) {
         const auto& [egl, EGL]{eglapi};
         const auto apis{egl.get_client_api_bits(display)};
         const bool has_gl{apis.has(EGL.opengl_bit)};
         const bool has_gles{apis.has(EGL.opengl_es_bit)};
         if(has_gl or has_gles) {
-            return {hold<eagitexi_cubemap_blur_io>, as_parent(), _shared};
+            if(has_gl) {
+                egl.bind_api(EGL.opengl_api);
+            } else {
+                egl.bind_api(EGL.opengl_es_api);
+            }
+            const auto& q{locator.query()};
+            return {
+              hold<eagitexi_cubemap_blur_io>,
+              as_parent(),
+              _shared,
+              std::move(display),
+              q.arg_url("source"),
+              q.arg_value_as<int>("side").value_or(1024)};
         }
     }
     return {};
@@ -124,10 +168,8 @@ auto eagitexi_cubemap_blur_provider::_get_device_io(
   const url& locator,
   const eglplus::egl_api& eglapi,
   eglplus::device_handle device) -> unique_holder<msgbus::source_blob_io> {
-    if(const ok display{eglapi.get_platform_display(device)}) {
-        return _get_display_io(locator, eglapi, display);
-    }
-    return {};
+    return _get_display_io(
+      locator, eglapi, eglapi.get_open_platform_display(device));
 }
 //------------------------------------------------------------------------------
 auto eagitexi_cubemap_blur_provider::_get_selected_device_io(
@@ -167,9 +209,7 @@ auto eagitexi_cubemap_blur_provider::get_resource_io(const url& locator)
                     return io;
                 }
             }
-            if(const ok display{egl.get_display()}) {
-                return _get_display_io(locator, *eglapi, display);
-            }
+            return _get_display_io(locator, *eglapi, egl.get_open_display());
         }
     }
     return {};

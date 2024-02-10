@@ -26,6 +26,16 @@ auto is_valid_text_resource_url(const url& locator) noexcept -> bool {
             locator.has_path_suffix(".txt"));
 }
 //------------------------------------------------------------------------------
+auto is_valid_eagitex_resource_url(const url& locator) noexcept -> bool {
+    return locator and (locator.has_scheme("eagitex") or
+                        locator.has_path_suffix(".eagitex"));
+}
+//------------------------------------------------------------------------------
+auto is_valid_eagitexi_resource_url(const url& locator) noexcept -> bool {
+    return locator and (locator.has_scheme("eagitexi") or
+                        locator.has_path_suffix(".eagitexi"));
+}
+//------------------------------------------------------------------------------
 // simple_string_source_blob_io
 //------------------------------------------------------------------------------
 simple_string_source_blob_io::simple_string_source_blob_io(
