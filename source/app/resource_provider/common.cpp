@@ -95,6 +95,8 @@ private:
 //------------------------------------------------------------------------------
 struct gl_rendered_source_params {
     valid_if_nonnegative<span_size_t> device_index{-1};
+    valid_if_positive<int> surface_width{0};
+    valid_if_positive<int> surface_height{0};
 };
 //------------------------------------------------------------------------------
 class gl_rendered_source_blob_io : public compressed_buffer_source_blob_io {
@@ -103,6 +105,10 @@ public:
       shared_provider_objects& shared,
       const gl_rendered_source_params&) noexcept
       -> eglplus::initialized_display;
+
+    ~gl_rendered_source_blob_io() noexcept;
+
+    auto create_context(const gl_rendered_source_params&) noexcept -> bool;
 
 protected:
     gl_rendered_source_blob_io(
@@ -116,12 +122,16 @@ protected:
         return _shared;
     }
 
-    auto display() const noexcept -> eglplus::display_handle;
     auto eglapi() const noexcept -> const eglplus::egl_api&;
+    auto display() const noexcept -> eglplus::display_handle;
+    auto surface() const noexcept -> eglplus::surface_handle;
+    auto context() const noexcept -> eglplus::context_handle;
 
 private:
     shared_provider_objects& _shared;
     eglplus::initialized_display _display;
+    eglplus::owned_surface_handle _surface;
+    eglplus::owned_context_handle _context;
 };
 //------------------------------------------------------------------------------
 class ostream_io final : public msgbus::source_blob_io {

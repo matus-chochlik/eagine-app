@@ -32,6 +32,7 @@ public:
 private:
     void _make_header() noexcept;
 
+    const oglplus::gl_api glapi;
     url _source;
     const int _side;
 };
@@ -121,17 +122,25 @@ auto eagitexi_cubemap_blur_provider::has_resource(const url& locator) noexcept
 auto eagitexi_cubemap_blur_provider::get_resource_io(const url& locator)
   -> unique_holder<msgbus::source_blob_io> {
     if(has_resource(locator)) {
-        gl_rendered_source_params params{}; // TODO: params from config
+        const auto& q{locator.query()};
+        const auto side{q.arg_value_as<int>("side").value_or(1024)};
+
+        gl_rendered_source_params params{
+          .surface_width = side, .surface_height = side};
+
         if(auto display{
              eagitexi_cubemap_blur_io::open_display(_shared, params)}) {
-            const auto& q{locator.query()};
-            return {
-              hold<eagitexi_cubemap_blur_io>,
-              as_parent(),
-              _shared,
-              std::move(display),
-              q.arg_url("source"),
-              q.arg_value_as<int>("side").value_or(1024)};
+            if(unique_holder<eagitexi_cubemap_blur_io> io{
+                 default_selector,
+                 as_parent(),
+                 _shared,
+                 std::move(display),
+                 q.arg_url("source"),
+                 side}) {
+                if(io->create_context(params)) {
+                    return io;
+                }
+            }
         }
     }
     return {};
