@@ -287,9 +287,11 @@ auto gl_rendered_source_blob_io::create_context(
 }
 //------------------------------------------------------------------------------
 auto gl_rendered_source_blob_io::make_current() const noexcept -> bool {
-    return eglapi()
-      .make_current(_display, _surface, _surface, _context)
-      .has_value();
+    return eglapi().make_current(_display, _surface, _context).has_value();
+}
+//------------------------------------------------------------------------------
+auto gl_rendered_source_blob_io::swap_buffers() const noexcept -> bool {
+    return eglapi().swap_buffers(_display, _surface).has_value();
 }
 //------------------------------------------------------------------------------
 auto gl_rendered_source_blob_io::eglapi() const noexcept

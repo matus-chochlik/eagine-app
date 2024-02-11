@@ -132,8 +132,9 @@ void eagitexi_cubemap_blur_io::_on_tex_loaded(
 void eagitexi_cubemap_blur_io::_render_tile() noexcept {
     const auto& [gl, GL]{_glapi};
     if((_tile_x == 0) and (_tile_y == 0)) {
+        swap_buffers();
         gl.disable(GL.scissor_test);
-        gl.clear_color(0.5, 0.5, 0.5, 1.0);
+        gl.clear_color(0.5, 0.5, 0.5, 0.0);
         gl.clear(GL.color_buffer_bit);
     }
     gl.enable(GL.scissor_test);
@@ -149,6 +150,8 @@ void eagitexi_cubemap_blur_io::_save_tile() noexcept {
     const auto& [gl, GL]{_glapi};
     _buffer.resize(span_size(_size * _size * 4));
 
+    gl.disable(GL.scissor_test);
+    gl.finish();
     gl.read_pixels(
       0,
       0,
@@ -157,14 +160,6 @@ void eagitexi_cubemap_blur_io::_save_tile() noexcept {
       GL.rgba,
       GL.unsigned_byte_,
       cover(_buffer));
-
-    // TODO
-    const int c = _cube_side / 2;
-    int i = 0;
-    for(auto& b : cover(_buffer)) {
-        b = byte(((i % 4) == c) ? 0xB0 : ((i % 4) == 3) ? 0xFF : 0x30);
-        ++i;
-    }
 
     compress(view(_buffer));
 }
@@ -202,12 +197,14 @@ void eagitexi_cubemap_blur_io::_make_header() noexcept {
 //------------------------------------------------------------------------------
 auto eagitexi_cubemap_blur_io::prepare() noexcept -> msgbus::blob_preparation {
     const auto& GL = _glapi.constants();
+    if(not _finished) {
+        make_current();
+    }
     if(_cubemap.load_if_needed(
          loader(), _glapi, GL.texture_cube_map, GL.texture0)) {
         return msgbus::blob_preparation::working;
     }
     if(_cube_side < 6) {
-        make_current();
         _render_tile();
         if(++_tile_x >= _tiles_per_side) {
             _tile_x = 0;

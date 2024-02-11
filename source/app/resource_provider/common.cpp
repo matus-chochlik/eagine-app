@@ -132,6 +132,7 @@ protected:
     auto context() const noexcept -> eglplus::context_handle;
 
     auto make_current() const noexcept -> bool;
+    auto swap_buffers() const noexcept -> bool;
 
 private:
     shared_provider_objects& _shared;
