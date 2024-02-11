@@ -121,6 +121,7 @@ auto eagitexi_cubemap_blur_io::_build_program() noexcept
 //------------------------------------------------------------------------------
 void eagitexi_cubemap_blur_io::_on_tex_loaded(
   const gl_texture_resource::load_info& loaded) noexcept {
+    make_current();
     const auto& GL{_glapi.constants()};
     loaded.parameter_i(GL.texture_min_filter, GL.linear);
     loaded.parameter_i(GL.texture_mag_filter, GL.linear);
@@ -132,11 +133,7 @@ void eagitexi_cubemap_blur_io::_render_tile() noexcept {
     const auto& [gl, GL]{_glapi};
     if((_tile_x == 0) and (_tile_y == 0)) {
         gl.disable(GL.scissor_test);
-        gl.clear_color(
-          float(_cube_side % 3 == 0),
-          float(_cube_side % 3 == 1),
-          float(_cube_side % 3 == 2),
-          1.0);
+        gl.clear_color(0.5, 0.5, 0.5, 1.0);
         gl.clear(GL.color_buffer_bit);
     }
     gl.enable(GL.scissor_test);
@@ -150,8 +147,7 @@ void eagitexi_cubemap_blur_io::_render_tile() noexcept {
 //------------------------------------------------------------------------------
 void eagitexi_cubemap_blur_io::_save_tile() noexcept {
     const auto& [gl, GL]{_glapi};
-    const auto size{span_size(_size * _size * 4)};
-    _buffer.resize(size);
+    _buffer.resize(span_size(_size * _size * 4));
 
     gl.read_pixels(
       0,
@@ -160,7 +156,15 @@ void eagitexi_cubemap_blur_io::_save_tile() noexcept {
       oglplus::gl_types::sizei_type(_size),
       GL.rgba,
       GL.unsigned_byte_,
-      _buffer);
+      cover(_buffer));
+
+    // TODO
+    const int c = _cube_side / 2;
+    int i = 0;
+    for(auto& b : cover(_buffer)) {
+        b = byte(((i % 4) == c) ? 0xB0 : ((i % 4) == 3) ? 0xFF : 0x30);
+        ++i;
+    }
 
     compress(view(_buffer));
 }
@@ -172,6 +176,7 @@ void eagitexi_cubemap_blur_io::_make_header() noexcept {
     hdr << R"({"level":0)";
     hdr << R"(,"width":)" << _size;
     hdr << R"(,"height":)" << _size;
+    hdr << R"(,"depth":)" << 6;
     hdr << R"(,"channels":4)";
     hdr << R"(,"data_type":"unsigned_byte")";
     hdr << R"(,"format":"rgba")";
@@ -179,13 +184,13 @@ void eagitexi_cubemap_blur_io::_make_header() noexcept {
     hdr << R"(,"tag":["blur","cubemap"])";
     hdr << R"(,"metadata":{"renderer":{)";
     if(const auto vendor{egl.query_string(display(), EGL.vendor)}) {
-        hdr << R"("vendor":")" << *vendor << R"("})";
+        hdr << R"("vendor":")" << *vendor << R"(")";
         if(const auto version{egl.query_string(display(), EGL.version)}) {
-            hdr << R"(,"version":")" << *version << R"("})";
+            hdr << R"(,"version":")" << *version << R"(")";
         }
         if(egl.MESA_query_driver(display())) {
             if(const auto driver{egl.get_display_driver_name(display())}) {
-                hdr << R"(,"driver":")" << *driver << R"("})";
+                hdr << R"(,"driver":")" << *driver << R"(")";
             }
         }
     }
@@ -202,6 +207,7 @@ auto eagitexi_cubemap_blur_io::prepare() noexcept -> msgbus::blob_preparation {
         return msgbus::blob_preparation::working;
     }
     if(_cube_side < 6) {
+        make_current();
         _render_tile();
         if(++_tile_x >= _tiles_per_side) {
             _tile_x = 0;

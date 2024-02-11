@@ -252,7 +252,7 @@ auto gl_rendered_source_blob_io::create_context(
 
     const auto config_attribs =
       (EGL.red_size | 8) + (EGL.green_size | 8) + (EGL.blue_size | 8) +
-      (EGL.alpha_size | EGL.dont_care) + (EGL.depth_size | EGL.dont_care) +
+      (EGL.alpha_size | 8) + (EGL.depth_size | EGL.dont_care) +
       (EGL.stencil_size | EGL.dont_care) +
       (EGL.color_buffer_type | EGL.rgb_buffer) +
       (EGL.surface_type | EGL.pbuffer_bit) +
@@ -277,11 +277,19 @@ auto gl_rendered_source_blob_io::create_context(
                  _display, config, eglplus::context_handle{}, context_attribs)}) {
                 _surface = std::move(surface.get());
                 _context = std::move(context.get());
-                return _surface and _context;
+                if(_surface and _context) {
+                    return make_current();
+                }
             }
         }
     }
     return false;
+}
+//------------------------------------------------------------------------------
+auto gl_rendered_source_blob_io::make_current() const noexcept -> bool {
+    return eglapi()
+      .make_current(_display, _surface, _surface, _context)
+      .has_value();
 }
 //------------------------------------------------------------------------------
 auto gl_rendered_source_blob_io::eglapi() const noexcept

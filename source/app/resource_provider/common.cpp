@@ -131,6 +131,8 @@ protected:
     auto surface() const noexcept -> eglplus::surface_handle;
     auto context() const noexcept -> eglplus::context_handle;
 
+    auto make_current() const noexcept -> bool;
+
 private:
     shared_provider_objects& _shared;
     eglplus::initialized_display _display;
