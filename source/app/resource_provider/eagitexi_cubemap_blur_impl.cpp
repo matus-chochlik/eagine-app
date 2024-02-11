@@ -9,6 +9,7 @@ module eagine.app.resource_provider;
 
 import eagine.core;
 import eagine.msgbus;
+import eagine.shapes;
 import eagine.eglplus;
 import eagine.oglplus;
 import eagine.app;
@@ -30,12 +31,72 @@ public:
     auto prepare() noexcept -> msgbus::blob_preparation final;
 
 private:
+    auto _build_screen() noexcept -> oglplus::geometry_and_bindings;
+    auto _build_program() noexcept -> oglplus::program_object;
+
     void _make_header() noexcept;
 
-    const oglplus::gl_api glapi;
+    main_ctx_buffer _buffer;
+    const oglplus::gl_api _glapi;
+
+    const oglplus::geometry_and_bindings _screen;
+    const oglplus::program_object _prog;
     url _source;
     const int _side;
 };
+//------------------------------------------------------------------------------
+auto eagitexi_cubemap_blur_io::_build_screen() noexcept
+  -> oglplus::geometry_and_bindings {
+    oglplus::shape_generator shape(
+      _glapi, shapes::unit_screen(shapes::vertex_attrib_kind::position));
+
+    return oglplus::geometry_and_bindings{_glapi, shape, _buffer};
+}
+//------------------------------------------------------------------------------
+auto eagitexi_cubemap_blur_io::_build_program() noexcept
+  -> oglplus::program_object {
+    const auto& [gl, GL]{_glapi};
+
+    // vertex shader
+    const string_view vs_source{
+      "#version 140\n"
+      "in vec2 Position;"
+      "out vec2 vertCoord;"
+      "void main() {"
+      "  gl_Position = vec4(Position, 0.0, 1.0);"
+      "  vertCoord = gl_Position.xy;"
+      "}"};
+
+    const auto vs{gl.create_shader.object(GL.vertex_shader)};
+    gl.shader_source(vs, oglplus::glsl_string_ref(vs_source));
+    gl.compile_shader(vs);
+
+    // fragment shader
+    const string_view fs_source{
+      "#version 140\n"
+      "in vec2 vertCoord;"
+      "out vec3 fragColor;"
+      "void main() {"
+      "  vec2 csq = pow(vertCoord, 2.0);"
+      "  vec3 cubeCoord = vec3(vertCoord, sqrt(3.0-csq.x-csq.y));"
+      "  fragColor = normalize(cubeCoord);"
+      "}"};
+
+    const auto fs{gl.create_shader.object(GL.fragment_shader)};
+    gl.shader_source(fs, oglplus::glsl_string_ref(fs_source));
+    gl.compile_shader(fs);
+
+    // program
+    auto prog{gl.create_program.object()};
+    gl.attach_shader(prog, vs);
+    gl.attach_shader(prog, fs);
+    gl.link_program(prog);
+    gl.use_program(prog);
+
+    gl.bind_attrib_location(prog, _screen.position_loc(), "Position");
+
+    return prog;
+}
 //------------------------------------------------------------------------------
 void eagitexi_cubemap_blur_io::_make_header() noexcept {
     const auto& [egl, EGL]{eglapi()};
@@ -74,6 +135,9 @@ eagitexi_cubemap_blur_io::eagitexi_cubemap_blur_io(
   url source,
   int side) noexcept
   : gl_rendered_source_blob_io{"ITxCubBlur", parent, shared, std::move(display), side * side * 6}
+  , _buffer{*this, 1024, nothing}
+  , _screen{_build_screen()}
+  , _prog{_build_program()}
   , _source{std::move(source)}
   , _side{side} {
     _make_header();
