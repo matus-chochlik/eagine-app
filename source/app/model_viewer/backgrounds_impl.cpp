@@ -20,8 +20,8 @@ namespace eagine::app {
 model_viewer_backgrounds::model_viewer_backgrounds(
   execution_context& ctx,
   video_context& video) {
-    load("Icosphere", url{"eagibg:///Icosphere"}, ctx, video);
     load("Skybox", url{"eagibg:///Skybox"}, ctx, video);
+    load("Icosphere", url{"eagibg:///Icosphere"}, ctx, video);
 }
 //------------------------------------------------------------------------------
 auto model_viewer_backgrounds::set_skybox_unit(
