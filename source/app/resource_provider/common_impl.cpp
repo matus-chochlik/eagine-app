@@ -14,6 +14,7 @@ module eagine.app.resource_provider;
 import eagine.core;
 import eagine.msgbus;
 import eagine.eglplus;
+import eagine.oglplus;
 import std;
 
 namespace eagine::app {
@@ -156,11 +157,13 @@ gl_rendered_source_blob_io::gl_rendered_source_blob_io(
   identifier id,
   main_ctx_parent parent,
   shared_provider_objects& shared,
-  eglplus::initialized_display display,
+  gl_rendered_source_context context,
   span_size_t size) noexcept
   : compressed_buffer_source_blob_io{id, parent, size}
   , _shared{shared}
-  , _display{std::move(display)} {}
+  , _display{std::move(context.display)}
+  , _surface{std::move(context.surface)}
+  , _context{std::move(context.context)} {}
 //------------------------------------------------------------------------------
 gl_rendered_source_blob_io::~gl_rendered_source_blob_io() noexcept {
     if(_display) {
@@ -228,7 +231,7 @@ auto gl_rendered_source_blob_io_display_choose(
     return {};
 }
 //------------------------------------------------------------------------------
-auto gl_rendered_source_blob_io::open_display(
+auto gl_rendered_source_blob_io::_open_display(
   shared_provider_objects& shared,
   const gl_rendered_source_params& params) noexcept
   -> eglplus::initialized_display {
@@ -247,43 +250,52 @@ auto gl_rendered_source_blob_io::open_display(
 }
 //------------------------------------------------------------------------------
 auto gl_rendered_source_blob_io::create_context(
-  const gl_rendered_source_params& params) noexcept -> bool {
-    const auto& [egl, EGL]{eglapi()};
+  shared_provider_objects& shared,
+  const gl_rendered_source_params& params) noexcept
+  -> gl_rendered_source_context {
 
-    const auto config_attribs =
-      (EGL.red_size | 8) + (EGL.green_size | 8) + (EGL.blue_size | 8) +
-      (EGL.alpha_size | 8) + (EGL.depth_size | EGL.dont_care) +
-      (EGL.stencil_size | EGL.dont_care) +
-      (EGL.color_buffer_type | EGL.rgb_buffer) +
-      (EGL.surface_type | EGL.pbuffer_bit) +
-      (EGL.renderable_type | (EGL.opengl_bit | EGL.opengl_es3_bit));
+    if(auto display{_open_display(shared, params)}) {
+        const auto& [egl, EGL]{*shared.apis.egl()};
 
-    if(const ok config{egl.choose_config(_display, config_attribs)}) {
+        const auto config_attribs =
+          (EGL.red_size | 8) + (EGL.green_size | 8) + (EGL.blue_size | 8) +
+          (EGL.alpha_size | 8) + (EGL.depth_size | EGL.dont_care) +
+          (EGL.stencil_size | EGL.dont_care) +
+          (EGL.color_buffer_type | EGL.rgb_buffer) +
+          (EGL.surface_type | EGL.pbuffer_bit) +
+          (EGL.renderable_type | (EGL.opengl_bit | EGL.opengl_es3_bit));
 
-        const auto surface_attribs =
-          (EGL.width | params.surface_width.value()) +
-          (EGL.height | params.surface_height.value());
+        if(const ok config{egl.choose_config(display, config_attribs)}) {
 
-        if(ok surface{
-             egl.create_pbuffer_surface(_display, config, surface_attribs)}) {
-            const auto context_attribs =
-              (EGL.context_opengl_profile_mask |
-               EGL.context_opengl_core_profile_bit) +
-              (EGL.context_major_version | 3) +
-              (EGL.context_minor_version | 3) +
-              (EGL.context_opengl_robust_access | true);
+            const auto surface_attribs =
+              (EGL.width | params.surface_width.value()) +
+              (EGL.height | params.surface_height.value());
 
-            if(ok context{egl.create_context(
-                 _display, config, eglplus::context_handle{}, context_attribs)}) {
-                _surface = std::move(surface.get());
-                _context = std::move(context.get());
-                if(_surface and _context) {
-                    return make_current();
+            if(ok surface{egl.create_pbuffer_surface(
+                 display, config, surface_attribs)}) {
+                const auto context_attribs =
+                  (EGL.context_opengl_profile_mask |
+                   EGL.context_opengl_core_profile_bit) +
+                  (EGL.context_major_version | 3) +
+                  (EGL.context_minor_version | 3) +
+                  (EGL.context_opengl_robust_access | true);
+
+                if(ok context{egl.create_context(
+                     display,
+                     config,
+                     eglplus::context_handle{},
+                     context_attribs)}) {
+                    if(egl.make_current(display, surface, context)) {
+                        return {
+                          .display = std::move(display),
+                          .surface = std::move(surface.get()),
+                          .context = std::move(context.get())};
+                    }
                 }
             }
         }
     }
-    return false;
+    return {};
 }
 //------------------------------------------------------------------------------
 auto gl_rendered_source_blob_io::make_current() const noexcept -> bool {
@@ -299,6 +311,11 @@ auto gl_rendered_source_blob_io::eglapi() const noexcept
     auto ref{_shared.apis.egl()};
     assert(ref);
     return *ref;
+}
+//------------------------------------------------------------------------------
+auto gl_rendered_source_blob_io::glapi() const noexcept
+  -> const oglplus::gl_api& {
+    return _glapi;
 }
 //------------------------------------------------------------------------------
 auto gl_rendered_source_blob_io::display() const noexcept

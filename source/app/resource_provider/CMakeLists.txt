@@ -36,6 +36,7 @@ eagine_add_module(
 		eagine.core
 		eagine.msgbus
 		eagine.eglplus
+		eagine.oglplus
 		eagine.app)
 
 eagine_add_module(

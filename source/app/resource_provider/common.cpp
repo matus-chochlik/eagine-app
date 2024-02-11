@@ -10,6 +10,7 @@ export module eagine.app.resource_provider:common;
 import eagine.core;
 import eagine.msgbus;
 import eagine.eglplus;
+import eagine.oglplus;
 import eagine.app;
 import std;
 import :driver;
@@ -100,23 +101,30 @@ struct gl_rendered_source_params {
     valid_if_positive<int> surface_height{0};
 };
 //------------------------------------------------------------------------------
+struct gl_rendered_source_context {
+    eglplus::initialized_display display;
+    eglplus::owned_surface_handle surface;
+    eglplus::owned_context_handle context;
+
+    explicit operator bool() const noexcept {
+        return display and surface and context;
+    }
+};
+//------------------------------------------------------------------------------
 class gl_rendered_source_blob_io : public compressed_buffer_source_blob_io {
 public:
-    static auto open_display(
-      shared_provider_objects& shared,
-      const gl_rendered_source_params&) noexcept
-      -> eglplus::initialized_display;
-
     ~gl_rendered_source_blob_io() noexcept;
 
-    auto create_context(const gl_rendered_source_params&) noexcept -> bool;
+    static auto create_context(
+      shared_provider_objects&,
+      const gl_rendered_source_params&) noexcept -> gl_rendered_source_context;
 
 protected:
     gl_rendered_source_blob_io(
       identifier id,
       main_ctx_parent parent,
       shared_provider_objects& shared,
-      eglplus::initialized_display display,
+      gl_rendered_source_context,
       span_size_t size) noexcept;
 
     auto shared() const noexcept -> shared_provider_objects& {
@@ -127,6 +135,7 @@ protected:
     }
 
     auto eglapi() const noexcept -> const eglplus::egl_api&;
+    auto glapi() const noexcept -> const oglplus::gl_api&;
     auto display() const noexcept -> eglplus::display_handle;
     auto surface() const noexcept -> eglplus::surface_handle;
     auto context() const noexcept -> eglplus::context_handle;
@@ -135,10 +144,16 @@ protected:
     auto swap_buffers() const noexcept -> bool;
 
 private:
+    static auto _open_display(
+      shared_provider_objects& shared,
+      const gl_rendered_source_params&) noexcept
+      -> eglplus::initialized_display;
+
     shared_provider_objects& _shared;
     eglplus::initialized_display _display;
     eglplus::owned_surface_handle _surface;
     eglplus::owned_context_handle _context;
+    const oglplus::gl_api _glapi;
 };
 //------------------------------------------------------------------------------
 class ostream_io final : public msgbus::source_blob_io {
