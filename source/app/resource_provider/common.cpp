@@ -10,6 +10,7 @@ export module eagine.app.resource_provider:common;
 import eagine.core;
 import eagine.msgbus;
 import eagine.eglplus;
+import eagine.app;
 import std;
 import :driver;
 
@@ -120,6 +121,9 @@ protected:
 
     auto shared() const noexcept -> shared_provider_objects& {
         return _shared;
+    }
+    auto loader() const noexcept -> resource_loader& {
+        return _shared.loader;
     }
 
     auto eglapi() const noexcept -> const eglplus::egl_api&;

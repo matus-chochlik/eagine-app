@@ -35,7 +35,8 @@ eagine_add_module(
 		driver std
 		eagine.core
 		eagine.msgbus
-		eagine.eglplus)
+		eagine.eglplus
+		eagine.app)
 
 eagine_add_module(
 	eagine.app.resource_provider PARTITION eagitexi_provider

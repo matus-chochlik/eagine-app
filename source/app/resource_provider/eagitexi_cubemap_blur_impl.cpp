@@ -26,13 +26,16 @@ public:
       shared_provider_objects& shared,
       eglplus::initialized_display display,
       url source,
-      int side) noexcept;
+      int size) noexcept;
 
     auto prepare() noexcept -> msgbus::blob_preparation final;
 
 private:
     auto _build_screen() noexcept -> oglplus::geometry_and_bindings;
     auto _build_program() noexcept -> oglplus::program_object;
+    void _on_tex_loaded(const gl_texture_resource::load_info&) noexcept;
+    void _render_tile() noexcept;
+    void _save_tile() noexcept;
 
     void _make_header() noexcept;
 
@@ -41,8 +44,13 @@ private:
 
     const oglplus::geometry_and_bindings _screen;
     const oglplus::program_object _prog;
-    url _source;
-    const int _side;
+    gl_texture_resource _cubemap;
+    const int _size;
+    const int _tiles_per_side{1};
+    int _tile_x{0};
+    int _tile_y{0};
+    int _cube_side{0};
+    bool _finished{false};
 };
 //------------------------------------------------------------------------------
 auto eagitexi_cubemap_blur_io::_build_screen() noexcept
@@ -98,16 +106,56 @@ auto eagitexi_cubemap_blur_io::_build_program() noexcept
     return prog;
 }
 //------------------------------------------------------------------------------
+void eagitexi_cubemap_blur_io::_on_tex_loaded(
+  const gl_texture_resource::load_info& loaded) noexcept {
+    const auto& GL{_glapi.constants()};
+    loaded.parameter_i(GL.texture_min_filter, GL.linear);
+    loaded.parameter_i(GL.texture_mag_filter, GL.linear);
+    loaded.parameter_i(GL.texture_wrap_s, GL.clamp_to_edge);
+    loaded.parameter_i(GL.texture_wrap_t, GL.clamp_to_edge);
+}
+//------------------------------------------------------------------------------
+void eagitexi_cubemap_blur_io::_render_tile() noexcept {
+    const auto& [gl, GL]{_glapi};
+    if((_tile_x == 0) and (_tile_y == 0)) {
+        gl.disable(GL.scissor_test);
+        gl.clear_color(
+          float(_cube_side % 3 == 0),
+          float(_cube_side % 3 == 1),
+          float(_cube_side % 3 == 2),
+          1.0);
+        gl.clear(GL.color_buffer_bit);
+    }
+    gl.enable(GL.scissor_test);
+}
+//------------------------------------------------------------------------------
+void eagitexi_cubemap_blur_io::_save_tile() noexcept {
+    const auto& [gl, GL]{_glapi};
+    const auto size{span_size(_size * _size * 3)};
+    _buffer.resize(size);
+
+    gl.read_pixels(
+      0,
+      0,
+      oglplus::gl_types::sizei_type(_size),
+      oglplus::gl_types::sizei_type(_size),
+      GL.rgb,
+      GL.unsigned_byte_,
+      _buffer);
+
+    compress(view(_buffer));
+}
+//------------------------------------------------------------------------------
 void eagitexi_cubemap_blur_io::_make_header() noexcept {
     const auto& [egl, EGL]{eglapi()};
 
     std::stringstream hdr;
     hdr << R"({"level":0)";
-    hdr << R"(,"width":)" << _side;
-    hdr << R"(,"height":)" << _side;
+    hdr << R"(,"width":)" << _size;
+    hdr << R"(,"height":)" << _size;
     hdr << R"(,"channels":3)";
     hdr << R"(,"data_type":"unsigned_byte")";
-    hdr << R"(,"format":"red")";
+    hdr << R"(,"format":"rgb")";
     hdr << R"(,"iformat":"rgb8")";
     hdr << R"(,"tag":["blur","cubemap"])";
     hdr << R"(,"metadata":{"renderer":{)";
@@ -128,24 +176,53 @@ void eagitexi_cubemap_blur_io::_make_header() noexcept {
     append(hdr.str());
 }
 //------------------------------------------------------------------------------
+auto eagitexi_cubemap_blur_io::prepare() noexcept -> msgbus::blob_preparation {
+    const auto& GL = _glapi.constants();
+    if(_cubemap.load_if_needed(
+         loader(), _glapi, GL.texture_cube_map, GL.texture0)) {
+        return msgbus::blob_preparation::working;
+    }
+    if(_cube_side < 6) {
+        _render_tile();
+        if(++_tile_x >= _tiles_per_side) {
+            _tile_x = 0;
+            if(++_tile_y >= _tiles_per_side) {
+                _tile_y = 0;
+                _save_tile();
+                ++_cube_side;
+            }
+        }
+        return msgbus::blob_preparation::working;
+    }
+    if(not _finished) {
+        finish();
+        _finished = true;
+        return msgbus::blob_preparation::working;
+    }
+    return msgbus::blob_preparation::finished;
+}
+//------------------------------------------------------------------------------
 eagitexi_cubemap_blur_io::eagitexi_cubemap_blur_io(
   main_ctx_parent parent,
   shared_provider_objects& shared,
   eglplus::initialized_display display,
   url source,
-  int side) noexcept
-  : gl_rendered_source_blob_io{"ITxCubBlur", parent, shared, std::move(display), side * side * 6}
-  , _buffer{*this, 1024, nothing}
+  int size) noexcept
+  : gl_rendered_source_blob_io{"ITxCubBlur", parent, shared, std::move(display), size * size * 6}
+  , _buffer{*this, size * size * 3, nothing}
   , _screen{_build_screen()}
   , _prog{_build_program()}
-  , _source{std::move(source)}
-  , _side{side} {
+  , _cubemap{std::move(source), loader()}
+  , _size{size}
+  , _tiles_per_side{size / 256} {
+    _cubemap.loaded.connect(
+      make_callable_ref<&eagitexi_cubemap_blur_io::_on_tex_loaded>(this));
+
+    const auto& [gl, GL]{_glapi};
+    gl.clear_color(1.0, 0.0, 0.0, 0.0);
+    gl.disable(GL.depth_test);
+
     _make_header();
-    finish(); // TODO
-}
-//------------------------------------------------------------------------------
-auto eagitexi_cubemap_blur_io::prepare() noexcept -> msgbus::blob_preparation {
-    return msgbus::blob_preparation::finished;
 }
 //------------------------------------------------------------------------------
 // provider
@@ -187,10 +264,10 @@ auto eagitexi_cubemap_blur_provider::get_resource_io(const url& locator)
   -> unique_holder<msgbus::source_blob_io> {
     if(has_resource(locator)) {
         const auto& q{locator.query()};
-        const auto side{q.arg_value_as<int>("side").value_or(1024)};
+        const auto size{q.arg_value_as<int>("size").value_or(1024)};
 
         gl_rendered_source_params params{
-          .surface_width = side, .surface_height = side};
+          .surface_width = size, .surface_height = size};
 
         if(auto display{
              eagitexi_cubemap_blur_io::open_display(_shared, params)}) {
@@ -200,7 +277,7 @@ auto eagitexi_cubemap_blur_provider::get_resource_io(const url& locator)
                  _shared,
                  std::move(display),
                  q.arg_url("source"),
-                 side}) {
+                 size}) {
                 if(io->create_context(params)) {
                     return io;
                 }
