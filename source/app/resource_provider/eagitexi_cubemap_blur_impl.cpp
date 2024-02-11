@@ -31,6 +31,8 @@ public:
     auto prepare() noexcept -> msgbus::blob_preparation final;
 
 private:
+    static auto _tile_size() noexcept -> int;
+
     auto _build_screen() noexcept -> oglplus::geometry_and_bindings;
     auto _build_program() noexcept -> oglplus::program_object;
     void _on_tex_loaded(const gl_texture_resource::load_info&) noexcept;
@@ -53,12 +55,19 @@ private:
     bool _finished{false};
 };
 //------------------------------------------------------------------------------
+auto eagitexi_cubemap_blur_io::_tile_size() noexcept -> int {
+    return 256;
+}
+//------------------------------------------------------------------------------
 auto eagitexi_cubemap_blur_io::_build_screen() noexcept
   -> oglplus::geometry_and_bindings {
     oglplus::shape_generator shape(
       _glapi, shapes::unit_screen(shapes::vertex_attrib_kind::position));
 
-    return oglplus::geometry_and_bindings{_glapi, shape, _buffer};
+    oglplus::geometry_and_bindings screen{_glapi, shape, _buffer};
+    screen.use(_glapi);
+
+    return screen;
 }
 //------------------------------------------------------------------------------
 auto eagitexi_cubemap_blur_io::_build_program() noexcept
@@ -72,7 +81,7 @@ auto eagitexi_cubemap_blur_io::_build_program() noexcept
       "out vec2 vertCoord;"
       "void main() {"
       "  gl_Position = vec4(Position, 0.0, 1.0);"
-      "  vertCoord = gl_Position.xy;"
+      "  vertCoord = Position;"
       "}"};
 
     const auto vs{gl.create_shader.object(GL.vertex_shader)};
@@ -84,6 +93,7 @@ auto eagitexi_cubemap_blur_io::_build_program() noexcept
       "#version 140\n"
       "in vec2 vertCoord;"
       "out vec3 fragColor;"
+      "uniform samplerCubeMap cubeMap;"
       "void main() {"
       "  vec2 csq = pow(vertCoord, 2.0);"
       "  vec3 cubeCoord = vec3(vertCoord, sqrt(3.0-csq.x-csq.y));"
@@ -102,6 +112,9 @@ auto eagitexi_cubemap_blur_io::_build_program() noexcept
     gl.use_program(prog);
 
     gl.bind_attrib_location(prog, _screen.position_loc(), "Position");
+    _glapi.get_uniform_location(prog, "cubeMap")
+      .and_then(
+        [&](auto cube_map_loc) { _glapi.set_uniform(prog, cube_map_loc, 0); });
 
     return prog;
 }
@@ -127,11 +140,17 @@ void eagitexi_cubemap_blur_io::_render_tile() noexcept {
         gl.clear(GL.color_buffer_bit);
     }
     gl.enable(GL.scissor_test);
+    gl.scissor(
+      _tile_x * _tile_size(),
+      _tile_y * _tile_size(),
+      _tile_size(),
+      _tile_size());
+    _screen.draw(_glapi);
 }
 //------------------------------------------------------------------------------
 void eagitexi_cubemap_blur_io::_save_tile() noexcept {
     const auto& [gl, GL]{_glapi};
-    const auto size{span_size(_size * _size * 3)};
+    const auto size{span_size(_size * _size * 4)};
     _buffer.resize(size);
 
     gl.read_pixels(
@@ -139,7 +158,7 @@ void eagitexi_cubemap_blur_io::_save_tile() noexcept {
       0,
       oglplus::gl_types::sizei_type(_size),
       oglplus::gl_types::sizei_type(_size),
-      GL.rgb,
+      GL.rgba,
       GL.unsigned_byte_,
       _buffer);
 
@@ -153,10 +172,10 @@ void eagitexi_cubemap_blur_io::_make_header() noexcept {
     hdr << R"({"level":0)";
     hdr << R"(,"width":)" << _size;
     hdr << R"(,"height":)" << _size;
-    hdr << R"(,"channels":3)";
+    hdr << R"(,"channels":4)";
     hdr << R"(,"data_type":"unsigned_byte")";
-    hdr << R"(,"format":"rgb")";
-    hdr << R"(,"iformat":"rgb8")";
+    hdr << R"(,"format":"rgba")";
+    hdr << R"(,"iformat":"rgba8")";
     hdr << R"(,"tag":["blur","cubemap"])";
     hdr << R"(,"metadata":{"renderer":{)";
     if(const auto vendor{egl.query_string(display(), EGL.vendor)}) {
@@ -209,17 +228,16 @@ eagitexi_cubemap_blur_io::eagitexi_cubemap_blur_io(
   url source,
   int size) noexcept
   : gl_rendered_source_blob_io{"ITxCubBlur", parent, shared, std::move(display), size * size * 6}
-  , _buffer{*this, size * size * 3, nothing}
+  , _buffer{*this, size * size * 4, nothing}
   , _screen{_build_screen()}
   , _prog{_build_program()}
   , _cubemap{std::move(source), loader()}
   , _size{size}
-  , _tiles_per_side{size / 256} {
+  , _tiles_per_side{size / _tile_size()} {
     _cubemap.loaded.connect(
       make_callable_ref<&eagitexi_cubemap_blur_io::_on_tex_loaded>(this));
 
     const auto& [gl, GL]{_glapi};
-    gl.clear_color(1.0, 0.0, 0.0, 0.0);
     gl.disable(GL.depth_test);
 
     _make_header();
