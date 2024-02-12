@@ -92,9 +92,9 @@ auto eagitexi_cubemap_blur_io::_build_program() noexcept
       "#version 140\n"
       "in vec2 vertCoord;"
       "out vec3 fragColor;"
-      "uniform samplerCubeMap cubeMap;"
+      "uniform samplerCube cubeMap;"
       "void main() {"
-      "  vec2 csq = pow(vertCoord, 2.0);"
+      "  vec2 csq = pow(vertCoord, vec2(2.0));"
       "  vec3 cubeCoord = vec3(vertCoord, sqrt(3.0-csq.x-csq.y));"
       "  fragColor = normalize(cubeCoord);"
       "}"};
@@ -120,7 +120,6 @@ auto eagitexi_cubemap_blur_io::_build_program() noexcept
 //------------------------------------------------------------------------------
 void eagitexi_cubemap_blur_io::_on_tex_loaded(
   const gl_texture_resource::load_info& loaded) noexcept {
-    make_current();
     const auto& GL{glapi().constants()};
     loaded.parameter_i(GL.texture_min_filter, GL.linear);
     loaded.parameter_i(GL.texture_mag_filter, GL.linear);
@@ -235,7 +234,7 @@ eagitexi_cubemap_blur_io::eagitexi_cubemap_blur_io(
   , _prog{_build_program()}
   , _cubemap{std::move(source), loader()}
   , _size{size}
-  , _tiles_per_side{size / _tile_size()} {
+  , _tiles_per_side{std::max(size / _tile_size(), 1)} {
     _cubemap.loaded.connect(
       make_callable_ref<&eagitexi_cubemap_blur_io::_on_tex_loaded>(this));
 

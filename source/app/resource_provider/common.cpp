@@ -119,6 +119,13 @@ public:
       shared_provider_objects&,
       const gl_rendered_source_params&) noexcept -> gl_rendered_source_context;
 
+    void debug_callback(
+      oglplus::gl_types::enum_type source,
+      oglplus::gl_types::enum_type type,
+      oglplus::gl_types::uint_type id,
+      oglplus::gl_types::enum_type severity,
+      string_view message) const noexcept;
+
 protected:
     gl_rendered_source_blob_io(
       identifier id,
@@ -144,6 +151,8 @@ protected:
     auto swap_buffers() const noexcept -> bool;
 
 private:
+    void _enable_debug() noexcept;
+
     shared_provider_objects& _shared;
     eglplus::initialized_display _display;
     eglplus::owned_surface_handle _surface;

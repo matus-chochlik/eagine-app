@@ -153,6 +153,58 @@ void compressed_buffer_source_blob_io::finish() noexcept {
 //------------------------------------------------------------------------------
 // gl_rendered_source_blob_io
 //------------------------------------------------------------------------------
+static void gl_rendered_source_debug_callback(
+  oglplus::gl_types::enum_type source,
+  oglplus::gl_types::enum_type type,
+  oglplus::gl_types::uint_type id,
+  oglplus::gl_types::enum_type severity,
+  oglplus::gl_types::sizei_type length,
+  const oglplus::gl_types::char_type* message,
+  const void* raw_pio) {
+    assert(raw_pio);
+    const auto msg = length >= 0 ? string_view(message, span_size(length))
+                                 : string_view(message);
+
+    static_cast<const gl_rendered_source_blob_io*>(raw_pio)->debug_callback(
+      source, type, id, severity, msg);
+}
+//------------------------------------------------------------------------------
+void gl_rendered_source_blob_io::debug_callback(
+  [[maybe_unused]] oglplus::gl_types::enum_type source,
+  [[maybe_unused]] oglplus::gl_types::enum_type type,
+  [[maybe_unused]] oglplus::gl_types::uint_type id,
+  [[maybe_unused]] oglplus::gl_types::enum_type severity,
+  [[maybe_unused]] string_view message) const noexcept {
+    std::cout << message << std::endl;
+
+    log_debug(message)
+      .tag("glDbgOutpt")
+      .arg("severity", "DbgOutSvrt", severity)
+      .arg("source", "DbgOutSrce", source)
+      .arg("type", "DbgOutType", type)
+      .arg("id", id);
+}
+//------------------------------------------------------------------------------
+void gl_rendered_source_blob_io::_enable_debug() noexcept {
+    const auto& [gl, GL]{_glapi};
+    if(gl.ARB_debug_output) {
+        log_info("enabling GL debug output");
+
+        gl.debug_message_callback(
+          &gl_rendered_source_debug_callback, static_cast<const void*>(this));
+
+        gl.debug_message_control(
+          GL.dont_care, GL.dont_care, GL.dont_care, GL.true_);
+
+        gl.debug_message_insert(
+          GL.debug_source_application,
+          GL.debug_type_other,
+          GL.debug_severity_medium,
+          0U,
+          "successfully enabled GL debug output");
+    }
+}
+//------------------------------------------------------------------------------
 gl_rendered_source_blob_io::gl_rendered_source_blob_io(
   identifier id,
   main_ctx_parent parent,
@@ -163,7 +215,11 @@ gl_rendered_source_blob_io::gl_rendered_source_blob_io(
   , _shared{shared}
   , _display{std::move(context.display)}
   , _surface{std::move(context.surface)}
-  , _context{std::move(context.context)} {}
+  , _context{std::move(context.context)} {
+    if(debug_build) {
+        _enable_debug();
+    }
+}
 //------------------------------------------------------------------------------
 gl_rendered_source_blob_io::~gl_rendered_source_blob_io() noexcept {
     if(_display) {
@@ -258,8 +314,9 @@ auto gl_rendered_source_blob_io::create_context(
         const auto& [egl, EGL]{*shared.apis.egl()};
 
         const auto config_attribs =
-          (EGL.red_size | 8) + (EGL.green_size | 8) + (EGL.blue_size | 8) +
-          (EGL.alpha_size | 8) + (EGL.depth_size | EGL.dont_care) +
+          (EGL.buffer_size | 32) + (EGL.red_size | 8) + (EGL.green_size | 8) +
+          (EGL.blue_size | 8) + (EGL.alpha_size | 8) +
+          (EGL.depth_size | EGL.dont_care) +
           (EGL.stencil_size | EGL.dont_care) +
           (EGL.color_buffer_type | EGL.rgb_buffer) +
           (EGL.surface_type | EGL.pbuffer_bit) +
@@ -278,6 +335,7 @@ auto gl_rendered_source_blob_io::create_context(
                    EGL.context_opengl_core_profile_bit) +
                   (EGL.context_major_version | 3) +
                   (EGL.context_minor_version | 3) +
+                  (EGL.context_opengl_debug | debug_build) +
                   (EGL.context_opengl_robust_access | true);
 
                 if(ok context{egl.create_context(
