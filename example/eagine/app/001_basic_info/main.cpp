@@ -103,13 +103,8 @@ private:
             const auto ext_cio{
               gl_cio.print("GL extensions:").to_be_continued()};
 
-            if(const ok extensions{gl.get_extensions()}) {
-                for(auto name : extensions) {
-                    ext_cio.print(name);
-                }
-            } else {
-                ext_cio.error("failed to get GL extension list: ${message}")
-                  .arg("message", (!extensions).message());
+            for(auto name : gl.get_extensions()) {
+                ext_cio.print(name);
             }
             _gl_info_printed = true;
         });
