@@ -111,10 +111,9 @@ auto eagitexi_cubemap_blur_io::_build_program() noexcept
     gl.use_program(prog);
 
     gl.bind_attrib_location(prog, _screen.position_loc(), "Position");
-    glapi()
-      .get_uniform_location(prog, "cubeMap")
-      .and_then(
-        [&](auto cube_map_loc) { glapi().set_uniform(prog, cube_map_loc, 0); });
+    gl.get_uniform_location(prog, "cubeMap").and_then([&](auto cube_map_loc) {
+        glapi().set_uniform(prog, cube_map_loc, 0);
+    });
 
     return prog;
 }
@@ -289,6 +288,9 @@ auto eagitexi_cubemap_blur_provider::get_resource_io(const url& locator)
 
         gl_rendered_source_params params{
           .surface_width = size, .surface_height = size};
+
+        q.arg_value_as<int>("device_index")
+          .and_then(_1.assign_to(params.device_index));
 
         if(auto context{
              eagitexi_cubemap_blur_io::create_context(_shared, params)}) {

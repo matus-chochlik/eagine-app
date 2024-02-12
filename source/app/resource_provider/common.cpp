@@ -144,11 +144,6 @@ protected:
     auto swap_buffers() const noexcept -> bool;
 
 private:
-    static auto _open_display(
-      shared_provider_objects& shared,
-      const gl_rendered_source_params&) noexcept
-      -> eglplus::initialized_display;
-
     shared_provider_objects& _shared;
     eglplus::initialized_display _display;
     eglplus::owned_surface_handle _surface;

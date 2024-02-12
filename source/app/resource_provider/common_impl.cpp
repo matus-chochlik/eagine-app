@@ -231,7 +231,7 @@ auto gl_rendered_source_blob_io_display_choose(
     return {};
 }
 //------------------------------------------------------------------------------
-auto gl_rendered_source_blob_io::_open_display(
+auto gl_rendered_source_blob_io_open_display(
   shared_provider_objects& shared,
   const gl_rendered_source_params& params) noexcept
   -> eglplus::initialized_display {
@@ -254,7 +254,7 @@ auto gl_rendered_source_blob_io::create_context(
   const gl_rendered_source_params& params) noexcept
   -> gl_rendered_source_context {
 
-    if(auto display{_open_display(shared, params)}) {
+    if(auto display{gl_rendered_source_blob_io_open_display(shared, params)}) {
         const auto& [egl, EGL]{*shared.apis.egl()};
 
         const auto config_attribs =
