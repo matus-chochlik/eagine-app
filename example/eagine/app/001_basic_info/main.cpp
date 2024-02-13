@@ -58,14 +58,8 @@ private:
                 const auto ext_cio{
                   egl_cio.print("EGL extensions:").to_be_continued()};
 
-                if(const ok extensions{egl.get_extensions(display)}) {
-                    for(auto name : extensions) {
-                        ext_cio.print(name);
-                    }
-                } else {
-                    ext_cio
-                      .error("failed to get EGL extension list: ${message}")
-                      .arg("message", (!extensions).message());
+                for(auto name : egl.get_extensions(display)) {
+                    ext_cio.print(name);
                 }
                 _egl_info_printed = true;
             }
@@ -129,13 +123,8 @@ private:
             const auto ext_cio{
               al_cio.print("AL extensions:").to_be_continued()};
 
-            if(const ok extensions{al.get_extensions()}) {
-                for(auto name : extensions) {
-                    ext_cio.print(name);
-                }
-            } else {
-                ext_cio.error("failed to get AL extension list: ${message}")
-                  .arg("message", (!extensions).message());
+            for(auto name : al.get_extensions()) {
+                ext_cio.print(name);
             }
             _al_info_printed = true;
         });
