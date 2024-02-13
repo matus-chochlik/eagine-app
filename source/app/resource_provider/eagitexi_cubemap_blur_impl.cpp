@@ -194,10 +194,11 @@ void eagitexi_cubemap_blur_io::_make_header() noexcept {
 }
 //------------------------------------------------------------------------------
 auto eagitexi_cubemap_blur_io::prepare() noexcept -> msgbus::blob_preparation {
-    const auto& GL = glapi().constants();
     if(not _finished) {
         make_current();
     }
+
+    const auto& GL = glapi().constants();
     if(_cubemap.load_if_needed(
          loader(), glapi(), GL.texture_cube_map, GL.texture0)) {
         return msgbus::blob_preparation::working;

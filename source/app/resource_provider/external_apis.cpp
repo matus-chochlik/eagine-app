@@ -25,11 +25,9 @@ public:
     ~external_apis() noexcept;
 
     auto egl() noexcept -> optional_reference<eglplus::egl_api>;
-    auto gl() noexcept -> optional_reference<oglplus::gl_api>;
 
 private:
     unique_holder<eglplus::egl_api> _egl;
-    unique_holder<oglplus::gl_api> _gl;
 };
 //------------------------------------------------------------------------------
 } // namespace eagine::app

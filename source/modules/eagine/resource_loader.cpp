@@ -106,7 +106,7 @@ export enum class resource_kind {
     gl_buffer,
     /// @brief GL buffer image update.
     gl_buffer_update,
-    /// @brief
+    /// @brief Arbitrary structure with defined attribute mapping.
     mapped_struct,
     /// @brief Marks that resource request is finished.
     finished
@@ -150,6 +150,15 @@ public:
         _continuation = cont;
     }
 
+    void set_context_switch(
+      callable_ref<void() noexcept> switch_context) noexcept {
+        _switch_context = switch_context;
+    }
+
+    void copy_context_switch_from(pending_resource_info& that) noexcept {
+        _switch_context = that._switch_context;
+    }
+
     auto loader() noexcept -> resource_loader& {
         return _parent;
     }
@@ -159,6 +168,7 @@ public:
     auto is_done() const noexcept -> bool;
 
     void add_label(const string_view) noexcept;
+    void apply_label() noexcept;
 
     void add_valtree_stream_input(
       valtree::value_tree_stream_input input) noexcept;
@@ -415,8 +425,10 @@ private:
 
     resource_loader& _parent;
     const identifier_t _request_id;
-    weak_holder<pending_resource_info> _continuation{};
     const url _locator;
+    std::string _label;
+    weak_holder<pending_resource_info> _continuation{};
+    callable_ref<void() noexcept> _switch_context{};
 
     std::variant<
       std::monostate,
@@ -585,7 +597,7 @@ public:
 
     /// @brief Returns the unique id of the request.
     auto request_id() const noexcept -> identifier_t {
-        return _info->request_id();
+        return info().request_id();
     }
 
     /// @brief Returns the locator of the requested resource.
@@ -595,17 +607,19 @@ public:
 
     /// @brief Sets the reference to the continuation request of this request.
     auto set_continuation(const shared_holder<pending_resource_info>& cont)
-      const noexcept -> const resource_request_result& {
-        info().set_continuation(cont);
-        return *this;
-    }
+      const noexcept -> const resource_request_result&;
 
     /// @brief Sets the reference to the continuation request of this request.
     auto set_continuation(resource_request_result& cont) const noexcept
-      -> const resource_request_result& {
-        info().set_continuation(cont._info);
-        return *this;
-    }
+      -> const resource_request_result&;
+
+    /// @brief Sets the context switch function that is called when loading resource.
+    auto set_context_switch(callable_ref<void() noexcept> switch_context)
+      const noexcept -> const resource_request_result&;
+
+    /// @brief Copies the context switch function from other request.
+    auto copy_context_switch_from(resource_request_result& that) const noexcept
+      -> const resource_request_result&;
 
 private:
     shared_holder<pending_resource_info> _info;

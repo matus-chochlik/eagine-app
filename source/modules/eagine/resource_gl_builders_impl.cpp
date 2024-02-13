@@ -1190,6 +1190,8 @@ auto pending_resource_info::handle_gl_buffer_params(
 auto pending_resource_info::_finish_gl_buffer(
   _pending_gl_buffer_state& pgbs) noexcept -> bool {
     if(pgbs.loaded and pgbs.pending_requests.empty()) {
+        apply_label();
+
         _parent.log_info("loaded and set-up GL buffer object")
           .arg("requestId", _request_id)
           .arg("locator", _locator.str());

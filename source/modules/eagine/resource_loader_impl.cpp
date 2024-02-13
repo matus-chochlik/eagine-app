@@ -57,12 +57,18 @@ auto pending_resource_info::is_done() const noexcept -> bool {
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::add_label(const string_view label) noexcept {
-    if(auto pgps{get_if<_pending_gl_program_state>(_state)}) {
-        pgps->glapi.get().object_label(pgps->prog, label);
-    } else if(auto pgts{get_if<_pending_gl_texture_state>(_state)}) {
-        pgts->glapi.get().object_label(pgts->tex, label);
-    } else if(auto pgbs{get_if<_pending_gl_buffer_state>(_state)}) {
-        pgbs->glapi.get().object_label(pgbs->buf, label);
+    _label = to_string(label);
+}
+//------------------------------------------------------------------------------
+void pending_resource_info::apply_label() noexcept {
+    if(not _label.empty()) {
+        if(auto pgps{get_if<_pending_gl_program_state>(_state)}) {
+            pgps->glapi.get().object_label(pgps->prog, _label);
+        } else if(auto pgts{get_if<_pending_gl_texture_state>(_state)}) {
+            pgts->glapi.get().object_label(pgts->tex, _label);
+        } else if(auto pgbs{get_if<_pending_gl_buffer_state>(_state)}) {
+            pgbs->glapi.get().object_label(pgbs->buf, _label);
+        }
     }
 }
 //------------------------------------------------------------------------------
@@ -691,6 +697,8 @@ void pending_resource_info::_handle_gl_shader(
 auto pending_resource_info::_finish_gl_texture(
   _pending_gl_texture_state& pgts) noexcept -> bool {
     if(pgts.loaded and pgts.pending_requests.empty()) {
+        apply_label();
+
         const auto& gl = pgts.glapi.get().operations();
         gl.active_texture(pgts.tex_unit);
 
@@ -745,6 +753,9 @@ void pending_resource_info::handle_source_data(
   const pending_resource_info& rinfo,
   const span_size_t offset,
   const memory::span<const memory::const_block> data) noexcept {
+    if(_switch_context) {
+        _switch_context();
+    }
     switch(rinfo._kind) {
         case resource_kind::plain_text:
             _handle_plain_text(binfo, rinfo, offset, data);
@@ -790,6 +801,33 @@ valtree_builder_common::valtree_builder_common(
 auto resource_request_result::info() const noexcept -> pending_resource_info& {
     assert(_info);
     return *_info;
+}
+//------------------------------------------------------------------------------
+auto resource_request_result::set_continuation(
+  const shared_holder<pending_resource_info>& cont) const noexcept
+  -> const resource_request_result& {
+    info().set_continuation(cont);
+    return *this;
+}
+//------------------------------------------------------------------------------
+auto resource_request_result::set_continuation(resource_request_result& cont)
+  const noexcept -> const resource_request_result& {
+    info().set_continuation(cont._info);
+    return *this;
+}
+//------------------------------------------------------------------------------
+auto resource_request_result::set_context_switch(
+  callable_ref<void() noexcept> switch_context) const noexcept
+  -> const resource_request_result& {
+    info().set_context_switch(switch_context);
+    return *this;
+}
+//------------------------------------------------------------------------------
+auto resource_request_result::copy_context_switch_from(
+  resource_request_result& that) const noexcept
+  -> const resource_request_result& {
+    info().copy_context_switch_from(that.info());
+    return *this;
 }
 //------------------------------------------------------------------------------
 // resource_loader

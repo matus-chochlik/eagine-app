@@ -29,8 +29,4 @@ auto external_apis::egl() noexcept -> optional_reference<eglplus::egl_api> {
     return _egl.ensure().ref();
 }
 //------------------------------------------------------------------------------
-auto external_apis::gl() noexcept -> optional_reference<oglplus::gl_api> {
-    return _gl.ensure().ref();
-}
-//------------------------------------------------------------------------------
 } // namespace eagine::app
