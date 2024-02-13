@@ -199,8 +199,8 @@ void gl_rendered_source_blob_io::_enable_debug() noexcept {
         gl.debug_message_insert(
           GL.debug_source_application,
           GL.debug_type_other,
+          0U, // ID
           GL.debug_severity_medium,
-          0U,
           "successfully enabled GL debug output");
     }
 }
