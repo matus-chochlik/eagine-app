@@ -28,6 +28,8 @@ public:
       url source,
       int size) noexcept;
 
+    ~eagitexi_cubemap_blur_io() noexcept;
+
     auto prepare() noexcept -> msgbus::blob_preparation final;
 
 private:
@@ -56,6 +58,37 @@ private:
 //------------------------------------------------------------------------------
 auto eagitexi_cubemap_blur_io::_tile_size() noexcept -> int {
     return 256;
+}
+//------------------------------------------------------------------------------
+void eagitexi_cubemap_blur_io::_make_header() noexcept {
+    const auto& [egl, EGL]{eglapi()};
+
+    std::stringstream hdr;
+    hdr << R"({"level":0)";
+    hdr << R"(,"width":)" << _size;
+    hdr << R"(,"height":)" << _size;
+    hdr << R"(,"depth":)" << 6;
+    hdr << R"(,"channels":4)";
+    hdr << R"(,"data_type":"unsigned_byte")";
+    hdr << R"(,"format":"rgba")";
+    hdr << R"(,"iformat":"rgba8")";
+    hdr << R"(,"tag":["blur","cubemap"])";
+    hdr << R"(,"metadata":{"renderer":{)";
+    if(const auto vendor{egl.query_string(display(), EGL.vendor)}) {
+        hdr << R"("vendor":")" << *vendor << R"(")";
+        if(const auto version{egl.query_string(display(), EGL.version)}) {
+            hdr << R"(,"version":")" << *version << R"(")";
+        }
+        if(egl.MESA_query_driver(display())) {
+            if(const auto driver{egl.get_display_driver_name(display())}) {
+                hdr << R"(,"driver":")" << *driver << R"(")";
+            }
+        }
+    }
+    hdr << R"(}})";
+    hdr << R"(,"data_filter":"zlib")";
+    hdr << '}';
+    append(hdr.str());
 }
 //------------------------------------------------------------------------------
 auto eagitexi_cubemap_blur_io::_build_screen() noexcept
@@ -162,37 +195,6 @@ void eagitexi_cubemap_blur_io::_save_tile() noexcept {
     compress(view(_buffer));
 }
 //------------------------------------------------------------------------------
-void eagitexi_cubemap_blur_io::_make_header() noexcept {
-    const auto& [egl, EGL]{eglapi()};
-
-    std::stringstream hdr;
-    hdr << R"({"level":0)";
-    hdr << R"(,"width":)" << _size;
-    hdr << R"(,"height":)" << _size;
-    hdr << R"(,"depth":)" << 6;
-    hdr << R"(,"channels":4)";
-    hdr << R"(,"data_type":"unsigned_byte")";
-    hdr << R"(,"format":"rgba")";
-    hdr << R"(,"iformat":"rgba8")";
-    hdr << R"(,"tag":["blur","cubemap"])";
-    hdr << R"(,"metadata":{"renderer":{)";
-    if(const auto vendor{egl.query_string(display(), EGL.vendor)}) {
-        hdr << R"("vendor":")" << *vendor << R"(")";
-        if(const auto version{egl.query_string(display(), EGL.version)}) {
-            hdr << R"(,"version":")" << *version << R"(")";
-        }
-        if(egl.MESA_query_driver(display())) {
-            if(const auto driver{egl.get_display_driver_name(display())}) {
-                hdr << R"(,"driver":")" << *driver << R"(")";
-            }
-        }
-    }
-    hdr << R"(}})";
-    hdr << R"(,"data_filter":"zlib")";
-    hdr << '}';
-    append(hdr.str());
-}
-//------------------------------------------------------------------------------
 auto eagitexi_cubemap_blur_io::prepare() noexcept -> msgbus::blob_preparation {
     if(not _finished) {
         make_current();
@@ -240,9 +242,14 @@ eagitexi_cubemap_blur_io::eagitexi_cubemap_blur_io(
       make_callable_ref<&eagitexi_cubemap_blur_io::_on_tex_loaded>(this));
 
     const auto& [gl, GL]{glapi()};
+    gl.viewport(0, 0, _size, _size);
     gl.disable(GL.depth_test);
 
     _make_header();
+}
+//------------------------------------------------------------------------------
+eagitexi_cubemap_blur_io::~eagitexi_cubemap_blur_io() noexcept {
+    _cubemap.clean_up(loader(), glapi());
 }
 //------------------------------------------------------------------------------
 // provider
