@@ -80,7 +80,14 @@ public:
     /// @see init_gl_api
     /// @see gl_api
     auto has_gl_api() const noexcept {
-        return bool(_gl_api);
+        return bool(_gl_api_context);
+    }
+
+    /// @brief Returns a smart reference to the GL rendering API in this context.
+    /// @see init_gl_api
+    /// @see with_gl
+    auto gl_ref() const noexcept -> oglplus::gl_api_reference {
+        return _gl_api_context.gl_ref();
     }
 
     /// @brief Returns a reference to the GL rendering API in this context.
@@ -90,14 +97,7 @@ public:
     /// @pre has_gl_api()
     auto gl_api() const noexcept -> oglplus::gl_api& {
         assert(has_gl_api());
-        return *_gl_api;
-    }
-
-    /// @brief Returns a smart reference to the GL rendering API in this context.
-    /// @see init_gl_api
-    /// @see with_gl
-    auto gl_ref() const noexcept -> oglplus::gl_api_reference {
-        return _gl_api;
+        return _gl_api_context.gl_api();
     }
 
     /// @brief Calls the specified function if the EGL API is available.
@@ -180,7 +180,7 @@ private:
     execution_context& _parent;
     long _frame_no{0};
     shared_holder<video_provider> _provider{};
-    shared_holder<oglplus::gl_api> _gl_api{};
+    oglplus::shared_gl_api_context _gl_api_context{};
     shared_holder<video_context_state> _state{};
 };
 //------------------------------------------------------------------------------

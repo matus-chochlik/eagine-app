@@ -5,6 +5,10 @@
 /// See accompanying file LICENSE_1_0.txt or copy at
 /// https://www.boost.org/LICENSE_1_0.txt
 ///
+module;
+
+#include <cassert>
+
 module eagine.app;
 
 import std;
@@ -18,6 +22,7 @@ import eagine.core.valid_if;
 import eagine.core.c_api;
 import eagine.core.main_ctx;
 import eagine.eglplus;
+import eagine.oglplus;
 import eagine.guiplus;
 import :types;
 
@@ -27,11 +32,16 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 class eglplus_opengl_surface
   : public main_ctx_object
-  , public video_provider {
+  , public video_provider
+  , public oglplus::gl_context_handler {
 public:
-    eglplus_opengl_surface(main_ctx_parent parent, eglplus::egl_api& egl)
+    eglplus_opengl_surface(
+      main_ctx_parent parent,
+      shared_holder<eglplus::egl_api> egl)
       : main_ctx_object{"EGLPbuffer", parent}
-      , _egl_api{egl} {}
+      , _egl_api{std::move(egl)} {
+        assert(_egl_api);
+    }
 
     auto get_context_attribs(
       execution_context&,
@@ -65,6 +75,7 @@ public:
     auto surface_size() noexcept -> std::tuple<int, int> final;
     auto surface_aspect() noexcept -> float final;
 
+    auto egl_api() noexcept -> eglplus::egl_api&;
     auto egl_ref() noexcept -> eglplus::egl_api_reference final;
     auto egl_display() noexcept -> eglplus::display_handle final;
     auto imgui_ref() noexcept -> guiplus::imgui_api_reference final;
@@ -74,8 +85,10 @@ public:
     void video_end(execution_context&) final;
     void video_commit(execution_context&) final;
 
+    auto make_current() noexcept -> bool final;
+
 private:
-    eglplus::egl_api& _egl_api;
+    shared_holder<eglplus::egl_api> _egl_api;
     identifier _instance_id;
     eglplus::display_handle _display{};
     eglplus::owned_surface_handle _surface{};
@@ -89,7 +102,7 @@ auto eglplus_opengl_surface::get_context_attribs(
   execution_context&,
   const bool gl_otherwise_gles,
   const video_options& video_opts) const -> eglplus::context_attributes {
-    const auto& EGL = _egl_api.constants();
+    const auto& EGL = _egl_api->constants();
 
     const auto add_major_version{[&](auto attribs) {
         return attribs + (EGL.context_major_version |
@@ -137,7 +150,7 @@ auto eglplus_opengl_surface::initialize(
   const eglplus::display_handle display,
   const eglplus::egl_types::config_type config,
   const video_options& video_opts) -> bool {
-    const auto& [egl, EGL] = _egl_api;
+    const auto& [egl, EGL] = egl_api();
 
     const auto apis{egl.get_client_api_bits(display)};
     const bool has_gl = apis.has(EGL.opengl_bit);
@@ -197,7 +210,7 @@ auto eglplus_opengl_surface::initialize(
   const eglplus::display_handle display,
   const valid_if_nonnegative<span_size_t>& device_idx,
   const video_options& video_opts) -> bool {
-    const auto& [egl, EGL] = _egl_api;
+    const auto& [egl, EGL] = egl_api();
 
     if(device_idx) {
         log_info("trying EGL device ${index}").arg("index", *device_idx);
@@ -286,7 +299,7 @@ auto eglplus_opengl_surface::initialize(
   const identifier id,
   const video_options& video_opts) -> bool {
     _instance_id = id;
-    const auto& [egl, EGL] = _egl_api;
+    const auto& [egl, EGL] = egl_api();
 
     const ok device_kind{video_opts.device_kind()};
     const ok device_path{video_opts.device_path()};
@@ -384,7 +397,7 @@ auto eglplus_opengl_surface::initialize(
                                  video_opts)) {
                                 return true;
                             } else {
-                                _egl_api.terminate(display);
+                                egl_api().terminate(display);
                             }
                         }
                     }
@@ -405,12 +418,12 @@ auto eglplus_opengl_surface::initialize(
 void eglplus_opengl_surface::clean_up() {
     if(_display) {
         if(_context) {
-            _egl_api.destroy_context(_display, std::move(_context));
+            egl_api().destroy_context(_display, std::move(_context));
         }
         if(_surface) {
-            _egl_api.destroy_surface(_display, std::move(_surface));
+            egl_api().destroy_surface(_display, std::move(_surface));
         }
-        _egl_api.terminate(_display);
+        egl_api().terminate(_display);
     }
 }
 //------------------------------------------------------------------------------
@@ -438,8 +451,12 @@ auto eglplus_opengl_surface::surface_aspect() noexcept -> float {
     return float(_width) / float(_height);
 }
 //------------------------------------------------------------------------------
+auto eglplus_opengl_surface::egl_api() noexcept -> eglplus::egl_api& {
+    return *_egl_api;
+}
+//------------------------------------------------------------------------------
 auto eglplus_opengl_surface::egl_ref() noexcept -> eglplus::egl_api_reference {
-    return {_egl_api};
+    return {*_egl_api};
 }
 //------------------------------------------------------------------------------
 auto eglplus_opengl_surface::egl_display() noexcept -> eglplus::display_handle {
@@ -454,15 +471,19 @@ auto eglplus_opengl_surface::imgui_ref() noexcept
 void eglplus_opengl_surface::parent_context_changed(const video_context&) {}
 //------------------------------------------------------------------------------
 void eglplus_opengl_surface::video_begin(execution_context&) {
-    _egl_api.make_current(_display, _surface, _context);
+    egl_api().make_current(_display, _surface, _context);
 }
 //------------------------------------------------------------------------------
 void eglplus_opengl_surface::video_end(execution_context&) {
-    _egl_api.make_current.none(_display);
+    egl_api().make_current.none(_display);
 }
 //------------------------------------------------------------------------------
 void eglplus_opengl_surface::video_commit(execution_context&) {
-    _egl_api.swap_buffers(_display, _surface);
+    egl_api().swap_buffers(_display, _surface);
+}
+//------------------------------------------------------------------------------
+auto eglplus_opengl_surface::make_current() noexcept -> bool {
+    return bool(egl_api().make_current(_display, _surface, _context));
 }
 //------------------------------------------------------------------------------
 // provider
@@ -491,16 +512,16 @@ public:
       callable_ref<void(shared_holder<audio_provider>)>) final;
 
 private:
-    eglplus::egl_api _egl_api;
+    shared_holder<eglplus::egl_api> _egl_api{default_selector};
 
     std::map<identifier, shared_holder<eglplus_opengl_surface>> _surfaces;
 };
 //------------------------------------------------------------------------------
 auto eglplus_opengl_provider::is_implemented() const noexcept -> bool {
-    return _egl_api.get_display and _egl_api.initialize and
-           _egl_api.terminate and _egl_api.get_configs and
-           _egl_api.choose_config and _egl_api.get_config_attrib and
-           _egl_api.query_string and _egl_api.swap_buffers;
+    return _egl_api->get_display and _egl_api->initialize and
+           _egl_api->terminate and _egl_api->get_configs and
+           _egl_api->choose_config and _egl_api->get_config_attrib and
+           _egl_api->query_string and _egl_api->swap_buffers;
 }
 //------------------------------------------------------------------------------
 auto eglplus_opengl_provider::implementation_name() const noexcept
@@ -524,7 +545,7 @@ auto eglplus_opengl_provider::should_initialize(execution_context& exec_ctx)
 }
 //------------------------------------------------------------------------------
 auto eglplus_opengl_provider::initialize(execution_context& exec_ctx) -> bool {
-    if(_egl_api.get_display) {
+    if(_egl_api->get_display) {
         auto& options = exec_ctx.options();
         for(auto& [inst, video_opts] : options.video_requirements()) {
             const bool should_create_surface =

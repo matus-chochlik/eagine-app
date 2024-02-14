@@ -287,8 +287,8 @@ video_context::video_context(
 //------------------------------------------------------------------------------
 auto video_context::init_gl_api() noexcept -> bool {
     try {
-        _gl_api.emplace();
-        const auto& [gl, GL] = *_gl_api;
+        _gl_api_context.ensure();
+        const auto& [gl, GL] = gl_api();
 
         const auto found{eagine::find(
           _parent.options().video_requirements(), _provider->instance_id())};
@@ -321,7 +321,7 @@ auto video_context::init_gl_api() noexcept -> bool {
         _state.emplace(_parent, opts);
 
         if(not _provider->has_framebuffer()) {
-            if(not _state->init_framebuffer(_parent, *_gl_api)) {
+            if(not _state->init_framebuffer(_parent, gl_api())) {
                 _parent.log_error("failed to create offscreen framebuffer");
                 return false;
             }
@@ -329,7 +329,7 @@ auto video_context::init_gl_api() noexcept -> bool {
     } catch(...) {
         return false;
     }
-    return bool(_gl_api);
+    return bool(_gl_api_context);
 }
 //------------------------------------------------------------------------------
 void video_context::begin() {
@@ -341,8 +341,8 @@ void video_context::end() {
 }
 //------------------------------------------------------------------------------
 void video_context::commit() {
-    if(_gl_api) [[likely]] {
-        if(not _state->commit(_frame_no, *_provider, *_gl_api)) [[unlikely]] {
+    if(_gl_api_context) [[likely]] {
+        if(not _state->commit(_frame_no, *_provider, gl_api())) [[unlikely]] {
             _parent.stop_running();
         }
     }
