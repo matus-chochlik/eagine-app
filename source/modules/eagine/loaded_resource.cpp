@@ -46,19 +46,36 @@ public:
     }
 
     /// @brief Indicates if this resource is currently loading.
+    /// @see is_loaded
+    /// @see is_cancelled
+    /// @see has_failed
     auto is_loading() const noexcept -> bool {
         return (_request_id != 0) and
                (_status == resource_load_status::loading);
     }
 
     /// @brief Indicates if this resource is loaded.
+    /// @see is_loading
+    /// @see is_cancelled
+    /// @see has_failed
     auto is_loaded() const noexcept -> bool {
         return _status == resource_load_status::loaded;
     }
 
     /// @brief Indicates if this resource is cancelled.
+    /// @see is_loading
+    /// @see has_failed
     auto is_cancelled() const noexcept -> bool {
         return _status == resource_load_status::cancelled;
+    }
+
+    /// @brief Indicates if the loading of this resource has failed
+    /// @see is_loading
+    /// @see is_loaded
+    /// @see is_cancelled
+    auto has_failed() const noexcept -> bool {
+        return (_status == resource_load_status::cancelled) or
+               (_status == resource_load_status::error);
     }
 
     /// @brief Indicates if this resource is the same as that resource.
