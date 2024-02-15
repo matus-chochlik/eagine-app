@@ -219,8 +219,6 @@ void gl_rendered_source_blob_io::debug_callback(
   [[maybe_unused]] oglplus::gl_types::uint_type id,
   [[maybe_unused]] oglplus::gl_types::enum_type severity,
   [[maybe_unused]] string_view message) const noexcept {
-    std::cout << message << std::endl;
-
     log_debug(message)
       .tag("glDbgOutpt")
       .arg("severity", "DbgOutSvrt", severity)
