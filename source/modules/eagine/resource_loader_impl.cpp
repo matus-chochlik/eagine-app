@@ -1150,8 +1150,7 @@ auto resource_loader::request_gl_geometry_and_bindings(
   oglplus::shared_gl_api_context gl_context,
   oglplus::vertex_attrib_bindings bindings,
   span_size_t draw_var_idx) noexcept -> resource_request_result {
-    if(const auto src_request{
-         request_gl_shape(locator, std::move(gl_context))}) {
+    if(const auto src_request{request_gl_shape(locator, gl_context)}) {
         auto new_request{_new_resource(
           std::move(locator), resource_kind::gl_geometry_and_bindings)};
         new_request.info().add_gl_geometry_and_bindings_context(
