@@ -50,12 +50,12 @@ protected:
     simple_buffer_source_blob_io(
       identifier id,
       main_ctx_parent parent,
-      span_size_t size) noexcept;
+      span_size_t buffer_size) noexcept;
 
     simple_buffer_source_blob_io(
       identifier id,
       main_ctx_parent parent,
-      span_size_t size,
+      span_size_t buffer_size,
       std::function<memory::buffer(memory::buffer)>) noexcept;
 
     void append(const memory::const_block);
@@ -76,12 +76,12 @@ protected:
     compressed_buffer_source_blob_io(
       identifier id,
       main_ctx_parent parent,
-      span_size_t size) noexcept;
+      span_size_t buffer_size) noexcept;
 
     compressed_buffer_source_blob_io(
       identifier id,
       main_ctx_parent parent,
-      span_size_t size,
+      span_size_t buffer_size,
       std::function<memory::buffer(memory::buffer)>) noexcept;
 
     void compress(const memory::const_block) noexcept;
@@ -147,7 +147,8 @@ protected:
       main_ctx_parent parent,
       shared_provider_objects& shared,
       gl_rendered_source_context,
-      span_size_t size) noexcept;
+      const gl_rendered_source_params& params,
+      span_size_t buffer_size) noexcept;
 
     auto shared() const noexcept -> shared_provider_objects&;
     auto loader() const noexcept -> resource_loader& {
@@ -165,9 +166,12 @@ protected:
 
 private:
     void _enable_debug() noexcept;
+    void _init_fbo(const gl_rendered_source_params&) noexcept;
 
     shared_holder<egl_context_handler> _egl_context;
     oglplus::shared_gl_api_context _gl_context;
+    oglplus::renderbuffer_object _color_rbo;
+    oglplus::framebuffer_object _offscreen_fbo;
 };
 //------------------------------------------------------------------------------
 class ostream_io final : public msgbus::source_blob_io {

@@ -62,19 +62,19 @@ auto simple_string_source_blob_io::fetch_fragment(
 simple_buffer_source_blob_io::simple_buffer_source_blob_io(
   identifier id,
   main_ctx_parent parent,
-  span_size_t size) noexcept
+  span_size_t buffer_size) noexcept
   : main_ctx_object{id, parent}
-  , _content{*this, size} {
+  , _content{*this, buffer_size} {
     _content.clear();
 }
 //------------------------------------------------------------------------------
 simple_buffer_source_blob_io::simple_buffer_source_blob_io(
   identifier id,
   main_ctx_parent parent,
-  span_size_t size,
+  span_size_t buffer_size,
   std::function<memory::buffer(memory::buffer)> make_content) noexcept
   : main_ctx_object{id, parent}
-  , _content{*this, make_content(main_context().buffers().get(size))} {}
+  , _content{*this, make_content(main_context().buffers().get(buffer_size))} {}
 //------------------------------------------------------------------------------
 void simple_buffer_source_blob_io::append(const memory::const_block part) {
     memory::append_to(part, _content);
@@ -116,8 +116,8 @@ auto compressed_buffer_source_blob_io::_compress_handler() noexcept {
 compressed_buffer_source_blob_io::compressed_buffer_source_blob_io(
   identifier id,
   main_ctx_parent parent,
-  span_size_t size) noexcept
-  : simple_buffer_source_blob_io{id, parent, size}
+  span_size_t buffer_size) noexcept
+  : simple_buffer_source_blob_io{id, parent, buffer_size}
   , _compress{
       main_context().compressor(),
       _compress_handler(),
@@ -126,9 +126,9 @@ compressed_buffer_source_blob_io::compressed_buffer_source_blob_io(
 compressed_buffer_source_blob_io::compressed_buffer_source_blob_io(
   identifier id,
   main_ctx_parent parent,
-  span_size_t size,
+  span_size_t buffer_size,
   std::function<memory::buffer(memory::buffer)> func) noexcept
-  : simple_buffer_source_blob_io{id, parent, size, func}
+  : simple_buffer_source_blob_io{id, parent, buffer_size, func}
   , _compress{
       main_context().compressor(),
       _compress_handler(),
@@ -243,18 +243,38 @@ void gl_rendered_source_blob_io::_enable_debug() noexcept {
     }
 }
 //------------------------------------------------------------------------------
+void gl_rendered_source_blob_io::_init_fbo(
+  const gl_rendered_source_params& params) noexcept {
+    const auto& [gl, GL]{gl_api()};
+    gl.bind_renderbuffer(GL.renderbuffer, _color_rbo);
+    gl.renderbuffer_storage(
+      GL.renderbuffer,
+      GL.rgba8,
+      params.surface_width.value(),
+      params.surface_height.value());
+    gl.bind_framebuffer(GL.draw_framebuffer, _offscreen_fbo);
+    gl.framebuffer_renderbuffer(
+      GL.draw_framebuffer, GL.color_attachment0, GL.renderbuffer, _color_rbo);
+    gl.bind_framebuffer(GL.read_framebuffer, _offscreen_fbo);
+    gl.named_framebuffer_read_buffer(_offscreen_fbo, GL.color_attachment0);
+}
+//------------------------------------------------------------------------------
 gl_rendered_source_blob_io::gl_rendered_source_blob_io(
   identifier id,
   main_ctx_parent parent,
   shared_provider_objects& shared,
   gl_rendered_source_context context,
-  span_size_t size) noexcept
-  : compressed_buffer_source_blob_io{id, parent, size}
-  , _egl_context{default_selector, shared, std::move(context)} {
-    _gl_context.ensure().set_context(_egl_context);
+  const gl_rendered_source_params& params,
+  span_size_t buffer_size) noexcept
+  : compressed_buffer_source_blob_io{id, parent, buffer_size}
+  , _egl_context{default_selector, shared, std::move(context)}
+  , _gl_context{_egl_context}
+  , _color_rbo{_gl_context.gl_api().gen_renderbuffers.object()}
+  , _offscreen_fbo{_gl_context.gl_api().gen_framebuffers.object()} {
     if(debug_build) {
         _enable_debug();
     }
+    _init_fbo(params);
 }
 //------------------------------------------------------------------------------
 auto gl_rendered_source_blob_io_display_bind_api(

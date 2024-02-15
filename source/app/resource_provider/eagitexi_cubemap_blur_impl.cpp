@@ -25,6 +25,7 @@ public:
       main_ctx_parent,
       shared_provider_objects& shared,
       gl_rendered_source_context context,
+      const gl_rendered_source_params& params,
       url source,
       int size) noexcept;
 
@@ -228,9 +229,10 @@ eagitexi_cubemap_blur_io::eagitexi_cubemap_blur_io(
   main_ctx_parent parent,
   shared_provider_objects& shared,
   gl_rendered_source_context context,
+  const gl_rendered_source_params& params,
   url source,
   int size) noexcept
-  : gl_rendered_source_blob_io{"ITxCubBlur", parent, shared, std::move(context), size * size * 6}
+  : gl_rendered_source_blob_io{"ITxCubBlur", parent, shared, std::move(context), params, size * size * 6}
   , _buffer{*this, size * size * 4, nothing}
   , _screen{_build_screen()}
   , _prog{_build_program()}
@@ -305,6 +307,7 @@ auto eagitexi_cubemap_blur_provider::get_resource_io(const url& locator)
               as_parent(),
               _shared,
               std::move(context),
+              params,
               q.arg_url("source"),
               size};
         }
