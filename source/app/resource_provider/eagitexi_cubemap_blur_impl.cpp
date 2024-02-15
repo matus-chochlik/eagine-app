@@ -61,7 +61,7 @@ auto eagitexi_cubemap_blur_io::_tile_size() noexcept -> int {
 }
 //------------------------------------------------------------------------------
 void eagitexi_cubemap_blur_io::_make_header() noexcept {
-    const auto& [egl, EGL]{eglapi()};
+    const auto& [egl, EGL]{egl_api()};
 
     std::stringstream hdr;
     hdr << R"({"level":0)";
@@ -94,17 +94,17 @@ void eagitexi_cubemap_blur_io::_make_header() noexcept {
 auto eagitexi_cubemap_blur_io::_build_screen() noexcept
   -> oglplus::geometry_and_bindings {
     oglplus::shape_generator shape(
-      glapi(), shapes::unit_screen(shapes::vertex_attrib_kind::position));
+      gl_api(), shapes::unit_screen(shapes::vertex_attrib_kind::position));
 
-    oglplus::geometry_and_bindings screen{glapi(), shape, _buffer};
-    screen.use(glapi());
+    oglplus::geometry_and_bindings screen{gl_api(), shape, _buffer};
+    screen.use(gl_api());
 
     return screen;
 }
 //------------------------------------------------------------------------------
 auto eagitexi_cubemap_blur_io::_build_program() noexcept
   -> oglplus::program_object {
-    const auto& [gl, GL]{glapi()};
+    const auto& [gl, GL]{gl_api()};
 
     // vertex shader
     const string_view vs_source{
@@ -145,7 +145,7 @@ auto eagitexi_cubemap_blur_io::_build_program() noexcept
 
     gl.bind_attrib_location(prog, _screen.position_loc(), "Position");
     gl.get_uniform_location(prog, "cubeMap").and_then([&](auto cube_map_loc) {
-        glapi().set_uniform(prog, cube_map_loc, 0);
+        gl_api().set_uniform(prog, cube_map_loc, 0);
     });
 
     return prog;
@@ -153,7 +153,7 @@ auto eagitexi_cubemap_blur_io::_build_program() noexcept
 //------------------------------------------------------------------------------
 void eagitexi_cubemap_blur_io::_on_tex_loaded(
   const gl_texture_resource::load_info& loaded) noexcept {
-    const auto& GL{glapi().constants()};
+    const auto& GL{gl_api().constants()};
     loaded.parameter_i(GL.texture_min_filter, GL.linear);
     loaded.parameter_i(GL.texture_mag_filter, GL.linear);
     loaded.parameter_i(GL.texture_wrap_s, GL.clamp_to_edge);
@@ -161,7 +161,7 @@ void eagitexi_cubemap_blur_io::_on_tex_loaded(
 }
 //------------------------------------------------------------------------------
 void eagitexi_cubemap_blur_io::_render_tile() noexcept {
-    const auto& [gl, GL]{glapi()};
+    const auto& [gl, GL]{gl_api()};
     if((_tile_x == 0) and (_tile_y == 0)) {
         swap_buffers();
         gl.disable(GL.scissor_test);
@@ -174,11 +174,11 @@ void eagitexi_cubemap_blur_io::_render_tile() noexcept {
       _tile_y * _tile_size(),
       _tile_size(),
       _tile_size());
-    _screen.draw(glapi());
+    _screen.draw(gl_api());
 }
 //------------------------------------------------------------------------------
 void eagitexi_cubemap_blur_io::_save_tile() noexcept {
-    const auto& [gl, GL]{glapi()};
+    const auto& [gl, GL]{gl_api()};
     _buffer.resize(span_size(_size * _size * 4));
 
     gl.disable(GL.scissor_test);
@@ -200,9 +200,9 @@ auto eagitexi_cubemap_blur_io::prepare() noexcept -> msgbus::blob_preparation {
         make_current();
     }
 
-    const auto& GL = glapi().constants();
+    const auto& GL = gl_api().constants();
     if(_cubemap.load_if_needed(
-         loader(), glapi(), GL.texture_cube_map, GL.texture0)) {
+         loader(), gl_context(), GL.texture_cube_map, GL.texture0)) {
         return msgbus::blob_preparation::working;
     }
     if(_cube_side < 6) {
@@ -241,7 +241,7 @@ eagitexi_cubemap_blur_io::eagitexi_cubemap_blur_io(
     _cubemap.loaded.connect(
       make_callable_ref<&eagitexi_cubemap_blur_io::_on_tex_loaded>(this));
 
-    const auto& [gl, GL]{glapi()};
+    const auto& [gl, GL]{gl_api()};
     gl.viewport(0, 0, _size, _size);
     gl.disable(GL.depth_test);
 
@@ -249,7 +249,7 @@ eagitexi_cubemap_blur_io::eagitexi_cubemap_blur_io(
 }
 //------------------------------------------------------------------------------
 eagitexi_cubemap_blur_io::~eagitexi_cubemap_blur_io() noexcept {
-    _cubemap.clean_up(loader(), glapi());
+    _cubemap.clean_up(loader(), gl_api());
 }
 //------------------------------------------------------------------------------
 // provider

@@ -151,6 +151,50 @@ void compressed_buffer_source_blob_io::finish() noexcept {
     _compress.finish();
 }
 //------------------------------------------------------------------------------
+// egl_context_handler
+//------------------------------------------------------------------------------
+egl_context_handler::egl_context_handler(
+  shared_provider_objects& shared,
+  gl_rendered_source_context context) noexcept
+  : _shared{shared}
+  , _display{std::move(context.display)}
+  , _surface{std::move(context.surface)}
+  , _context{std::move(context.context)} {}
+//------------------------------------------------------------------------------
+egl_context_handler::~egl_context_handler() noexcept {
+    if(_display) {
+        if(_context) {
+            egl_api().clean_up(std::move(_context), _display);
+        }
+        if(_surface) {
+            egl_api().clean_up(std::move(_surface), _display);
+        }
+        _display.clean_up();
+    }
+}
+//------------------------------------------------------------------------------
+auto egl_context_handler::shared() const noexcept -> shared_provider_objects& {
+    return _shared;
+}
+//------------------------------------------------------------------------------
+auto egl_context_handler::display() const noexcept -> eglplus::display_handle {
+    return _display;
+}
+//------------------------------------------------------------------------------
+auto egl_context_handler::egl_api() const noexcept -> const eglplus::egl_api& {
+    auto ref{_shared.apis.egl()};
+    assert(ref);
+    return *ref;
+}
+//------------------------------------------------------------------------------
+auto egl_context_handler::make_current() noexcept -> bool {
+    return egl_api().make_current(_display, _surface, _context).has_value();
+}
+//------------------------------------------------------------------------------
+auto egl_context_handler::swap_buffers() noexcept -> bool {
+    return egl_api().swap_buffers(_display, _surface).has_value();
+}
+//------------------------------------------------------------------------------
 // gl_rendered_source_blob_io
 //------------------------------------------------------------------------------
 static void gl_rendered_source_debug_callback(
@@ -186,7 +230,7 @@ void gl_rendered_source_blob_io::debug_callback(
 }
 //------------------------------------------------------------------------------
 void gl_rendered_source_blob_io::_enable_debug() noexcept {
-    const auto& [gl, GL]{_glapi};
+    const auto& [gl, GL]{gl_api()};
     if(gl.ARB_debug_output) {
         log_info("enabling GL debug output");
 
@@ -212,24 +256,10 @@ gl_rendered_source_blob_io::gl_rendered_source_blob_io(
   gl_rendered_source_context context,
   span_size_t size) noexcept
   : compressed_buffer_source_blob_io{id, parent, size}
-  , _shared{shared}
-  , _display{std::move(context.display)}
-  , _surface{std::move(context.surface)}
-  , _context{std::move(context.context)} {
+  , _egl_context{default_selector, shared, std::move(context)} {
+    _gl_context.ensure().set_context(_egl_context);
     if(debug_build) {
         _enable_debug();
-    }
-}
-//------------------------------------------------------------------------------
-gl_rendered_source_blob_io::~gl_rendered_source_blob_io() noexcept {
-    if(_display) {
-        if(_context) {
-            eglapi().clean_up(std::move(_context), _display);
-        }
-        if(_surface) {
-            eglapi().clean_up(std::move(_surface), _display);
-        }
-        _display.clean_up();
     }
 }
 //------------------------------------------------------------------------------
@@ -357,38 +387,31 @@ auto gl_rendered_source_blob_io::create_context(
 }
 //------------------------------------------------------------------------------
 auto gl_rendered_source_blob_io::make_current() const noexcept -> bool {
-    return eglapi().make_current(_display, _surface, _context).has_value();
+    return _egl_context->make_current();
 }
 //------------------------------------------------------------------------------
 auto gl_rendered_source_blob_io::swap_buffers() const noexcept -> bool {
-    return eglapi().swap_buffers(_display, _surface).has_value();
+    return _egl_context->swap_buffers();
 }
 //------------------------------------------------------------------------------
-auto gl_rendered_source_blob_io::eglapi() const noexcept
-  -> const eglplus::egl_api& {
-    auto ref{_shared.apis.egl()};
-    assert(ref);
-    return *ref;
-}
-//------------------------------------------------------------------------------
-auto gl_rendered_source_blob_io::glapi() const noexcept
-  -> const oglplus::gl_api& {
-    return _glapi;
+auto gl_rendered_source_blob_io::shared() const noexcept
+  -> shared_provider_objects& {
+    return _egl_context->shared();
 }
 //------------------------------------------------------------------------------
 auto gl_rendered_source_blob_io::display() const noexcept
   -> eglplus::display_handle {
-    return _display;
+    return _egl_context->display();
 }
 //------------------------------------------------------------------------------
-auto gl_rendered_source_blob_io::surface() const noexcept
-  -> eglplus::surface_handle {
-    return _surface;
+auto gl_rendered_source_blob_io::egl_api() const noexcept
+  -> const eglplus::egl_api& {
+    return _egl_context->egl_api();
 }
 //------------------------------------------------------------------------------
-auto gl_rendered_source_blob_io::context() const noexcept
-  -> eglplus::context_handle {
-    return _context;
+auto gl_rendered_source_blob_io::gl_api() const noexcept
+  -> const oglplus::gl_api& {
+    return _gl_context.gl_api();
 }
 //------------------------------------------------------------------------------
 // ostream_io

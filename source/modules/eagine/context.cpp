@@ -76,6 +76,11 @@ public:
     /// @see gl_api
     auto init_gl_api() noexcept -> bool;
 
+    /// @brief Returns the shared GL API context wrapper.
+    auto gl_context() const noexcept -> oglplus::shared_gl_api_context {
+        return _gl_api_context;
+    }
+
     /// @brief Indicates if the GL rendering API in this video context is initialized.
     /// @see init_gl_api
     /// @see gl_api

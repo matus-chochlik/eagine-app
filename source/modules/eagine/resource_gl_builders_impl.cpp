@@ -37,9 +37,9 @@ class valtree_gl_program_builder
 public:
     valtree_gl_program_builder(
       const shared_holder<pending_resource_info>& info,
-      const oglplus::gl_api& glapi) noexcept
+      oglplus::shared_gl_api_context gl_context) noexcept
       : base{"GLprgBuldr", info}
-      , _glapi{glapi} {}
+      , _gl_context{std::move(gl_context)} {}
 
     auto max_token_size() noexcept -> span_size_t final {
         return 256;
@@ -99,7 +99,7 @@ public:
                 _attrib_variant_index = 0;
             } else if(path.starts_with("shaders")) {
                 _shdr_locator = {};
-                _shdr_type = _glapi.constants().fragment_shader;
+                _shdr_type = _gl_context.gl_api().constants().fragment_shader;
             }
         }
     }
@@ -119,7 +119,7 @@ public:
                     if(auto parent{_parent.lock()}) {
                         auto& loader = parent->loader();
                         if(auto src_request{loader.request_gl_shader(
-                             _shdr_locator, _glapi, _shdr_type)}) {
+                             _shdr_locator, _gl_context, _shdr_type)}) {
                             src_request.set_continuation(parent);
                             if(not parent->add_gl_program_shader_request(
                                  src_request.request_id())) [[unlikely]] {
@@ -134,7 +134,7 @@ public:
     }
 
 private:
-    const oglplus::gl_api& _glapi;
+    oglplus::shared_gl_api_context _gl_context;
     std::string _input_name;
     oglplus::shader_type _shdr_type;
     url _shdr_locator;
@@ -144,9 +144,9 @@ private:
 //------------------------------------------------------------------------------
 auto make_valtree_gl_program_builder(
   const shared_holder<pending_resource_info>& parent,
-  const oglplus::gl_api& glapi) noexcept
+  oglplus::shared_gl_api_context gl_context) noexcept
   -> unique_holder<valtree::object_builder> {
-    return {hold<valtree_gl_program_builder>, parent, glapi};
+    return {hold<valtree_gl_program_builder>, parent, std::move(gl_context)};
 }
 //------------------------------------------------------------------------------
 // valtree_gl_texture_image_loader
@@ -431,11 +431,11 @@ class valtree_gl_texture_builder
 public:
     valtree_gl_texture_builder(
       const shared_holder<pending_resource_info>& info,
-      const oglplus::gl_api& glapi,
+      oglplus::shared_gl_api_context gl_context,
       oglplus::texture_target tex_target,
       oglplus::texture_unit tex_unit) noexcept
       : base{"GLtexBuldr", info}
-      , _glapi{glapi}
+      , _gl_context{std::move(gl_context)}
       , _tex_data{*this}
       , _tex_target{tex_target}
       , _tex_unit{tex_unit} {}
@@ -699,7 +699,7 @@ public:
     }
 
 private:
-    const oglplus::gl_api& _glapi;
+    oglplus::shared_gl_api_context _gl_context;
     main_ctx_buffer _tex_data;
     stream_decompression _decompression;
     resource_gl_texture_params _params{};
@@ -719,18 +719,23 @@ private:
 //------------------------------------------------------------------------------
 auto make_valtree_gl_texture_builder(
   const shared_holder<pending_resource_info>& parent,
-  const oglplus::gl_api& glapi,
+  oglplus::shared_gl_api_context gl_context,
   oglplus::texture_target target,
   oglplus::texture_unit unit) noexcept
   -> unique_holder<valtree::object_builder> {
-    return {hold<valtree_gl_texture_builder>, parent, glapi, target, unit};
+    return {
+      hold<valtree_gl_texture_builder>,
+      parent,
+      std::move(gl_context),
+      target,
+      unit};
 }
 //------------------------------------------------------------------------------
 static void _adjust_texture_dimensions(
   const oglplus::texture_target target,
   auto& pgts,
   auto& params) noexcept {
-    const auto& GL{pgts.glapi.get().constants()};
+    const auto& GL{pgts.gl_context.gl_api().constants()};
     if(target == GL.texture_2d_array) {
         params.dimensions = std::max(params.dimensions, 3);
     } else if(target == GL.texture_1d_array) {
@@ -742,7 +747,7 @@ static void _adjust_texture_z_offs(
   const oglplus::texture_target target,
   auto& pgts,
   auto& params) noexcept {
-    const auto& GL{pgts.glapi.get().constants()};
+    const auto& GL{pgts.gl_context.gl_api().constants()};
     static const std::array<oglplus::texture_target, 6> cm_faces{
       {GL.texture_cube_map_positive_x,
        GL.texture_cube_map_negative_x,
@@ -920,7 +925,7 @@ auto pending_resource_info::handle_gl_texture_params(
         pgts->pparams = &params;
         pgts->levels = span_size(params.levels);
 
-        const auto& glapi{pgts->glapi.get()};
+        const auto& glapi{pgts->gl_context.gl_api()};
         const auto& [gl, GL] = glapi;
         return _handle_pending_gl_texture_state(gl, GL, glapi, *pgts, params);
     }
@@ -937,7 +942,7 @@ void pending_resource_info::handle_gl_texture_i_param(
     if(is(resource_kind::gl_texture)) {
         if(const auto pgts{get_if<_pending_gl_texture_state>(_state)}) {
             if(pgts->tex) [[likely]] {
-                const auto& gl{pgts->glapi.get().operations()};
+                const auto& gl{pgts->gl_context.gl_api().operations()};
                 if(gl.texture_parameter_i) {
                     gl.texture_parameter_i(pgts->tex, param, value);
                 } else if(gl.tex_parameter_i) {
@@ -971,7 +976,7 @@ void pending_resource_info::_clear_gl_texture_image(
       .arg("dataSize", data.size())
       .arg("locator", locator().str());
 
-    const auto& gl{pgts.glapi.get().operations()};
+    const auto& gl{pgts.gl_context.gl_api().operations()};
     if(gl.clear_tex_image) {
         gl.clear_tex_image(
           pgts.tex,
@@ -1089,7 +1094,7 @@ void pending_resource_info::_handle_gl_texture_image(
             if(pgts->tex) [[likely]] {
                 _adjust_gl_texture_params(target, *pgts, tex_params);
                 pgts->level_images_done.set(std_size(tex_params.level), true);
-                add_image_data(pgts->glapi.get(), *pgts, tex_params);
+                add_image_data(pgts->gl_context.gl_api(), *pgts, tex_params);
 
                 if(const auto found{eagine::find(
                      pgts->pending_requests, source.request_id())}) {
@@ -1103,7 +1108,7 @@ void pending_resource_info::_handle_gl_texture_image(
     } else if(is(resource_kind::gl_texture_update)) {
         if(const auto pgts{get_if<_pending_gl_texture_update_state>(_state)}) {
             _adjust_gl_texture_params(target, *pgts, tex_params);
-            add_image_data(pgts->glapi.get(), *pgts, tex_params);
+            add_image_data(pgts->gl_context.gl_api(), *pgts, tex_params);
         }
     }
     mark_finished();
@@ -1130,10 +1135,10 @@ class valtree_gl_buffer_builder
 public:
     valtree_gl_buffer_builder(
       const shared_holder<pending_resource_info>& info,
-      const oglplus::gl_api& glapi,
+      oglplus::shared_gl_api_context gl_context,
       oglplus::buffer_target buf_target) noexcept
       : base{"GLbufBuldr", info}
-      , _glapi{glapi}
+      , _gl_context{std::move(gl_context)}
       , _buf_target{buf_target} {}
 
     auto max_token_size() noexcept -> span_size_t final {
@@ -1160,7 +1165,7 @@ public:
     void do_add(const basic_string_path&, const auto&) noexcept {}
 
 private:
-    const oglplus::gl_api& _glapi;
+    oglplus::shared_gl_api_context _gl_context;
     resource_gl_buffer_params _params{};
     url _image_locator;
     oglplus::buffer_target _buf_target;
@@ -1169,10 +1174,11 @@ private:
 //------------------------------------------------------------------------------
 auto make_valtree_gl_buffer_builder(
   const shared_holder<pending_resource_info>& parent,
-  const oglplus::gl_api& glapi,
+  oglplus::shared_gl_api_context gl_context,
   oglplus::buffer_target target) noexcept
   -> unique_holder<valtree::object_builder> {
-    return {hold<valtree_gl_buffer_builder>, parent, glapi, target};
+    return {
+      hold<valtree_gl_buffer_builder>, parent, std::move(gl_context), target};
 }
 //------------------------------------------------------------------------------
 auto pending_resource_info::handle_gl_buffer_params(

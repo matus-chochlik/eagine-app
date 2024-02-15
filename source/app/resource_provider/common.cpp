@@ -111,10 +111,26 @@ struct gl_rendered_source_context {
     }
 };
 //------------------------------------------------------------------------------
+struct egl_context_handler final : oglplus::gl_context_handler {
+    egl_context_handler(
+      shared_provider_objects&,
+      gl_rendered_source_context) noexcept;
+    ~egl_context_handler() noexcept final;
+
+    auto shared() const noexcept -> shared_provider_objects&;
+    auto display() const noexcept -> eglplus::display_handle;
+    auto egl_api() const noexcept -> const eglplus::egl_api&;
+    auto make_current() noexcept -> bool final;
+    auto swap_buffers() noexcept -> bool;
+
+    shared_provider_objects& _shared;
+    eglplus::initialized_display _display;
+    eglplus::owned_surface_handle _surface;
+    eglplus::owned_context_handle _context;
+};
+//------------------------------------------------------------------------------
 class gl_rendered_source_blob_io : public compressed_buffer_source_blob_io {
 public:
-    ~gl_rendered_source_blob_io() noexcept;
-
     static auto create_context(
       shared_provider_objects&,
       const gl_rendered_source_params&) noexcept -> gl_rendered_source_context;
@@ -134,18 +150,17 @@ protected:
       gl_rendered_source_context,
       span_size_t size) noexcept;
 
-    auto shared() const noexcept -> shared_provider_objects& {
-        return _shared;
-    }
+    auto shared() const noexcept -> shared_provider_objects&;
     auto loader() const noexcept -> resource_loader& {
-        return _shared.loader;
+        return shared().loader;
     }
 
-    auto eglapi() const noexcept -> const eglplus::egl_api&;
-    auto glapi() const noexcept -> const oglplus::gl_api&;
+    auto egl_api() const noexcept -> const eglplus::egl_api&;
     auto display() const noexcept -> eglplus::display_handle;
-    auto surface() const noexcept -> eglplus::surface_handle;
-    auto context() const noexcept -> eglplus::context_handle;
+    auto gl_api() const noexcept -> const oglplus::gl_api&;
+    auto gl_context() const noexcept -> oglplus::shared_gl_api_context {
+        return _gl_context;
+    }
 
     auto make_current() const noexcept -> bool;
     auto swap_buffers() const noexcept -> bool;
@@ -153,11 +168,8 @@ protected:
 private:
     void _enable_debug() noexcept;
 
-    shared_provider_objects& _shared;
-    eglplus::initialized_display _display;
-    eglplus::owned_surface_handle _surface;
-    eglplus::owned_context_handle _context;
-    const oglplus::gl_api _glapi;
+    shared_holder<egl_context_handler> _egl_context;
+    oglplus::shared_gl_api_context _gl_context;
 };
 //------------------------------------------------------------------------------
 class ostream_io final : public msgbus::source_blob_io {
