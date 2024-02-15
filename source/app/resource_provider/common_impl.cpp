@@ -191,10 +191,6 @@ auto egl_context_handler::make_current() noexcept -> bool {
     return egl_api().make_current(_display, _surface, _context).has_value();
 }
 //------------------------------------------------------------------------------
-auto egl_context_handler::swap_buffers() noexcept -> bool {
-    return egl_api().swap_buffers(_display, _surface).has_value();
-}
-//------------------------------------------------------------------------------
 // gl_rendered_source_blob_io
 //------------------------------------------------------------------------------
 static void gl_rendered_source_debug_callback(
@@ -386,10 +382,6 @@ auto gl_rendered_source_blob_io::create_context(
 //------------------------------------------------------------------------------
 auto gl_rendered_source_blob_io::make_current() const noexcept -> bool {
     return _egl_context->make_current();
-}
-//------------------------------------------------------------------------------
-auto gl_rendered_source_blob_io::swap_buffers() const noexcept -> bool {
-    return _egl_context->swap_buffers();
 }
 //------------------------------------------------------------------------------
 auto gl_rendered_source_blob_io::shared() const noexcept

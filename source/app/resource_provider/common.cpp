@@ -121,7 +121,6 @@ struct egl_context_handler final : oglplus::gl_context_handler {
     auto display() const noexcept -> eglplus::display_handle;
     auto egl_api() const noexcept -> const eglplus::egl_api&;
     auto make_current() noexcept -> bool final;
-    auto swap_buffers() noexcept -> bool;
 
     shared_provider_objects& _shared;
     eglplus::initialized_display _display;
@@ -163,7 +162,6 @@ protected:
     }
 
     auto make_current() const noexcept -> bool;
-    auto swap_buffers() const noexcept -> bool;
 
 private:
     void _enable_debug() noexcept;

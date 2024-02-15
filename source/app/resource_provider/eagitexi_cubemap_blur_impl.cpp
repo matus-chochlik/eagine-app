@@ -163,7 +163,6 @@ void eagitexi_cubemap_blur_io::_on_tex_loaded(
 void eagitexi_cubemap_blur_io::_render_tile() noexcept {
     const auto& [gl, GL]{gl_api()};
     if((_tile_x == 0) and (_tile_y == 0)) {
-        swap_buffers();
         gl.disable(GL.scissor_test);
         gl.clear_color(0.5, 0.5, 0.5, 0.0);
         gl.clear(GL.color_buffer_bit);
