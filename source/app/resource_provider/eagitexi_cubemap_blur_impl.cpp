@@ -110,12 +110,22 @@ auto eagitexi_cubemap_blur_io::_build_program() noexcept
     // vertex shader
     const string_view vs_source{
       "#version 140\n"
-      "in vec2 Position;"
-      "out vec2 vertCoord;"
-      "void main() {"
-      "  gl_Position = vec4(Position, 0.0, 1.0);"
-      "  vertCoord = Position;"
-      "}"};
+      "in vec2 Position;\n"
+      "out vec2 vertCoord;\n"
+      "out mat3 vertCubeFace;\n"
+      "uniform int faceIdx;\n"
+      "const mat3[6] cubeFaces = mat3[6](\n"
+      "  mat3( 0.0, 0.0,-1.0, 0.0,-1.0, 0.0, 1.0, 0.0, 0.0),\n"
+      "  mat3( 0.0, 0.0, 1.0, 0.0,-1.0, 0.0,-1.0, 0.0, 0.0),\n"
+      "  mat3( 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0),\n"
+      "  mat3( 1.0, 0.0, 0.0, 0.0, 0.0,-1.0, 0.0,-1.0, 0.0),\n"
+      "  mat3( 1.0, 0.0, 0.0, 0.0,-1.0, 0.0, 0.0, 0.0, 1.0),\n"
+      "  mat3(-1.0, 0.0, 0.0, 0.0,-1.0, 0.0, 0.0, 0.0,-1.0));\n"
+      "void main() {\n"
+      "  gl_Position = vec4(Position, 0.0, 1.0);\n"
+      "  vertCoord = Position;\n"
+      "  vertCubeFace = cubeFaces[faceIdx];\n"
+      "}\n"};
 
     const auto vs{gl.create_shader.object(GL.vertex_shader)};
     gl.shader_source(vs, oglplus::glsl_string_ref(vs_source));
@@ -124,14 +134,17 @@ auto eagitexi_cubemap_blur_io::_build_program() noexcept
     // fragment shader
     const string_view fs_source{
       "#version 140\n"
-      "in vec2 vertCoord;"
-      "out vec3 fragColor;"
-      "uniform samplerCube cubeMap;"
-      "void main() {"
-      "  vec2 csq = pow(vertCoord, vec2(2.0));"
-      "  vec3 cubeCoord = vec3(vertCoord, sqrt(3.0-csq.x-csq.y));"
-      "  fragColor = normalize(cubeCoord);"
-      "}"};
+      "in vec2 vertCoord;\n"
+      "in mat3 vertCubeFace;\n"
+      "out vec4 fragColor;\n"
+      "uniform samplerCube cubeMap;\n"
+      "void main() {\n"
+      "  vec3 cubeCoord =\n"
+      "    vertCubeFace[0]*vertCoord.x+\n"
+      "    vertCubeFace[1]*vertCoord.y+\n"
+      "    vertCubeFace[2];\n"
+      "  fragColor = texture(cubeMap, cubeCoord);\n"
+      "}\n"};
 
     const auto fs{gl.create_shader.object(GL.fragment_shader)};
     gl.shader_source(fs, oglplus::glsl_string_ref(fs_source));
@@ -167,6 +180,10 @@ void eagitexi_cubemap_blur_io::_render_tile() noexcept {
         gl.disable(GL.scissor_test);
         gl.clear_color(0.5, 0.5, 0.5, 0.0);
         gl.clear(GL.color_buffer_bit);
+        gl.get_uniform_location(_prog, "faceIdx")
+          .and_then([&](auto face_idx_loc) {
+              gl_api().set_uniform(_prog, face_idx_loc, _cube_side);
+          });
     }
     gl.enable(GL.scissor_test);
     gl.scissor(
