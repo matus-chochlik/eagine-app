@@ -37,7 +37,8 @@ private:
     static auto _tile_size() noexcept -> int;
 
     auto _build_screen() noexcept -> oglplus::geometry_and_bindings;
-    auto _build_program() noexcept -> oglplus::program_object;
+    auto _build_program(const gl_rendered_source_params& params) noexcept
+      -> oglplus::program_object;
     void _on_tex_loaded(const gl_texture_resource::load_info&) noexcept;
     void _render_tile() noexcept;
     void _save_tile() noexcept;
@@ -53,12 +54,12 @@ private:
     const int _tiles_per_side{1};
     int _tile_x{0};
     int _tile_y{0};
-    int _cube_side{0};
+    int _face_index{0};
     bool _finished{false};
 };
 //------------------------------------------------------------------------------
 auto eagitexi_cubemap_blur_io::_tile_size() noexcept -> int {
-    return 256;
+    return 32;
 }
 //------------------------------------------------------------------------------
 void eagitexi_cubemap_blur_io::_make_header() noexcept {
@@ -103,8 +104,8 @@ auto eagitexi_cubemap_blur_io::_build_screen() noexcept
     return screen;
 }
 //------------------------------------------------------------------------------
-auto eagitexi_cubemap_blur_io::_build_program() noexcept
-  -> oglplus::program_object {
+auto eagitexi_cubemap_blur_io::_build_program(
+  const gl_rendered_source_params& params) noexcept -> oglplus::program_object {
     const auto& [gl, GL]{gl_api()};
 
     // vertex shader
@@ -112,19 +113,9 @@ auto eagitexi_cubemap_blur_io::_build_program() noexcept
       "#version 140\n"
       "in vec2 Position;\n"
       "out vec2 vertCoord;\n"
-      "out mat3 vertCubeFace;\n"
-      "uniform int faceIdx;\n"
-      "const mat3[6] cubeFaces = mat3[6](\n"
-      "  mat3( 0.0, 0.0,-1.0, 0.0,-1.0, 0.0, 1.0, 0.0, 0.0),\n"
-      "  mat3( 0.0, 0.0, 1.0, 0.0,-1.0, 0.0,-1.0, 0.0, 0.0),\n"
-      "  mat3( 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0),\n"
-      "  mat3( 1.0, 0.0, 0.0, 0.0, 0.0,-1.0, 0.0,-1.0, 0.0),\n"
-      "  mat3( 1.0, 0.0, 0.0, 0.0,-1.0, 0.0, 0.0, 0.0, 1.0),\n"
-      "  mat3(-1.0, 0.0, 0.0, 0.0,-1.0, 0.0, 0.0, 0.0,-1.0));\n"
       "void main() {\n"
       "  gl_Position = vec4(Position, 0.0, 1.0);\n"
       "  vertCoord = Position;\n"
-      "  vertCubeFace = cubeFaces[faceIdx];\n"
       "}\n"};
 
     const auto vs{gl.create_shader.object(GL.vertex_shader)};
@@ -135,15 +126,48 @@ auto eagitexi_cubemap_blur_io::_build_program() noexcept
     const string_view fs_source{
       "#version 140\n"
       "in vec2 vertCoord;\n"
-      "in mat3 vertCubeFace;\n"
       "out vec4 fragColor;\n"
       "uniform samplerCube cubeMap;\n"
+      "uniform int faceIdx;\n"
+      "uniform int cubeSide;\n"
+      "const mat3[6] cubeFaces = mat3[6](\n"
+      "  mat3( 0.0, 0.0,-1.0, 0.0,-1.0, 0.0, 1.0, 0.0, 0.0),\n"
+      "  mat3( 0.0, 0.0, 1.0, 0.0,-1.0, 0.0,-1.0, 0.0, 0.0),\n"
+      "  mat3( 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0),\n"
+      "  mat3( 1.0, 0.0, 0.0, 0.0, 0.0,-1.0, 0.0,-1.0, 0.0),\n"
+      "  mat3( 1.0, 0.0, 0.0, 0.0,-1.0, 0.0, 0.0, 0.0, 1.0),\n"
+      "  mat3(-1.0, 0.0, 0.0, 0.0,-1.0, 0.0, 0.0, 0.0,-1.0));\n"
       "void main() {\n"
+      "  mat3 cubeFace = cubeFaces[faceIdx];\n"
       "  vec3 cubeCoord =\n"
-      "    vertCubeFace[0]*vertCoord.x+\n"
-      "    vertCubeFace[1]*vertCoord.y+\n"
-      "    vertCubeFace[2];\n"
-      "  fragColor = texture(cubeMap, cubeCoord);\n"
+      "    cubeFace[0]*vertCoord.x+\n"
+      "    cubeFace[1]*vertCoord.y+\n"
+      "    cubeFace[2];\n"
+      "  float ics = 1.0 / float(cubeSide);\n"
+      "  vec4 accumColor = vec4(0.0);\n"
+      "  float accumWeight = 0.0;\n"
+      "  for(int f = 0; f < 6; ++f) {\n"
+      "    mat3 sampleFace = cubeFaces[f];\n"
+      "    for(int y = 0; y <= cubeSide; ++y) {\n"
+      "      for(int x = 0; x <= cubeSide; ++x) {\n"
+      "        vec2 sampleCoord = vec2(\n"
+      "          mix(-1.0, 1.0, float(x)*ics),\n"
+      "          mix(-1.0, 1.0, float(y)*ics));\n"
+      "        vec3 sampleCubeCoord =\n"
+      "          sampleFace[0]*sampleCoord.x+\n"
+      "          sampleFace[1]*sampleCoord.y+\n"
+      "          sampleFace[2];\n"
+      "        vec4 sampleColor = texture(cubeMap, sampleCubeCoord);\n"
+      "        float sampleWeight = pow(max(dot(\n"
+      "            normalize(cubeCoord),\n"
+      "            normalize(sampleCubeCoord)),\n"
+      "          0.0), 64.0);\n"
+      "        accumColor = accumColor + sampleColor * sampleWeight;\n"
+      "        accumWeight += sampleWeight;\n"
+      "      }\n"
+      "    }\n"
+      "  }\n"
+      "  fragColor = accumColor / accumWeight;\n"
       "}\n"};
 
     const auto fs{gl.create_shader.object(GL.fragment_shader)};
@@ -158,8 +182,14 @@ auto eagitexi_cubemap_blur_io::_build_program() noexcept
     gl.use_program(prog);
 
     gl.bind_attrib_location(prog, _screen.position_loc(), "Position");
-    gl.get_uniform_location(prog, "cubeMap").and_then([&](auto cube_map_loc) {
-        gl_api().set_uniform(prog, cube_map_loc, 0);
+    gl.get_uniform_location(_prog, "cubeSide").and_then([&](auto loc) {
+        const auto side{std::min(
+          std::max(params.surface_width.value(), params.surface_height.value()),
+          64)};
+        gl_api().set_uniform(_prog, loc, side);
+    });
+    gl.get_uniform_location(prog, "cubeMap").and_then([&](auto loc) {
+        gl_api().set_uniform(prog, loc, 0);
     });
 
     return prog;
@@ -180,10 +210,9 @@ void eagitexi_cubemap_blur_io::_render_tile() noexcept {
         gl.disable(GL.scissor_test);
         gl.clear_color(0.5, 0.5, 0.5, 0.0);
         gl.clear(GL.color_buffer_bit);
-        gl.get_uniform_location(_prog, "faceIdx")
-          .and_then([&](auto face_idx_loc) {
-              gl_api().set_uniform(_prog, face_idx_loc, _cube_side);
-          });
+        gl.get_uniform_location(_prog, "faceIdx").and_then([&](auto loc) {
+            gl_api().set_uniform(_prog, loc, _face_index);
+        });
     }
     gl.enable(GL.scissor_test);
     gl.scissor(
@@ -222,14 +251,14 @@ auto eagitexi_cubemap_blur_io::prepare() noexcept -> msgbus::blob_preparation {
          loader(), gl_context(), GL.texture_cube_map, GL.texture0)) {
         return msgbus::blob_preparation::working;
     }
-    if(_cube_side < 6) {
+    if(_face_index < 6) {
         _render_tile();
         if(++_tile_x >= _tiles_per_side) {
             _tile_x = 0;
             if(++_tile_y >= _tiles_per_side) {
                 _tile_y = 0;
                 _save_tile();
-                ++_cube_side;
+                ++_face_index;
             }
         }
         return msgbus::blob_preparation::working;
@@ -252,7 +281,7 @@ eagitexi_cubemap_blur_io::eagitexi_cubemap_blur_io(
   : gl_rendered_source_blob_io{"ITxCubBlur", parent, shared, std::move(context), params, size * size * 6}
   , _buffer{*this, size * size * 4, nothing}
   , _screen{_build_screen()}
-  , _prog{_build_program()}
+  , _prog{_build_program(params)}
   , _cubemap{std::move(source), loader()}
   , _size{size}
   , _tiles_per_side{std::max(size / _tile_size(), 1)} {
