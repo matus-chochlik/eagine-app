@@ -185,7 +185,7 @@ auto eagitexi_cubemap_blur_io::_build_program(
     gl.get_uniform_location(_prog, "cubeSide").and_then([&](auto loc) {
         const auto side{std::min(
           std::max(params.surface_width.value(), params.surface_height.value()),
-          64)};
+          128)};
         gl_api().set_uniform(_prog, loc, side);
     });
     gl.get_uniform_location(prog, "cubeMap").and_then([&](auto loc) {
@@ -312,6 +312,9 @@ public:
     auto get_resource_io(const url& locator)
       -> unique_holder<msgbus::source_blob_io> final;
 
+    auto get_blob_timeout(const span_size_t size) noexcept
+      -> std::chrono::seconds final;
+
     void for_each_locator(
       callable_ref<void(string_view) noexcept>) noexcept final;
 
@@ -359,6 +362,11 @@ auto eagitexi_cubemap_blur_provider::get_resource_io(const url& locator)
         }
     }
     return {};
+}
+//------------------------------------------------------------------------------
+auto eagitexi_cubemap_blur_provider::get_blob_timeout(const span_size_t) noexcept
+  -> std::chrono::seconds {
+    return std::chrono::minutes{5};
 }
 //------------------------------------------------------------------------------
 void eagitexi_cubemap_blur_provider::for_each_locator(
