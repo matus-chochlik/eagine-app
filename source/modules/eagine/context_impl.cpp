@@ -485,7 +485,9 @@ inline auto execution_context::_setup_providers() noexcept -> bool {
 auto execution_context::resource_context() noexcept
   -> loaded_resource_context& {
     if(not _resource_context.gl_context()) [[unlikely]] {
-        _resource_context.set_gl_context(main_video().gl_context());
+        if(not _video_contexts.empty()) {
+            _resource_context.set_gl_context(main_video().gl_context());
+        }
     }
     return _resource_context;
 }

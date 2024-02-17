@@ -251,7 +251,7 @@ public:
 
     auto load_if_needed(loaded_resource_context& ctx, std::tuple<>)
       -> work_done {
-        return load_if_needed(ctx.loader());
+        return load_if_needed(ctx);
     }
 
     /// @brief Updates the resource, possibly doing resource load request.
