@@ -43,21 +43,23 @@ private:
 example_uv_map::example_uv_map(execution_context& ec, video_context& vc)
   : timeouting_application{ec, std::chrono::seconds{30}}
   , _video{vc}
-  , _resources{ec}
-  , _prog{_resources, url{"json:///Program"}}
-  , _barrel{_resources, url{"json:///Barrel"}, 0} 
+  , _prog{_resources, ec, url{"json:///Program"}}
+  , _barrel{_resources, ec, url{"json:///Barrel"}, 0}
   , _color_tex{
       _resources,
-	  url{"eagitex:///BarelColor"},
-	  _video.gl_api().texture_2d,
-	  _video.gl_api().texture0 + 0}
+      ec,
+      url{"eagitex:///BarelColor"},
+      _video.gl_api().texture_2d,
+      _video.gl_api().texture0 + 0}
   , _aoccl_tex{
       _resources,
+      ec,
       url{"eagitex:///BarelAOccl"},
       _video.gl_api().texture_2d,
       _video.gl_api().texture0 + 1}
   , _rough_tex{
      _resources,
+     ec,
      url{"eagitex:///BarelRough"},
      _video.gl_api().texture_2d,
      _video.gl_api().texture0 + 2} {

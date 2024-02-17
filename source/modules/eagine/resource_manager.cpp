@@ -32,6 +32,7 @@ public:
     template <typename... Resources, typename... Args>
     managed_resource(
       basic_resource_manager<Resources...>& manager,
+      loaded_resource_context& context,
       identifier resource_id,
       url locator,
       Args&&... args)
@@ -39,17 +40,46 @@ public:
           std::type_identity<Resource>{},
           resource_id,
           std::move(locator),
+          context,
           std::forward<Args>(args)...)} {}
 
     template <typename... Resources, typename... Args>
     managed_resource(
       basic_resource_manager<Resources...>& manager,
+      execution_context& ec,
+      identifier resource_id,
       url locator,
       Args&&... args)
       : managed_resource{
           manager,
+          ec.resource_context(),
+          resource_id,
+          std::move(locator),
+          std::forward<Args>(args)...} {}
+
+    template <typename... Resources, typename... Args>
+    managed_resource(
+      basic_resource_manager<Resources...>& manager,
+      loaded_resource_context& context,
+      url locator,
+      Args&&... args)
+      : managed_resource{
+          manager,
+          context,
           locator.hash_id(),
           locator,
+          std::forward<Args>(args)...} {}
+
+    template <typename... Resources, typename... Args>
+    managed_resource(
+      basic_resource_manager<Resources...>& manager,
+      execution_context& ec,
+      url locator,
+      Args&&... args)
+      : managed_resource{
+          manager,
+          ec.resource_context(),
+          std::move(locator),
           std::forward<Args>(args)...} {}
 
     auto resource() const noexcept -> loaded_resource<Resource>& {
@@ -114,6 +144,7 @@ class basic_resource_manager {
 
     template <typename Resource>
     struct resource_and_params {
+        loaded_resource_context context; // TODO: optimize as flyweight
         Resource resource;
         resource_load_params<Resource> params;
 
@@ -122,8 +153,17 @@ class basic_resource_manager {
           loaded_resource_context& ctx,
           url locator,
           Args&&... args) noexcept
-          : resource{std::move(locator), ctx}
+          : context{ctx}
+          , resource{std::move(locator), ctx}
           , params{std::forward<Args>(args)...} {}
+
+        auto load_if_needed() noexcept {
+            return resource.load_if_needed(context, params);
+        }
+
+        auto clean_up() noexcept {
+            return resource.clean_up(context);
+        }
     };
 
     template <typename X>
@@ -133,26 +173,17 @@ class basic_resource_manager {
     using resource_storage = std::vector<unique_holder<adj_res_and_params<X>>>;
 
 public:
-    basic_resource_manager(loaded_resource_context& ctx) noexcept
-      : _ctx{ctx} {}
-
-    basic_resource_manager(execution_context& ctx) noexcept
-      : _ctx{ctx.resource_context()} {}
-
     template <typename Resource, typename... Args>
     [[nodiscard]] auto do_add(
       std::type_identity<Resource> rtid,
       identifier, // TODO (use as map key)
       url locator,
+      loaded_resource_context& context,
       Args&&... args) -> managed_resource<Resource> {
         auto& res_vec{_get(rtid)};
         res_vec.emplace_back(std::make_unique<adj_res_and_params<Resource>>(
-          _ctx, std::move(locator), std::forward<Args>(args)...));
+          context, std::move(locator), std::forward<Args>(args)...));
         return {res_vec.back()->resource};
-    }
-
-    [[nodiscard]] auto context() const noexcept -> loaded_resource_context& {
-        return _ctx;
     }
 
     [[nodiscard]] auto are_loaded() noexcept -> bool {
@@ -205,7 +236,7 @@ private:
     auto _do_load(V& res_vec) noexcept -> span_size_t {
         span_size_t result{0};
         for(auto& res_info : res_vec) {
-            if(res_info->resource.load_if_needed(_ctx, res_info->params)) {
+            if(res_info->load_if_needed()) {
                 ++result;
             }
         }
@@ -225,11 +256,10 @@ private:
     template <typename V>
     void _do_clean_up(V& res_vec) noexcept {
         for(auto& res_info : res_vec) {
-            res_info->resource.clean_up(_ctx);
+            res_info->clean_up();
         }
     }
 
-    loaded_resource_context& _ctx;
     std::tuple<resource_storage<Resources>...> _resources;
 };
 //------------------------------------------------------------------------------

@@ -42,16 +42,17 @@ private:
 example_uv_map::example_uv_map(execution_context& ec, video_context& vc)
   : timeouting_application{ec, std::chrono::seconds{30}}
   , _video{vc}
-  , _resources{ec}
-  , _prog{_resources, url{"json:///Program"}}
-  , _crate{_resources, url{"json:///Crate"}, 0}
+  , _prog{_resources, ec, url{"json:///Program"}}
+  , _crate{_resources, ec, url{"json:///Crate"}, 0}
   , _color_tex{
       _resources,
+      ec,
       url{"eagitex:///CrateColor"},
       _video.gl_api().texture_2d,
       _video.gl_api().texture0 + 0}
   , _light_tex{
       _resources,
+      ec,
       url{"eagitex:///CrateLight"},
       _video.gl_api().texture_2d,
       _video.gl_api().texture0 + 1} {
