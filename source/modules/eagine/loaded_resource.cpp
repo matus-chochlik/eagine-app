@@ -249,6 +249,11 @@ public:
         return is_loading();
     }
 
+    auto load_if_needed(loaded_resource_context& ctx, std::tuple<>)
+      -> work_done {
+        return load_if_needed(ctx.loader());
+    }
+
     /// @brief Updates the resource, possibly doing resource load request.
     auto load_if_needed(execution_context& ctx) -> work_done {
         return load_if_needed(ctx.resource_context());
@@ -390,6 +395,13 @@ public:
             }
         }
         return is_loading();
+    }
+
+    /// @brief Updates the resource, possibly doing resource load request.
+    auto load_if_needed(
+      loaded_resource_context& ctx,
+      const std::tuple<P...>& params) -> work_done {
+        return load_if_needed(ctx, std::get<P>(params)...);
     }
 
     /// @brief Updates the resource, possibly doing resource load request.
