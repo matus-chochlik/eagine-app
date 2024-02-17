@@ -151,16 +151,13 @@ protected:
       span_size_t buffer_size) noexcept;
 
     auto shared() const noexcept -> shared_provider_objects&;
-    auto loader() const noexcept -> resource_loader& {
-        return shared().loader;
+    auto resource_context() noexcept -> loaded_resource_context& {
+        return _resource_context;
     }
 
     auto egl_api() const noexcept -> const eglplus::egl_api&;
     auto display() const noexcept -> eglplus::display_handle;
     auto gl_api() const noexcept -> const oglplus::gl_api&;
-    auto gl_context() const noexcept -> oglplus::shared_gl_api_context {
-        return _gl_context;
-    }
 
     auto make_current() const noexcept -> bool;
 
@@ -169,7 +166,7 @@ private:
     void _init_fbo(const gl_rendered_source_params&) noexcept;
 
     shared_holder<egl_context_handler> _egl_context;
-    oglplus::shared_gl_api_context _gl_context;
+    loaded_resource_context _resource_context{shared().loader, _egl_context};
     oglplus::renderbuffer_object _color_rbo;
     oglplus::framebuffer_object _offscreen_fbo;
 };

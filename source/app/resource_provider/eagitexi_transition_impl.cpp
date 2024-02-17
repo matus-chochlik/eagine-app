@@ -138,7 +138,8 @@ auto tiling_transition_tiling::is_valid_locator(const url& locator) noexcept
 }
 //------------------------------------------------------------------------------
 auto tiling_transition_tiling::prepare() noexcept -> msgbus::blob_preparation {
-    return _prep_result(_tiling.load_if_needed(_shared.loader));
+    loaded_resource_context context{_shared.loader};
+    return _prep_result(_tiling.load_if_needed(context));
 }
 //------------------------------------------------------------------------------
 auto tiling_transition_tiling::width() noexcept -> valid_if_positive<int> {

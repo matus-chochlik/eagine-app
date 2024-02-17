@@ -27,6 +27,7 @@ import eagine.msgbus;
 
 namespace eagine::app {
 
+export class loaded_resource_context;
 export class execution_context;
 export class orbiting_camera;
 export class gl_geometry_and_bindings;
@@ -1284,41 +1285,42 @@ public:
     /// @brief Requests plain text resource.
     auto request_plain_text(url locator) noexcept -> resource_request_result;
 
-    auto request(std::type_identity<std::string>, url locator) noexcept {
-        return request_plain_text(std::move(locator));
-    }
+    auto request(
+      std::type_identity<std::string>,
+      url locator,
+      loaded_resource_context&) noexcept -> resource_request_result;
 
     /// @brief Requests string-list resource.
     auto request_string_list(url locator) noexcept -> resource_request_result;
 
     auto request(
       std::type_identity<std::vector<std::string>>,
-      url locator) noexcept {
-        return request_string_list(std::move(locator));
-    }
+      url locator,
+      loaded_resource_context&) noexcept -> resource_request_result;
 
     /// @brief Requests URL-list resource.
     auto request_url_list(url locator) noexcept -> resource_request_result;
 
-    auto request(std::type_identity<std::vector<url>>, url locator) noexcept {
-        return request_url_list(std::move(locator));
-    }
+    auto request(
+      std::type_identity<std::vector<url>>,
+      url locator,
+      loaded_resource_context&) noexcept -> resource_request_result;
 
     /// @brief Requests a float vector resource.
     auto request_float_vector(url locator) noexcept -> resource_request_result;
 
-    auto request(std::type_identity<std::vector<float>>, url locator) noexcept {
-        return request_float_vector(std::move(locator));
-    }
+    auto request(
+      std::type_identity<std::vector<float>>,
+      url locator,
+      loaded_resource_context&) noexcept -> resource_request_result;
 
     /// @brief Requests a float vector resource.
     auto request_vec3_vector(url locator) noexcept -> resource_request_result;
 
     auto request(
       std::type_identity<std::vector<math::vector<float, 3, true>>>,
-      url locator) noexcept {
-        return request_vec3_vector(std::move(locator));
-    }
+      url locator,
+      loaded_resource_context&) noexcept -> resource_request_result;
 
     /// @brief Requests a smooth vec3 curve resource.
     auto request_smooth_vec3_curve(url locator) noexcept
@@ -1327,25 +1329,24 @@ public:
     auto request(
       std::type_identity<
         math::cubic_bezier_curves<math::vector<float, 3, true>, float>>,
-      url locator) noexcept {
-        return request_smooth_vec3_curve(std::move(locator));
-    }
+      url locator,
+      loaded_resource_context&) noexcept -> resource_request_result;
 
     /// @brief Requests a 4x4 matrix resource.
     auto request_mat4_vector(url locator) noexcept -> resource_request_result;
 
     auto request(
       std::type_identity<std::vector<math::matrix<float, 4, 4, true, true>>>,
-      url locator) noexcept {
-        return request_mat4_vector(std::move(locator));
-    }
+      url locator,
+      loaded_resource_context&) noexcept -> resource_request_result;
 
     /// @brief Requests a value tree object resource.
     auto request_value_tree(url locator) noexcept -> resource_request_result;
 
-    auto request(std::type_identity<valtree::compound>, url locator) noexcept {
-        return request_value_tree(std::move(locator));
-    }
+    auto request(
+      std::type_identity<valtree::compound>,
+      url locator,
+      loaded_resource_context&) noexcept -> resource_request_result;
 
     auto request_json_traversal(
       url locator,
@@ -1383,9 +1384,8 @@ public:
 
     auto request(
       std::type_identity<shared_holder<shapes::generator>>,
-      url locator) noexcept {
-        return request_shape_generator(std::move(locator));
-    }
+      url locator,
+      loaded_resource_context&) noexcept -> resource_request_result;
 
     /// @brief Requests a oglplus shape generator wrapper object.
     auto request_gl_shape(url locator, oglplus::shared_gl_api_context) noexcept
@@ -1394,9 +1394,7 @@ public:
     auto request(
       std::type_identity<oglplus::shape_generator>,
       url locator,
-      oglplus::shared_gl_api_context gl_context) noexcept {
-        return request_gl_shape(std::move(locator), std::move(gl_context));
-    }
+      loaded_resource_context& ctx) noexcept -> resource_request_result;
 
     /// @brief Requests a shape geometry and attrib bindings object.
     auto request_gl_geometry_and_bindings(
@@ -1408,12 +1406,9 @@ public:
     auto request(
       std::type_identity<gl_geometry_and_bindings>,
       url locator,
-      oglplus::shared_gl_api_context gl_context,
+      loaded_resource_context& ctx,
       oglplus::vertex_attrib_bindings bindings,
-      span_size_t draw_var_idx = 0) noexcept {
-        return request_gl_geometry_and_bindings(
-          std::move(locator), std::move(gl_context), bindings, draw_var_idx);
-    }
+      span_size_t draw_var_idx = 0) noexcept -> resource_request_result;
 
     /// @brief Requests a shape geometry and attrib bindings object.
     auto request_gl_geometry_and_bindings(
@@ -1424,11 +1419,8 @@ public:
     auto request(
       std::type_identity<gl_geometry_and_bindings>,
       url locator,
-      oglplus::shared_gl_api_context gl_context,
-      span_size_t draw_var_idx = 0) noexcept {
-        return request_gl_geometry_and_bindings(
-          std::move(locator), std::move(gl_context), draw_var_idx);
-    }
+      loaded_resource_context& ctx,
+      span_size_t draw_var_idx = 0) noexcept -> resource_request_result;
 
     /// @brief Requests GLSL shader source code resource.
     auto request_glsl_source(url locator) noexcept -> resource_request_result;
@@ -1442,11 +1434,8 @@ public:
     auto request(
       std::type_identity<oglplus::owned_shader_name>,
       url locator,
-      oglplus::shared_gl_api_context gl_context,
-      oglplus::shader_type shdr_type) noexcept {
-        return request_gl_shader(
-          std::move(locator), std::move(gl_context), shdr_type);
-    }
+      loaded_resource_context& ctx,
+      oglplus::shader_type shdr_type) noexcept -> resource_request_result;
 
     /// @brief Requests a compiled GL shader object of a type specified in URL.
     auto request_gl_shader(url locator, oglplus::shared_gl_api_context) noexcept
@@ -1455,9 +1444,7 @@ public:
     auto request(
       std::type_identity<oglplus::owned_shader_name>,
       url locator,
-      oglplus::shared_gl_api_context gl_context) noexcept {
-        return request_gl_shader(std::move(locator), std::move(gl_context));
-    }
+      loaded_resource_context& ctx) noexcept -> resource_request_result;
 
     /// @brief Requests a linked GL program object.
     auto request_gl_program(url locator, oglplus::shared_gl_api_context) noexcept
@@ -1466,9 +1453,7 @@ public:
     auto request(
       std::type_identity<oglplus::owned_program_name>,
       url locator,
-      oglplus::shared_gl_api_context gl_context) noexcept {
-        return request_gl_program(std::move(locator), std::move(gl_context));
-    }
+      loaded_resource_context& ctx) noexcept -> resource_request_result;
 
     auto request_gl_texture_image(
       url locator,
@@ -1497,12 +1482,9 @@ public:
     auto request(
       std::type_identity<oglplus::owned_texture_name>,
       url locator,
-      oglplus::shared_gl_api_context gl_context,
+      loaded_resource_context& ctx,
       oglplus::texture_target tex_target,
-      oglplus::texture_unit tex_unit) noexcept {
-        return request_gl_texture(
-          std::move(locator), std::move(gl_context), tex_target, tex_unit);
-    }
+      oglplus::texture_unit tex_unit) noexcept -> resource_request_result;
 
     /// @brief Requests a set-up GL buffer object.
     auto request_gl_buffer(
@@ -1513,11 +1495,8 @@ public:
     auto request(
       std::type_identity<oglplus::owned_buffer_name>,
       url locator,
-      oglplus::shared_gl_api_context gl_context,
-      oglplus::buffer_target buf_target) noexcept {
-        return request_gl_buffer(
-          std::move(locator), std::move(gl_context), buf_target);
-    }
+      loaded_resource_context& ctx,
+      oglplus::buffer_target buf_target) noexcept -> resource_request_result;
 
     /// @brief Requests a mapped structure
     template <default_mapped_struct O>
@@ -1535,7 +1514,10 @@ public:
     }
 
     template <default_mapped_struct O>
-    auto request(std::type_identity<O> tid, url locator) noexcept {
+    auto request(
+      std::type_identity<O> tid,
+      url locator,
+      loaded_resource_context&) noexcept {
         return request_mapped_struct(std::move(locator), tid);
     }
 

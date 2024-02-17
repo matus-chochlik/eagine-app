@@ -254,6 +254,46 @@ private:
     shared_holder<oalplus::alut_api> _alut_api{};
 };
 //------------------------------------------------------------------------------
+/// @brief Class providing various contexts to which a loaded_resource belongs
+/// @see loaded_resource
+/// @see resource_loader
+export class loaded_resource_context {
+public:
+    loaded_resource_context(resource_loader& loader) noexcept
+      : _loader{loader} {}
+
+    loaded_resource_context(
+      resource_loader& loader,
+      oglplus::shared_gl_api_context gl_context) noexcept
+      : _loader{loader}
+      , _gl_context{std::move(gl_context)} {}
+
+    /// @brief Reference to a resource's parent loader.
+    auto loader() const noexcept -> resource_loader& {
+        return _loader.get();
+    }
+
+    auto set_gl_context(oglplus::shared_gl_api_context gl_context) noexcept
+      -> loaded_resource_context& {
+        _gl_context = std::move(gl_context);
+        return *this;
+    }
+
+    /// @brief Reference to a resource's parent GL context.
+    auto gl_context() const noexcept -> const oglplus::shared_gl_api_context& {
+        return _gl_context;
+    }
+
+    /// @brief Reference to a resource's parent GL API.
+    auto gl_api() const noexcept -> const oglplus::gl_api& {
+        return _gl_context.gl_api();
+    }
+
+private:
+    std::reference_wrapper<resource_loader> _loader;
+    oglplus::shared_gl_api_context _gl_context;
+};
+//------------------------------------------------------------------------------
 /// @brief Class holding shared video/audio rendering application support objects.
 /// @ingroup application
 /// @see video_context
@@ -275,10 +315,11 @@ public:
         return _options;
     }
 
+    /// @brief Returns a reference to the resource loading context
+    auto resource_context() noexcept -> loaded_resource_context&;
+
     /// @brief Returns a reference to the resource loader.
-    auto loader() const noexcept -> resource_loader& {
-        return _loader;
-    }
+    auto loader() noexcept -> resource_loader&;
 
     /// @brief Returns a references to a multi-purpose memory buffer.
     auto buffer() const noexcept -> memory::buffer&;
@@ -615,7 +656,8 @@ private:
     shared_holder<context_state> _state;
     unique_holder<application> _app;
 
-    resource_loader& _loader;
+    loaded_resource_context _resource_context;
+
     std::vector<shared_holder<hmi_provider>> _hmi_providers;
     std::vector<shared_holder<input_provider>> _input_providers;
     std::vector<unique_holder<video_context>> _video_contexts;

@@ -112,7 +112,7 @@ void tiling_viewer_geometry_resource::draw(video_context& video) {
 void tiling_viewer_geometry_resource::clean_up(
   execution_context& ctx,
   video_context& video) {
-    gl_geometry_and_bindings_resource::clean_up(ctx.loader(), video);
+    gl_geometry_and_bindings_resource::clean_up(ctx);
 }
 //------------------------------------------------------------------------------
 //  Default geometry

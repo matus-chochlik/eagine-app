@@ -268,9 +268,8 @@ gl_rendered_source_blob_io::gl_rendered_source_blob_io(
   span_size_t buffer_size) noexcept
   : compressed_buffer_source_blob_io{id, parent, buffer_size}
   , _egl_context{default_selector, shared, std::move(context)}
-  , _gl_context{_egl_context}
-  , _color_rbo{_gl_context.gl_api().gen_renderbuffers.object()}
-  , _offscreen_fbo{_gl_context.gl_api().gen_framebuffers.object()} {
+  , _color_rbo{_resource_context.gl_api().gen_renderbuffers.object()}
+  , _offscreen_fbo{_resource_context.gl_api().gen_framebuffers.object()} {
     if(debug_build) {
         _enable_debug();
     }
@@ -421,7 +420,7 @@ auto gl_rendered_source_blob_io::egl_api() const noexcept
 //------------------------------------------------------------------------------
 auto gl_rendered_source_blob_io::gl_api() const noexcept
   -> const oglplus::gl_api& {
-    return _gl_context.gl_api();
+    return _resource_context.gl_api();
 }
 //------------------------------------------------------------------------------
 // ostream_io

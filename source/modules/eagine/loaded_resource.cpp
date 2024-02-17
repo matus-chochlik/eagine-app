@@ -121,83 +121,9 @@ using resource_load_params = typename get_resource_load_params<Resource>::type;
 export template <typename Params>
 struct get_resource_load_context_params : std::type_identity<Params> {};
 
-export template <typename... P>
-struct get_resource_load_context_params<
-  std::tuple<oglplus::shared_gl_api_context, P...>>
-  : std::type_identity<std::tuple<P...>> {};
-
 export template <typename Params>
 using resource_load_context_params =
   typename get_resource_load_context_params<Params>::type;
-//------------------------------------------------------------------------------
-export template <
-  typename Resource,
-  typename Params = resource_load_params<Resource>>
-struct resource_load_utils;
-
-export template <typename Resource, typename... P>
-struct resource_load_utils<Resource, std::tuple<P...>> {
-
-    auto request(resource_loader& loader, url locator, P... params)
-      -> resource_request_result {
-        return loader.request(
-          std::type_identity<Resource>{}, std::move(locator), params...);
-    }
-
-    auto request(execution_context& ctx, url locator, P... params)
-      -> resource_request_result {
-        return ctx.loader().request(
-          std::type_identity<Resource>{}, std::move(locator), params...);
-    }
-
-    template <std::size_t... I>
-    auto request(
-      execution_context& ctx,
-      url locator,
-      const std::tuple<P...>& params,
-      std::index_sequence<I...>) -> resource_request_result {
-        return ctx.loader().request(
-          std::type_identity<Resource>{},
-          std::move(locator),
-          std::get<I>(params)...);
-    }
-};
-
-export template <typename Resource, typename... P>
-struct resource_load_utils<
-  Resource,
-  std::tuple<oglplus::shared_gl_api_context, P...>> {
-
-    auto request(
-      resource_loader& loader,
-      url locator,
-      oglplus::shared_gl_api_context glapi,
-      P... params) -> resource_request_result {
-        return loader.request(
-          std::type_identity<Resource>{}, std::move(locator), glapi, params...);
-    }
-
-    auto request(execution_context& ctx, url locator, P... params)
-      -> resource_request_result {
-        return ctx.loader().request(
-          std::type_identity<Resource>{},
-          std::move(locator),
-          ctx.main_video().gl_context(),
-          params...);
-    }
-
-    template <std::size_t... I>
-    auto request(
-      execution_context& ctx,
-      url locator,
-      const std::tuple<oglplus::shared_gl_api_context, P...>& params,
-      std::index_sequence<I...> = {}) -> resource_request_result {
-        return ctx.loader().request(
-          std::type_identity<Resource>{},
-          std::move(locator),
-          std::get<I>(params)...);
-    }
-};
 //------------------------------------------------------------------------------
 export template <typename Resource>
 class loaded_resource;
@@ -221,11 +147,8 @@ struct resource_load_info {
 export template <typename Resource>
 class loaded_resource
   : public Resource
-  , public loaded_resource_base
-  , public resource_load_utils<Resource> {
+  , public loaded_resource_base {
     static_assert(default_mapped_struct<Resource>);
-
-    using utils = resource_load_utils<Resource>;
 
     using Derived = loaded_resource<Resource>;
 
@@ -273,6 +196,11 @@ public:
     }
 
     /// @brief Delay-initializes the resource.
+    void init(loaded_resource_context& ctx) noexcept {
+        _connect(ctx.loader());
+    }
+
+    /// @brief Delay-initializes the resource.
     void init(execution_context& ctx) noexcept {
         _connect(ctx.loader());
     }
@@ -281,6 +209,12 @@ public:
     loaded_resource(url locator, resource_loader& loader)
       : loaded_resource_base{std::move(locator)} {
         init(loader);
+    }
+
+    /// @brief Constructor specifying the locator and initializing the resource.
+    loaded_resource(url locator, loaded_resource_context& ctx)
+      : loaded_resource_base{std::move(locator)} {
+        init(ctx);
     }
 
     /// @brief Constructor specifying the locator and initializing the resource.
@@ -295,14 +229,20 @@ public:
     }
 
     /// @brief Cleans up this resource.
+    void clean_up(loaded_resource_context& ctx) {
+        derived().clean_up(ctx.loader());
+    }
+
+    /// @brief Cleans up this resource.
     void clean_up(execution_context& ctx) {
         derived().clean_up(ctx.loader());
     }
 
     /// @brief Updates the resource, possibly doing resource load request.
-    auto load_if_needed(resource_loader& loader) -> work_done {
+    auto load_if_needed(loaded_resource_context& ctx) -> work_done {
         if(not is_loaded() and not is_loading()) {
-            if(const auto request{utils::request(loader, locator())}) {
+            if(const auto request{ctx.loader().request(
+                 std::type_identity<Resource>{}, locator(), ctx)}) {
                 _request_id = request.request_id();
             }
         }
@@ -311,7 +251,7 @@ public:
 
     /// @brief Updates the resource, possibly doing resource load request.
     auto load_if_needed(execution_context& ctx) -> work_done {
-        return load_if_needed(ctx.loader());
+        return load_if_needed(ctx.resource_context());
     }
 
     auto load_if_needed(execution_context& ctx, std::tuple<>) -> work_done {
@@ -359,10 +299,8 @@ class loaded_resource_common<
   std::tuple<P...>,
   std::tuple<Cp...>>
   : public Resource
-  , public loaded_resource_base
-  , public resource_load_utils<Resource> {
+  , public loaded_resource_base {
     using base = loaded_resource_base;
-    using utils = resource_load_utils<Resource>;
 
     using Derived = loaded_resource<Resource>;
 
@@ -400,6 +338,12 @@ public:
     }
 
     /// @brief Constructor specifying the resource locator.
+    loaded_resource_common(url locator, loaded_resource_context& ctx) noexcept
+      : loaded_resource_base{std::move(locator)} {
+        derived().init(ctx);
+    }
+
+    /// @brief Constructor specifying the resource locator.
     loaded_resource_common(url locator, execution_context& ctx) noexcept
       : loaded_resource_base{std::move(locator)} {
         derived().init(ctx);
@@ -408,6 +352,11 @@ public:
     /// @brief Delay-initializes the resource.
     void init(resource_loader& loader) noexcept {
         _connect(loader);
+    }
+
+    /// @brief Delay-initializes the resource.
+    void init(loaded_resource_context& ctx) noexcept {
+        _connect(ctx.loader());
     }
 
     /// @brief Delay-initializes the resource.
@@ -432,9 +381,11 @@ public:
     }
 
     /// @brief Updates the resource, possibly doing resource load request.
-    auto load_if_needed(resource_loader& ldr, P... params) -> work_done {
+    auto load_if_needed(loaded_resource_context& ctx, P... params)
+      -> work_done {
         if(not is_loaded() and not is_loading()) {
-            if(const auto request{utils::request(ldr, locator(), params...)}) {
+            if(const auto request{ctx.loader().request(
+                 std::type_identity<Resource>{}, locator(), ctx, params...)}) {
                 _request_id = request.request_id();
             }
         }
@@ -443,27 +394,18 @@ public:
 
     /// @brief Updates the resource, possibly doing resource load request.
     auto load_if_needed(execution_context& ctx, Cp... params) -> work_done {
-        if(not is_loaded() and not is_loading()) {
-            if(const auto request{utils::request(ctx, locator(), params...)}) {
-                _request_id = request.request_id();
-            }
-        }
-        return is_loading();
+        return load_if_needed(ctx.resource_context(), std::move(params)...);
     }
 
     /// @brief Updates the resource, possibly doing resource load request.
     auto load_if_needed(execution_context& ctx, const std::tuple<P...>& params)
       -> work_done {
-        if(not is_loaded() and not is_loading()) {
-            if(const auto request{utils::request(
-                 ctx,
-                 locator(),
-                 params,
-                 std::make_index_sequence<sizeof...(P)>())}) {
-                _request_id = request.request_id();
-            }
-        }
-        return is_loading();
+        return load_if_needed(ctx, std::get<P>(params)...);
+    }
+
+    /// @brief Cleans up this resource.
+    void clean_up(loaded_resource_context& ctx) {
+        derived().clean_up(ctx.loader());
     }
 
     /// @brief Cleans up this resource.
@@ -640,8 +582,7 @@ export using shape_generator_resource =
 //------------------------------------------------------------------------------
 template <>
 struct get_resource_load_params<gl_geometry_and_bindings>
-  : std::type_identity<std::tuple<oglplus::shared_gl_api_context, span_size_t>> {
-};
+  : std::type_identity<std::tuple<span_size_t>> {};
 
 export template <>
 class loaded_resource<gl_geometry_and_bindings>
@@ -660,13 +601,13 @@ public:
     }
 
     /// @brief Cleans up this resource.
-    void clean_up(resource_loader& loader, video_context& video) {
-        clean_up(loader, video.gl_api());
+    void clean_up(loaded_resource_context& ctx) {
+        clean_up(ctx.loader(), ctx.gl_api());
     }
 
     /// @brief Cleans up this resource.
     void clean_up(execution_context& ctx) {
-        clean_up(ctx.loader(), ctx.main_video().gl_api());
+        clean_up(ctx.resource_context());
     }
 
     using common::load_if_needed;
@@ -735,8 +676,7 @@ export using value_tree_resource = loaded_resource<valtree::compound>;
 //------------------------------------------------------------------------------
 template <>
 struct get_resource_load_params<oglplus::owned_shader_name>
-  : std::type_identity<
-      std::tuple<oglplus::shared_gl_api_context, oglplus::shader_type>> {};
+  : std::type_identity<std::tuple<oglplus::shader_type>> {};
 
 export template <>
 class loaded_resource<oglplus::owned_shader_name>
@@ -755,13 +695,13 @@ public:
     }
 
     /// @brief Cleans up this resource.
-    void clean_up(resource_loader& loader, video_context& video) {
-        clean_up(loader, video.gl_api());
+    void clean_up(loaded_resource_context& ctx) {
+        clean_up(ctx.loader(), ctx.gl_api());
     }
 
     /// @brief Cleans up this resource.
     void clean_up(execution_context& ctx) {
-        clean_up(ctx.loader(), ctx.main_video().gl_api());
+        clean_up(ctx.resource_context());
     }
 
     auto assign(const typename common::base_load_info& info) noexcept -> bool {
@@ -772,7 +712,7 @@ export using gl_shader_resource = loaded_resource<oglplus::owned_shader_name>;
 //------------------------------------------------------------------------------
 template <>
 struct get_resource_load_params<oglplus::owned_program_name>
-  : std::type_identity<std::tuple<oglplus::shared_gl_api_context>> {};
+  : std::type_identity<std::tuple<>> {};
 
 export template <>
 struct resource_load_info<oglplus::owned_program_name> {
@@ -949,13 +889,13 @@ public:
     }
 
     /// @brief Cleans up this resource.
-    void clean_up(resource_loader& loader, video_context& video) {
-        clean_up(loader, video.gl_api());
+    void clean_up(loaded_resource_context& ctx) {
+        clean_up(ctx.loader(), ctx.gl_api());
     }
 
     /// @brief Cleans up this resource.
     void clean_up(execution_context& ctx) {
-        return clean_up(ctx.loader(), ctx.main_video());
+        clean_up(ctx.resource_context());
     }
 
     auto assign(const typename common::base_load_info& info) noexcept -> bool {
@@ -973,10 +913,8 @@ export using gl_program_resource = loaded_resource<oglplus::owned_program_name>;
 //------------------------------------------------------------------------------
 template <>
 struct get_resource_load_params<oglplus::owned_texture_name>
-  : std::type_identity<std::tuple<
-      oglplus::shared_gl_api_context,
-      oglplus::texture_target,
-      oglplus::texture_unit>> {};
+  : std::type_identity<
+      std::tuple<oglplus::texture_target, oglplus::texture_unit>> {};
 
 export template <>
 struct resource_load_info<oglplus::owned_texture_name> {
@@ -1029,13 +967,13 @@ public:
     }
 
     /// @brief Cleans up this resource.
-    void clean_up(resource_loader& loader, video_context& video) {
-        clean_up(loader, video.gl_api());
+    void clean_up(loaded_resource_context& ctx) {
+        clean_up(ctx.loader(), ctx.gl_api());
     }
 
     /// @brief Cleans up this resource.
     void clean_up(execution_context& ctx) {
-        clean_up(ctx.loader(), ctx.main_video().gl_api());
+        clean_up(ctx.resource_context());
     }
 
     auto assign(const typename common::base_load_info& info) noexcept -> bool {
@@ -1046,8 +984,7 @@ export using gl_texture_resource = loaded_resource<oglplus::owned_texture_name>;
 //------------------------------------------------------------------------------
 template <>
 struct get_resource_load_params<oglplus::owned_buffer_name>
-  : std::type_identity<
-      std::tuple<oglplus::shared_gl_api_context, oglplus::buffer_target>> {};
+  : std::type_identity<std::tuple<oglplus::buffer_target>> {};
 
 export template <>
 class loaded_resource<oglplus::owned_buffer_name>
@@ -1064,13 +1001,13 @@ public:
     }
 
     /// @brief Cleans up this resource.
-    void clean_up(resource_loader& loader, video_context& video) {
-        clean_up(loader, video.gl_api());
+    void clean_up(loaded_resource_context& ctx) {
+        clean_up(ctx.loader(), ctx.gl_api());
     }
 
     /// @brief Cleans up this resource.
     void clean_up(execution_context& ctx) {
-        clean_up(ctx.loader(), ctx.main_video().gl_api());
+        clean_up(ctx.resource_context());
     }
 
     auto assign(const typename common::base_load_info& info) noexcept -> bool {

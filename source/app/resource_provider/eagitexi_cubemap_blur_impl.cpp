@@ -254,7 +254,7 @@ auto eagitexi_cubemap_blur_io::prepare() noexcept -> msgbus::blob_preparation {
 
     const auto& GL = gl_api().constants();
     if(_cubemap.load_if_needed(
-         loader(), gl_context(), GL.texture_cube_map, GL.texture0)) {
+         resource_context(), GL.texture_cube_map, GL.texture0)) {
         return msgbus::blob_preparation::working;
     }
     if(_face_index < 6) {
@@ -289,7 +289,7 @@ eagitexi_cubemap_blur_io::eagitexi_cubemap_blur_io(
   , _buffer{*this, size * size * 4, nothing}
   , _screen{_build_screen()}
   , _prog{_build_program(params, sharpness)}
-  , _cubemap{std::move(source), loader()}
+  , _cubemap{std::move(source), resource_context()}
   , _size{size}
   , _tiles_per_side{std::max(size / _tile_size(), 1)} {
     _cubemap.loaded.connect(
@@ -303,7 +303,7 @@ eagitexi_cubemap_blur_io::eagitexi_cubemap_blur_io(
 }
 //------------------------------------------------------------------------------
 eagitexi_cubemap_blur_io::~eagitexi_cubemap_blur_io() noexcept {
-    _cubemap.clean_up(loader(), gl_api());
+    _cubemap.clean_up(resource_context());
 }
 //------------------------------------------------------------------------------
 // provider

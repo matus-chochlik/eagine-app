@@ -57,7 +57,8 @@ eagitexi_tiling_io::eagitexi_tiling_io(
 }
 //------------------------------------------------------------------------------
 auto eagitexi_tiling_io::prepare() noexcept -> msgbus::blob_preparation {
-    return _prep_result(_tiling.load_if_needed(_shared.loader));
+    loaded_resource_context context{_shared.loader};
+    return _prep_result(_tiling.load_if_needed(context));
 }
 //------------------------------------------------------------------------------
 void eagitexi_tiling_io::_process_cell(const byte b) {
@@ -317,7 +318,8 @@ void tiling_data::_process_cell(const byte b) {
 }
 //------------------------------------------------------------------------------
 auto tiling_data::is_loaded() noexcept -> bool {
-    _tiling.load_if_needed(_shared.loader);
+    loaded_resource_context context{_shared.loader};
+    _tiling.load_if_needed(context);
     return _tiling.is_loaded() and (_width > 0) and (_height > 0);
 }
 //------------------------------------------------------------------------------

@@ -421,7 +421,7 @@ inline auto make_all_hmi_providers(main_ctx_parent parent)
 //------------------------------------------------------------------------------
 execution_context::execution_context(main_ctx_parent parent) noexcept
   : main_ctx_object("AppExecCtx", parent)
-  , _loader{_registry.emplace<resource_loader>("RsrsLoadr")} {}
+  , _resource_context{_registry.emplace<resource_loader>("RsrsLoadr")} {}
 //------------------------------------------------------------------------------
 inline auto execution_context::_setup_providers() noexcept -> bool {
     const auto try_init{[&](auto provider) -> bool {
@@ -480,6 +480,18 @@ inline auto execution_context::_setup_providers() noexcept -> bool {
     }
 
     return true;
+}
+//------------------------------------------------------------------------------
+auto execution_context::resource_context() noexcept
+  -> loaded_resource_context& {
+    if(not _resource_context.gl_context()) [[unlikely]] {
+        _resource_context.set_gl_context(main_video().gl_context());
+    }
+    return _resource_context;
+}
+//------------------------------------------------------------------------------
+auto execution_context::loader() noexcept -> resource_loader& {
+    return resource_context().loader();
 }
 //------------------------------------------------------------------------------
 auto execution_context::buffer() const noexcept -> memory::buffer& {
