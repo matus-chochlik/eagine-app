@@ -119,10 +119,10 @@ class basic_resource_manager {
 
         template <typename... Args>
         resource_and_params(
-          execution_context& ec,
+          loaded_resource_context& ctx,
           url locator,
           Args&&... args) noexcept
-          : resource{std::move(locator), ec}
+          : resource{std::move(locator), ctx}
           , params{std::forward<Args>(args)...} {}
     };
 
@@ -133,8 +133,11 @@ class basic_resource_manager {
     using resource_storage = std::vector<unique_holder<adj_res_and_params<X>>>;
 
 public:
-    basic_resource_manager(execution_context& ctx) noexcept
+    basic_resource_manager(loaded_resource_context& ctx) noexcept
       : _ctx{ctx} {}
+
+    basic_resource_manager(execution_context& ctx) noexcept
+      : _ctx{ctx.resource_context()} {}
 
     template <typename Resource, typename... Args>
     [[nodiscard]] auto do_add(
@@ -148,7 +151,7 @@ public:
         return {res_vec.back()->resource};
     }
 
-    [[nodiscard]] auto context() const noexcept -> execution_context& {
+    [[nodiscard]] auto context() const noexcept -> loaded_resource_context& {
         return _ctx;
     }
 
@@ -226,7 +229,7 @@ private:
         }
     }
 
-    execution_context& _ctx;
+    loaded_resource_context& _ctx;
     std::tuple<resource_storage<Resources>...> _resources;
 };
 //------------------------------------------------------------------------------
