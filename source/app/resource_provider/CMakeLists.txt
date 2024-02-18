@@ -43,6 +43,7 @@ eagine_add_module(
 	eagine.app.resource_provider PARTITION common
 	IMPORTS
 		driver std
+		gl_context
 		eagine.core
 		eagine.msgbus
 		eagine.eglplus
