@@ -760,9 +760,6 @@ void pending_resource_info::handle_source_data(
   const pending_resource_info& rinfo,
   const span_size_t offset,
   const memory::span<const memory::const_block> data) noexcept {
-    if(_switch_context) {
-        _switch_context();
-    }
     switch(rinfo._kind) {
         case resource_kind::plain_text:
             _handle_plain_text(binfo, rinfo, offset, data);
@@ -820,20 +817,6 @@ auto resource_request_result::set_continuation(
 auto resource_request_result::set_continuation(resource_request_result& cont)
   const noexcept -> const resource_request_result& {
     info().set_continuation(cont._info);
-    return *this;
-}
-//------------------------------------------------------------------------------
-auto resource_request_result::set_context_switch(
-  callable_ref<void() noexcept> switch_context) const noexcept
-  -> const resource_request_result& {
-    info().set_context_switch(switch_context);
-    return *this;
-}
-//------------------------------------------------------------------------------
-auto resource_request_result::copy_context_switch_from(
-  resource_request_result& that) const noexcept
-  -> const resource_request_result& {
-    info().copy_context_switch_from(that.info());
     return *this;
 }
 //------------------------------------------------------------------------------

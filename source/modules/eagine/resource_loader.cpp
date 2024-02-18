@@ -151,15 +151,6 @@ public:
         _continuation = cont;
     }
 
-    void set_context_switch(
-      callable_ref<void() noexcept> switch_context) noexcept {
-        _switch_context = switch_context;
-    }
-
-    void copy_context_switch_from(pending_resource_info& that) noexcept {
-        _switch_context = that._switch_context;
-    }
-
     auto loader() noexcept -> resource_loader& {
         return _parent;
     }
@@ -429,7 +420,6 @@ private:
     const url _locator;
     std::string _label;
     weak_holder<pending_resource_info> _continuation{};
-    callable_ref<void() noexcept> _switch_context{};
 
     std::variant<
       std::monostate,
@@ -612,14 +602,6 @@ public:
 
     /// @brief Sets the reference to the continuation request of this request.
     auto set_continuation(resource_request_result& cont) const noexcept
-      -> const resource_request_result&;
-
-    /// @brief Sets the context switch function that is called when loading resource.
-    auto set_context_switch(callable_ref<void() noexcept> switch_context)
-      const noexcept -> const resource_request_result&;
-
-    /// @brief Copies the context switch function from other request.
-    auto copy_context_switch_from(resource_request_result& that) const noexcept
       -> const resource_request_result&;
 
 private:
