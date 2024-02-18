@@ -101,7 +101,7 @@ struct gl_rendered_source_params {
     valid_if_positive<int> surface_height{0};
 };
 //------------------------------------------------------------------------------
-struct gl_rendered_source_context {
+struct egl_rendered_source_context {
     eglplus::initialized_display display;
     eglplus::owned_surface_handle surface;
     eglplus::owned_context_handle context;
@@ -111,10 +111,11 @@ struct gl_rendered_source_context {
     }
 };
 //------------------------------------------------------------------------------
-struct egl_context_handler final : oglplus::gl_context_handler {
+class egl_context_handler final : public oglplus::gl_context_handler {
+public:
     egl_context_handler(
       shared_provider_objects&,
-      gl_rendered_source_context) noexcept;
+      egl_rendered_source_context) noexcept;
     ~egl_context_handler() noexcept final;
 
     auto shared() const noexcept -> shared_provider_objects&;
@@ -122,17 +123,21 @@ struct egl_context_handler final : oglplus::gl_context_handler {
     auto egl_api() const noexcept -> const eglplus::egl_api&;
     auto make_current() noexcept -> bool final;
 
+private:
     shared_provider_objects& _shared;
     eglplus::initialized_display _display;
     eglplus::owned_surface_handle _surface;
     eglplus::owned_context_handle _context;
 };
 //------------------------------------------------------------------------------
-class gl_rendered_source_blob_io : public compressed_buffer_source_blob_io {
+class gl_rendered_source_blob_context : public main_ctx_object {
 public:
-    static auto create_context(
-      shared_provider_objects&,
-      const gl_rendered_source_params&) noexcept -> gl_rendered_source_context;
+    gl_rendered_source_blob_context(
+      identifier id,
+      main_ctx_parent parent,
+      shared_provider_objects& shared,
+      egl_rendered_source_context,
+      const gl_rendered_source_params& params) noexcept;
 
     void debug_callback(
       oglplus::gl_types::enum_type source,
@@ -140,15 +145,6 @@ public:
       oglplus::gl_types::uint_type id,
       oglplus::gl_types::enum_type severity,
       string_view message) const noexcept;
-
-protected:
-    gl_rendered_source_blob_io(
-      identifier id,
-      main_ctx_parent parent,
-      shared_provider_objects& shared,
-      gl_rendered_source_context,
-      const gl_rendered_source_params& params,
-      span_size_t buffer_size) noexcept;
 
     auto shared() const noexcept -> shared_provider_objects&;
     auto resource_context() noexcept -> loaded_resource_context& {
@@ -169,6 +165,33 @@ private:
     loaded_resource_context _resource_context{shared().loader, _egl_context};
     oglplus::renderbuffer_object _color_rbo;
     oglplus::framebuffer_object _offscreen_fbo;
+};
+//------------------------------------------------------------------------------
+class gl_rendered_source_blob_io : public compressed_buffer_source_blob_io {
+public:
+    static auto create_context(
+      shared_provider_objects&,
+      const gl_rendered_source_params&) noexcept -> egl_rendered_source_context;
+
+protected:
+    gl_rendered_source_blob_io(
+      identifier id,
+      main_ctx_parent parent,
+      shared_provider_objects& shared,
+      egl_rendered_source_context,
+      const gl_rendered_source_params& params,
+      span_size_t buffer_size) noexcept;
+
+    auto shared() const noexcept -> shared_provider_objects&;
+    auto resource_context() noexcept -> loaded_resource_context&;
+    auto display() const noexcept -> eglplus::display_handle;
+    auto egl_api() const noexcept -> const eglplus::egl_api&;
+    auto gl_api() const noexcept -> const oglplus::gl_api&;
+
+    auto make_current() const noexcept -> bool;
+
+private:
+    shared_holder<gl_rendered_source_blob_context> _gl_context;
 };
 //------------------------------------------------------------------------------
 class ostream_io final : public msgbus::source_blob_io {

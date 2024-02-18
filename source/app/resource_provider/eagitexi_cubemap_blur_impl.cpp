@@ -24,7 +24,7 @@ public:
     eagitexi_cubemap_blur_io(
       main_ctx_parent,
       shared_provider_objects& shared,
-      gl_rendered_source_context context,
+      egl_rendered_source_context context,
       const gl_rendered_source_params& params,
       url source,
       int size,
@@ -281,7 +281,7 @@ auto eagitexi_cubemap_blur_io::prepare() noexcept -> msgbus::blob_preparation {
 eagitexi_cubemap_blur_io::eagitexi_cubemap_blur_io(
   main_ctx_parent parent,
   shared_provider_objects& shared,
-  gl_rendered_source_context context,
+  egl_rendered_source_context context,
   const gl_rendered_source_params& params,
   url source,
   int size,
