@@ -23,6 +23,16 @@ eagine_add_module(
 		eagine.app)
 
 eagine_add_module(
+	eagine.app.resource_provider PARTITION gl_context
+	IMPORTS
+		driver std
+		eagine.core
+		eagine.msgbus
+		eagine.eglplus
+		eagine.oglplus
+		eagine.app)
+
+eagine_add_module(
 	eagine.app.resource_provider PARTITION providers
 	IMPORTS
 		driver std
@@ -51,6 +61,7 @@ eagine_add_module(
 	SOURCES
 		special_args
 		external_apis
+		gl_context
 		driver
 		common
 		file
