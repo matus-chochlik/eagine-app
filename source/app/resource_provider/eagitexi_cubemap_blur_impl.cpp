@@ -327,6 +327,10 @@ public:
 
 private:
     shared_provider_objects& _shared;
+    application_config_value<int> _device_index{
+      main_context().config(),
+      "application.resource_provider.cubemap_blur.device_index",
+      -1};
 };
 //------------------------------------------------------------------------------
 eagitexi_cubemap_blur_provider::eagitexi_cubemap_blur_provider(
@@ -353,7 +357,9 @@ auto eagitexi_cubemap_blur_provider::get_resource_io(const url& locator)
         const auto level{q.arg_value_as<int>("level").value_or(0)};
 
         gl_rendered_source_params params{
-          .surface_width = size, .surface_height = size};
+          .device_index = _device_index.value(),
+          .surface_width = size,
+          .surface_height = size};
 
         q.arg_value_as<int>("device_index")
           .and_then(_1.assign_to(params.device_index));
