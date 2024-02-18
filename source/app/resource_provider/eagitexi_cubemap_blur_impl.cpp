@@ -23,9 +23,8 @@ class eagitexi_cubemap_blur_io final : public gl_rendered_source_blob_io {
 public:
     eagitexi_cubemap_blur_io(
       main_ctx_parent,
-      shared_provider_objects& shared,
-      egl_rendered_source_context context,
       const gl_rendered_source_params& params,
+      shared_holder<gl_rendered_source_blob_context>,
       url source,
       int size,
       int sharpness,
@@ -280,14 +279,13 @@ auto eagitexi_cubemap_blur_io::prepare() noexcept -> msgbus::blob_preparation {
 //------------------------------------------------------------------------------
 eagitexi_cubemap_blur_io::eagitexi_cubemap_blur_io(
   main_ctx_parent parent,
-  shared_provider_objects& shared,
-  egl_rendered_source_context context,
   const gl_rendered_source_params& params,
+  shared_holder<gl_rendered_source_blob_context> context,
   url source,
   int size,
   int sharpness,
   int level) noexcept
-  : gl_rendered_source_blob_io{"ITxCubBlur", parent, shared, std::move(context), params, size * size * 6}
+  : gl_rendered_source_blob_io{"ITxCubBlur", parent, std::move(context), size * size * 6}
   , _buffer{*this, size * size * 4, nothing}
   , _screen{_build_screen()}
   , _prog{_build_program(params, sharpness)}
@@ -360,14 +358,13 @@ auto eagitexi_cubemap_blur_provider::get_resource_io(const url& locator)
         q.arg_value_as<int>("device_index")
           .and_then(_1.assign_to(params.device_index));
 
-        if(auto context{
-             eagitexi_cubemap_blur_io::create_context(_shared, params)}) {
+        if(auto context{eagitexi_cubemap_blur_io::create_context(
+             as_parent(), _shared, params)}) {
             return {
               hold<eagitexi_cubemap_blur_io>,
               as_parent(),
-              _shared,
-              std::move(context),
               params,
+              std::move(context),
               q.arg_url("source"),
               size,
               sharpness,

@@ -154,6 +154,112 @@ void compressed_buffer_source_blob_io::finish() noexcept {
 //------------------------------------------------------------------------------
 // egl_context_handler
 //------------------------------------------------------------------------------
+auto egl_context_handler_display_bind_api(
+  const eglplus::egl_api& eglapi,
+  eglplus::initialized_display display) noexcept
+  -> eglplus::initialized_display {
+    if(display) {
+        const auto& [egl, EGL]{eglapi};
+        const auto apis{egl.get_client_api_bits(display)};
+        const bool has_gl{apis.has(EGL.opengl_bit)};
+        const bool has_gles{apis.has(EGL.opengl_es_bit)};
+        if(has_gl) {
+            egl.bind_api(EGL.opengl_api);
+        } else if(has_gles) {
+            egl.bind_api(EGL.opengl_es_api);
+        } else {
+            display.clean_up();
+        }
+    }
+    return display;
+}
+//------------------------------------------------------------------------------
+auto egl_context_handler_display_choose(
+  const eglplus::egl_api& eglapi,
+  const gl_rendered_source_params& params) noexcept
+  -> eglplus::initialized_display {
+    const bool select_device = params.device_index.has_value();
+    if(select_device) {
+        const auto& egl{eglapi.operations()};
+        if(const ok dev_count{egl.query_devices.count()}) {
+            const auto n{std_size(dev_count)};
+            std::vector<eglplus::egl_types::device_type> devices;
+            devices.resize(n);
+            if(egl.query_devices(cover(devices))) {
+                for(const auto cur_dev_idx : integer_range(n)) {
+                    bool matching_device = true;
+                    auto device = eglplus::device_handle(devices[cur_dev_idx]);
+
+                    if(params.device_index) {
+                        if(std_size(*params.device_index) != cur_dev_idx) {
+                            matching_device = false;
+                        }
+                    }
+
+                    // TODO: try additional parameters (vendor, driver name,...)
+                    if(matching_device) {
+                        return egl_context_handler_display_bind_api(
+                          eglapi, egl.get_open_platform_display(device));
+                    }
+                }
+            }
+        }
+    }
+    return {};
+}
+//------------------------------------------------------------------------------
+auto egl_context_handler_open_display(
+  shared_provider_objects& shared,
+  const gl_rendered_source_params& params) noexcept
+  -> eglplus::initialized_display {
+    if(const auto eglapi{shared.apis.egl()}) {
+        const auto& egl{eglapi->operations()};
+        if(egl.EXT_device_enumeration) {
+            if(auto display{
+                 egl_context_handler_display_choose(*eglapi, params)}) {
+                return display;
+            }
+        }
+        return egl_context_handler_display_bind_api(
+          *eglapi, egl.get_open_display());
+    }
+    return {};
+}
+//------------------------------------------------------------------------------
+auto egl_context_handler::create_context(
+  shared_provider_objects& shared,
+  const gl_rendered_source_params& params,
+  const eglplus::config_attributes config_attribs,
+  const eglplus::surface_attributes surface_attribs,
+  const eglplus::context_attributes context_attribs) noexcept
+  -> egl_rendered_source_context {
+
+    if(auto display{egl_context_handler_open_display(shared, params)}) {
+        const auto& egl{shared.apis.egl()->operations()};
+
+        if(const ok config{egl.choose_config(display, config_attribs)}) {
+
+            if(ok surface{egl.create_pbuffer_surface(
+                 display, config, surface_attribs)}) {
+
+                if(ok context{egl.create_context(
+                     display,
+                     config,
+                     eglplus::context_handle{},
+                     context_attribs)}) {
+                    if(egl.make_current(display, surface, context)) {
+                        return {
+                          .display = std::move(display),
+                          .surface = std::move(surface.get()),
+                          .context = std::move(context.get())};
+                    }
+                }
+            }
+        }
+    }
+    return {};
+}
+//------------------------------------------------------------------------------
 egl_context_handler::egl_context_handler(
   shared_provider_objects& shared,
   egl_rendered_source_context context) noexcept
@@ -195,12 +301,11 @@ auto egl_context_handler::make_current() noexcept -> bool {
 // gl_rendered_source_blob_context
 //------------------------------------------------------------------------------
 gl_rendered_source_blob_context::gl_rendered_source_blob_context(
-  identifier id,
   main_ctx_parent parent,
   shared_provider_objects& shared,
-  egl_rendered_source_context context,
-  const gl_rendered_source_params& params) noexcept
-  : main_ctx_object{id, parent}
+  const gl_rendered_source_params& params,
+  egl_rendered_source_context context) noexcept
+  : main_ctx_object{"GLRSBlbCtx", parent}
   , _egl_context{default_selector, shared, std::move(context)}
   , _color_rbo{_resource_context.gl_api().gen_renderbuffers.object()}
   , _offscreen_fbo{_resource_context.gl_api().gen_framebuffers.object()} {
@@ -302,139 +407,62 @@ auto gl_rendered_source_blob_context::gl_api() const noexcept
 //------------------------------------------------------------------------------
 // gl_rendered_source_blob_io
 //------------------------------------------------------------------------------
-gl_rendered_source_blob_io::gl_rendered_source_blob_io(
-  identifier id,
-  main_ctx_parent parent,
+auto gl_rendered_source_blob_io::config_attribs(
   shared_provider_objects& shared,
-  egl_rendered_source_context context,
-  const gl_rendered_source_params& params,
-  span_size_t buffer_size) noexcept
-  : compressed_buffer_source_blob_io{id, parent, buffer_size}
-  , _gl_context{default_selector, id, *this, shared, std::move(context), params} {
+  const gl_rendered_source_params&) noexcept -> eglplus::config_attributes {
+    const auto& EGL{shared.apis.egl()->constants()};
+    return (EGL.buffer_size | 32) + (EGL.red_size | 8) + (EGL.green_size | 8) +
+           (EGL.blue_size | 8) + (EGL.alpha_size | 8) +
+           (EGL.depth_size | EGL.dont_care) +
+           (EGL.stencil_size | EGL.dont_care) +
+           (EGL.color_buffer_type | EGL.rgb_buffer) +
+           (EGL.surface_type | EGL.pbuffer_bit) +
+           (EGL.renderable_type | (EGL.opengl_bit | EGL.opengl_es3_bit));
 }
 //------------------------------------------------------------------------------
-auto gl_rendered_source_blob_io_display_bind_api(
-  const eglplus::egl_api& eglapi,
-  eglplus::initialized_display display) noexcept
-  -> eglplus::initialized_display {
-    if(display) {
-        const auto& [egl, EGL]{eglapi};
-        const auto apis{egl.get_client_api_bits(display)};
-        const bool has_gl{apis.has(EGL.opengl_bit)};
-        const bool has_gles{apis.has(EGL.opengl_es_bit)};
-        if(has_gl) {
-            egl.bind_api(EGL.opengl_api);
-        } else if(has_gles) {
-            egl.bind_api(EGL.opengl_es_api);
-        } else {
-            display.clean_up();
-        }
-    }
-    return display;
-}
-//------------------------------------------------------------------------------
-auto gl_rendered_source_blob_io_display_choose(
-  const eglplus::egl_api& eglapi,
-  const gl_rendered_source_params& params) noexcept
-  -> eglplus::initialized_display {
-    const bool select_device = params.device_index.has_value();
-    if(select_device) {
-        const auto& egl{eglapi.operations()};
-        if(const ok dev_count{egl.query_devices.count()}) {
-            const auto n{std_size(dev_count)};
-            std::vector<eglplus::egl_types::device_type> devices;
-            devices.resize(n);
-            if(egl.query_devices(cover(devices))) {
-                for(const auto cur_dev_idx : integer_range(n)) {
-                    bool matching_device = true;
-                    auto device = eglplus::device_handle(devices[cur_dev_idx]);
-
-                    if(params.device_index) {
-                        if(std_size(*params.device_index) != cur_dev_idx) {
-                            matching_device = false;
-                        }
-                    }
-
-                    // TODO: try additional parameters (vendor, driver name,...)
-                    if(matching_device) {
-                        return gl_rendered_source_blob_io_display_bind_api(
-                          eglapi, egl.get_open_platform_display(device));
-                    }
-                }
-            }
-        }
-    }
-    return {};
-}
-//------------------------------------------------------------------------------
-auto gl_rendered_source_blob_io_open_display(
+auto gl_rendered_source_blob_io::surface_attribs(
   shared_provider_objects& shared,
   const gl_rendered_source_params& params) noexcept
-  -> eglplus::initialized_display {
-    if(const auto eglapi{shared.apis.egl()}) {
-        const auto& egl{eglapi->operations()};
-        if(egl.EXT_device_enumeration) {
-            if(auto display{
-                 gl_rendered_source_blob_io_display_choose(*eglapi, params)}) {
-                return display;
-            }
-        }
-        return gl_rendered_source_blob_io_display_bind_api(
-          *eglapi, egl.get_open_display());
-    }
-    return {};
+  -> eglplus::surface_attributes {
+    const auto& EGL{shared.apis.egl()->constants()};
+    return (EGL.width | params.surface_width.value()) +
+           (EGL.height | params.surface_height.value());
+}
+//------------------------------------------------------------------------------
+auto gl_rendered_source_blob_io::context_attribs(
+  shared_provider_objects& shared,
+  const gl_rendered_source_params&) noexcept -> eglplus::context_attributes {
+    const auto& EGL{shared.apis.egl()->constants()};
+    return (EGL.context_opengl_profile_mask |
+            EGL.context_opengl_core_profile_bit) +
+           (EGL.context_major_version | 3) + (EGL.context_minor_version | 3) +
+           (EGL.context_opengl_debug | debug_build) +
+           (EGL.context_opengl_robust_access | true);
 }
 //------------------------------------------------------------------------------
 auto gl_rendered_source_blob_io::create_context(
+  main_ctx_parent parent,
   shared_provider_objects& shared,
   const gl_rendered_source_params& params) noexcept
-  -> egl_rendered_source_context {
-
-    if(auto display{gl_rendered_source_blob_io_open_display(shared, params)}) {
-        const auto& [egl, EGL]{*shared.apis.egl()};
-
-        const auto config_attribs =
-          (EGL.buffer_size | 32) + (EGL.red_size | 8) + (EGL.green_size | 8) +
-          (EGL.blue_size | 8) + (EGL.alpha_size | 8) +
-          (EGL.depth_size | EGL.dont_care) +
-          (EGL.stencil_size | EGL.dont_care) +
-          (EGL.color_buffer_type | EGL.rgb_buffer) +
-          (EGL.surface_type | EGL.pbuffer_bit) +
-          (EGL.renderable_type | (EGL.opengl_bit | EGL.opengl_es3_bit));
-
-        if(const ok config{egl.choose_config(display, config_attribs)}) {
-
-            const auto surface_attribs =
-              (EGL.width | params.surface_width.value()) +
-              (EGL.height | params.surface_height.value());
-
-            if(ok surface{egl.create_pbuffer_surface(
-                 display, config, surface_attribs)}) {
-                const auto context_attribs =
-                  (EGL.context_opengl_profile_mask |
-                   EGL.context_opengl_core_profile_bit) +
-                  (EGL.context_major_version | 3) +
-                  (EGL.context_minor_version | 3) +
-                  (EGL.context_opengl_debug | debug_build) +
-                  (EGL.context_opengl_robust_access | true);
-
-                if(ok context{egl.create_context(
-                     display,
-                     config,
-                     eglplus::context_handle{},
-                     context_attribs)}) {
-                    if(egl.make_current(display, surface, context)) {
-                        return {
-                          .display = std::move(display),
-                          .surface = std::move(surface.get()),
-                          .context = std::move(context.get())};
-                    }
-                }
-            }
-        }
+  -> shared_holder<gl_rendered_source_blob_context> {
+    if(auto context{egl_context_handler::create_context(
+         shared,
+         params,
+         config_attribs(shared, params),
+         surface_attribs(shared, params),
+         context_attribs(shared, params))}) {
+        return {default_selector, parent, shared, params, std::move(context)};
     }
     return {};
 }
+//------------------------------------------------------------------------------
+gl_rendered_source_blob_io::gl_rendered_source_blob_io(
+  identifier id,
+  main_ctx_parent parent,
+  shared_holder<gl_rendered_source_blob_context> gl_context,
+  span_size_t buffer_size) noexcept
+  : compressed_buffer_source_blob_io{id, parent, buffer_size}
+  , _gl_context{std::move(gl_context)} {}
 //------------------------------------------------------------------------------
 auto gl_rendered_source_blob_io::make_current() const noexcept -> bool {
     return _gl_context->make_current();

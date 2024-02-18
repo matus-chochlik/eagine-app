@@ -113,6 +113,14 @@ struct egl_rendered_source_context {
 //------------------------------------------------------------------------------
 class egl_context_handler final : public oglplus::gl_context_handler {
 public:
+    static auto create_context(
+      shared_provider_objects&,
+      const gl_rendered_source_params&,
+      const eglplus::config_attributes,
+      const eglplus::surface_attributes,
+      const eglplus::context_attributes) noexcept
+      -> egl_rendered_source_context;
+
     egl_context_handler(
       shared_provider_objects&,
       egl_rendered_source_context) noexcept;
@@ -133,11 +141,10 @@ private:
 class gl_rendered_source_blob_context : public main_ctx_object {
 public:
     gl_rendered_source_blob_context(
-      identifier id,
       main_ctx_parent parent,
       shared_provider_objects& shared,
-      egl_rendered_source_context,
-      const gl_rendered_source_params& params) noexcept;
+      const gl_rendered_source_params& params,
+      egl_rendered_source_context) noexcept;
 
     void debug_callback(
       oglplus::gl_types::enum_type source,
@@ -170,16 +177,16 @@ private:
 class gl_rendered_source_blob_io : public compressed_buffer_source_blob_io {
 public:
     static auto create_context(
-      shared_provider_objects&,
-      const gl_rendered_source_params&) noexcept -> egl_rendered_source_context;
+      main_ctx_parent parent,
+      shared_provider_objects& shared,
+      const gl_rendered_source_params& params) noexcept
+      -> shared_holder<gl_rendered_source_blob_context>;
 
 protected:
     gl_rendered_source_blob_io(
       identifier id,
       main_ctx_parent parent,
-      shared_provider_objects& shared,
-      egl_rendered_source_context,
-      const gl_rendered_source_params& params,
+      shared_holder<gl_rendered_source_blob_context>,
       span_size_t buffer_size) noexcept;
 
     auto shared() const noexcept -> shared_provider_objects&;
@@ -191,6 +198,18 @@ protected:
     auto make_current() const noexcept -> bool;
 
 private:
+    static auto config_attribs(
+      shared_provider_objects&,
+      const gl_rendered_source_params&) noexcept -> eglplus::config_attributes;
+
+    static auto surface_attribs(
+      shared_provider_objects&,
+      const gl_rendered_source_params&) noexcept -> eglplus::surface_attributes;
+
+    static auto context_attribs(
+      shared_provider_objects&,
+      const gl_rendered_source_params&) noexcept -> eglplus::context_attributes;
+
     shared_holder<gl_rendered_source_blob_context> _gl_context;
 };
 //------------------------------------------------------------------------------
