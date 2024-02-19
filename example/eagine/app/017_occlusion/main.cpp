@@ -241,7 +241,7 @@ public:
         if(auto opt_vc{ec.video_ctx()}) {
             auto& vc = *opt_vc;
             vc.begin();
-            if(vc.init_gl_api()) {
+            if(vc.init_gl_api(ec)) {
                 if(check_requirements(vc)) {
                     std::string shape_file_path;
                     ec.app_config().fetch("example.shape", shape_file_path);

@@ -171,10 +171,10 @@ public:
             auto& vc = *opt_vc;
             auto& ac = *opt_ac;
             vc.begin();
-            if(vc.init_gl_api()) {
+            if(vc.init_gl_api(ec)) {
                 if(check_requirements(vc)) {
                     ac.begin();
-                    if(ac.init_al_api()) {
+                    if(ac.init_al_api(ec)) {
                         if(check_requirements(ac)) {
                             return {hold<example_info>, ec, vc, ac};
                         } else {

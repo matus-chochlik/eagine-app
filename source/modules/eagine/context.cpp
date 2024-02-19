@@ -74,7 +74,7 @@ public:
     /// @brief Tries to intialize the GL rendering API in this video context.
     /// @see has_gl_api
     /// @see gl_api
-    auto init_gl_api() noexcept -> bool;
+    auto init_gl_api(execution_context&) noexcept -> bool;
 
     /// @brief Returns the shared GL API context wrapper.
     auto gl_context() const noexcept -> oglplus::shared_gl_api_context {
@@ -220,7 +220,7 @@ public:
 
     /// @brief Tries to intialize the AL sound API in this video context.
     /// @see al_ref
-    auto init_al_api() noexcept -> bool;
+    auto init_al_api(execution_context&) noexcept -> bool;
 
     /// @brief Returns a reference to the AL sound API in this context.
     /// @see with_al
@@ -354,46 +354,28 @@ public:
     auto enough_frames(const span_size_t frame_no) const noexcept -> bool;
 
     /// @brief Returns the count of created video contexts.
-    auto video_ctx_count() const noexcept {
-        return span_size(_video_contexts.size());
-    }
+    auto video_ctx_count() const noexcept -> span_size_t;
 
     /// @brief Returns the video context at the specified index.
     auto video_ctx(const span_size_t index = 0) const noexcept
-      -> optional_reference<video_context> {
-        if((index >= 0) and (index < video_ctx_count())) {
-            return _video_contexts[integer(index)].get();
-        }
-        return {};
-    }
+      -> optional_reference<video_context>;
 
     /// @brief Returns the main video context.
-    auto main_video() const noexcept -> video_context& {
-        assert(not _video_contexts.empty());
-        assert(_video_contexts.front());
-        return *_video_contexts.front();
-    }
+    auto main_video() const noexcept -> video_context&;
+
+    auto gl_initialized(video_context&) noexcept -> execution_context&;
 
     /// @brief Returns the count of created audio contexts.
-    auto audio_ctx_count() const noexcept {
-        return span_size(_audio_contexts.size());
-    }
+    auto audio_ctx_count() const noexcept -> span_size_t;
 
     /// @brief Returns the audio context at the specified index.
     auto audio_ctx(const span_size_t index = 0) const noexcept
-      -> optional_reference<audio_context> {
-        if((index >= 0) and (index < audio_ctx_count())) {
-            return _audio_contexts[integer(index)].get();
-        }
-        return {};
-    }
+      -> optional_reference<audio_context>;
 
     /// @brief Returns the main audio context.
-    auto main_audio() const noexcept -> audio_context& {
-        assert(not _audio_contexts.empty());
-        assert(_audio_contexts.front());
-        return *_audio_contexts.front();
-    }
+    auto main_audio() const noexcept -> audio_context&;
+
+    auto al_initialized(audio_context&) noexcept -> execution_context&;
 
     /// @brief Returns the canonical device id for application gui inputs.
     constexpr auto app_gui_device_id() const noexcept -> identifier {

@@ -187,7 +187,7 @@ public:
         return ec.video_ctx().and_then(
           [this, &ec](auto& vc) -> unique_holder<application> {
               vc.begin();
-              if(vc.init_gl_api()) {
+              if(vc.init_gl_api(ec)) {
                   if(check_requirements(vc)) {
                       return {hold<example_arrow>, ec, vc, _gen};
                   }

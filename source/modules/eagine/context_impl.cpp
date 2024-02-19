@@ -285,9 +285,10 @@ video_context::video_context(
     _provider->parent_context_changed(*this);
 }
 //------------------------------------------------------------------------------
-auto video_context::init_gl_api() noexcept -> bool {
+auto video_context::init_gl_api(execution_context& ec) noexcept -> bool {
     try {
         _gl_api_context.ensure();
+        ec.gl_initialized(*this);
         const auto& [gl, GL] = gl_api();
 
         const auto found{eagine::find(
@@ -396,10 +397,11 @@ void audio_context::commit() {
     _provider->audio_commit(_parent);
 }
 //------------------------------------------------------------------------------
-auto audio_context::init_al_api() noexcept -> bool {
+auto audio_context::init_al_api(execution_context& ec) noexcept -> bool {
     try {
         _al_api.emplace();
         _alut_api.emplace();
+        ec.al_initialized(*this);
     } catch(...) {
     }
     return bool(_al_api);
@@ -484,11 +486,6 @@ inline auto execution_context::_setup_providers() noexcept -> bool {
 //------------------------------------------------------------------------------
 auto execution_context::resource_context() noexcept
   -> loaded_resource_context& {
-    if(not _resource_context.gl_context()) [[unlikely]] {
-        if(not _video_contexts.empty()) {
-            _resource_context.set_gl_context(main_video().gl_context());
-        }
-    }
     return _resource_context;
 }
 //------------------------------------------------------------------------------
@@ -512,6 +509,55 @@ auto execution_context::enough_run_time() const noexcept -> bool {
 auto execution_context::enough_frames(const span_size_t frame_no) const noexcept
   -> bool {
     return options().enough_frames(frame_no);
+}
+//------------------------------------------------------------------------------
+auto execution_context::video_ctx_count() const noexcept -> span_size_t {
+    return span_size(_video_contexts.size());
+}
+//------------------------------------------------------------------------------
+auto execution_context::video_ctx(const span_size_t index) const noexcept
+  -> optional_reference<video_context> {
+    if((index >= 0) and (index < video_ctx_count())) {
+        return _video_contexts[integer(index)].get();
+    }
+    return {};
+}
+//------------------------------------------------------------------------------
+auto execution_context::main_video() const noexcept -> video_context& {
+    assert(not _video_contexts.empty());
+    assert(_video_contexts.front());
+    return *_video_contexts.front();
+}
+//------------------------------------------------------------------------------
+auto execution_context::gl_initialized(video_context& video) noexcept
+  -> execution_context& {
+    if(not _resource_context.gl_context()) {
+        _resource_context.set_gl_context(video.gl_context());
+    }
+    return *this;
+}
+//------------------------------------------------------------------------------
+auto execution_context::audio_ctx_count() const noexcept -> span_size_t {
+    return span_size(_audio_contexts.size());
+}
+//------------------------------------------------------------------------------
+auto execution_context::audio_ctx(const span_size_t index) const noexcept
+  -> optional_reference<audio_context> {
+    if((index >= 0) and (index < audio_ctx_count())) {
+        return _audio_contexts[integer(index)].get();
+    }
+    return {};
+}
+//------------------------------------------------------------------------------
+auto execution_context::main_audio() const noexcept -> audio_context& {
+    assert(not _audio_contexts.empty());
+    assert(_audio_contexts.front());
+    return *_audio_contexts.front();
+}
+//------------------------------------------------------------------------------
+auto execution_context::al_initialized(audio_context&) noexcept
+  -> execution_context& {
+    return *this;
 }
 //------------------------------------------------------------------------------
 auto execution_context::prepare(unique_holder<launchpad> pad)
