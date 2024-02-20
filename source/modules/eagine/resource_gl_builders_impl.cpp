@@ -236,7 +236,7 @@ public:
       oglplus::texture_target target,
       const resource_gl_texture_image_params& params) noexcept
       : base{"GLtxiBuldr", std::move(info)}
-      , _tex_data{*this, 512 * 512 * 4, nothing}
+      , _tex_data{*this, 1024 * 1024 * 4, nothing}
       , _target{target}
       , _params{params} {}
 
@@ -436,7 +436,7 @@ public:
       oglplus::texture_unit tex_unit) noexcept
       : base{"GLtexBuldr", info}
       , _gl_context{std::move(gl_context)}
-      , _tex_data{*this}
+      , _tex_data{*this, 1024 * 1024 * 4}
       , _tex_target{tex_target}
       , _tex_unit{tex_unit} {}
 
