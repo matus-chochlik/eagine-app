@@ -83,33 +83,33 @@ void pending_resource_info::add_shape_generator(
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::add_gl_shape_context(
-  oglplus::shared_gl_api_context gl_context) noexcept {
-    _state = _pending_gl_shape_state{.gl_context = std::move(gl_context)};
+  const oglplus::shared_gl_api_context& gl_context) noexcept {
+    _state = _pending_gl_shape_state{.gl_context = gl_context};
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::add_gl_geometry_and_bindings_context(
-  oglplus::shared_gl_api_context gl_context,
+  const oglplus::shared_gl_api_context& gl_context,
   oglplus::vertex_attrib_bindings bindings,
   span_size_t draw_var_idx) noexcept {
     _state = _pending_gl_geometry_and_bindings_state{
-      .gl_context = std::move(gl_context),
+      .gl_context = gl_context,
       .bindings = std::move(bindings),
       .draw_var_idx = draw_var_idx};
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::add_gl_shader_context(
-  oglplus::shared_gl_api_context gl_context,
+  const oglplus::shared_gl_api_context& gl_context,
   oglplus::shader_type shdr_type) noexcept {
     _state = _pending_gl_shader_state{
-      .gl_context = std::move(gl_context), .shdr_type = shdr_type};
+      .gl_context = gl_context, .shdr_type = shdr_type};
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::add_gl_program_context(
-  oglplus::shared_gl_api_context gl_context) noexcept {
+  const oglplus::shared_gl_api_context& gl_context) noexcept {
     oglplus::owned_program_name prog;
     gl_context.gl_api().create_program() >> prog;
     _state = _pending_gl_program_state{
-      .gl_context = std::move(gl_context), .prog = std::move(prog)};
+      .gl_context = gl_context, .prog = std::move(prog)};
 }
 //------------------------------------------------------------------------------
 auto pending_resource_info::add_gl_program_shader_request(
@@ -155,25 +155,25 @@ auto pending_resource_info::add_gl_texture_image_request(
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::add_gl_texture_update_context(
-  oglplus::shared_gl_api_context gl_context,
+  const oglplus::shared_gl_api_context& gl_context,
   oglplus::texture_target target,
   oglplus::texture_unit unit,
   oglplus::texture_name tex) noexcept {
     _state = _pending_gl_texture_update_state{
-      .gl_context = std::move(gl_context),
+      .gl_context = gl_context,
       .tex_target = target,
       .tex_unit = unit,
       .tex = tex};
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::add_gl_texture_context(
-  oglplus::shared_gl_api_context gl_context,
+  const oglplus::shared_gl_api_context& gl_context,
   oglplus::texture_target target,
   oglplus::texture_unit unit) noexcept {
     oglplus::owned_texture_name tex;
     gl_context.gl_api().gen_textures() >> tex;
     _state = _pending_gl_texture_state{
-      .gl_context = std::move(gl_context),
+      .gl_context = gl_context,
       .tex_target = target,
       .tex_unit = unit,
       .tex = std::move(tex)};
@@ -189,14 +189,12 @@ void pending_resource_info::handle_gl_buffer_data(
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::add_gl_buffer_context(
-  oglplus::shared_gl_api_context gl_context,
+  const oglplus::shared_gl_api_context& gl_context,
   oglplus::buffer_target target) noexcept {
     oglplus::owned_buffer_name buf;
     gl_context.gl_api().gen_buffers() >> buf;
     _state = _pending_gl_buffer_state{
-      .gl_context = std::move(gl_context),
-      .buf_target = target,
-      .buf = std::move(buf)};
+      .gl_context = gl_context, .buf_target = target, .buf = std::move(buf)};
 }
 //------------------------------------------------------------------------------
 auto pending_resource_info::update() noexcept -> work_done {
@@ -1180,12 +1178,12 @@ auto resource_loader::request(
 //------------------------------------------------------------------------------
 auto resource_loader::request_gl_shape(
   url locator,
-  oglplus::shared_gl_api_context gl_context) noexcept
+  const oglplus::shared_gl_api_context& gl_context) noexcept
   -> resource_request_result {
     if(const auto src_request{request_shape_generator(locator)}) {
         auto new_request{
           _new_resource(std::move(locator), resource_kind::gl_shape)};
-        new_request.info().add_gl_shape_context(std::move(gl_context));
+        new_request.info().add_gl_shape_context(gl_context);
         src_request.set_continuation(new_request);
         return new_request;
     }
@@ -1201,14 +1199,14 @@ auto resource_loader::request(
 //------------------------------------------------------------------------------
 auto resource_loader::request_gl_geometry_and_bindings(
   url locator,
-  oglplus::shared_gl_api_context gl_context,
+  const oglplus::shared_gl_api_context& gl_context,
   oglplus::vertex_attrib_bindings bindings,
   span_size_t draw_var_idx) noexcept -> resource_request_result {
     if(const auto src_request{request_gl_shape(locator, gl_context)}) {
         auto new_request{_new_resource(
           std::move(locator), resource_kind::gl_geometry_and_bindings)};
         new_request.info().add_gl_geometry_and_bindings_context(
-          std::move(gl_context), std::move(bindings), draw_var_idx);
+          gl_context, std::move(bindings), draw_var_idx);
         src_request.set_continuation(new_request);
         return new_request;
     }
@@ -1228,10 +1226,10 @@ auto resource_loader::request(
 //------------------------------------------------------------------------------
 auto resource_loader::request_gl_geometry_and_bindings(
   url locator,
-  oglplus::shared_gl_api_context gl_context,
+  const oglplus::shared_gl_api_context& gl_context,
   span_size_t draw_var_idx) noexcept -> resource_request_result {
     return request_gl_geometry_and_bindings(
-      std::move(locator), std::move(gl_context), {}, draw_var_idx);
+      std::move(locator), gl_context, {}, draw_var_idx);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request(
@@ -1265,13 +1263,12 @@ auto resource_loader::request_glsl_source(url locator) noexcept
 //------------------------------------------------------------------------------
 auto resource_loader::request_gl_shader(
   url locator,
-  oglplus::shared_gl_api_context gl_context,
+  const oglplus::shared_gl_api_context& gl_context,
   oglplus::shader_type shdr_type) noexcept -> resource_request_result {
     if(const auto src_request{request_glsl_source(locator)}) {
         auto new_request{
           _new_resource(std::move(locator), resource_kind::gl_shader)};
-        new_request.info().add_gl_shader_context(
-          std::move(gl_context), shdr_type);
+        new_request.info().add_gl_shader_context(gl_context, shdr_type);
         src_request.set_continuation(new_request);
         return new_request;
     }
@@ -1288,7 +1285,7 @@ auto resource_loader::request(
 //------------------------------------------------------------------------------
 auto resource_loader::request_gl_shader(
   url locator,
-  oglplus::shared_gl_api_context gl_context) noexcept
+  const oglplus::shared_gl_api_context& gl_context) noexcept
   -> resource_request_result {
     if(const auto type_arg{locator.argument("shader_type")}) {
         const auto& GL = gl_context.gl_api().constants();
@@ -1326,7 +1323,7 @@ auto resource_loader::request(
 //------------------------------------------------------------------------------
 auto resource_loader::request_gl_program(
   url locator,
-  oglplus::shared_gl_api_context gl_context) noexcept
+  const oglplus::shared_gl_api_context& gl_context) noexcept
   -> resource_request_result {
     auto new_request{_new_resource(locator, resource_kind::gl_program)};
     new_request.info().add_gl_program_context(gl_context);
@@ -1364,7 +1361,7 @@ auto resource_loader::request_gl_texture_image(
 //------------------------------------------------------------------------------
 auto resource_loader::request_gl_texture_update(
   url locator,
-  oglplus::shared_gl_api_context gl_context,
+  const oglplus::shared_gl_api_context& gl_context,
   oglplus::texture_target target,
   oglplus::texture_unit unit,
   oglplus::texture_name tex) noexcept -> resource_request_result {
@@ -1372,7 +1369,7 @@ auto resource_loader::request_gl_texture_update(
         auto new_request{
           _new_resource(locator, resource_kind::gl_texture_update)};
         new_request.info().add_gl_texture_update_context(
-          std::move(gl_context), target, unit, tex);
+          gl_context, target, unit, tex);
         src_request.set_continuation(new_request);
         return new_request;
     }
@@ -1381,7 +1378,7 @@ auto resource_loader::request_gl_texture_update(
 //------------------------------------------------------------------------------
 auto resource_loader::request_gl_texture(
   url locator,
-  oglplus::shared_gl_api_context gl_context,
+  const oglplus::shared_gl_api_context& gl_context,
   oglplus::texture_target target,
   oglplus::texture_unit unit) noexcept -> resource_request_result {
     auto new_request{_new_resource(locator, resource_kind::gl_texture)};
@@ -1409,7 +1406,7 @@ auto resource_loader::request(
 //------------------------------------------------------------------------------
 auto resource_loader::request_gl_buffer(
   url locator,
-  oglplus::shared_gl_api_context gl_context,
+  const oglplus::shared_gl_api_context& gl_context,
   oglplus::buffer_target target) noexcept -> resource_request_result {
     auto new_request{_new_resource(locator, resource_kind::gl_buffer)};
     new_request.info().add_gl_buffer_context(gl_context, target);

@@ -870,7 +870,7 @@ public:
 
     /// @brief Binds the location of a input attribute variable.
     auto bind(
-      oglplus::gl_api& glapi,
+      const oglplus::gl_api& glapi,
       const oglplus::vertex_attrib_location loc,
       const string_view& var_name) -> loaded_resource& {
         glapi.BindAttribLocation(

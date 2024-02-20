@@ -32,7 +32,7 @@ class video_context_state {
 public:
     video_context_state(execution_context&, const video_options&) noexcept;
 
-    auto init_framebuffer(execution_context&, oglplus::gl_api&) noexcept
+    auto init_framebuffer(execution_context&, const oglplus::gl_api&) noexcept
       -> bool;
 
     auto doing_framedump() const noexcept -> bool;
@@ -40,7 +40,8 @@ public:
     auto framedump_number(const long frame_no) const noexcept
       -> valid_if_nonnegative<long>;
 
-    auto commit(long frame_number, video_provider&, oglplus::gl_api&) -> bool;
+    auto commit(long frame_number, video_provider&, const oglplus::gl_api&)
+      -> bool;
 
     void add_cleanup_op(callable_ref<void(video_context&) noexcept> op);
 
@@ -50,7 +51,7 @@ private:
     auto _dump_frame(
       const long frame_number,
       video_provider& provider,
-      oglplus::gl_api& api) -> bool;
+      const oglplus::gl_api& api) -> bool;
 
     void _clean_up(auto&) noexcept;
 
@@ -88,7 +89,7 @@ inline video_context_state::video_context_state(
 //------------------------------------------------------------------------------
 inline auto video_context_state::init_framebuffer(
   execution_context&,
-  oglplus::gl_api&) noexcept -> bool {
+  const oglplus::gl_api&) noexcept -> bool {
     if(_options.needs_offscreen_framebuffer()) {
         // TODO: check options and make RBOs and FBO
     }
@@ -107,7 +108,7 @@ auto video_context_state::framedump_number(const long frame_no) const noexcept
 auto video_context_state::_dump_frame(
   const long frame_number,
   video_provider& provider,
-  oglplus::gl_api& api) -> bool {
+  const oglplus::gl_api& api) -> bool {
     bool result = true;
     const auto& [gl, GL] = api;
 
@@ -219,7 +220,7 @@ auto video_context_state::_dump_frame(
 inline auto video_context_state::commit(
   const long frame_number,
   video_provider& provider,
-  oglplus::gl_api& api) -> bool {
+  const oglplus::gl_api& api) -> bool {
     bool result = true;
     if(doing_framedump()) [[unlikely]] {
         result = _dump_frame(frame_number, provider, api) and result;

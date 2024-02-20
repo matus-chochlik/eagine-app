@@ -183,16 +183,16 @@ public:
       std::vector<math::matrix<float, 4, 4, true, true>>& values) noexcept;
 
     void add_shape_generator(shared_holder<shapes::generator> gen) noexcept;
-    void add_gl_shape_context(oglplus::shared_gl_api_context) noexcept;
+    void add_gl_shape_context(const oglplus::shared_gl_api_context&) noexcept;
     void add_gl_geometry_and_bindings_context(
-      oglplus::shared_gl_api_context,
+      const oglplus::shared_gl_api_context&,
       oglplus::vertex_attrib_bindings,
       shapes::drawing_variant) noexcept;
 
     void add_gl_shader_context(
-      oglplus::shared_gl_api_context,
+      const oglplus::shared_gl_api_context&,
       oglplus::shader_type) noexcept;
-    void add_gl_program_context(oglplus::shared_gl_api_context) noexcept;
+    void add_gl_program_context(const oglplus::shared_gl_api_context&) noexcept;
     auto add_gl_program_shader_request(identifier_t request_id) noexcept
       -> bool;
     auto add_gl_program_input_binding(
@@ -209,19 +209,19 @@ public:
       const memory::const_block) noexcept;
     auto add_gl_texture_image_request(identifier_t request_id) noexcept -> bool;
     void add_gl_texture_update_context(
-      oglplus::shared_gl_api_context,
+      const oglplus::shared_gl_api_context&,
       oglplus::texture_target,
       oglplus::texture_unit,
       oglplus::texture_name) noexcept;
 
     void add_gl_texture_context(
-      oglplus::shared_gl_api_context,
+      const oglplus::shared_gl_api_context&,
       oglplus::texture_target,
       oglplus::texture_unit) noexcept;
     auto handle_gl_texture_params(resource_gl_texture_params&) noexcept -> bool;
 
     void add_gl_buffer_context(
-      oglplus::shared_gl_api_context,
+      const oglplus::shared_gl_api_context&,
       oglplus::buffer_target) noexcept;
     void handle_gl_buffer_data(
       const oglplus::buffer_target,
@@ -538,7 +538,7 @@ auto make_valtree_input_setup_builder(
 //------------------------------------------------------------------------------
 auto make_valtree_gl_program_builder(
   const shared_holder<pending_resource_info>& parent,
-  oglplus::shared_gl_api_context) noexcept
+  const oglplus::shared_gl_api_context&) noexcept
   -> unique_holder<valtree::object_builder>;
 auto make_valtree_gl_texture_image_loader(
   const shared_holder<pending_resource_info>& parent,
@@ -547,12 +547,12 @@ auto make_valtree_gl_texture_image_loader(
   -> unique_holder<valtree::object_builder>;
 auto make_valtree_gl_texture_builder(
   const shared_holder<pending_resource_info>& parent,
-  oglplus::shared_gl_api_context,
+  const oglplus::shared_gl_api_context&,
   oglplus::texture_target,
   oglplus::texture_unit) noexcept -> unique_holder<valtree::object_builder>;
 auto make_valtree_gl_buffer_builder(
   const shared_holder<pending_resource_info>& parent,
-  oglplus::shared_gl_api_context,
+  const oglplus::shared_gl_api_context&,
   oglplus::buffer_target) noexcept -> unique_holder<valtree::object_builder>;
 //------------------------------------------------------------------------------
 /// @brief Result of resource request operation.
@@ -1370,7 +1370,9 @@ public:
       loaded_resource_context&) noexcept -> resource_request_result;
 
     /// @brief Requests a oglplus shape generator wrapper object.
-    auto request_gl_shape(url locator, oglplus::shared_gl_api_context) noexcept
+    auto request_gl_shape(
+      url locator,
+      const oglplus::shared_gl_api_context&) noexcept
       -> resource_request_result;
 
     auto request(
@@ -1381,7 +1383,7 @@ public:
     /// @brief Requests a shape geometry and attrib bindings object.
     auto request_gl_geometry_and_bindings(
       url locator,
-      oglplus::shared_gl_api_context,
+      const oglplus::shared_gl_api_context&,
       oglplus::vertex_attrib_bindings,
       span_size_t draw_var_idx = 0) noexcept -> resource_request_result;
 
@@ -1395,7 +1397,7 @@ public:
     /// @brief Requests a shape geometry and attrib bindings object.
     auto request_gl_geometry_and_bindings(
       url locator,
-      oglplus::shared_gl_api_context,
+      const oglplus::shared_gl_api_context&,
       span_size_t draw_var_idx = 0) noexcept -> resource_request_result;
 
     auto request(
@@ -1410,7 +1412,7 @@ public:
     /// @brief Requests a compiled GL shader object of a specified type.
     auto request_gl_shader(
       url locator,
-      oglplus::shared_gl_api_context,
+      const oglplus::shared_gl_api_context&,
       oglplus::shader_type) noexcept -> resource_request_result;
 
     auto request(
@@ -1420,7 +1422,9 @@ public:
       oglplus::shader_type shdr_type) noexcept -> resource_request_result;
 
     /// @brief Requests a compiled GL shader object of a type specified in URL.
-    auto request_gl_shader(url locator, oglplus::shared_gl_api_context) noexcept
+    auto request_gl_shader(
+      url locator,
+      const oglplus::shared_gl_api_context&) noexcept
       -> resource_request_result;
 
     auto request(
@@ -1429,7 +1433,9 @@ public:
       loaded_resource_context& ctx) noexcept -> resource_request_result;
 
     /// @brief Requests a linked GL program object.
-    auto request_gl_program(url locator, oglplus::shared_gl_api_context) noexcept
+    auto request_gl_program(
+      url locator,
+      const oglplus::shared_gl_api_context&) noexcept
       -> resource_request_result;
 
     auto request(
@@ -1449,7 +1455,7 @@ public:
     /// @brief Requests image data update for a GL texture.
     auto request_gl_texture_update(
       url locator,
-      oglplus::shared_gl_api_context,
+      const oglplus::shared_gl_api_context&,
       oglplus::texture_target,
       oglplus::texture_unit,
       oglplus::texture_name) noexcept -> resource_request_result;
@@ -1457,7 +1463,7 @@ public:
     /// @brief Requests a set-up GL texture object.
     auto request_gl_texture(
       url locator,
-      oglplus::shared_gl_api_context,
+      const oglplus::shared_gl_api_context&,
       oglplus::texture_target,
       oglplus::texture_unit) noexcept -> resource_request_result;
 
@@ -1471,7 +1477,7 @@ public:
     /// @brief Requests a set-up GL buffer object.
     auto request_gl_buffer(
       url locator,
-      oglplus::shared_gl_api_context,
+      const oglplus::shared_gl_api_context&,
       oglplus::buffer_target) noexcept -> resource_request_result;
 
     auto request(

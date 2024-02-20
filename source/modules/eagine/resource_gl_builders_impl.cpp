@@ -37,9 +37,9 @@ class valtree_gl_program_builder
 public:
     valtree_gl_program_builder(
       const shared_holder<pending_resource_info>& info,
-      oglplus::shared_gl_api_context gl_context) noexcept
+      const oglplus::shared_gl_api_context& gl_context) noexcept
       : base{"GLprgBuldr", info}
-      , _gl_context{std::move(gl_context)} {}
+      , _gl_context{gl_context} {}
 
     auto max_token_size() noexcept -> span_size_t final {
         return 256;
@@ -144,9 +144,9 @@ private:
 //------------------------------------------------------------------------------
 auto make_valtree_gl_program_builder(
   const shared_holder<pending_resource_info>& parent,
-  oglplus::shared_gl_api_context gl_context) noexcept
+  const oglplus::shared_gl_api_context& gl_context) noexcept
   -> unique_holder<valtree::object_builder> {
-    return {hold<valtree_gl_program_builder>, parent, std::move(gl_context)};
+    return {hold<valtree_gl_program_builder>, parent, gl_context};
 }
 //------------------------------------------------------------------------------
 // valtree_gl_texture_image_loader
@@ -431,11 +431,11 @@ class valtree_gl_texture_builder
 public:
     valtree_gl_texture_builder(
       const shared_holder<pending_resource_info>& info,
-      oglplus::shared_gl_api_context gl_context,
+      const oglplus::shared_gl_api_context& gl_context,
       oglplus::texture_target tex_target,
       oglplus::texture_unit tex_unit) noexcept
       : base{"GLtexBuldr", info}
-      , _gl_context{std::move(gl_context)}
+      , _gl_context{gl_context}
       , _tex_data{*this, 1024 * 1024 * 4}
       , _tex_target{tex_target}
       , _tex_unit{tex_unit} {}
@@ -719,16 +719,11 @@ private:
 //------------------------------------------------------------------------------
 auto make_valtree_gl_texture_builder(
   const shared_holder<pending_resource_info>& parent,
-  oglplus::shared_gl_api_context gl_context,
+  const oglplus::shared_gl_api_context& gl_context,
   oglplus::texture_target target,
   oglplus::texture_unit unit) noexcept
   -> unique_holder<valtree::object_builder> {
-    return {
-      hold<valtree_gl_texture_builder>,
-      parent,
-      std::move(gl_context),
-      target,
-      unit};
+    return {hold<valtree_gl_texture_builder>, parent, gl_context, target, unit};
 }
 //------------------------------------------------------------------------------
 static void _adjust_texture_dimensions(
@@ -1135,10 +1130,10 @@ class valtree_gl_buffer_builder
 public:
     valtree_gl_buffer_builder(
       const shared_holder<pending_resource_info>& info,
-      oglplus::shared_gl_api_context gl_context,
+      const oglplus::shared_gl_api_context& gl_context,
       oglplus::buffer_target buf_target) noexcept
       : base{"GLbufBuldr", info}
-      , _gl_context{std::move(gl_context)}
+      , _gl_context{gl_context}
       , _buf_target{buf_target} {}
 
     auto max_token_size() noexcept -> span_size_t final {
@@ -1174,11 +1169,10 @@ private:
 //------------------------------------------------------------------------------
 auto make_valtree_gl_buffer_builder(
   const shared_holder<pending_resource_info>& parent,
-  oglplus::shared_gl_api_context gl_context,
+  const oglplus::shared_gl_api_context& gl_context,
   oglplus::buffer_target target) noexcept
   -> unique_holder<valtree::object_builder> {
-    return {
-      hold<valtree_gl_buffer_builder>, parent, std::move(gl_context), target};
+    return {hold<valtree_gl_buffer_builder>, parent, gl_context, target};
 }
 //------------------------------------------------------------------------------
 auto pending_resource_info::handle_gl_buffer_params(

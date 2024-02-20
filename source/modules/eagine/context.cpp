@@ -100,7 +100,7 @@ public:
     /// @see gl_ref
     /// @see with_gl
     /// @pre has_gl_api()
-    auto gl_api() const noexcept -> oglplus::gl_api& {
+    auto gl_api() const noexcept -> const oglplus::gl_api& {
         assert(has_gl_api());
         return _gl_api_context.gl_api();
     }
@@ -264,18 +264,19 @@ public:
 
     loaded_resource_context(
       resource_loader& loader,
-      oglplus::shared_gl_api_context gl_context) noexcept
+      const oglplus::shared_gl_api_context& gl_context) noexcept
       : _loader{loader}
-      , _gl_context{std::move(gl_context)} {}
+      , _gl_context{gl_context} {}
 
     /// @brief Reference to a resource's parent loader.
     auto loader() const noexcept -> resource_loader& {
         return _loader.get();
     }
 
-    auto set_gl_context(oglplus::shared_gl_api_context gl_context) noexcept
+    auto set_gl_context(
+      const oglplus::shared_gl_api_context& gl_context) noexcept
       -> loaded_resource_context& {
-        _gl_context = std::move(gl_context);
+        _gl_context = gl_context;
         return *this;
     }
 
