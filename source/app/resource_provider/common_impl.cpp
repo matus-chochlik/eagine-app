@@ -164,7 +164,7 @@ auto gl_rendered_source_blob_io::config_attribs(
            (EGL.stencil_size | EGL.dont_care) +
            (EGL.color_buffer_type | EGL.rgb_buffer) +
            (EGL.surface_type | EGL.pbuffer_bit) +
-           (EGL.renderable_type | (EGL.opengl_bit | EGL.opengl_es3_bit));
+           (EGL.renderable_type | EGL.opengl_bit);
 }
 //------------------------------------------------------------------------------
 auto gl_rendered_source_blob_io::surface_attribs(

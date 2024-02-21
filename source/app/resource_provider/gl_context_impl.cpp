@@ -31,11 +31,8 @@ auto egl_context_handler_display_bind_api(
         const auto& [egl, EGL]{eglapi};
         const auto apis{egl.get_client_api_bits(display)};
         const bool has_gl{apis.has(EGL.opengl_bit)};
-        const bool has_gles{apis.has(EGL.opengl_es_bit)};
         if(has_gl) {
             egl.bind_api(EGL.opengl_api);
-        } else if(has_gles) {
-            egl.bind_api(EGL.opengl_es_api);
         } else {
             display.clean_up();
         }
