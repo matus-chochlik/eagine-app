@@ -17,34 +17,30 @@ import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-// I/O
+// Renderer
 //------------------------------------------------------------------------------
-class eagitexi_cubemap_blur_io final : public gl_rendered_source_blob_io {
+class eagitexi_cubemap_blur_renderer final : public gl_blob_renderer {
 public:
-    eagitexi_cubemap_blur_io(
-      main_ctx_parent,
-      const gl_rendered_source_params& params,
-      shared_holder<gl_rendered_source_blob_context>,
+    eagitexi_cubemap_blur_renderer(
+      gl_rendered_source_blob_io& parent,
+      const gl_rendered_blob_params& params,
+      shared_holder<gl_rendered_blob_context> context,
       url source,
       int size,
-      int sharpness,
-      int level) noexcept;
+      int sharpness) noexcept;
 
-    ~eagitexi_cubemap_blur_io() noexcept;
+    ~eagitexi_cubemap_blur_renderer() noexcept final;
 
-    auto prepare() noexcept -> msgbus::blob_preparation final;
+    auto render() noexcept -> msgbus::blob_preparation final;
 
 private:
     static auto _tile_size() noexcept -> int;
-
     auto _build_screen() noexcept -> oglplus::geometry_and_bindings;
-    auto _build_program(const gl_rendered_source_params&, int) noexcept
+    auto _build_program(const gl_rendered_blob_params&, int) noexcept
       -> oglplus::program_object;
     void _on_tex_loaded(const gl_texture_resource::load_info&) noexcept;
     void _render_tile() noexcept;
     void _save_tile() noexcept;
-
-    void _make_header(int level) noexcept;
 
     main_ctx_buffer _buffer;
 
@@ -56,57 +52,52 @@ private:
     int _tile_x{0};
     int _tile_y{0};
     int _face_index{0};
-    bool _finished{false};
 };
 //------------------------------------------------------------------------------
-auto eagitexi_cubemap_blur_io::_tile_size() noexcept -> int {
+eagitexi_cubemap_blur_renderer::eagitexi_cubemap_blur_renderer(
+  gl_rendered_source_blob_io& parent,
+  const gl_rendered_blob_params& params,
+  shared_holder<gl_rendered_blob_context> context,
+  url source,
+  int size,
+  int sharpness) noexcept
+  : gl_blob_renderer{parent, std::move(context)}
+  , _buffer{*this, size * size * 4, nothing}
+  , _screen{_build_screen()}
+  , _prog{_build_program(params, sharpness)}
+  , _cubemap{std::move(source), resource_context()}
+  , _size{size}
+  , _tiles_per_side{std::max(_size / _tile_size(), 1)} {
+    _cubemap.loaded.connect(
+      make_callable_ref<&eagitexi_cubemap_blur_renderer::_on_tex_loaded>(this));
+
+    const auto& [gl, GL]{gl_api()};
+    gl.viewport(0, 0, _size, _size);
+    gl.disable(GL.depth_test);
+}
+//------------------------------------------------------------------------------
+eagitexi_cubemap_blur_renderer::~eagitexi_cubemap_blur_renderer() noexcept {
+    _cubemap.clean_up(resource_context());
+}
+//------------------------------------------------------------------------------
+auto eagitexi_cubemap_blur_renderer::_tile_size() noexcept -> int {
     return 16;
 }
 //------------------------------------------------------------------------------
-void eagitexi_cubemap_blur_io::_make_header(int level) noexcept {
-    const auto& [egl, EGL]{egl_api()};
-
-    std::stringstream hdr;
-    hdr << R"({"level":)" << level;
-    hdr << R"(,"width":)" << _size;
-    hdr << R"(,"height":)" << _size;
-    hdr << R"(,"depth":)" << 6;
-    hdr << R"(,"channels":4)";
-    hdr << R"(,"data_type":"unsigned_byte")";
-    hdr << R"(,"format":"rgba")";
-    hdr << R"(,"iformat":"rgba8")";
-    hdr << R"(,"tag":["blur","cubemap"])";
-    hdr << R"(,"metadata":{"renderer":{)";
-    if(const auto vendor{egl.query_string(display(), EGL.vendor)}) {
-        hdr << R"("vendor":")" << *vendor << R"(")";
-        if(const auto version{egl.query_string(display(), EGL.version)}) {
-            hdr << R"(,"version":")" << *version << R"(")";
-        }
-        if(egl.MESA_query_driver(display())) {
-            if(const auto driver{egl.get_display_driver_name(display())}) {
-                hdr << R"(,"driver":")" << *driver << R"(")";
-            }
-        }
-    }
-    hdr << R"(}})";
-    hdr << R"(,"data_filter":"zlib")";
-    hdr << '}';
-    append(hdr.str());
-}
-//------------------------------------------------------------------------------
-auto eagitexi_cubemap_blur_io::_build_screen() noexcept
+auto eagitexi_cubemap_blur_renderer::_build_screen() noexcept
   -> oglplus::geometry_and_bindings {
-    oglplus::shape_generator shape(
-      gl_api(), shapes::unit_screen(shapes::vertex_attrib_kind::position));
-
-    oglplus::geometry_and_bindings screen{gl_api(), shape, _buffer};
+    oglplus::geometry_and_bindings screen{
+      gl_api(),
+      oglplus::shape_generator{
+        gl_api(), shapes::unit_screen(shapes::vertex_attrib_kind::position)},
+      _buffer};
     screen.use(gl_api());
 
     return screen;
 }
 //------------------------------------------------------------------------------
-auto eagitexi_cubemap_blur_io::_build_program(
-  const gl_rendered_source_params& params,
+auto eagitexi_cubemap_blur_renderer::_build_program(
+  const gl_rendered_blob_params& params,
   int sharpness) noexcept -> oglplus::program_object {
     const auto& [gl, GL]{gl_api()};
 
@@ -201,7 +192,7 @@ auto eagitexi_cubemap_blur_io::_build_program(
     return prog;
 }
 //------------------------------------------------------------------------------
-void eagitexi_cubemap_blur_io::_on_tex_loaded(
+void eagitexi_cubemap_blur_renderer::_on_tex_loaded(
   const gl_texture_resource::load_info& loaded) noexcept {
     const auto& GL{gl_api().constants()};
     loaded.parameter_i(GL.texture_min_filter, GL.linear);
@@ -210,7 +201,7 @@ void eagitexi_cubemap_blur_io::_on_tex_loaded(
     loaded.parameter_i(GL.texture_wrap_t, GL.clamp_to_edge);
 }
 //------------------------------------------------------------------------------
-void eagitexi_cubemap_blur_io::_render_tile() noexcept {
+void eagitexi_cubemap_blur_renderer::_render_tile() noexcept {
     const auto& [gl, GL]{gl_api()};
     if((_tile_x == 0) and (_tile_y == 0)) {
         gl.disable(GL.scissor_test);
@@ -229,7 +220,7 @@ void eagitexi_cubemap_blur_io::_render_tile() noexcept {
     _screen.draw(gl_api());
 }
 //------------------------------------------------------------------------------
-void eagitexi_cubemap_blur_io::_save_tile() noexcept {
+void eagitexi_cubemap_blur_renderer::_save_tile() noexcept {
     const auto& [gl, GL]{gl_api()};
     _buffer.resize(span_size(_size * _size * 4));
 
@@ -247,12 +238,9 @@ void eagitexi_cubemap_blur_io::_save_tile() noexcept {
     compress(view(_buffer));
 }
 //------------------------------------------------------------------------------
-auto eagitexi_cubemap_blur_io::prepare() noexcept -> msgbus::blob_preparation {
-    if(not _finished) {
-        make_current();
-    }
-
-    const auto& GL = gl_api().constants();
+auto eagitexi_cubemap_blur_renderer::render() noexcept
+  -> msgbus::blob_preparation {
+    const auto& GL{gl_api().constants()};
     if(_cubemap.load_if_needed(
          resource_context(), GL.texture_cube_map, GL.texture0)) {
         return msgbus::blob_preparation::working;
@@ -269,41 +257,76 @@ auto eagitexi_cubemap_blur_io::prepare() noexcept -> msgbus::blob_preparation {
         }
         return msgbus::blob_preparation::working;
     }
-    if(not _finished) {
-        finish();
-        _finished = true;
-        return msgbus::blob_preparation::working;
-    }
     return msgbus::blob_preparation::finished;
+}
+//------------------------------------------------------------------------------
+// I/O
+//------------------------------------------------------------------------------
+class eagitexi_cubemap_blur_io final : public gl_rendered_source_blob_io {
+public:
+    eagitexi_cubemap_blur_io(
+      main_ctx_parent,
+      shared_provider_objects& shared,
+      const gl_rendered_blob_params& params,
+      url source,
+      int size,
+      int sharpness,
+      int level) noexcept;
+
+protected:
+    auto make_renderer(shared_holder<gl_rendered_blob_context>) noexcept
+      -> shared_holder<gl_blob_renderer> final;
+
+private:
+    void _make_header(int size, int level) noexcept;
+
+    const url _source;
+    const int _size;
+    const int _sharpness;
+};
+//------------------------------------------------------------------------------
+void eagitexi_cubemap_blur_io::_make_header(int size, int level) noexcept {
+    std::stringstream hdr;
+    hdr << R"({"level":)" << level;
+    hdr << R"(,"width":)" << size;
+    hdr << R"(,"height":)" << size;
+    hdr << R"(,"depth":)" << 6;
+    hdr << R"(,"channels":4)";
+    hdr << R"(,"data_type":"unsigned_byte")";
+    hdr << R"(,"format":"rgba")";
+    hdr << R"(,"iformat":"rgba8")";
+    hdr << R"(,"tag":["blur","cubemap"])";
+    hdr << R"(,"data_filter":"zlib")";
+    hdr << '}';
+    append(hdr.str());
 }
 //------------------------------------------------------------------------------
 eagitexi_cubemap_blur_io::eagitexi_cubemap_blur_io(
   main_ctx_parent parent,
-  const gl_rendered_source_params& params,
-  shared_holder<gl_rendered_source_blob_context> context,
+  shared_provider_objects& shared,
+  const gl_rendered_blob_params& params,
   url source,
   int size,
   int sharpness,
   int level) noexcept
-  : gl_rendered_source_blob_io{"ITxCubBlur", parent, std::move(context), size * size * 6}
-  , _buffer{*this, size * size * 4, nothing}
-  , _screen{_build_screen()}
-  , _prog{_build_program(params, sharpness)}
-  , _cubemap{std::move(source), resource_context()}
+  : gl_rendered_source_blob_io{"ITxCubBlur", parent, shared, params, size * size * 6}
+  , _source{std::move(source)}
   , _size{size}
-  , _tiles_per_side{std::max(size / _tile_size(), 1)} {
-    _cubemap.loaded.connect(
-      make_callable_ref<&eagitexi_cubemap_blur_io::_on_tex_loaded>(this));
-
-    const auto& [gl, GL]{gl_api()};
-    gl.viewport(0, 0, _size, _size);
-    gl.disable(GL.depth_test);
-
-    _make_header(level);
+  , _sharpness{sharpness} {
+    _make_header(size, level);
 }
 //------------------------------------------------------------------------------
-eagitexi_cubemap_blur_io::~eagitexi_cubemap_blur_io() noexcept {
-    _cubemap.clean_up(resource_context());
+auto eagitexi_cubemap_blur_io::make_renderer(
+  shared_holder<gl_rendered_blob_context> context) noexcept
+  -> shared_holder<gl_blob_renderer> {
+    return {
+      hold<eagitexi_cubemap_blur_renderer>,
+      *this,
+      params(),
+      std::move(context),
+      _source,
+      _size,
+      _sharpness};
 }
 //------------------------------------------------------------------------------
 // provider
@@ -356,7 +379,7 @@ auto eagitexi_cubemap_blur_provider::get_resource_io(const url& locator)
         const auto sharpness{q.arg_value_as<int>("sharpness").value_or(8)};
         const auto level{q.arg_value_as<int>("level").value_or(0)};
 
-        gl_rendered_source_params params{
+        gl_rendered_blob_params params{
           .device_index = _device_index.value(),
           .surface_width = size,
           .surface_height = size};
@@ -364,18 +387,15 @@ auto eagitexi_cubemap_blur_provider::get_resource_io(const url& locator)
         q.arg_value_as<int>("device_index")
           .and_then(_1.assign_to(params.device_index));
 
-        if(auto context{eagitexi_cubemap_blur_io::create_context(
-             as_parent(), _shared, params)}) {
-            return {
-              hold<eagitexi_cubemap_blur_io>,
-              as_parent(),
-              params,
-              std::move(context),
-              q.arg_url("source"),
-              size,
-              sharpness,
-              level};
-        }
+        return {
+          hold<eagitexi_cubemap_blur_io>,
+          as_parent(),
+          _shared,
+          params,
+          q.arg_url("source"),
+          size,
+          sharpness,
+          level};
     }
     return {};
 }

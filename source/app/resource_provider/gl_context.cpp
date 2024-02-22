@@ -17,7 +17,7 @@ import :driver;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-struct gl_rendered_source_params {
+struct gl_rendered_blob_params {
     valid_if_nonnegative<span_size_t> device_index{-1};
     valid_if_positive<int> surface_width{0};
     valid_if_positive<int> surface_height{0};
@@ -37,7 +37,7 @@ class egl_context_handler final : public oglplus::gl_context_handler {
 public:
     static auto create_context(
       shared_provider_objects&,
-      const gl_rendered_source_params&,
+      const gl_rendered_blob_params&,
       const eglplus::config_attributes,
       const eglplus::surface_attributes,
       const eglplus::context_attributes) noexcept
@@ -60,12 +60,12 @@ private:
     eglplus::owned_context_handle _context;
 };
 //------------------------------------------------------------------------------
-class gl_rendered_source_blob_context : public main_ctx_object {
+class gl_rendered_blob_context : public main_ctx_object {
 public:
-    gl_rendered_source_blob_context(
+    gl_rendered_blob_context(
       main_ctx_parent parent,
       shared_provider_objects& shared,
-      const gl_rendered_source_params& params,
+      const gl_rendered_blob_params& params,
       egl_rendered_source_context) noexcept;
 
     void debug_callback(
@@ -88,12 +88,39 @@ public:
 
 private:
     void _enable_debug() noexcept;
-    void _init_fbo(const gl_rendered_source_params&) noexcept;
+    void _init_fbo(const gl_rendered_blob_params&) noexcept;
 
     shared_holder<egl_context_handler> _egl_context;
     loaded_resource_context _resource_context{shared().loader, _egl_context};
     oglplus::renderbuffer_object _color_rbo;
     oglplus::framebuffer_object _offscreen_fbo;
+};
+//------------------------------------------------------------------------------
+class gl_rendered_source_blob_io;
+class gl_blob_renderer
+  : public main_ctx_object
+  , public abstract<gl_blob_renderer> {
+public:
+    gl_blob_renderer(
+      gl_rendered_source_blob_io& parent,
+      shared_holder<gl_rendered_blob_context>) noexcept;
+
+    virtual auto render() noexcept -> msgbus::blob_preparation = 0;
+
+protected:
+    auto resource_context() noexcept -> loaded_resource_context&;
+    auto shared() const noexcept -> shared_provider_objects&;
+    auto display() const noexcept -> eglplus::display_handle;
+    auto egl_api() const noexcept -> const eglplus::egl_api&;
+    auto gl_api() const noexcept -> const oglplus::gl_api&;
+
+    void compress(const memory::const_block) noexcept;
+    void compress(const string_view) noexcept;
+    void compress(const byte) noexcept;
+
+private:
+    gl_rendered_source_blob_io& _parent;
+    shared_holder<gl_rendered_blob_context> _gl_context;
 };
 //------------------------------------------------------------------------------
 } // namespace eagine::app

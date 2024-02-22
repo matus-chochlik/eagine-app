@@ -155,8 +155,7 @@ void compressed_buffer_source_blob_io::finish() noexcept {
 // gl_rendered_source_blob_io
 //------------------------------------------------------------------------------
 auto gl_rendered_source_blob_io::config_attribs(
-  shared_provider_objects& shared,
-  const gl_rendered_source_params&) noexcept -> eglplus::config_attributes {
+  shared_provider_objects& shared) noexcept -> eglplus::config_attributes {
     const auto& EGL{shared.apis.egl()->constants()};
     return (EGL.buffer_size | 32) + (EGL.red_size | 8) + (EGL.green_size | 8) +
            (EGL.blue_size | 8) + (EGL.alpha_size | 8) +
@@ -168,17 +167,14 @@ auto gl_rendered_source_blob_io::config_attribs(
 }
 //------------------------------------------------------------------------------
 auto gl_rendered_source_blob_io::surface_attribs(
-  shared_provider_objects& shared,
-  const gl_rendered_source_params& params) noexcept
-  -> eglplus::surface_attributes {
+  shared_provider_objects& shared) noexcept -> eglplus::surface_attributes {
     const auto& EGL{shared.apis.egl()->constants()};
-    return (EGL.width | params.surface_width.value()) +
-           (EGL.height | params.surface_height.value());
+    return (EGL.width | _params.surface_width.value()) +
+           (EGL.height | _params.surface_height.value());
 }
 //------------------------------------------------------------------------------
 auto gl_rendered_source_blob_io::context_attribs(
-  shared_provider_objects& shared,
-  const gl_rendered_source_params&) noexcept -> eglplus::context_attributes {
+  shared_provider_objects& shared) noexcept -> eglplus::context_attributes {
     const auto& EGL{shared.apis.egl()->constants()};
     return (EGL.context_opengl_profile_mask |
             EGL.context_opengl_core_profile_bit) +
@@ -187,18 +183,15 @@ auto gl_rendered_source_blob_io::context_attribs(
            (EGL.context_opengl_robust_access | true);
 }
 //------------------------------------------------------------------------------
-auto gl_rendered_source_blob_io::create_context(
-  main_ctx_parent parent,
-  shared_provider_objects& shared,
-  const gl_rendered_source_params& params) noexcept
-  -> shared_holder<gl_rendered_source_blob_context> {
+auto gl_rendered_source_blob_io::_create_context() noexcept
+  -> shared_holder<gl_rendered_blob_context> {
     if(auto context{egl_context_handler::create_context(
-         shared,
-         params,
-         config_attribs(shared, params),
-         surface_attribs(shared, params),
-         context_attribs(shared, params))}) {
-        return {default_selector, parent, shared, params, std::move(context)};
+         _shared,
+         _params,
+         config_attribs(_shared),
+         surface_attribs(_shared),
+         context_attribs(_shared))}) {
+        return {default_selector, *this, _shared, _params, std::move(context)};
     }
     return {};
 }
@@ -206,38 +199,36 @@ auto gl_rendered_source_blob_io::create_context(
 gl_rendered_source_blob_io::gl_rendered_source_blob_io(
   identifier id,
   main_ctx_parent parent,
-  shared_holder<gl_rendered_source_blob_context> gl_context,
+  shared_provider_objects& shared,
+  const gl_rendered_blob_params& params,
   span_size_t buffer_size) noexcept
   : compressed_buffer_source_blob_io{id, parent, buffer_size}
-  , _gl_context{std::move(gl_context)} {}
+  , _shared{shared}
+  , _params{params} {}
 //------------------------------------------------------------------------------
-auto gl_rendered_source_blob_io::make_current() const noexcept -> bool {
-    return _gl_context->make_current();
-}
-//------------------------------------------------------------------------------
-auto gl_rendered_source_blob_io::shared() const noexcept
-  -> shared_provider_objects& {
-    return _gl_context->shared();
-}
-//------------------------------------------------------------------------------
-auto gl_rendered_source_blob_io::display() const noexcept
-  -> eglplus::display_handle {
-    return _gl_context->display();
-}
-//------------------------------------------------------------------------------
-auto gl_rendered_source_blob_io::resource_context() noexcept
-  -> loaded_resource_context& {
-    return _gl_context->resource_context();
-}
-//------------------------------------------------------------------------------
-auto gl_rendered_source_blob_io::egl_api() const noexcept
-  -> const eglplus::egl_api& {
-    return _gl_context->egl_api();
-}
-//------------------------------------------------------------------------------
-auto gl_rendered_source_blob_io::gl_api() const noexcept
-  -> const oglplus::gl_api& {
-    return _gl_context->gl_api();
+auto gl_rendered_source_blob_io::prepare() noexcept
+  -> msgbus::blob_preparation {
+    if(not _renderer) {
+        if(auto context{_create_context()}) {
+            try {
+                _renderer = make_renderer(std::move(context));
+            } catch(...) {
+                return msgbus::blob_preparation::failed;
+            }
+        }
+        if(not _renderer) {
+            return msgbus::blob_preparation::working;
+        }
+    }
+    if(not _finished) {
+        const auto render_result{_renderer->render()};
+        if(render_result == msgbus::blob_preparation::finished) {
+            finish();
+            _finished = true;
+        }
+        return render_result;
+    }
+    return msgbus::blob_preparation::finished;
 }
 //------------------------------------------------------------------------------
 // ostream_io

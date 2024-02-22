@@ -73,6 +73,11 @@ private:
 };
 //------------------------------------------------------------------------------
 class compressed_buffer_source_blob_io : public simple_buffer_source_blob_io {
+public:
+    void compress(const memory::const_block) noexcept;
+    void compress(const string_view) noexcept;
+    void compress(const byte) noexcept;
+
 protected:
     compressed_buffer_source_blob_io(
       identifier id,
@@ -85,9 +90,6 @@ protected:
       span_size_t buffer_size,
       std::function<memory::buffer(memory::buffer)>) noexcept;
 
-    void compress(const memory::const_block) noexcept;
-    void compress(const string_view) noexcept;
-    void compress(const byte) noexcept;
     void finish() noexcept;
 
 private:
@@ -98,41 +100,43 @@ private:
 //------------------------------------------------------------------------------
 class gl_rendered_source_blob_io : public compressed_buffer_source_blob_io {
 public:
-    static auto create_context(
-      main_ctx_parent parent,
-      shared_provider_objects& shared,
-      const gl_rendered_source_params& params) noexcept
-      -> shared_holder<gl_rendered_source_blob_context>;
+    auto prepare() noexcept -> msgbus::blob_preparation final;
+
+    auto shared() const noexcept -> shared_provider_objects& {
+        return _shared;
+    }
+
+    auto params() const noexcept -> const gl_rendered_blob_params& {
+        return _params;
+    }
 
 protected:
     gl_rendered_source_blob_io(
       identifier id,
       main_ctx_parent parent,
-      shared_holder<gl_rendered_source_blob_context>,
+      shared_provider_objects& shared,
+      const gl_rendered_blob_params& params,
       span_size_t buffer_size) noexcept;
 
-    auto shared() const noexcept -> shared_provider_objects&;
-    auto resource_context() noexcept -> loaded_resource_context&;
-    auto display() const noexcept -> eglplus::display_handle;
-    auto egl_api() const noexcept -> const eglplus::egl_api&;
-    auto gl_api() const noexcept -> const oglplus::gl_api&;
+    virtual auto config_attribs(shared_provider_objects&) noexcept
+      -> eglplus::config_attributes;
 
-    auto make_current() const noexcept -> bool;
+    virtual auto surface_attribs(shared_provider_objects&) noexcept
+      -> eglplus::surface_attributes;
+
+    virtual auto context_attribs(shared_provider_objects&) noexcept
+      -> eglplus::context_attributes;
+
+    virtual auto make_renderer(shared_holder<gl_rendered_blob_context>)
+      -> shared_holder<gl_blob_renderer> = 0;
 
 private:
-    static auto config_attribs(
-      shared_provider_objects&,
-      const gl_rendered_source_params&) noexcept -> eglplus::config_attributes;
+    auto _create_context() noexcept -> shared_holder<gl_rendered_blob_context>;
 
-    static auto surface_attribs(
-      shared_provider_objects&,
-      const gl_rendered_source_params&) noexcept -> eglplus::surface_attributes;
-
-    static auto context_attribs(
-      shared_provider_objects&,
-      const gl_rendered_source_params&) noexcept -> eglplus::context_attributes;
-
-    shared_holder<gl_rendered_source_blob_context> _gl_context;
+    shared_provider_objects& _shared;
+    gl_rendered_blob_params _params;
+    shared_holder<gl_blob_renderer> _renderer;
+    bool _finished{false};
 };
 //------------------------------------------------------------------------------
 class ostream_io final : public msgbus::source_blob_io {
