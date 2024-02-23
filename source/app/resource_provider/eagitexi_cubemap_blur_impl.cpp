@@ -271,7 +271,7 @@ class eagitexi_cubemap_blur_io final : public gl_rendered_source_blob_io {
 public:
     eagitexi_cubemap_blur_io(
       main_ctx_parent,
-      shared_provider_objects& shared,
+      const shared_provider_objects& shared,
       const gl_rendered_blob_params& params,
       url source,
       int size,
@@ -280,7 +280,7 @@ public:
 
 protected:
     auto make_renderer(shared_holder<gl_rendered_blob_context>) noexcept
-      -> shared_holder<gl_blob_renderer> final;
+      -> unique_holder<gl_blob_renderer> final;
 
 private:
     void _make_header_bgn(int size, int level) noexcept;
@@ -330,7 +330,7 @@ void eagitexi_cubemap_blur_io::_make_header_end(
 //------------------------------------------------------------------------------
 eagitexi_cubemap_blur_io::eagitexi_cubemap_blur_io(
   main_ctx_parent parent,
-  shared_provider_objects& shared,
+  const shared_provider_objects& shared,
   const gl_rendered_blob_params& params,
   url source,
   int size,
@@ -345,8 +345,8 @@ eagitexi_cubemap_blur_io::eagitexi_cubemap_blur_io(
 //------------------------------------------------------------------------------
 auto eagitexi_cubemap_blur_io::make_renderer(
   shared_holder<gl_rendered_blob_context> context) noexcept
-  -> shared_holder<gl_blob_renderer> {
-    shared_holder<eagitexi_cubemap_blur_renderer> renderer{
+  -> unique_holder<gl_blob_renderer> {
+    unique_holder<eagitexi_cubemap_blur_renderer> renderer{
       default_selector,
       *this,
       params(),
@@ -381,7 +381,7 @@ public:
       callable_ref<void(string_view) noexcept>) noexcept final;
 
 private:
-    shared_provider_objects& _shared;
+    const shared_provider_objects& _shared;
     application_config_value<int> _device_index{
       main_context().config(),
       "application.resource_provider.cubemap_blur.device_index",

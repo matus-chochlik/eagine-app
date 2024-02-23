@@ -155,7 +155,8 @@ void compressed_buffer_source_blob_io::finish() noexcept {
 // gl_rendered_source_blob_io
 //------------------------------------------------------------------------------
 auto gl_rendered_source_blob_io::config_attribs(
-  shared_provider_objects& shared) noexcept -> eglplus::config_attributes {
+  const shared_provider_objects& shared) noexcept
+  -> eglplus::config_attributes {
     const auto& EGL{shared.apis.egl()->constants()};
     return (EGL.buffer_size | 32) + (EGL.red_size | 8) + (EGL.green_size | 8) +
            (EGL.blue_size | 8) + (EGL.alpha_size | 8) +
@@ -167,14 +168,16 @@ auto gl_rendered_source_blob_io::config_attribs(
 }
 //------------------------------------------------------------------------------
 auto gl_rendered_source_blob_io::surface_attribs(
-  shared_provider_objects& shared) noexcept -> eglplus::surface_attributes {
+  const shared_provider_objects& shared) noexcept
+  -> eglplus::surface_attributes {
     const auto& EGL{shared.apis.egl()->constants()};
     return (EGL.width | _params.surface_width.value()) +
            (EGL.height | _params.surface_height.value());
 }
 //------------------------------------------------------------------------------
 auto gl_rendered_source_blob_io::context_attribs(
-  shared_provider_objects& shared) noexcept -> eglplus::context_attributes {
+  const shared_provider_objects& shared) noexcept
+  -> eglplus::context_attributes {
     const auto& EGL{shared.apis.egl()->constants()};
     return (EGL.context_opengl_profile_mask |
             EGL.context_opengl_core_profile_bit) +
@@ -199,7 +202,7 @@ auto gl_rendered_source_blob_io::_create_context() noexcept
 gl_rendered_source_blob_io::gl_rendered_source_blob_io(
   identifier id,
   main_ctx_parent parent,
-  shared_provider_objects& shared,
+  const shared_provider_objects& shared,
   const gl_rendered_blob_params& params,
   span_size_t buffer_size) noexcept
   : compressed_buffer_source_blob_io{id, parent, buffer_size}

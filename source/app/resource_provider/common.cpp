@@ -102,7 +102,7 @@ class gl_rendered_source_blob_io : public compressed_buffer_source_blob_io {
 public:
     auto prepare() noexcept -> msgbus::blob_preparation final;
 
-    auto shared() const noexcept -> shared_provider_objects& {
+    auto shared() const noexcept -> const shared_provider_objects& {
         return _shared;
     }
 
@@ -114,28 +114,28 @@ protected:
     gl_rendered_source_blob_io(
       identifier id,
       main_ctx_parent parent,
-      shared_provider_objects& shared,
+      const shared_provider_objects& shared,
       const gl_rendered_blob_params& params,
       span_size_t buffer_size) noexcept;
 
-    virtual auto config_attribs(shared_provider_objects&) noexcept
+    virtual auto config_attribs(const shared_provider_objects&) noexcept
       -> eglplus::config_attributes;
 
-    virtual auto surface_attribs(shared_provider_objects&) noexcept
+    virtual auto surface_attribs(const shared_provider_objects&) noexcept
       -> eglplus::surface_attributes;
 
-    virtual auto context_attribs(shared_provider_objects&) noexcept
+    virtual auto context_attribs(const shared_provider_objects&) noexcept
       -> eglplus::context_attributes;
 
     virtual auto make_renderer(shared_holder<gl_rendered_blob_context>)
-      -> shared_holder<gl_blob_renderer> = 0;
+      -> unique_holder<gl_blob_renderer> = 0;
 
 private:
     auto _create_context() noexcept -> shared_holder<gl_rendered_blob_context>;
 
-    shared_provider_objects& _shared;
-    gl_rendered_blob_params _params;
-    shared_holder<gl_blob_renderer> _renderer;
+    const shared_provider_objects& _shared;
+    const gl_rendered_blob_params _params;
+    unique_holder<gl_blob_renderer> _renderer;
     bool _finished{false};
 };
 //------------------------------------------------------------------------------

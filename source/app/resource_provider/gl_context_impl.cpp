@@ -76,7 +76,7 @@ auto egl_context_handler_display_choose(
 }
 //------------------------------------------------------------------------------
 auto egl_context_handler_open_display(
-  shared_provider_objects& shared,
+  const shared_provider_objects& shared,
   const gl_rendered_blob_params& params) noexcept
   -> eglplus::initialized_display {
     if(const auto eglapi{shared.apis.egl()}) {
@@ -94,7 +94,7 @@ auto egl_context_handler_open_display(
 }
 //------------------------------------------------------------------------------
 auto egl_context_handler::create_context(
-  shared_provider_objects& shared,
+  const shared_provider_objects& shared,
   const gl_rendered_blob_params& params,
   const eglplus::config_attributes config_attribs,
   const eglplus::surface_attributes surface_attribs,
@@ -128,7 +128,7 @@ auto egl_context_handler::create_context(
 }
 //------------------------------------------------------------------------------
 egl_context_handler::egl_context_handler(
-  shared_provider_objects& shared,
+  const shared_provider_objects& shared,
   egl_rendered_blob_context context) noexcept
   : _shared{shared}
   , _display{std::move(context.display)}
@@ -147,7 +147,8 @@ egl_context_handler::~egl_context_handler() noexcept {
     }
 }
 //------------------------------------------------------------------------------
-auto egl_context_handler::shared() const noexcept -> shared_provider_objects& {
+auto egl_context_handler::shared() const noexcept
+  -> const shared_provider_objects& {
     return _shared;
 }
 //------------------------------------------------------------------------------
@@ -169,7 +170,7 @@ auto egl_context_handler::make_current() noexcept -> bool {
 //------------------------------------------------------------------------------
 gl_rendered_blob_context::gl_rendered_blob_context(
   main_ctx_parent parent,
-  shared_provider_objects& shared,
+  const shared_provider_objects& shared,
   const gl_rendered_blob_params& params,
   egl_rendered_blob_context context) noexcept
   : main_ctx_object{"GLRSBlbCtx", parent}
@@ -253,7 +254,7 @@ auto gl_rendered_blob_context::make_current() const noexcept -> bool {
 }
 //------------------------------------------------------------------------------
 auto gl_rendered_blob_context::shared() const noexcept
-  -> shared_provider_objects& {
+  -> const shared_provider_objects& {
     return _egl_context->shared();
 }
 //------------------------------------------------------------------------------
@@ -285,7 +286,8 @@ auto gl_blob_renderer::resource_context() noexcept -> loaded_resource_context& {
     return _gl_context->resource_context();
 }
 //------------------------------------------------------------------------------
-auto gl_blob_renderer::shared() const noexcept -> shared_provider_objects& {
+auto gl_blob_renderer::shared() const noexcept
+  -> const shared_provider_objects& {
     return _gl_context->shared();
 }
 //------------------------------------------------------------------------------

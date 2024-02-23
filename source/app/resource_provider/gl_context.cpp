@@ -36,24 +36,24 @@ struct egl_rendered_blob_context {
 class egl_context_handler final : public oglplus::gl_context_handler {
 public:
     static auto create_context(
-      shared_provider_objects&,
+      const shared_provider_objects&,
       const gl_rendered_blob_params&,
       const eglplus::config_attributes,
       const eglplus::surface_attributes,
       const eglplus::context_attributes) noexcept -> egl_rendered_blob_context;
 
     egl_context_handler(
-      shared_provider_objects&,
+      const shared_provider_objects&,
       egl_rendered_blob_context) noexcept;
     ~egl_context_handler() noexcept final;
 
-    auto shared() const noexcept -> shared_provider_objects&;
+    auto shared() const noexcept -> const shared_provider_objects&;
     auto display() const noexcept -> eglplus::display_handle;
     auto egl_api() const noexcept -> const eglplus::egl_api&;
     auto make_current() noexcept -> bool final;
 
 private:
-    shared_provider_objects& _shared;
+    const shared_provider_objects& _shared;
     eglplus::initialized_display _display;
     eglplus::owned_surface_handle _surface;
     eglplus::owned_context_handle _context;
@@ -63,7 +63,7 @@ class gl_rendered_blob_context : public main_ctx_object {
 public:
     gl_rendered_blob_context(
       main_ctx_parent parent,
-      shared_provider_objects& shared,
+      const shared_provider_objects& shared,
       const gl_rendered_blob_params& params,
       egl_rendered_blob_context) noexcept;
 
@@ -74,7 +74,7 @@ public:
       oglplus::gl_types::enum_type severity,
       string_view message) const noexcept;
 
-    auto shared() const noexcept -> shared_provider_objects&;
+    auto shared() const noexcept -> const shared_provider_objects&;
     auto resource_context() noexcept -> loaded_resource_context& {
         return _resource_context;
     }
@@ -113,7 +113,7 @@ public:
 
 protected:
     auto resource_context() noexcept -> loaded_resource_context&;
-    auto shared() const noexcept -> shared_provider_objects&;
+    auto shared() const noexcept -> const shared_provider_objects&;
     auto display() const noexcept -> eglplus::display_handle;
     auto egl_api() const noexcept -> const eglplus::egl_api&;
     auto gl_api() const noexcept -> const oglplus::gl_api&;
