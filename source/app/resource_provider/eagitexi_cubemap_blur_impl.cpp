@@ -434,7 +434,7 @@ auto eagitexi_cubemap_blur_provider::get_resource_io(const url& locator)
 //------------------------------------------------------------------------------
 auto eagitexi_cubemap_blur_provider::get_blob_timeout(const span_size_t) noexcept
   -> std::chrono::seconds {
-    return std::chrono::minutes{10};
+    return adjusted_duration(std::chrono::minutes{10});
 }
 //------------------------------------------------------------------------------
 void eagitexi_cubemap_blur_provider::for_each_locator(

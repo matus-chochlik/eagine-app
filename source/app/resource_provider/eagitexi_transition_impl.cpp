@@ -414,7 +414,7 @@ public:
 
     auto get_blob_timeout(const span_size_t) noexcept
       -> std::chrono::seconds final {
-        return std::chrono::minutes{2};
+        return adjusted_duration(std::chrono::minutes{2});
     }
 
     void for_each_locator(

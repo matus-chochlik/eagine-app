@@ -122,7 +122,7 @@ struct eagitexi_tiling_provider final
 
     auto get_blob_timeout(const span_size_t) noexcept
       -> std::chrono::seconds final {
-        return std::chrono::minutes{2};
+        return adjusted_duration(std::chrono::minutes{2});
     }
 
     void for_each_locator(
@@ -524,7 +524,7 @@ struct eagitexi_tiling_noise_provider final
 
     auto get_blob_timeout(const span_size_t) noexcept
       -> std::chrono::seconds final {
-        return std::chrono::minutes{5};
+        return adjusted_duration(std::chrono::minutes{5});
     }
 
     void for_each_locator(
