@@ -52,6 +52,9 @@ private:
     int _tile_x{0};
     int _tile_y{0};
     int _face_index{0};
+
+    const signal_binding_key _sig_key{_cubemap.loaded.connect(
+      make_callable_ref<&eagitexi_cubemap_blur_renderer::_on_tex_loaded>(this))};
 };
 //------------------------------------------------------------------------------
 eagitexi_cubemap_blur_renderer::eagitexi_cubemap_blur_renderer(
@@ -68,15 +71,13 @@ eagitexi_cubemap_blur_renderer::eagitexi_cubemap_blur_renderer(
   , _cubemap{std::move(source), resource_context()}
   , _size{size}
   , _tiles_per_side{std::max(_size / _tile_size(), 1)} {
-    _cubemap.loaded.connect(
-      make_callable_ref<&eagitexi_cubemap_blur_renderer::_on_tex_loaded>(this));
-
     const auto& [gl, GL]{gl_api()};
     gl.viewport(0, 0, _size, _size);
     gl.disable(GL.depth_test);
 }
 //------------------------------------------------------------------------------
 eagitexi_cubemap_blur_renderer::~eagitexi_cubemap_blur_renderer() noexcept {
+    _cubemap.loaded.disconnect(_sig_key);
     _cubemap.clean_up(resource_context());
 }
 //------------------------------------------------------------------------------
