@@ -5,6 +5,10 @@
 /// See accompanying file LICENSE_1_0.txt or copy at
 /// https://www.boost.org/LICENSE_1_0.txt
 ///
+module;
+
+#include <cassert>
+
 module eagine.app.resource_provider;
 
 import eagine.core;
@@ -279,14 +283,15 @@ protected:
       -> shared_holder<gl_blob_renderer> final;
 
 private:
-    void _make_header(int size, int level) noexcept;
+    void _make_header_bgn(int size, int level) noexcept;
+    void _make_header_end(eagitexi_cubemap_blur_renderer&) noexcept;
 
     const url _source;
     const int _size;
     const int _sharpness;
 };
 //------------------------------------------------------------------------------
-void eagitexi_cubemap_blur_io::_make_header(int size, int level) noexcept {
+void eagitexi_cubemap_blur_io::_make_header_bgn(int size, int level) noexcept {
     std::stringstream hdr;
     hdr << R"({"level":)" << level;
     hdr << R"(,"width":)" << size;
@@ -298,7 +303,28 @@ void eagitexi_cubemap_blur_io::_make_header(int size, int level) noexcept {
     hdr << R"(,"iformat":"rgba8")";
     hdr << R"(,"tag":["blur","cubemap"])";
     hdr << R"(,"data_filter":"zlib")";
-    hdr << '}';
+    append(hdr.str());
+}
+//------------------------------------------------------------------------------
+void eagitexi_cubemap_blur_io::_make_header_end(
+  eagitexi_cubemap_blur_renderer& renderer) noexcept {
+    std::stringstream hdr;
+
+    if(const auto vendor_name{renderer.renderer_name()}) {
+        hdr << R"(,"metadata":{"renderer":{)";
+        hdr << R"("vendor":")" << *vendor_name << R"(")";
+        if(const auto renderer_name{renderer.renderer_name()}) {
+            hdr << R"(,"name":")" << *renderer_name << R"(")";
+        }
+        if(const auto version{renderer.version()}) {
+            hdr << R"(,"version":")" << *version << R"(")";
+        }
+        if(const auto driver_name{renderer.driver_name()}) {
+            hdr << R"(,"driver":")" << *driver_name << R"(")";
+        }
+        hdr << R"(}})";
+    }
+    hdr << "}";
     append(hdr.str());
 }
 //------------------------------------------------------------------------------
@@ -314,20 +340,25 @@ eagitexi_cubemap_blur_io::eagitexi_cubemap_blur_io(
   , _source{std::move(source)}
   , _size{size}
   , _sharpness{sharpness} {
-    _make_header(size, level);
+    _make_header_bgn(size, level);
 }
 //------------------------------------------------------------------------------
 auto eagitexi_cubemap_blur_io::make_renderer(
   shared_holder<gl_rendered_blob_context> context) noexcept
   -> shared_holder<gl_blob_renderer> {
-    return {
-      hold<eagitexi_cubemap_blur_renderer>,
+    shared_holder<eagitexi_cubemap_blur_renderer> renderer{
+      default_selector,
       *this,
       params(),
       std::move(context),
       _source,
       _size,
       _sharpness};
+
+    assert(renderer);
+    _make_header_end(*renderer);
+
+    return renderer;
 }
 //------------------------------------------------------------------------------
 // provider

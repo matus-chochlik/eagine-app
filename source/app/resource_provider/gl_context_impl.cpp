@@ -301,6 +301,31 @@ auto gl_blob_renderer::gl_api() const noexcept -> const oglplus::gl_api& {
     return _gl_context->gl_api();
 }
 //------------------------------------------------------------------------------
+auto gl_blob_renderer::renderer_name() const noexcept
+  -> valid_if_not_empty<std::string> {
+    return {to_string(gl_api().get_renderer().or_default())};
+}
+//------------------------------------------------------------------------------
+auto gl_blob_renderer::vendor_name() const noexcept
+  -> valid_if_not_empty<std::string> {
+    return {to_string(gl_api().get_vendor().or_default())};
+}
+//------------------------------------------------------------------------------
+auto gl_blob_renderer::version() const noexcept
+  -> valid_if_not_empty<std::string> {
+    return {to_string(gl_api().get_version().or_default())};
+}
+//------------------------------------------------------------------------------
+auto gl_blob_renderer::driver_name() const noexcept
+  -> valid_if_not_empty<std::string> {
+    const auto& egl{egl_api().operations()};
+
+    if(egl.MESA_query_driver(display())) {
+        return {to_string(egl.get_display_driver_name(display()).or_default())};
+    }
+    return {};
+}
+//------------------------------------------------------------------------------
 void gl_blob_renderer::compress(const memory::const_block b) noexcept {
     _parent.compress(b);
 }

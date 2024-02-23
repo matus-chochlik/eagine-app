@@ -106,6 +106,11 @@ public:
 
     virtual auto render() noexcept -> msgbus::blob_preparation = 0;
 
+    auto renderer_name() const noexcept -> valid_if_not_empty<std::string>;
+    auto vendor_name() const noexcept -> valid_if_not_empty<std::string>;
+    auto version() const noexcept -> valid_if_not_empty<std::string>;
+    auto driver_name() const noexcept -> valid_if_not_empty<std::string>;
+
 protected:
     auto resource_context() noexcept -> loaded_resource_context&;
     auto shared() const noexcept -> shared_provider_objects&;
