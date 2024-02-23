@@ -23,7 +23,7 @@ struct gl_rendered_blob_params {
     valid_if_positive<int> surface_height{0};
 };
 //------------------------------------------------------------------------------
-struct egl_rendered_source_context {
+struct egl_rendered_blob_context {
     eglplus::initialized_display display;
     eglplus::owned_surface_handle surface;
     eglplus::owned_context_handle context;
@@ -40,12 +40,11 @@ public:
       const gl_rendered_blob_params&,
       const eglplus::config_attributes,
       const eglplus::surface_attributes,
-      const eglplus::context_attributes) noexcept
-      -> egl_rendered_source_context;
+      const eglplus::context_attributes) noexcept -> egl_rendered_blob_context;
 
     egl_context_handler(
       shared_provider_objects&,
-      egl_rendered_source_context) noexcept;
+      egl_rendered_blob_context) noexcept;
     ~egl_context_handler() noexcept final;
 
     auto shared() const noexcept -> shared_provider_objects&;
@@ -66,7 +65,7 @@ public:
       main_ctx_parent parent,
       shared_provider_objects& shared,
       const gl_rendered_blob_params& params,
-      egl_rendered_source_context) noexcept;
+      egl_rendered_blob_context) noexcept;
 
     void debug_callback(
       oglplus::gl_types::enum_type source,

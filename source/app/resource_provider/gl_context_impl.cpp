@@ -99,7 +99,7 @@ auto egl_context_handler::create_context(
   const eglplus::config_attributes config_attribs,
   const eglplus::surface_attributes surface_attribs,
   const eglplus::context_attributes context_attribs) noexcept
-  -> egl_rendered_source_context {
+  -> egl_rendered_blob_context {
 
     if(auto display{egl_context_handler_open_display(shared, params)}) {
         const auto& egl{shared.apis.egl()->operations()};
@@ -129,7 +129,7 @@ auto egl_context_handler::create_context(
 //------------------------------------------------------------------------------
 egl_context_handler::egl_context_handler(
   shared_provider_objects& shared,
-  egl_rendered_source_context context) noexcept
+  egl_rendered_blob_context context) noexcept
   : _shared{shared}
   , _display{std::move(context.display)}
   , _surface{std::move(context.surface)}
@@ -171,7 +171,7 @@ gl_rendered_blob_context::gl_rendered_blob_context(
   main_ctx_parent parent,
   shared_provider_objects& shared,
   const gl_rendered_blob_params& params,
-  egl_rendered_source_context context) noexcept
+  egl_rendered_blob_context context) noexcept
   : main_ctx_object{"GLRSBlbCtx", parent}
   , _egl_context{default_selector, shared, std::move(context)}
   , _color_rbo{_resource_context.gl_api().gen_renderbuffers.object()}
