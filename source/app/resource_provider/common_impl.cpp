@@ -206,25 +206,33 @@ gl_rendered_source_blob_io::gl_rendered_source_blob_io(
   , _shared{shared}
   , _params{params} {}
 //------------------------------------------------------------------------------
+static bool gl_renderer_active{false};
+//------------------------------------------------------------------------------
 auto gl_rendered_source_blob_io::prepare() noexcept
   -> msgbus::blob_preparation {
-    if(not _renderer) {
-        if(auto context{_create_context()}) {
-            try {
-                _renderer = make_renderer(std::move(context));
-            } catch(...) {
-                return msgbus::blob_preparation::failed;
+    if(not _finished) {
+        if(not _renderer) {
+            if(not gl_renderer_active) {
+                if(auto context{_create_context()}) {
+                    try {
+                        _renderer = make_renderer(std::move(context));
+                        gl_renderer_active = true;
+                    } catch(...) {
+                        return msgbus::blob_preparation::failed;
+                    }
+                }
+            }
+            if(not _renderer) {
+                return msgbus::blob_preparation::working;
             }
         }
-        if(not _renderer) {
-            return msgbus::blob_preparation::working;
-        }
-    }
-    if(not _finished) {
         const auto render_result{_renderer->render()};
         if(render_result == msgbus::blob_preparation::finished) {
             finish();
+            _renderer.reset();
+            gl_renderer_active = false;
             _finished = true;
+            return msgbus::blob_preparation::working;
         }
         return render_result;
     }
