@@ -9,10 +9,13 @@ out vec3 fragColor;
 uniform samplerCube SkyBox;
 
 void main() {
-    vec3  ReflCoord = reflect(normalize(vertViewDir), normalize(vertNormal));
-    vec3 Ambient = vec3(0.4);
+    vec3 ReflCoord = reflect(normalize(vertViewDir), normalize(vertNormal));
+    vec3 CubeCoord = normalize(mix(vertNormal, ReflCoord, vertOccl));
+
+	int lod = int(mix(7.0, 0.0, vertOccl));
+    vec3 Reflect = textureLod(SkyBox, CubeCoord, lod).rgb;
     vec3 Diffuse = vec3(max(dot(vertNormal, vertLightDir)+0.1, 0.0) * 0.6);
-    vec3 Reflect = texture(SkyBox, ReflCoord).rgb;
-    vec3 Light = mix(Reflect, Ambient, mix(0.4, 0.1, vertOccl)) + vec3(Diffuse);
-    fragColor = vertColor * Light;
+    vec3 Ambient = vec3(0.2) + Reflect * mix(1.0, 0.0, vertOccl);
+
+    fragColor = vertColor * (Ambient + Diffuse) + Reflect * vertOccl;
 }
