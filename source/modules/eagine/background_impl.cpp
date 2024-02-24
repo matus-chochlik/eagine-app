@@ -217,7 +217,7 @@ void background_skybox::_init(auto& gl, auto& GL, auto& api) noexcept {
         uniform samplerCube Tex;
 
         void main() {
-            fragColor = texture(Tex, geomCoord);
+            fragColor = textureLod(Tex, geomCoord, 0);
         })";
 
         gl.shader_source(fs, oglplus::glsl_string_ref(fs_source));
