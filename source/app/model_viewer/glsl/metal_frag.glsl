@@ -17,7 +17,7 @@ void main() {
         textureLod(SkyBox, CubeCoord, int(floor(lod))).rgb,
         textureLod(SkyBox, CubeCoord, int(ceil(lod))).rgb,
         fract(lod));
-    vec3 Diffuse = vec3(max(dot(vertNormal, vertLightDir)+0.1, 0.0) * 0.6);
+    vec3 Diffuse = vec3(max(dot(vertNormal, vertLightDir)+0.1, 0.0) * 0.4);
     vec3 Ambient = vec3(0.2) + Reflect * mix(1.0, 0.0, vertOccl);
 
     fragColor = vertColor * (Ambient + Diffuse) + Reflect * vertOccl;

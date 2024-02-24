@@ -35,14 +35,16 @@ model_viewer_models::model_viewer_models(
     load(
       "Twisted torus",
       url{"shape:///unit_twisted_torus"
-          "?position=true+normal=true+wrap_coord=true"},
+          "?position=true+normal=true+wrap_coord=true"
+          "+rings=96"},
       ctx,
       video);
     load(
       "Torus",
       url{"shape:///unit_torus"
           "?position=true+normal=true+tangent=true+bitangent=true"
-          "+wrap_coord=true+occlusion=true"},
+          "+wrap_coord=true+occlusion=true"
+          "+rings=36+sections=72"},
       ctx,
       video);
     load(
