@@ -63,8 +63,7 @@ struct test_manage_mapped_struct_1 : eagitest::app_case {
 
     test_manage_mapped_struct_1(auto& s, auto& ec)
       : eagitest::app_case{s, ec, 1, "mapped struct is loaded"}
-      , manager{ec}
-      , object{manager, eagine::url{"json:///TestThdn1"}} {
+      , object{manager, ec, eagine::url{"json:///TestThdn1"}} {
         too_long.reset();
     }
 
@@ -117,8 +116,7 @@ struct test_manage_mapped_struct_2 : eagitest::app_case {
 
     test_manage_mapped_struct_2(auto& s, auto& ec)
       : eagitest::app_case{s, ec, 2, "mapped struct signal"}
-      , manager{ec}
-      , object{manager, eagine::url{"json:///TestThdn2"}} {
+      , object{manager, ec, eagine::url{"json:///TestThdn2"}} {
         object.connect(
           make_callable_ref<&test_manage_mapped_struct_2::on_loaded>(this));
         too_long.reset();

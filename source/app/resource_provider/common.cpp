@@ -9,10 +9,22 @@ export module eagine.app.resource_provider:common;
 
 import eagine.core;
 import eagine.msgbus;
+import eagine.eglplus;
+import eagine.oglplus;
+import eagine.app;
 import std;
 import :driver;
+import :gl_context;
 
 namespace eagine::app {
+//------------------------------------------------------------------------------
+// locator check functions
+//------------------------------------------------------------------------------
+auto is_valid_text_resource_url(const url&) noexcept -> bool;
+auto is_valid_eagitex_resource_url(const url&) noexcept -> bool;
+auto is_valid_eagitexi_resource_url(const url&) noexcept -> bool;
+//------------------------------------------------------------------------------
+// Base I/O implementations
 //------------------------------------------------------------------------------
 struct simple_string_source_blob_io
   : main_ctx_object
@@ -39,12 +51,12 @@ protected:
     simple_buffer_source_blob_io(
       identifier id,
       main_ctx_parent parent,
-      span_size_t size) noexcept;
+      span_size_t buffer_size) noexcept;
 
     simple_buffer_source_blob_io(
       identifier id,
       main_ctx_parent parent,
-      span_size_t size,
+      span_size_t buffer_size,
       std::function<memory::buffer(memory::buffer)>) noexcept;
 
     void append(const memory::const_block);
@@ -60,28 +72,71 @@ private:
     main_ctx_buffer _content;
 };
 //------------------------------------------------------------------------------
-struct compressed_buffer_source_blob_io : simple_buffer_source_blob_io {
+class compressed_buffer_source_blob_io : public simple_buffer_source_blob_io {
+public:
+    void compress(const memory::const_block) noexcept;
+    void compress(const string_view) noexcept;
+    void compress(const byte) noexcept;
+
 protected:
     compressed_buffer_source_blob_io(
       identifier id,
       main_ctx_parent parent,
-      span_size_t size) noexcept;
+      span_size_t buffer_size) noexcept;
 
     compressed_buffer_source_blob_io(
       identifier id,
       main_ctx_parent parent,
-      span_size_t size,
+      span_size_t buffer_size,
       std::function<memory::buffer(memory::buffer)>) noexcept;
 
-    void compress(const memory::const_block) noexcept;
-    void compress(const string_view) noexcept;
-    void compress(const byte) noexcept;
     void finish() noexcept;
 
 private:
     auto _append_compressed(const memory::const_block) noexcept -> bool;
     auto _compress_handler() noexcept;
     stream_compression _compress;
+};
+//------------------------------------------------------------------------------
+class gl_rendered_source_blob_io : public compressed_buffer_source_blob_io {
+public:
+    auto prepare() noexcept -> msgbus::blob_preparation final;
+
+    auto shared() const noexcept -> const shared_provider_objects& {
+        return _shared;
+    }
+
+    auto params() const noexcept -> const gl_rendered_blob_params& {
+        return _params;
+    }
+
+protected:
+    gl_rendered_source_blob_io(
+      identifier id,
+      main_ctx_parent parent,
+      const shared_provider_objects& shared,
+      const gl_rendered_blob_params& params,
+      span_size_t buffer_size) noexcept;
+
+    virtual auto config_attribs(const shared_provider_objects&) noexcept
+      -> eglplus::config_attributes;
+
+    virtual auto surface_attribs(const shared_provider_objects&) noexcept
+      -> eglplus::surface_attributes;
+
+    virtual auto context_attribs(const shared_provider_objects&) noexcept
+      -> eglplus::context_attributes;
+
+    virtual auto make_renderer(shared_holder<gl_rendered_blob_context>)
+      -> unique_holder<gl_blob_renderer> = 0;
+
+private:
+    auto _create_context() noexcept -> shared_holder<gl_rendered_blob_context>;
+
+    const shared_provider_objects& _shared;
+    const gl_rendered_blob_params _params;
+    unique_holder<gl_blob_renderer> _renderer;
+    bool _finished{false};
 };
 //------------------------------------------------------------------------------
 class ostream_io final : public msgbus::source_blob_io {
@@ -96,6 +151,8 @@ public:
 private:
     std::stringstream _content;
 };
+//------------------------------------------------------------------------------
+// base provider implementations
 //------------------------------------------------------------------------------
 struct eagitex_provider_base
   : main_ctx_object
@@ -114,6 +171,17 @@ protected:
     static auto valid_level(int l) noexcept -> bool {
         return (l >= 0);
     }
+};
+//------------------------------------------------------------------------------
+// file-system search paths
+//------------------------------------------------------------------------------
+class filesystem_search_paths
+  : public main_ctx_object
+  , public std::vector<std::filesystem::path> {
+public:
+    filesystem_search_paths(identifier id, main_ctx_parent parent) noexcept;
+
+private:
 };
 //------------------------------------------------------------------------------
 } // namespace eagine::app

@@ -58,14 +58,8 @@ private:
                 const auto ext_cio{
                   egl_cio.print("EGL extensions:").to_be_continued()};
 
-                if(const ok extensions{egl.get_extensions(display)}) {
-                    for(auto name : extensions) {
-                        ext_cio.print(name);
-                    }
-                } else {
-                    ext_cio
-                      .error("failed to get EGL extension list: ${message}")
-                      .arg("message", (!extensions).message());
+                for(auto name : egl.get_extensions(display)) {
+                    ext_cio.print(name);
                 }
                 _egl_info_printed = true;
             }
@@ -103,13 +97,8 @@ private:
             const auto ext_cio{
               gl_cio.print("GL extensions:").to_be_continued()};
 
-            if(const ok extensions{gl.get_extensions()}) {
-                for(auto name : extensions) {
-                    ext_cio.print(name);
-                }
-            } else {
-                ext_cio.error("failed to get GL extension list: ${message}")
-                  .arg("message", (!extensions).message());
+            for(auto name : gl.get_extensions()) {
+                ext_cio.print(name);
             }
             _gl_info_printed = true;
         });
@@ -134,13 +123,8 @@ private:
             const auto ext_cio{
               al_cio.print("AL extensions:").to_be_continued()};
 
-            if(const ok extensions{al.get_extensions()}) {
-                for(auto name : extensions) {
-                    ext_cio.print(name);
-                }
-            } else {
-                ext_cio.error("failed to get AL extension list: ${message}")
-                  .arg("message", (!extensions).message());
+            for(auto name : al.get_extensions()) {
+                ext_cio.print(name);
             }
             _al_info_printed = true;
         });
@@ -187,10 +171,10 @@ public:
             auto& vc = *opt_vc;
             auto& ac = *opt_ac;
             vc.begin();
-            if(vc.init_gl_api()) {
+            if(vc.init_gl_api(ec)) {
                 if(check_requirements(vc)) {
                     ac.begin();
-                    if(ac.init_al_api()) {
+                    if(ac.init_al_api(ec)) {
                         if(check_requirements(ac)) {
                             return {hold<example_info>, ec, vc, ac};
                         } else {

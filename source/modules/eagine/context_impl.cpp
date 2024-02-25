@@ -32,7 +32,7 @@ class video_context_state {
 public:
     video_context_state(execution_context&, const video_options&) noexcept;
 
-    auto init_framebuffer(execution_context&, oglplus::gl_api&) noexcept
+    auto init_framebuffer(execution_context&, const oglplus::gl_api&) noexcept
       -> bool;
 
     auto doing_framedump() const noexcept -> bool;
@@ -40,7 +40,8 @@ public:
     auto framedump_number(const long frame_no) const noexcept
       -> valid_if_nonnegative<long>;
 
-    auto commit(long frame_number, video_provider&, oglplus::gl_api&) -> bool;
+    auto commit(long frame_number, video_provider&, const oglplus::gl_api&)
+      -> bool;
 
     void add_cleanup_op(callable_ref<void(video_context&) noexcept> op);
 
@@ -50,7 +51,7 @@ private:
     auto _dump_frame(
       const long frame_number,
       video_provider& provider,
-      oglplus::gl_api& api) -> bool;
+      const oglplus::gl_api& api) -> bool;
 
     void _clean_up(auto&) noexcept;
 
@@ -88,7 +89,7 @@ inline video_context_state::video_context_state(
 //------------------------------------------------------------------------------
 inline auto video_context_state::init_framebuffer(
   execution_context&,
-  oglplus::gl_api&) noexcept -> bool {
+  const oglplus::gl_api&) noexcept -> bool {
     if(_options.needs_offscreen_framebuffer()) {
         // TODO: check options and make RBOs and FBO
     }
@@ -107,7 +108,7 @@ auto video_context_state::framedump_number(const long frame_no) const noexcept
 auto video_context_state::_dump_frame(
   const long frame_number,
   video_provider& provider,
-  oglplus::gl_api& api) -> bool {
+  const oglplus::gl_api& api) -> bool {
     bool result = true;
     const auto& [gl, GL] = api;
 
@@ -219,7 +220,7 @@ auto video_context_state::_dump_frame(
 inline auto video_context_state::commit(
   const long frame_number,
   video_provider& provider,
-  oglplus::gl_api& api) -> bool {
+  const oglplus::gl_api& api) -> bool {
     bool result = true;
     if(doing_framedump()) [[unlikely]] {
         result = _dump_frame(frame_number, provider, api) and result;
@@ -285,10 +286,11 @@ video_context::video_context(
     _provider->parent_context_changed(*this);
 }
 //------------------------------------------------------------------------------
-auto video_context::init_gl_api() noexcept -> bool {
+auto video_context::init_gl_api(execution_context& ec) noexcept -> bool {
     try {
-        _gl_api.emplace();
-        const auto& [gl, GL] = *_gl_api;
+        _gl_api_context.ensure();
+        ec.gl_initialized(*this);
+        const auto& [gl, GL] = gl_api();
 
         const auto found{eagine::find(
           _parent.options().video_requirements(), _provider->instance_id())};
@@ -309,8 +311,8 @@ auto video_context::init_gl_api() noexcept -> bool {
                 gl.debug_message_insert(
                   GL.debug_source_application,
                   GL.debug_type_other,
+                  0U, // ID
                   GL.debug_severity_medium,
-                  0U,
                   "successfully enabled GL debug output");
             } else {
                 _parent.log_warning(
@@ -321,7 +323,7 @@ auto video_context::init_gl_api() noexcept -> bool {
         _state.emplace(_parent, opts);
 
         if(not _provider->has_framebuffer()) {
-            if(not _state->init_framebuffer(_parent, *_gl_api)) {
+            if(not _state->init_framebuffer(_parent, gl_api())) {
                 _parent.log_error("failed to create offscreen framebuffer");
                 return false;
             }
@@ -329,7 +331,7 @@ auto video_context::init_gl_api() noexcept -> bool {
     } catch(...) {
         return false;
     }
-    return bool(_gl_api);
+    return bool(_gl_api_context);
 }
 //------------------------------------------------------------------------------
 void video_context::begin() {
@@ -341,8 +343,8 @@ void video_context::end() {
 }
 //------------------------------------------------------------------------------
 void video_context::commit() {
-    if(_gl_api) [[likely]] {
-        if(not _state->commit(_frame_no, *_provider, *_gl_api)) [[unlikely]] {
+    if(_gl_api_context) [[likely]] {
+        if(not _state->commit(_frame_no, *_provider, gl_api())) [[unlikely]] {
             _parent.stop_running();
         }
     }
@@ -396,10 +398,11 @@ void audio_context::commit() {
     _provider->audio_commit(_parent);
 }
 //------------------------------------------------------------------------------
-auto audio_context::init_al_api() noexcept -> bool {
+auto audio_context::init_al_api(execution_context& ec) noexcept -> bool {
     try {
         _al_api.emplace();
         _alut_api.emplace();
+        ec.al_initialized(*this);
     } catch(...) {
     }
     return bool(_al_api);
@@ -421,7 +424,7 @@ inline auto make_all_hmi_providers(main_ctx_parent parent)
 //------------------------------------------------------------------------------
 execution_context::execution_context(main_ctx_parent parent) noexcept
   : main_ctx_object("AppExecCtx", parent)
-  , _loader{_registry.emplace<resource_loader>("RsrsLoadr")} {}
+  , _resource_context{_registry.emplace<resource_loader>("RsrsLoadr")} {}
 //------------------------------------------------------------------------------
 inline auto execution_context::_setup_providers() noexcept -> bool {
     const auto try_init{[&](auto provider) -> bool {
@@ -482,6 +485,15 @@ inline auto execution_context::_setup_providers() noexcept -> bool {
     return true;
 }
 //------------------------------------------------------------------------------
+auto execution_context::resource_context() noexcept
+  -> loaded_resource_context& {
+    return _resource_context;
+}
+//------------------------------------------------------------------------------
+auto execution_context::loader() noexcept -> resource_loader& {
+    return resource_context().loader();
+}
+//------------------------------------------------------------------------------
 auto execution_context::buffer() const noexcept -> memory::buffer& {
     return main_ctx_object::main_context().scratch_space();
 }
@@ -498,6 +510,55 @@ auto execution_context::enough_run_time() const noexcept -> bool {
 auto execution_context::enough_frames(const span_size_t frame_no) const noexcept
   -> bool {
     return options().enough_frames(frame_no);
+}
+//------------------------------------------------------------------------------
+auto execution_context::video_ctx_count() const noexcept -> span_size_t {
+    return span_size(_video_contexts.size());
+}
+//------------------------------------------------------------------------------
+auto execution_context::video_ctx(const span_size_t index) const noexcept
+  -> optional_reference<video_context> {
+    if((index >= 0) and (index < video_ctx_count())) {
+        return _video_contexts[integer(index)].get();
+    }
+    return {};
+}
+//------------------------------------------------------------------------------
+auto execution_context::main_video() const noexcept -> video_context& {
+    assert(not _video_contexts.empty());
+    assert(_video_contexts.front());
+    return *_video_contexts.front();
+}
+//------------------------------------------------------------------------------
+auto execution_context::gl_initialized(video_context& video) noexcept
+  -> execution_context& {
+    if(not _resource_context.gl_context()) {
+        _resource_context.set_gl_context(video.gl_context());
+    }
+    return *this;
+}
+//------------------------------------------------------------------------------
+auto execution_context::audio_ctx_count() const noexcept -> span_size_t {
+    return span_size(_audio_contexts.size());
+}
+//------------------------------------------------------------------------------
+auto execution_context::audio_ctx(const span_size_t index) const noexcept
+  -> optional_reference<audio_context> {
+    if((index >= 0) and (index < audio_ctx_count())) {
+        return _audio_contexts[integer(index)].get();
+    }
+    return {};
+}
+//------------------------------------------------------------------------------
+auto execution_context::main_audio() const noexcept -> audio_context& {
+    assert(not _audio_contexts.empty());
+    assert(_audio_contexts.front());
+    return *_audio_contexts.front();
+}
+//------------------------------------------------------------------------------
+auto execution_context::al_initialized(audio_context&) noexcept
+  -> execution_context& {
+    return *this;
 }
 //------------------------------------------------------------------------------
 auto execution_context::prepare(unique_holder<launchpad> pad)

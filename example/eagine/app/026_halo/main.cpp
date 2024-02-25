@@ -22,10 +22,10 @@ public:
     void clean_up() noexcept final;
 
 private:
-    void _on_resource_loaded(const loaded_resource_base&) noexcept;
+    void _on_load_event(const loaded_resource_base&) noexcept;
 
     auto _load_handler() noexcept {
-        return make_callable_ref<&example_halo::_on_resource_loaded>(this);
+        return make_callable_ref<&example_halo::_on_load_event>(this);
     }
 
     video_context& _video;
@@ -44,9 +44,9 @@ example_halo::example_halo(execution_context& ec, video_context& vc)
   , _halo_prog{context()}
   , _shape{context()} {
 
-    _surf_prog.base_loaded.connect(_load_handler());
-    _halo_prog.base_loaded.connect(_load_handler());
-    _shape.base_loaded.connect(_load_handler());
+    _surf_prog.load_event.connect(_load_handler());
+    _halo_prog.load_event.connect(_load_handler());
+    _shape.load_event.connect(_load_handler());
 
     _camera.set_near(0.1F)
       .set_far(50.F)
@@ -67,7 +67,7 @@ example_halo::example_halo(execution_context& ec, video_context& vc)
     gl.blend_func(GL.src_alpha, GL.one);
 }
 //------------------------------------------------------------------------------
-void example_halo::_on_resource_loaded(const loaded_resource_base&) noexcept {
+void example_halo::_on_load_event(const loaded_resource_base&) noexcept {
     if(_shape) {
         if(_surf_prog) {
             _surf_prog.use(_video);

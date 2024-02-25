@@ -59,7 +59,7 @@ example_stencil_shadow::example_stencil_shadow(
   , _cube_tex{url{"json:///CloudyDay"}, context()}
   , _color_tex{url{"json:///CartColor"}, context()}
   , _light_tex{url{"json:///CartAOccl"}, context()} {
-    _wheelcart.base_loaded.connect(
+    _wheelcart.load_event.connect(
       make_callable_ref<&example_stencil_shadow::_on_loaded>(this));
     _draw_prog.loaded.connect(
       make_callable_ref<&example_stencil_shadow::_on_prog_loaded>(this));

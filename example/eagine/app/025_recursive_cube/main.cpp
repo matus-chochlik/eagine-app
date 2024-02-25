@@ -22,7 +22,7 @@ public:
     void clean_up() noexcept final;
 
 private:
-    void _on_resource_loaded(const loaded_resource_base&) noexcept;
+    void _on_load_event(const loaded_resource_base&) noexcept;
 
     video_context& _video;
 
@@ -50,7 +50,7 @@ example_cube::example_cube(execution_context& ec, video_context& vc)
     ec.setup_inputs().switch_input_mapping();
 }
 //------------------------------------------------------------------------------
-void example_cube::_on_resource_loaded(const loaded_resource_base&) noexcept {
+void example_cube::_on_load_event(const loaded_resource_base&) noexcept {
     if(_prog and _cube) {
         _prog.apply_input_bindings(_video, _cube);
     }

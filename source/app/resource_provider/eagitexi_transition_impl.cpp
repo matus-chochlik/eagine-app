@@ -13,6 +13,7 @@ module eagine.app.resource_provider;
 
 import eagine.core;
 import eagine.msgbus;
+import eagine.app;
 import std;
 
 namespace eagine::app {
@@ -33,7 +34,7 @@ class tiling_transition_checker final : public tiling_transition_mask {
 public:
     tiling_transition_checker(
       main_ctx_parent,
-      msgbus::resource_data_consumer_node&,
+      shared_provider_objects&,
       const url& locator) noexcept;
 
     static auto is_valid_locator(const url& locator) noexcept -> bool;
@@ -64,7 +65,7 @@ private:
 //------------------------------------------------------------------------------
 tiling_transition_checker::tiling_transition_checker(
   main_ctx_parent,
-  msgbus::resource_data_consumer_node&,
+  shared_provider_objects&,
   const url& locator) noexcept
   : _width{locator.query().arg_value_as<int>("width").value_or(64)}
   , _height{locator.query().arg_value_as<int>("height").value_or(64)} {}
@@ -83,7 +84,7 @@ class tiling_transition_tiling final
 public:
     tiling_transition_tiling(
       main_ctx_parent,
-      msgbus::resource_data_consumer_node&,
+      shared_provider_objects&,
       const url& locator) noexcept;
 
     static auto is_valid_locator(const url& locator) noexcept -> bool;
@@ -99,23 +100,13 @@ private:
     static auto _get_source(const url&) noexcept -> url;
     static auto _get_threshold(const url&) noexcept -> int;
 
-    void _handle_stream_data_appended(
-      const msgbus::blob_stream_chunk& chunk) noexcept;
-    void _handle_stream_finished(const msgbus::blob_id_t) noexcept;
-    void _handle_stream_canceled(const msgbus::blob_id_t) noexcept;
+    void _loaded(const loaded_resource_base& info) noexcept;
 
-    signal_binding _appended_binding;
-    signal_binding _finished_binding;
-    signal_binding _canceled_binding;
-
-    identifier_t _request_id;
-    std::string _tiling_line;
-    std::vector<std::string> _tiling;
-    int _threshold;
-    bool _first{true};
-    bool _last{false};
-    bool _finished{false};
-    bool _canceled{false};
+    shared_provider_objects& _shared;
+    string_list_resource _tiling;
+    const signal_binding _sig_binding;
+    const int _threshold;
+    msgbus::blob_preparation_result _prep_result;
 };
 //------------------------------------------------------------------------------
 auto tiling_transition_tiling::_get_source(const url& locator) noexcept -> url {
@@ -129,41 +120,26 @@ auto tiling_transition_tiling::_get_threshold(const url& locator) noexcept
 //------------------------------------------------------------------------------
 tiling_transition_tiling::tiling_transition_tiling(
   main_ctx_parent parent,
-  msgbus::resource_data_consumer_node& consumer,
+  shared_provider_objects& shared,
   const url& locator) noexcept
   : main_ctx_object{"TlgTrnsTlg", parent}
-  , _appended_binding{consumer.blob_stream_data_appended.bind(
-      {this,
-       member_function_constant_t<
-         &tiling_transition_tiling::_handle_stream_data_appended>{}})}
-  , _finished_binding{consumer.blob_stream_finished.bind(
-      {this,
-       member_function_constant_t<
-         &tiling_transition_tiling::_handle_stream_finished>{}})}
-  , _canceled_binding{consumer.blob_stream_cancelled.bind(
-      {this,
-       member_function_constant_t<
-         &tiling_transition_tiling::_handle_stream_canceled>{}})}
-  , _request_id{std::get<0>(consumer.stream_resource(_get_source(locator)))}
+  , _shared{shared}
+  , _tiling{_get_source(locator), _shared.loader}
+  , _sig_binding{_tiling.load_event.bind(
+      {this, member_function_constant_t<&tiling_transition_tiling::_loaded>{}})}
   , _threshold{_get_threshold(locator)} {}
 //------------------------------------------------------------------------------
 auto tiling_transition_tiling::is_valid_locator(const url& locator) noexcept
   -> bool {
     if(const auto source{locator.query().arg_url("source")}) {
-        return source.has_scheme("text") or source.has_path_suffix(".text") or
-               source.has_path_suffix(".txt");
+        return is_valid_text_resource_url(source);
     }
     return false;
 }
 //------------------------------------------------------------------------------
 auto tiling_transition_tiling::prepare() noexcept -> msgbus::blob_preparation {
-    const auto result = (_finished or _canceled)
-                          ? msgbus::blob_preparation::finished
-                          : msgbus::blob_preparation::working;
-    if(_last) {
-        _finished = true;
-    }
-    return result;
+    loaded_resource_context context{_shared.loader};
+    return _prep_result(_tiling.load_if_needed(context));
 }
 //------------------------------------------------------------------------------
 auto tiling_transition_tiling::width() noexcept -> valid_if_positive<int> {
@@ -206,43 +182,8 @@ auto tiling_transition_tiling::value(int x, int y) noexcept -> bool {
     return false;
 }
 //------------------------------------------------------------------------------
-void tiling_transition_tiling::_handle_stream_data_appended(
-  const msgbus::blob_stream_chunk& chunk) noexcept {
-    if(_request_id == chunk.request_id) {
-        const string_view sep{"\n"};
-        for(const auto blk : chunk.data) {
-            auto text{as_chars(blk)};
-            while(not text.empty()) {
-                if(const auto pos{memory::find_position(text, sep)}) {
-                    append_to(head(text, *pos), _tiling_line);
-                    text = skip(text, *pos + sep.size());
-                    if(not _tiling_line.empty()) {
-                        _tiling.emplace_back(std::move(_tiling_line));
-                    }
-                } else {
-                    append_to(text, _tiling_line);
-                    text = {};
-                }
-            }
-        }
-    }
-}
-//------------------------------------------------------------------------------
-void tiling_transition_tiling::_handle_stream_finished(
-  const msgbus::blob_id_t request_id) noexcept {
-    if(_request_id == request_id) {
-        if(not _tiling_line.empty()) {
-            _tiling.emplace_back(std::move(_tiling_line));
-        }
-        _last = true;
-    }
-}
-//------------------------------------------------------------------------------
-void tiling_transition_tiling::_handle_stream_canceled(
-  const msgbus::blob_id_t request_id) noexcept {
-    if(_request_id == request_id) {
-        _canceled = true;
-    }
+void tiling_transition_tiling::_loaded(const loaded_resource_base&) noexcept {
+    _tiling.erase_blank_lines();
 }
 //------------------------------------------------------------------------------
 // transition mask factory
@@ -251,9 +192,9 @@ class tiling_transition_mask_factory : public main_ctx_object {
 public:
     tiling_transition_mask_factory(
       main_ctx_parent parent,
-      msgbus::resource_data_consumer_node& consumer) noexcept
+      shared_provider_objects& shared) noexcept
       : main_ctx_object{"TiTrMskFac", parent}
-      , _consumer{consumer} {}
+      , _shared{shared} {}
 
     auto is_valid_locator(const url& locator) noexcept -> bool;
 
@@ -275,12 +216,12 @@ private:
     auto _make_mask(const url& locator, mp_list<M, Ms...>) noexcept
       -> unique_holder<tiling_transition_mask> {
         if(M::is_valid_locator(locator)) {
-            return {hold<M>, as_parent(), _consumer, locator};
+            return {hold<M>, as_parent(), _shared, locator};
         }
         return _make_mask(locator, mp_list<Ms...>{});
     }
 
-    msgbus::resource_data_consumer_node& _consumer;
+    shared_provider_objects& _shared;
     mp_list<tiling_transition_checker, tiling_transition_tiling> _masks{};
 };
 //------------------------------------------------------------------------------
@@ -464,7 +405,7 @@ class eagitexi_tiling_transition_provider final
 public:
     eagitexi_tiling_transition_provider(const provider_parameters& p) noexcept
       : main_ctx_object{"PTxTTrnstn", p.parent}
-      , _mask_factory{as_parent(), p.consumer} {}
+      , _mask_factory{as_parent(), p.shared} {}
 
     auto has_resource(const url& locator) noexcept -> bool final;
 
@@ -473,7 +414,7 @@ public:
 
     auto get_blob_timeout(const span_size_t) noexcept
       -> std::chrono::seconds final {
-        return std::chrono::minutes{2};
+        return adjusted_duration(std::chrono::minutes{2});
     }
 
     void for_each_locator(

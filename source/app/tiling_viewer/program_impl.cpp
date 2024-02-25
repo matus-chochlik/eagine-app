@@ -155,7 +155,7 @@ void tiling_viewer_program_resource::set_tileset_unit(
 void tiling_viewer_program_resource::clean_up(
   execution_context& ctx,
   video_context& video) {
-    gl_program_resource::clean_up(ctx.loader(), video);
+    gl_program_resource::clean_up(ctx);
 }
 //------------------------------------------------------------------------------
 auto make_viewer_resource(

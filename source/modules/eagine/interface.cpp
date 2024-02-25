@@ -198,7 +198,7 @@ export struct launchpad : interface<launchpad> {
         return video_ctx(ec).and_then(
           [this, &ec](auto& vc) -> unique_holder<application> {
               vc.begin();
-              if(vc.init_gl_api()) {
+              if(vc.init_gl_api(ec)) {
                   if(check_requirements(vc)) {
                       return {hold<Application>, ec, vc};
                   }

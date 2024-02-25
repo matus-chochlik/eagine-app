@@ -13,6 +13,7 @@ module eagine.app.resource_provider;
 
 import eagine.core;
 import eagine.msgbus;
+import eagine.app;
 import std;
 
 namespace eagine::app {
@@ -21,10 +22,7 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 class eagitexi_tiling_io final : public compressed_buffer_source_blob_io {
 public:
-    eagitexi_tiling_io(
-      main_ctx_parent,
-      msgbus::resource_data_consumer_node&,
-      url);
+    eagitexi_tiling_io(main_ctx_parent, shared_provider_objects&, const url&);
 
     auto prepare() noexcept -> msgbus::blob_preparation final;
 
@@ -32,55 +30,35 @@ private:
     void _process_cell(const byte);
     void _process_line(const string_view);
 
-    void _handle_stream_data_appended(
-      const msgbus::blob_stream_chunk& chunk) noexcept;
-    void _handle_stream_finished(const msgbus::blob_id_t) noexcept;
-    void _handle_stream_canceled(const msgbus::blob_id_t) noexcept;
+    void _line_loaded(resource_loader::string_list_load_info& info) noexcept;
+    void _loaded(const loaded_resource_base& info) noexcept;
 
-    signal_binding _appended_binding;
-    signal_binding _finished_binding;
-    signal_binding _canceled_binding;
-
-    identifier_t _request_id;
-
-    std::string _tiling_line;
-    bool _first{true};
-    bool _last{false};
-    bool _finished{false};
-    bool _canceled{false};
+    shared_provider_objects& _shared;
+    string_list_resource _tiling;
+    const signal_binding _line_binding;
+    const signal_binding _done_binding;
+    msgbus::blob_preparation_result _prep_result;
 };
 //------------------------------------------------------------------------------
 eagitexi_tiling_io::eagitexi_tiling_io(
   main_ctx_parent parent,
-  msgbus::resource_data_consumer_node& consumer,
-  url source)
+  shared_provider_objects& shared,
+  const url& locator)
   : compressed_buffer_source_blob_io{"ITxTlng", parent, 1024 * 1024}
-  , _appended_binding{consumer.blob_stream_data_appended.bind(
-      {this,
-       member_function_constant_t<
-         &eagitexi_tiling_io::_handle_stream_data_appended>{}})}
-  , _finished_binding{consumer.blob_stream_finished.bind(
-      {this,
-       member_function_constant_t<
-         &eagitexi_tiling_io::_handle_stream_finished>{}})}
-  , _canceled_binding{consumer.blob_stream_cancelled.bind(
-      {this,
-       member_function_constant_t<
-         &eagitexi_tiling_io::_handle_stream_canceled>{}})}
-  , _request_id{std::get<0>(consumer.stream_resource(std::move(source)))} {
+  , _shared{shared}
+  , _tiling{locator, shared.loader}
+  , _line_binding{_shared.loader.string_line_loaded.bind(
+      {this, member_function_constant_t<&eagitexi_tiling_io::_line_loaded>{}})}
+  , _done_binding{_tiling.load_event.bind(
+      {this, member_function_constant_t<&eagitexi_tiling_io::_loaded>{}})} {
     append(R"({"level":0,"channels":1,"data_type":"unsigned_byte")");
     append(R"(,"tag":["tiling"])");
     append(R"(,"format":"red_integer","iformat":"r8ui")");
 }
 //------------------------------------------------------------------------------
 auto eagitexi_tiling_io::prepare() noexcept -> msgbus::blob_preparation {
-    const auto result = (_finished or _canceled)
-                          ? msgbus::blob_preparation::finished
-                          : msgbus::blob_preparation::working;
-    if(_last) {
-        _finished = true;
-    }
-    return result;
+    loaded_resource_context context{_shared.loader};
+    return _prep_result(_tiling.load_if_needed(context));
 }
 //------------------------------------------------------------------------------
 void eagitexi_tiling_io::_process_cell(const byte b) {
@@ -89,8 +67,7 @@ void eagitexi_tiling_io::_process_cell(const byte b) {
 //------------------------------------------------------------------------------
 void eagitexi_tiling_io::_process_line(const string_view line) {
     if(not line.empty()) {
-        if(_first) {
-            _first = false;
+        if(_prep_result.first()) {
             std::stringstream hdr;
             hdr << R"(,"width":)" << line.size();
             hdr << R"(,"height":)" << line.size();
@@ -112,42 +89,16 @@ void eagitexi_tiling_io::_process_line(const string_view line) {
     }
 }
 //------------------------------------------------------------------------------
-void eagitexi_tiling_io::_handle_stream_data_appended(
-  const msgbus::blob_stream_chunk& chunk) noexcept {
-    if(_request_id == chunk.request_id) {
-        const string_view sep{"\n"};
-        for(const auto blk : chunk.data) {
-            auto text{as_chars(blk)};
-            while(not text.empty()) {
-                if(const auto pos{memory::find_position(text, sep)}) {
-                    append_to(head(text, *pos), _tiling_line);
-                    text = skip(text, *pos + sep.size());
-                    _process_line(_tiling_line);
-                    _tiling_line.clear();
-                } else {
-                    append_to(text, _tiling_line);
-                    text = {};
-                }
-            }
-        }
+void eagitexi_tiling_io::_line_loaded(
+  resource_loader::string_list_load_info& info) noexcept {
+    for(const auto& line : info.strings) {
+        _process_line(line);
     }
+    info.strings.clear();
 }
 //------------------------------------------------------------------------------
-void eagitexi_tiling_io::_handle_stream_finished(
-  const msgbus::blob_id_t request_id) noexcept {
-    if(_request_id == request_id) {
-        _process_line(_tiling_line);
-        _tiling_line.clear();
-        finish();
-        _last = true;
-    }
-}
-//------------------------------------------------------------------------------
-void eagitexi_tiling_io::_handle_stream_canceled(
-  const msgbus::blob_id_t request_id) noexcept {
-    if(_request_id == request_id) {
-        _canceled = true;
-    }
+void eagitexi_tiling_io::_loaded(const loaded_resource_base&) noexcept {
+    finish();
 }
 //------------------------------------------------------------------------------
 // tiling image provider
@@ -156,11 +107,11 @@ struct eagitexi_tiling_provider final
   : main_ctx_object
   , resource_provider_interface {
 
-    msgbus::resource_data_consumer_node& consumer;
+    shared_provider_objects& shared;
 
     eagitexi_tiling_provider(const provider_parameters& p) noexcept
       : main_ctx_object{"PTxTlng", p.parent}
-      , consumer{p.consumer} {}
+      , shared{p.shared} {}
 
     auto valid_source(const url& locator) noexcept -> bool;
 
@@ -171,7 +122,7 @@ struct eagitexi_tiling_provider final
 
     auto get_blob_timeout(const span_size_t) noexcept
       -> std::chrono::seconds final {
-        return std::chrono::minutes{2};
+        return adjusted_duration(std::chrono::minutes{2});
     }
 
     void for_each_locator(
@@ -180,9 +131,7 @@ struct eagitexi_tiling_provider final
 //------------------------------------------------------------------------------
 auto eagitexi_tiling_provider::valid_source(const url& locator) noexcept
   -> bool {
-    return locator and
-           (locator.has_scheme("text") or locator.has_path_suffix(".text") or
-            locator.has_path_suffix(".txt"));
+    return is_valid_text_resource_url(locator);
 }
 //------------------------------------------------------------------------------
 auto eagitexi_tiling_provider::has_resource(const url& locator) noexcept
@@ -202,11 +151,7 @@ auto eagitexi_tiling_provider::has_resource(const url& locator) noexcept
 auto eagitexi_tiling_provider::get_resource_io(const url& locator)
   -> unique_holder<msgbus::source_blob_io> {
     const auto& q{locator.query()};
-    return {
-      hold<eagitexi_tiling_io>,
-      as_parent(),
-      consumer,
-      q.decoded_arg_value("source").or_default()};
+    return {hold<eagitexi_tiling_io>, as_parent(), shared, q.arg_url("source")};
 }
 //------------------------------------------------------------------------------
 void eagitexi_tiling_provider::for_each_locator(
@@ -306,9 +251,9 @@ auto tiling_data_view::get(float x, float y) const noexcept -> float {
 //------------------------------------------------------------------------------
 class tiling_data : public main_ctx_object {
 public:
-    tiling_data(main_ctx_parent, msgbus::resource_data_consumer_node&, url);
+    tiling_data(main_ctx_parent, shared_provider_objects&, const url&);
 
-    auto is_loaded() const noexcept -> bool;
+    auto is_loaded() noexcept -> bool;
 
     auto width() const noexcept -> span_size_t {
         return _width;
@@ -340,23 +285,15 @@ private:
     void _process_cell(const byte);
     void _process_line(const string_view);
 
-    void _handle_stream_data_appended(
-      const msgbus::blob_stream_chunk& chunk) noexcept;
-    void _handle_stream_finished(const msgbus::blob_id_t) noexcept;
-    void _handle_stream_canceled(const msgbus::blob_id_t) noexcept;
+    void _line_loaded(resource_loader::string_list_load_info& info) noexcept;
 
-    signal_binding _appended_binding;
-    signal_binding _finished_binding;
-    signal_binding _canceled_binding;
-
-    identifier_t _request_id;
-
+    shared_provider_objects& _shared;
+    string_list_resource _tiling;
+    const signal_binding _line_binding;
     std::vector<float> _data;
-    std::string _tiling_line;
+
     span_size_t _width{0};
     span_size_t _height{0};
-    bool _finished{false};
-    bool _canceled{false};
 };
 //------------------------------------------------------------------------------
 auto tiling_data_view::get_cell(span_size_t x, span_size_t y) const noexcept
@@ -366,19 +303,13 @@ auto tiling_data_view::get_cell(span_size_t x, span_size_t y) const noexcept
 //------------------------------------------------------------------------------
 tiling_data::tiling_data(
   main_ctx_parent parent,
-  msgbus::resource_data_consumer_node& consumer,
-  url source)
+  shared_provider_objects& shared,
+  const url& locator)
   : main_ctx_object{"TilingData", parent}
-  , _appended_binding{consumer.blob_stream_data_appended.bind(
-      {this,
-       member_function_constant_t<&tiling_data::_handle_stream_data_appended>{}})}
-  , _finished_binding{consumer.blob_stream_finished.bind(
-      {this,
-       member_function_constant_t<&tiling_data::_handle_stream_finished>{}})}
-  , _canceled_binding{consumer.blob_stream_cancelled.bind(
-      {this,
-       member_function_constant_t<&tiling_data::_handle_stream_canceled>{}})}
-  , _request_id{std::get<0>(consumer.stream_resource(std::move(source)))} {
+  , _shared{shared}
+  , _tiling{locator, _shared.loader}
+  , _line_binding{_shared.loader.string_line_loaded.bind(
+      {this, member_function_constant_t<&tiling_data::_line_loaded>{}})} {
     _data.reserve(1024U * 1024U);
 }
 //------------------------------------------------------------------------------
@@ -386,8 +317,10 @@ void tiling_data::_process_cell(const byte b) {
     _data.push_back(float(b) / float(16));
 }
 //------------------------------------------------------------------------------
-auto tiling_data::is_loaded() const noexcept -> bool {
-    return _finished and (_width > 0) and (_height > 0);
+auto tiling_data::is_loaded() noexcept -> bool {
+    loaded_resource_context context{_shared.loader};
+    _tiling.load_if_needed(context);
+    return _tiling.is_loaded() and (_width > 0) and (_height > 0);
 }
 //------------------------------------------------------------------------------
 auto tiling_data::_wrap_coord(
@@ -440,41 +373,12 @@ void tiling_data::_process_line(const string_view line) {
     }
 }
 //------------------------------------------------------------------------------
-void tiling_data::_handle_stream_data_appended(
-  const msgbus::blob_stream_chunk& chunk) noexcept {
-    if(_request_id == chunk.request_id) {
-        const string_view sep{"\n"};
-        for(const auto blk : chunk.data) {
-            auto text{as_chars(blk)};
-            while(not text.empty()) {
-                if(const auto pos{memory::find_position(text, sep)}) {
-                    append_to(head(text, *pos), _tiling_line);
-                    text = skip(text, *pos + sep.size());
-                    _process_line(_tiling_line);
-                    _tiling_line.clear();
-                } else {
-                    append_to(text, _tiling_line);
-                    text = {};
-                }
-            }
-        }
+void tiling_data::_line_loaded(
+  resource_loader::string_list_load_info& info) noexcept {
+    for(const auto& line : info.strings) {
+        _process_line(line);
     }
-}
-//------------------------------------------------------------------------------
-void tiling_data::_handle_stream_finished(
-  const msgbus::blob_id_t request_id) noexcept {
-    if(_request_id == request_id) {
-        _process_line(_tiling_line);
-        _tiling_line.clear();
-        _finished = true;
-    }
-}
-//------------------------------------------------------------------------------
-void tiling_data::_handle_stream_canceled(
-  const msgbus::blob_id_t request_id) noexcept {
-    if(_request_id == request_id) {
-        _canceled = true;
-    }
+    info.strings.clear();
 }
 //------------------------------------------------------------------------------
 // noise I/O
@@ -483,7 +387,7 @@ class eagitexi_tiling_noise_io final : public simple_buffer_source_blob_io {
 public:
     eagitexi_tiling_noise_io(
       main_ctx_parent,
-      msgbus::resource_data_consumer_node&,
+      shared_provider_objects&,
       span_size_t width,
       span_size_t height,
       url);
@@ -507,16 +411,16 @@ private:
 //------------------------------------------------------------------------------
 eagitexi_tiling_noise_io::eagitexi_tiling_noise_io(
   main_ctx_parent parent,
-  msgbus::resource_data_consumer_node& consumer,
+  shared_provider_objects& shared,
   span_size_t width,
   span_size_t height,
   url locator)
   : simple_buffer_source_blob_io{"ITxTlgNois", parent, 1024 * 1024}
   , _width{width}
   , _height{height}
-  , _tiling{as_parent(), consumer, std::move(locator)} {
+  , _tiling{as_parent(), shared, std::move(locator)} {
     append(R"({"level":0,"channels":1,"data_type":"float")"
-           R"(,"format":"red","iformat":"red")"
+           R"(,"format":"red","iformat":"r32f")"
            R"(,"tag":["generated","noise","sudoku"])");
 }
 //------------------------------------------------------------------------------
@@ -568,12 +472,24 @@ auto eagitexi_tiling_noise_io::prepare() noexcept -> msgbus::blob_preparation {
     }
 
     if(_value_index < _noise.size()) {
+        const auto strip_trailing_zeroes{[](std::string str) {
+            while(not str.empty() and str.back() == '0') {
+                str.pop_back();
+            }
+            if(not str.empty() and str.back() == '.') {
+                str.push_back('0');
+            }
+            return str;
+        }};
+        const auto elem_str{[&](float elem) {
+            return strip_trailing_zeroes(std::to_string(elem));
+        }};
         for(int i = 0; i < 4096 and _value_index < _noise.size();
             ++i, ++_value_index) {
             if(_value_index) {
                 append(",");
             }
-            append(std::to_string(_noise[_value_index]));
+            append(elem_str(_noise[_value_index]));
         }
         return msgbus::blob_preparation::working;
     }
@@ -593,11 +509,11 @@ struct eagitexi_tiling_noise_provider final
   : main_ctx_object
   , resource_provider_interface {
 
-    msgbus::resource_data_consumer_node& consumer;
+    shared_provider_objects& shared;
 
     eagitexi_tiling_noise_provider(const provider_parameters& p) noexcept
       : main_ctx_object{"PTxTlgNois", p.parent}
-      , consumer{p.consumer} {}
+      , shared{p.shared} {}
 
     auto valid_source(const url& locator) noexcept -> bool;
 
@@ -608,7 +524,7 @@ struct eagitexi_tiling_noise_provider final
 
     auto get_blob_timeout(const span_size_t) noexcept
       -> std::chrono::seconds final {
-        return std::chrono::minutes{5};
+        return adjusted_duration(std::chrono::minutes{5});
     }
 
     void for_each_locator(
@@ -617,9 +533,7 @@ struct eagitexi_tiling_noise_provider final
 //------------------------------------------------------------------------------
 auto eagitexi_tiling_noise_provider::valid_source(const url& locator) noexcept
   -> bool {
-    return locator and
-           (locator.has_scheme("text") or locator.has_path_suffix(".text") or
-            locator.has_path_suffix(".txt"));
+    return is_valid_text_resource_url(locator);
 }
 //------------------------------------------------------------------------------
 auto eagitexi_tiling_noise_provider::has_resource(const url& locator) noexcept
@@ -645,7 +559,7 @@ auto eagitexi_tiling_noise_provider::get_resource_io(const url& locator)
     return {
       hold<eagitexi_tiling_noise_io>,
       as_parent(),
-      consumer,
+      shared,
       q.arg_value_as<span_size_t>("width").value_or(0),
       q.arg_value_as<span_size_t>("height").value_or(0),
       q.decoded_arg_value("source").or_default()};

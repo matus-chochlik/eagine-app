@@ -9,10 +9,14 @@ export module eagine.app.resource_provider:driver;
 
 import eagine.core;
 import eagine.msgbus;
+import eagine.app;
 import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
+export class external_apis;
+export class resource_provider_driver;
+
 export struct resource_provider_interface
   : abstract<resource_provider_interface> {
     virtual auto has_resource(const url&) noexcept -> bool = 0;
@@ -31,13 +35,17 @@ export struct resource_provider_interface
       callable_ref<void(string_view) noexcept>) noexcept = 0;
 };
 //------------------------------------------------------------------------------
+struct shared_provider_objects {
+    external_apis& apis;
+    resource_provider_driver& driver;
+    resource_loader& loader;
+};
+//------------------------------------------------------------------------------
 export class resource_provider_driver final
   : public main_ctx_object
   , public msgbus::resource_server_driver {
 public:
-    resource_provider_driver(
-      main_ctx_parent,
-      msgbus::resource_data_consumer_node&);
+    resource_provider_driver(main_ctx_parent, external_apis&, resource_loader&);
 
     auto find_provider_of(const url&) noexcept
       -> optional_reference<resource_provider_interface>;
@@ -63,8 +71,9 @@ public:
 
 private:
     void _add(unique_holder<resource_provider_interface>);
-    void _populate(msgbus::resource_data_consumer_node&);
+    void _populate();
 
+    shared_provider_objects _shared;
     std::vector<unique_holder<resource_provider_interface>> _providers;
 };
 //------------------------------------------------------------------------------

@@ -27,10 +27,9 @@ import eagine.msgbus;
 
 namespace eagine::app {
 
+export class loaded_resource_context;
 export class execution_context;
 export class orbiting_camera;
-export class video_context;
-export class audio_context;
 export class gl_geometry_and_bindings;
 export class resource_request_result;
 export class resource_loader;
@@ -39,6 +38,18 @@ struct resource_gl_texture_image_params;
 struct resource_gl_texture_params;
 struct resource_gl_buffer_data_params;
 struct resource_gl_buffer_params;
+//------------------------------------------------------------------------------
+/// @brief Resource loading status.
+/// @see resource_loader
+/// @see loaded resource
+/// @see resource_loader_signals
+export enum class resource_load_status : std::uint8_t {
+    loading,
+    loaded,
+    cancelled,
+    not_found,
+    error
+};
 //------------------------------------------------------------------------------
 /// @brief Resource kind enumeration.
 /// @see resource_loader
@@ -96,7 +107,7 @@ export enum class resource_kind {
     gl_buffer,
     /// @brief GL buffer image update.
     gl_buffer_update,
-    /// @brief
+    /// @brief Arbitrary structure with defined attribute mapping.
     mapped_struct,
     /// @brief Marks that resource request is finished.
     finished
@@ -149,6 +160,7 @@ public:
     auto is_done() const noexcept -> bool;
 
     void add_label(const string_view) noexcept;
+    void apply_label() noexcept;
 
     void add_valtree_stream_input(
       valtree::value_tree_stream_input input) noexcept;
@@ -171,14 +183,16 @@ public:
       std::vector<math::matrix<float, 4, 4, true, true>>& values) noexcept;
 
     void add_shape_generator(shared_holder<shapes::generator> gen) noexcept;
-    void add_gl_shape_context(video_context&) noexcept;
+    void add_gl_shape_context(const oglplus::shared_gl_api_context&) noexcept;
     void add_gl_geometry_and_bindings_context(
-      video_context&,
+      const oglplus::shared_gl_api_context&,
       oglplus::vertex_attrib_bindings,
       shapes::drawing_variant) noexcept;
 
-    void add_gl_shader_context(video_context&, oglplus::shader_type) noexcept;
-    void add_gl_program_context(video_context&) noexcept;
+    void add_gl_shader_context(
+      const oglplus::shared_gl_api_context&,
+      oglplus::shader_type) noexcept;
+    void add_gl_program_context(const oglplus::shared_gl_api_context&) noexcept;
     auto add_gl_program_shader_request(identifier_t request_id) noexcept
       -> bool;
     auto add_gl_program_input_binding(
@@ -195,18 +209,20 @@ public:
       const memory::const_block) noexcept;
     auto add_gl_texture_image_request(identifier_t request_id) noexcept -> bool;
     void add_gl_texture_update_context(
-      video_context&,
+      const oglplus::shared_gl_api_context&,
       oglplus::texture_target,
       oglplus::texture_unit,
       oglplus::texture_name) noexcept;
 
     void add_gl_texture_context(
-      video_context&,
+      const oglplus::shared_gl_api_context&,
       oglplus::texture_target,
       oglplus::texture_unit) noexcept;
     auto handle_gl_texture_params(resource_gl_texture_params&) noexcept -> bool;
 
-    void add_gl_buffer_context(video_context&, oglplus::buffer_target) noexcept;
+    void add_gl_buffer_context(
+      const oglplus::shared_gl_api_context&,
+      oglplus::buffer_target) noexcept;
     void handle_gl_buffer_data(
       const oglplus::buffer_target,
       const resource_gl_buffer_data_params&,
@@ -241,22 +257,22 @@ private:
     };
 
     struct _pending_gl_shape_state {
-        std::reference_wrapper<video_context> video;
+        oglplus::shared_gl_api_context gl_context;
     };
 
     struct _pending_gl_geometry_and_bindings_state {
-        std::reference_wrapper<video_context> video;
+        oglplus::shared_gl_api_context gl_context;
         oglplus::vertex_attrib_bindings bindings;
         span_size_t draw_var_idx;
     };
 
     struct _pending_gl_shader_state {
-        std::reference_wrapper<video_context> video;
+        oglplus::shared_gl_api_context gl_context;
         oglplus::shader_type shdr_type;
     };
 
     struct _pending_gl_program_state {
-        std::reference_wrapper<video_context> video;
+        oglplus::shared_gl_api_context gl_context;
         oglplus::owned_program_name prog;
         oglplus::program_input_bindings input_bindings;
         flat_set<identifier_t> pending_requests;
@@ -264,14 +280,14 @@ private:
     };
 
     struct _pending_gl_texture_update_state {
-        std::reference_wrapper<video_context> video;
+        oglplus::shared_gl_api_context gl_context;
         oglplus::texture_target tex_target;
         oglplus::texture_unit tex_unit;
         oglplus::texture_name tex;
     };
 
     struct _pending_gl_texture_state {
-        std::reference_wrapper<video_context> video;
+        oglplus::shared_gl_api_context gl_context;
         const resource_gl_texture_params* pparams{nullptr};
         flat_set<identifier_t> pending_requests;
         std::bitset<32> level_images_done;
@@ -284,13 +300,13 @@ private:
     };
 
     struct _pending_gl_buffer_update_state {
-        std::reference_wrapper<video_context> video;
+        oglplus::shared_gl_api_context gl_context;
         oglplus::buffer_target buf_target;
         oglplus::buffer_name buf;
     };
 
     struct _pending_gl_buffer_state {
-        std::reference_wrapper<video_context> video;
+        oglplus::shared_gl_api_context gl_context;
         oglplus::buffer_target buf_target;
         oglplus::owned_buffer_name buf;
         flat_set<identifier_t> pending_requests;
@@ -401,8 +417,9 @@ private:
 
     resource_loader& _parent;
     const identifier_t _request_id;
-    weak_holder<pending_resource_info> _continuation{};
     const url _locator;
+    std::string _label;
+    weak_holder<pending_resource_info> _continuation{};
 
     std::variant<
       std::monostate,
@@ -521,7 +538,8 @@ auto make_valtree_input_setup_builder(
 //------------------------------------------------------------------------------
 auto make_valtree_gl_program_builder(
   const shared_holder<pending_resource_info>& parent,
-  video_context& video) noexcept -> unique_holder<valtree::object_builder>;
+  const oglplus::shared_gl_api_context&) noexcept
+  -> unique_holder<valtree::object_builder>;
 auto make_valtree_gl_texture_image_loader(
   const shared_holder<pending_resource_info>& parent,
   oglplus::texture_target,
@@ -529,12 +547,12 @@ auto make_valtree_gl_texture_image_loader(
   -> unique_holder<valtree::object_builder>;
 auto make_valtree_gl_texture_builder(
   const shared_holder<pending_resource_info>& parent,
-  video_context& video,
+  const oglplus::shared_gl_api_context&,
   oglplus::texture_target,
   oglplus::texture_unit) noexcept -> unique_holder<valtree::object_builder>;
 auto make_valtree_gl_buffer_builder(
   const shared_holder<pending_resource_info>& parent,
-  video_context& video,
+  const oglplus::shared_gl_api_context&,
   oglplus::buffer_target) noexcept -> unique_holder<valtree::object_builder>;
 //------------------------------------------------------------------------------
 /// @brief Result of resource request operation.
@@ -570,7 +588,7 @@ public:
 
     /// @brief Returns the unique id of the request.
     auto request_id() const noexcept -> identifier_t {
-        return _info->request_id();
+        return info().request_id();
     }
 
     /// @brief Returns the locator of the requested resource.
@@ -580,17 +598,11 @@ public:
 
     /// @brief Sets the reference to the continuation request of this request.
     auto set_continuation(const shared_holder<pending_resource_info>& cont)
-      const noexcept -> const resource_request_result& {
-        info().set_continuation(cont);
-        return *this;
-    }
+      const noexcept -> const resource_request_result&;
 
     /// @brief Sets the reference to the continuation request of this request.
     auto set_continuation(resource_request_result& cont) const noexcept
-      -> const resource_request_result& {
-        info().set_continuation(cont._info);
-        return *this;
-    }
+      -> const resource_request_result&;
 
 private:
     shared_holder<pending_resource_info> _info;
@@ -600,13 +612,26 @@ private:
 /// @brief Collection of signals emitted by the resource loader.
 /// @see resource_loader
 export struct resource_loader_signals {
-    /// @brief Emitted then the loading of a resource is cancelled.
-    signal<void(identifier_t, resource_kind, const url&) noexcept>
-      resource_cancelled;
+    /// @brief Emitted when the status of resource loading changed.
+    signal<
+      void(resource_load_status, identifier_t, resource_kind, const url&) noexcept>
+      load_status_changed;
 
-    /// @brief Emitted when any resource is successfully loaded
-    signal<void(identifier_t, resource_kind, const url&) noexcept>
-      resource_loaded;
+    void resource_loaded(
+      identifier_t request_id,
+      resource_kind kind,
+      const url& locator) noexcept {
+        load_status_changed(
+          resource_load_status::loaded, request_id, kind, locator);
+    }
+
+    void resource_cancelled(
+      identifier_t request_id,
+      resource_kind kind,
+      const url& locator) noexcept {
+        load_status_changed(
+          resource_load_status::cancelled, request_id, kind, locator);
+    }
 
     template <typename T>
     struct get_load_info;
@@ -737,13 +762,15 @@ export struct resource_loader_signals {
     struct string_list_load_info {
         const identifier_t request_id;
         const url& locator;
-        const std::vector<std::string>& strings;
+        std::vector<std::string>& strings;
         const std::vector<std::string>& values{strings};
     };
 
     template <>
     struct get_load_info<std::vector<std::string>>
       : std::type_identity<string_list_load_info> {};
+
+    signal<void(string_list_load_info&) noexcept> string_line_loaded;
 
     /// @brief Emitted when list of strings is loaded.
     signal<void(const string_list_load_info&) noexcept> string_list_loaded;
@@ -873,12 +900,10 @@ export struct resource_loader_signals {
     struct gl_shader_load_info {
         const identifier_t request_id;
         const url& locator;
-        video_context& video;
+        oglplus::shared_gl_api_context gl_context;
         const oglplus::shader_type type;
         const oglplus::shader_name name;
         oglplus::owned_shader_name& ref;
-
-        auto gl_api() const noexcept -> const oglplus::gl_api&;
     };
 
     template <>
@@ -898,31 +923,30 @@ export struct resource_loader_signals {
     struct gl_program_load_info {
         const identifier_t request_id;
         const url& locator;
-        video_context& video;
+        oglplus::shared_gl_api_context gl_context;
         const oglplus::program_name name;
         oglplus::owned_program_name& ref;
         oglplus::program_input_bindings& input_bindings;
 
-        auto gl_api() const noexcept -> const oglplus::gl_api&;
-
         auto apply_input_bindings(
           const oglplus::vertex_attrib_bindings& attrib_bindings) const noexcept
           -> bool {
-            return input_bindings.apply(this->gl_api(), name, attrib_bindings);
+            return input_bindings.apply(
+              gl_context.gl_api(), name, attrib_bindings);
         }
 
         auto use_program() const noexcept {
-            return this->gl_api().use_program(name);
+            return gl_context.gl_api().use_program(name);
         }
 
         auto get_uniform_location(const string_view var_name) const noexcept {
-            return this->gl_api().get_uniform_location(name, var_name);
+            return gl_context.gl_api().get_uniform_location(name, var_name);
         }
 
         template <typename T>
         auto set_uniform(oglplus::uniform_location loc, const T& value)
           const noexcept {
-            return this->gl_api().set_uniform(name, loc, value);
+            return gl_context.gl_api().set_uniform(name, loc, value);
         }
 
         template <typename T>
@@ -935,14 +959,14 @@ export struct resource_loader_signals {
 
         auto get_shader_storage_block_index(
           const string_view var_name) const noexcept {
-            return this->gl_api().get_shader_storage_block_index(
+            return gl_context.gl_api().get_shader_storage_block_index(
               name, var_name);
         }
 
         auto shader_storage_block_binding(
           oglplus::shader_storage_block_index index,
           oglplus::gl_types::uint_type binding) const noexcept {
-            return this->gl_api().shader_storage_block_binding(
+            return gl_context.gl_api().shader_storage_block_binding(
               name, index, binding);
         }
 
@@ -972,25 +996,23 @@ export struct resource_loader_signals {
     struct gl_texture_load_info {
         const identifier_t request_id;
         const url& locator;
-        video_context& video;
+        oglplus::shared_gl_api_context gl_context;
         const oglplus::texture_target target;
         const oglplus::texture_name name;
         oglplus::owned_texture_name& ref;
 
-        auto gl_api() const noexcept -> const oglplus::gl_api&;
-
         template <typename Param, typename Value>
         auto parameter_f(Param param, Value value) const noexcept {
-            return gl_api().tex_parameter_f(target, param, value);
+            return gl_context.gl_api().tex_parameter_f(target, param, value);
         }
 
         template <typename Param, typename Value>
         auto parameter_i(Param param, Value value) const noexcept {
-            return gl_api().tex_parameter_i(target, param, value);
+            return gl_context.gl_api().tex_parameter_i(target, param, value);
         }
 
         auto generate_mipmap() const noexcept {
-            return gl_api().operations().generate_mipmap(target);
+            return gl_context.gl_api().operations().generate_mipmap(target);
         }
     };
 
@@ -1011,10 +1033,8 @@ export struct resource_loader_signals {
     struct gl_texture_images_load_info {
         const identifier_t request_id;
         const url& locator;
-        video_context& video;
+        oglplus::shared_gl_api_context gl_context;
         const oglplus::texture_name name;
-
-        auto gl_api() const noexcept -> const oglplus::gl_api&;
     };
 
     /// @brief Emitted when all GL texture images are successfully loaded.
@@ -1026,11 +1046,9 @@ export struct resource_loader_signals {
     struct gl_buffer_load_info {
         const identifier_t request_id;
         const url& locator;
-        video_context& video;
+        oglplus::shared_gl_api_context gl_context;
         const oglplus::buffer_name name;
         oglplus::owned_buffer_name& ref;
-
-        auto gl_api() const noexcept -> const oglplus::gl_api&;
     };
 
     template <>
@@ -1102,12 +1120,13 @@ export struct resource_loader_signals {
 };
 //------------------------------------------------------------------------------
 template <typename T>
-concept resource_cancelled_observer = requires(
+concept resource_load_event_observer = requires(
   T v,
+  resource_load_status status,
   identifier_t request_id,
   resource_kind kind,
   const url& locator) {
-    v.handle_resource_cancelled(request_id, kind, locator);
+    v.handle_resource_load_event(status, request_id, kind, locator);
 };
 
 template <typename T>
@@ -1193,9 +1212,9 @@ public:
             connect<&O::handle_blob_stream_data_appended>(
               &observer, this->blob_stream_data_appended);
         }
-        if constexpr(resource_cancelled_observer<O>) {
-            connect<&O::handle_resource_cancelled>(
-              &observer, this->resource_cancelled);
+        if constexpr(resource_load_event_observer<O>) {
+            connect<&O::handle_resource_load_event>(
+              &observer, &this->load_status_changed);
         }
         if constexpr(resource_shape_generator_loaded_observer<O>) {
             connect<&O::handle_shape_generator_loaded>(
@@ -1248,41 +1267,42 @@ public:
     /// @brief Requests plain text resource.
     auto request_plain_text(url locator) noexcept -> resource_request_result;
 
-    auto request(std::type_identity<std::string>, url locator) noexcept {
-        return request_plain_text(std::move(locator));
-    }
+    auto request(
+      std::type_identity<std::string>,
+      url locator,
+      loaded_resource_context&) noexcept -> resource_request_result;
 
     /// @brief Requests string-list resource.
     auto request_string_list(url locator) noexcept -> resource_request_result;
 
     auto request(
       std::type_identity<std::vector<std::string>>,
-      url locator) noexcept {
-        return request_string_list(std::move(locator));
-    }
+      url locator,
+      loaded_resource_context&) noexcept -> resource_request_result;
 
     /// @brief Requests URL-list resource.
     auto request_url_list(url locator) noexcept -> resource_request_result;
 
-    auto request(std::type_identity<std::vector<url>>, url locator) noexcept {
-        return request_url_list(std::move(locator));
-    }
+    auto request(
+      std::type_identity<std::vector<url>>,
+      url locator,
+      loaded_resource_context&) noexcept -> resource_request_result;
 
     /// @brief Requests a float vector resource.
     auto request_float_vector(url locator) noexcept -> resource_request_result;
 
-    auto request(std::type_identity<std::vector<float>>, url locator) noexcept {
-        return request_float_vector(std::move(locator));
-    }
+    auto request(
+      std::type_identity<std::vector<float>>,
+      url locator,
+      loaded_resource_context&) noexcept -> resource_request_result;
 
     /// @brief Requests a float vector resource.
     auto request_vec3_vector(url locator) noexcept -> resource_request_result;
 
     auto request(
       std::type_identity<std::vector<math::vector<float, 3, true>>>,
-      url locator) noexcept {
-        return request_vec3_vector(std::move(locator));
-    }
+      url locator,
+      loaded_resource_context&) noexcept -> resource_request_result;
 
     /// @brief Requests a smooth vec3 curve resource.
     auto request_smooth_vec3_curve(url locator) noexcept
@@ -1291,25 +1311,24 @@ public:
     auto request(
       std::type_identity<
         math::cubic_bezier_curves<math::vector<float, 3, true>, float>>,
-      url locator) noexcept {
-        return request_smooth_vec3_curve(std::move(locator));
-    }
+      url locator,
+      loaded_resource_context&) noexcept -> resource_request_result;
 
     /// @brief Requests a 4x4 matrix resource.
     auto request_mat4_vector(url locator) noexcept -> resource_request_result;
 
     auto request(
       std::type_identity<std::vector<math::matrix<float, 4, 4, true, true>>>,
-      url locator) noexcept {
-        return request_mat4_vector(std::move(locator));
-    }
+      url locator,
+      loaded_resource_context&) noexcept -> resource_request_result;
 
     /// @brief Requests a value tree object resource.
     auto request_value_tree(url locator) noexcept -> resource_request_result;
 
-    auto request(std::type_identity<valtree::compound>, url locator) noexcept {
-        return request_value_tree(std::move(locator));
-    }
+    auto request(
+      std::type_identity<valtree::compound>,
+      url locator,
+      loaded_resource_context&) noexcept -> resource_request_result;
 
     auto request_json_traversal(
       url locator,
@@ -1347,52 +1366,45 @@ public:
 
     auto request(
       std::type_identity<shared_holder<shapes::generator>>,
-      url locator) noexcept {
-        return request_shape_generator(std::move(locator));
-    }
+      url locator,
+      loaded_resource_context&) noexcept -> resource_request_result;
 
     /// @brief Requests a oglplus shape generator wrapper object.
-    auto request_gl_shape(url locator, video_context&) noexcept
+    auto request_gl_shape(
+      url locator,
+      const oglplus::shared_gl_api_context&) noexcept
       -> resource_request_result;
 
     auto request(
       std::type_identity<oglplus::shape_generator>,
       url locator,
-      video_context& video) noexcept {
-        return request_gl_shape(std::move(locator), video);
-    }
+      loaded_resource_context& ctx) noexcept -> resource_request_result;
 
     /// @brief Requests a shape geometry and attrib bindings object.
     auto request_gl_geometry_and_bindings(
       url locator,
-      video_context&,
+      const oglplus::shared_gl_api_context&,
       oglplus::vertex_attrib_bindings,
       span_size_t draw_var_idx = 0) noexcept -> resource_request_result;
 
     auto request(
       std::type_identity<gl_geometry_and_bindings>,
       url locator,
-      video_context& video,
+      loaded_resource_context& ctx,
       oglplus::vertex_attrib_bindings bindings,
-      span_size_t draw_var_idx = 0) noexcept {
-        return request_gl_geometry_and_bindings(
-          std::move(locator), video, bindings, draw_var_idx);
-    }
+      span_size_t draw_var_idx = 0) noexcept -> resource_request_result;
 
     /// @brief Requests a shape geometry and attrib bindings object.
     auto request_gl_geometry_and_bindings(
       url locator,
-      video_context&,
+      const oglplus::shared_gl_api_context&,
       span_size_t draw_var_idx = 0) noexcept -> resource_request_result;
 
     auto request(
       std::type_identity<gl_geometry_and_bindings>,
       url locator,
-      video_context& video,
-      span_size_t draw_var_idx = 0) noexcept {
-        return request_gl_geometry_and_bindings(
-          std::move(locator), video, draw_var_idx);
-    }
+      loaded_resource_context& ctx,
+      span_size_t draw_var_idx = 0) noexcept -> resource_request_result;
 
     /// @brief Requests GLSL shader source code resource.
     auto request_glsl_source(url locator) noexcept -> resource_request_result;
@@ -1400,38 +1412,36 @@ public:
     /// @brief Requests a compiled GL shader object of a specified type.
     auto request_gl_shader(
       url locator,
-      video_context&,
+      const oglplus::shared_gl_api_context&,
       oglplus::shader_type) noexcept -> resource_request_result;
 
     auto request(
       std::type_identity<oglplus::owned_shader_name>,
       url locator,
-      video_context& video,
-      oglplus::shader_type shdr_type) noexcept {
-        return request_gl_shader(std::move(locator), video, shdr_type);
-    }
+      loaded_resource_context& ctx,
+      oglplus::shader_type shdr_type) noexcept -> resource_request_result;
 
     /// @brief Requests a compiled GL shader object of a type specified in URL.
-    auto request_gl_shader(url locator, video_context&) noexcept
+    auto request_gl_shader(
+      url locator,
+      const oglplus::shared_gl_api_context&) noexcept
       -> resource_request_result;
 
     auto request(
       std::type_identity<oglplus::owned_shader_name>,
       url locator,
-      video_context& video) noexcept {
-        return request_gl_shader(std::move(locator), video);
-    }
+      loaded_resource_context& ctx) noexcept -> resource_request_result;
 
     /// @brief Requests a linked GL program object.
-    auto request_gl_program(url locator, video_context&) noexcept
+    auto request_gl_program(
+      url locator,
+      const oglplus::shared_gl_api_context&) noexcept
       -> resource_request_result;
 
     auto request(
       std::type_identity<oglplus::owned_program_name>,
       url locator,
-      video_context& video) noexcept {
-        return request_gl_program(std::move(locator), video);
-    }
+      loaded_resource_context& ctx) noexcept -> resource_request_result;
 
     auto request_gl_texture_image(
       url locator,
@@ -1445,7 +1455,7 @@ public:
     /// @brief Requests image data update for a GL texture.
     auto request_gl_texture_update(
       url locator,
-      video_context&,
+      const oglplus::shared_gl_api_context&,
       oglplus::texture_target,
       oglplus::texture_unit,
       oglplus::texture_name) noexcept -> resource_request_result;
@@ -1453,33 +1463,28 @@ public:
     /// @brief Requests a set-up GL texture object.
     auto request_gl_texture(
       url locator,
-      video_context&,
+      const oglplus::shared_gl_api_context&,
       oglplus::texture_target,
       oglplus::texture_unit) noexcept -> resource_request_result;
 
     auto request(
       std::type_identity<oglplus::owned_texture_name>,
       url locator,
-      video_context& video,
+      loaded_resource_context& ctx,
       oglplus::texture_target tex_target,
-      oglplus::texture_unit tex_unit) noexcept {
-        return request_gl_texture(
-          std::move(locator), video, tex_target, tex_unit);
-    }
+      oglplus::texture_unit tex_unit) noexcept -> resource_request_result;
 
     /// @brief Requests a set-up GL buffer object.
     auto request_gl_buffer(
       url locator,
-      video_context&,
+      const oglplus::shared_gl_api_context&,
       oglplus::buffer_target) noexcept -> resource_request_result;
 
     auto request(
       std::type_identity<oglplus::owned_buffer_name>,
       url locator,
-      video_context& video,
-      oglplus::buffer_target buf_target) noexcept {
-        return request_gl_buffer(std::move(locator), video, buf_target);
-    }
+      loaded_resource_context& ctx,
+      oglplus::buffer_target buf_target) noexcept -> resource_request_result;
 
     /// @brief Requests a mapped structure
     template <default_mapped_struct O>
@@ -1497,7 +1502,10 @@ public:
     }
 
     template <default_mapped_struct O>
-    auto request(std::type_identity<O> tid, url locator) noexcept {
+    auto request(
+      std::type_identity<O> tid,
+      url locator,
+      loaded_resource_context&) noexcept {
         return request_mapped_struct(std::move(locator), tid);
     }
 
@@ -1596,12 +1604,11 @@ public:
     }
 
 private:
-    void _handle_loaded(
+    void _handle_load_status(
+      resource_load_status,
       const identifier_t request_id,
       resource_kind,
-      const url&) noexcept {
-        _request_ids.erase(request_id);
-    }
+      const url&) noexcept;
 
     signal_binding _sig_bind;
     flat_set<identifier_t> _request_ids;

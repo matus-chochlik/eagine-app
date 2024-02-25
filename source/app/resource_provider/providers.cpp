@@ -8,15 +8,15 @@
 export module eagine.app.resource_provider:providers;
 
 import eagine.core;
-import eagine.msgbus;
+import eagine.app;
 import :driver;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
+export class external_apis;
 struct provider_parameters {
     main_ctx_parent parent;
-    resource_provider_driver& driver;
-    msgbus::resource_data_consumer_node& consumer;
+    shared_provider_objects& shared;
 };
 //------------------------------------------------------------------------------
 auto provider_zip_archive(const provider_parameters&)
@@ -54,6 +54,9 @@ auto provider_eagitexi_2d_single_rgb8(const provider_parameters&)
 auto provider_eagitex_sphere_volume(const provider_parameters&)
   -> unique_holder<resource_provider_interface>;
 auto provider_eagitexi_sphere_volume(const provider_parameters&)
+  -> unique_holder<resource_provider_interface>;
+//------------------------------------------------------------------------------
+auto provider_eagitexi_cubemap_blur(const provider_parameters&)
   -> unique_holder<resource_provider_interface>;
 //------------------------------------------------------------------------------
 auto provider_text_lorem_ipsum(const provider_parameters&)

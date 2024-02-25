@@ -9,34 +9,24 @@ module;
 
 #include <cassert>
 
-module eagine.app.model_viewer;
+module eagine.app.resource_provider;
 
 import eagine.core;
-import eagine.app;
+import eagine.eglplus;
+import eagine.oglplus;
 import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-model_viewer_backgrounds::model_viewer_backgrounds(
-  execution_context& ctx,
-  video_context& video) {
-    load("Skybox", url{"eagibg:///Skybox"}, ctx, video);
-    load("Icosphere", url{"eagibg:///Icosphere"}, ctx, video);
+external_apis::external_apis(main_ctx_parent parent)
+  : main_ctx_object{"ExternAPIs", parent} {}
+//------------------------------------------------------------------------------
+external_apis::~external_apis() noexcept {
+    //
 }
 //------------------------------------------------------------------------------
-auto model_viewer_backgrounds::set_skybox_unit(
-  video_context& video,
-  oglplus::texture_unit tu) -> model_viewer_backgrounds& {
-    current().set_skybox_unit(video, tu);
-    return *this;
-}
-//------------------------------------------------------------------------------
-auto model_viewer_backgrounds::clear(
-  video_context& video,
-  orbiting_camera& camera) -> model_viewer_backgrounds& {
-    current().clear(video, camera);
-    return *this;
+auto external_apis::egl() noexcept -> optional_reference<eglplus::egl_api> {
+    return _egl.ensure().ref();
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app
-

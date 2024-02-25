@@ -37,7 +37,7 @@ public:
     }
 
 private:
-    void _on_resource_loaded(const loaded_resource_base&) noexcept;
+    void _on_load_event(const loaded_resource_base&) noexcept;
 
     video_context& _video;
     background_icosahedron _bg;

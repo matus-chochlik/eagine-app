@@ -12,6 +12,7 @@ module eagine.app.resource_provider;
 
 import eagine.core;
 import eagine.msgbus;
+import eagine.app;
 import std;
 
 namespace eagine::app {
@@ -24,7 +25,7 @@ static inline auto get_default_blob_timeout(const span_size_t size) noexcept
 //------------------------------------------------------------------------------
 auto resource_provider_interface::get_blob_timeout(
   const span_size_t size) noexcept -> std::chrono::seconds {
-    return get_default_blob_timeout(size);
+    return adjusted_duration(get_default_blob_timeout(size));
 }
 //------------------------------------------------------------------------------
 auto resource_provider_interface::get_blob_priority(
@@ -41,10 +42,9 @@ void resource_provider_driver::_add(
     _providers.emplace_back(std::move(provider));
 }
 //------------------------------------------------------------------------------
-void resource_provider_driver::_populate(
-  msgbus::resource_data_consumer_node& consumer) {
+void resource_provider_driver::_populate() {
     const provider_parameters parameters{
-      .parent = as_parent(), .driver = *this, .consumer = consumer};
+      .parent = as_parent(), .shared = _shared};
 
     _add(provider_zip_archive(parameters));
     _add(provider_file(parameters));
@@ -57,6 +57,7 @@ void resource_provider_driver::_populate(
     _add(provider_eagitex_2d_single_rgb8(parameters));
     _add(provider_eagitexi_sphere_volume(parameters));
     _add(provider_eagitex_sphere_volume(parameters));
+    _add(provider_eagitexi_cubemap_blur(parameters));
     _add(provider_shape(parameters));
     _add(provider_text_lorem_ipsum(parameters));
     _add(provider_text_resource_list(parameters));
@@ -64,9 +65,11 @@ void resource_provider_driver::_populate(
 //------------------------------------------------------------------------------
 resource_provider_driver::resource_provider_driver(
   main_ctx_parent parent,
-  msgbus::resource_data_consumer_node& consumer)
-  : main_ctx_object{"RsrcPrDrvr", parent} {
-    _populate(consumer);
+  external_apis& apis,
+  resource_loader& loader)
+  : main_ctx_object{"RsrcPrDrvr", parent}
+  , _shared{.apis = apis, .driver = *this, .loader = loader} {
+    _populate();
 }
 //------------------------------------------------------------------------------
 auto resource_provider_driver::find_provider_of(const url& locator) noexcept
@@ -100,9 +103,10 @@ auto resource_provider_driver::get_blob_timeout(
   const endpoint_id_t,
   const url& locator,
   const span_size_t size) noexcept -> std::chrono::seconds {
-    return find_provider_of(locator)
-      .member(&resource_provider_interface::get_blob_timeout, size)
-      .value_or(get_default_blob_timeout(size));
+    return adjusted_duration(
+      find_provider_of(locator)
+        .member(&resource_provider_interface::get_blob_timeout, size)
+        .value_or(get_default_blob_timeout(size)));
 }
 //------------------------------------------------------------------------------
 auto resource_provider_driver::get_blob_priority(

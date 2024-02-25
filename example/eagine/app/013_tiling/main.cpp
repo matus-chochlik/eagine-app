@@ -65,37 +65,36 @@ private:
 example_tiling::example_tiling(execution_context& ec, video_context& vc)
   : timeouting_application{ec, std::chrono::seconds{60}}
   , _video{vc}
-  , _resources{ec}
-  , _prog{_resources, _prog_url(), _video}
-  , _cube{_resources, _cube_url(), _video, 0}
+  , _prog{_resources, ec, _prog_url()}
+  , _cube{_resources, ec, _cube_url(), 0}
   , _tiling_tex{
       _resources,
+      ec,
       _tiling_tex_url(),
-      _video,
       _video.gl_api().texture_2d_array,
       _video.gl_api().texture0}
   , _tiles1_tex{
       _resources,
+      ec,
       url{"json:///NodesTex"},
-      _video,
       _video.gl_api().texture_2d_array,
       _video.gl_api().texture0+1}
   , _tiles2_tex{
       _resources,
+      ec,
       url{"json:///CnnctsTex"},
-      _video,
       _video.gl_api().texture_2d_array,
       _video.gl_api().texture0+2}
   , _tiles3_tex{
       _resources,
+      ec,
       url{"json:///BlocksTex"},
-      _video,
       _video.gl_api().texture_2d_array,
       _video.gl_api().texture0+3}
   , _tiles4_tex{
       _resources,
+      ec,
       url{"json:///ThicketTex"},
-      _video,
       _video.gl_api().texture_2d_array,
       _video.gl_api().texture0+4}
   , _other{ec} {

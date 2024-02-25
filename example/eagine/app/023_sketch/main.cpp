@@ -39,7 +39,7 @@ example_sketch::example_sketch(execution_context& ec, video_context& vc)
   , _video{vc}
   , _bg{_video, {0.50F, 0.50F, 0.45F, 1.0F}, {0.85F, 0.85F, 0.85F, 0.0F}, 1.F}
   , _sketch_prog{ec} {
-    _sketch_prog.base_loaded.connect(
+    _sketch_prog.load_event.connect(
       make_callable_ref<&example_sketch::_on_loaded>(this));
 
     _shape.init(vc);

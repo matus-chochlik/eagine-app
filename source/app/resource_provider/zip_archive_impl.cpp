@@ -198,30 +198,13 @@ private:
       callable_ref<void(string_view) noexcept>) noexcept;
 
     std::string _hostname;
-    std::vector<std::filesystem::path> _search_paths;
+    filesystem_search_paths _search_paths;
     flat_map<std::filesystem::path, zip_archive> _open_archives;
 };
 //------------------------------------------------------------------------------
 zip_archive_provider::zip_archive_provider(const provider_parameters& params)
-  : main_ctx_object{"FilePrvdr", params.parent} {
-    std::vector<std::string> paths;
-    main_context().config().fetch("app.resource_provider.root_path", paths);
-    main_context().config().fetch("app.resource_provider.root_paths", paths);
-    for(const auto& path : paths) {
-        if(std::filesystem::is_directory(path)) {
-            _search_paths.emplace_back(path);
-        } else {
-            log_warning("'${path}' is not a path to existing directory")
-              .arg("path", "FsPath", path);
-        }
-    }
-    log_info("configured resource directories: ${path}")
-      .arg_func([&](logger_backend& backend) {
-          for(auto& path : _search_paths) {
-              backend.add_string("path", "FsPath", path.string());
-          }
-      });
-}
+  : main_ctx_object{"FilePrvdr", params.parent}
+  , _search_paths{"ZipSrchPth", as_parent()} {}
 //------------------------------------------------------------------------------
 auto zip_archive_provider::_get_archive(
   const std::filesystem::path& path) noexcept

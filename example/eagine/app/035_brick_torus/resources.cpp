@@ -76,7 +76,7 @@ auto example_texture::load_if_needed(execution_context& ctx) noexcept
 //------------------------------------------------------------------------------
 void example_texture::_on_loaded(
   const gl_texture_resource::load_info& info) noexcept {
-    const auto& GL = info.base.gl_api().constants();
+    const auto& GL = info.base.gl_context.gl_api().constants();
     info.parameter_i(GL.texture_min_filter, GL.linear_mipmap_linear);
     info.parameter_i(GL.texture_mag_filter, GL.linear);
     info.parameter_i(GL.texture_wrap_s, GL.repeat);

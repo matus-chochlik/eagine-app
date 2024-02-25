@@ -60,11 +60,11 @@ example_uv_map::example_uv_map(execution_context& ec, video_context& vc)
   , _shape{url{"json:///HydrntShpe"}, ec}
   , _prog{url{"json:///HydrntProg"}, ec}
   , _tex{url{"json:///HydrantTex"}, ec} {
-    _shape.base_loaded.connect(_load_handler());
+    _shape.load_event.connect(_load_handler());
     _shape.loaded.connect(_load_shp_handler());
-    _prog.base_loaded.connect(_load_handler());
+    _prog.load_event.connect(_load_handler());
     _prog.loaded.connect(_load_prg_handler());
-    _tex.base_loaded.connect(_load_handler());
+    _tex.load_event.connect(_load_handler());
     _tex.loaded.connect(_load_tex_handler());
 
     camera.set_pitch_max(degrees_(89.F))

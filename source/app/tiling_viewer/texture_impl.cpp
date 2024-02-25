@@ -91,7 +91,7 @@ auto tiling_viewer_texture_resource::texture_unit(video_context&)
 void tiling_viewer_texture_resource::clean_up(
   execution_context& ctx,
   video_context& video) {
-    gl_texture_resource::clean_up(ctx.loader(), video);
+    gl_texture_resource::clean_up(ctx);
 }
 //------------------------------------------------------------------------------
 auto make_viewer_resource(

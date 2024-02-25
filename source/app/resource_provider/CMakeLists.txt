@@ -7,25 +7,48 @@ eagine_add_module(
 	IMPORTS std eagine.core)
 
 eagine_add_module(
+	eagine.app.resource_provider PARTITION external_apis
+	IMPORTS
+		std
+		eagine.core
+		eagine.eglplus
+		eagine.oglplus)
+
+eagine_add_module(
 	eagine.app.resource_provider PARTITION driver
 	IMPORTS
 		std
 		eagine.core
-		eagine.msgbus)
+		eagine.msgbus
+		eagine.app)
+
+eagine_add_module(
+	eagine.app.resource_provider PARTITION gl_context
+	IMPORTS
+		driver std
+		eagine.core
+		eagine.msgbus
+		eagine.eglplus
+		eagine.oglplus
+		eagine.app)
 
 eagine_add_module(
 	eagine.app.resource_provider PARTITION providers
 	IMPORTS
 		driver std
 		eagine.core
-		eagine.msgbus)
+		eagine.app)
 
 eagine_add_module(
 	eagine.app.resource_provider PARTITION common
 	IMPORTS
 		driver std
+		gl_context
 		eagine.core
-		eagine.msgbus)
+		eagine.msgbus
+		eagine.eglplus
+		eagine.oglplus
+		eagine.app)
 
 eagine_add_module(
 	eagine.app.resource_provider PARTITION eagitexi_provider
@@ -38,6 +61,8 @@ eagine_add_module(
 	eagine.app.resource_provider
 	SOURCES
 		special_args
+		external_apis
+		gl_context
 		driver
 		common
 		file
@@ -52,6 +77,7 @@ eagine_add_module(
 		eagitexi_tiling
 		eagitexi_transition
 		eagitexi_sphere_volume
+		eagitexi_cubemap_blur
 		text_lorem_ipsum
 		text_resource_list
 	IMPORTS
@@ -59,6 +85,9 @@ eagine_add_module(
 		eagine.core
 		eagine.shapes
 		eagine.msgbus
+		eagine.eglplus
+		eagine.oglplus
+		eagine.app
 	PRIVATE_LINK_LIBRARIES
 		EAGine::Deps::Zip)
 
@@ -69,6 +98,7 @@ eagine_embed_target_resources(
 	RESOURCES
 		BoostLcnse "../../../LICENSE_1_0.txt"
 		BashCmpltn "other/eagine-app-resource-provider.bco"
+		Manual     "other/eagine-app-resource-provider.man"
 		EdgeDVert  "glsl/edges_default_vert.glsl"
 		EdgeDGeom  "glsl/edges_default_geom.glsl"
 		EdgeDFrag  "glsl/edges_default_frag.glsl"

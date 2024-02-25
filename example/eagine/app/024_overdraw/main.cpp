@@ -18,10 +18,10 @@ example::example(execution_context& ec, video_context& vc)
   , _video{vc}
   , _draw_prog{*this}
   , _screen_prog{*this} {
-    _draw_prog.base_loaded.connect(
-      make_callable_ref<&example::_on_resource_loaded>(this));
-    _screen_prog.base_loaded.connect(
-      make_callable_ref<&example::_on_resource_loaded>(this));
+    _draw_prog.load_event.connect(
+      make_callable_ref<&example::_on_load_event>(this));
+    _screen_prog.load_event.connect(
+      make_callable_ref<&example::_on_load_event>(this));
 
     _shape.init(*this);
     _screen.init(*this);
@@ -46,11 +46,11 @@ example::example(execution_context& ec, video_context& vc)
     gl.clear_color(0.F, 0.F, 0.F, 0.F);
 }
 //------------------------------------------------------------------------------
-void example::_on_resource_loaded(const loaded_resource_base& loaded) noexcept {
-    if(loaded.is(_draw_prog)) {
+void example::_on_load_event(const loaded_resource_base& loaded) noexcept {
+    if(loaded.is_loaded(_draw_prog)) {
         _draw_prog.bind_position_location(*this, _shape.position_loc());
     }
-    if(loaded.is(_screen_prog)) {
+    if(loaded.is_loaded(_screen_prog)) {
         _screen_prog.bind_position_location(*this, _screen.position_loc());
         _screen_prog.bind_tex_coord_location(*this, _screen.tex_coord_loc());
     }
