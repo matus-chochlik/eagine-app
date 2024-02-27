@@ -533,7 +533,7 @@ auto execution_context::main_video() const noexcept -> video_context& {
 auto execution_context::gl_initialized(video_context& video) noexcept
   -> execution_context& {
     if(not _resource_context.gl_context()) {
-        _resource_context.set_gl_context(video.gl_context());
+        _resource_context.set(video.gl_context());
     }
     return *this;
 }
@@ -556,8 +556,11 @@ auto execution_context::main_audio() const noexcept -> audio_context& {
     return *_audio_contexts.front();
 }
 //------------------------------------------------------------------------------
-auto execution_context::al_initialized(audio_context&) noexcept
+auto execution_context::al_initialized(audio_context& audio) noexcept
   -> execution_context& {
+    if(not _resource_context.al_context()) {
+        _resource_context.set(audio.al_context());
+    }
     return *this;
 }
 //------------------------------------------------------------------------------

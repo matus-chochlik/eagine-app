@@ -296,10 +296,15 @@ public:
         return _loader.get();
     }
 
-    auto set_gl_context(
-      const oglplus::shared_gl_api_context& gl_context) noexcept
+    auto set(const oglplus::shared_gl_api_context& gl_context) noexcept
       -> loaded_resource_context& {
         _gl_context = gl_context;
+        return *this;
+    }
+
+    auto set(const oalplus::shared_al_api_context& al_context) noexcept
+      -> loaded_resource_context& {
+        _al_context = al_context;
         return *this;
     }
 
@@ -313,9 +318,20 @@ public:
         return _gl_context.gl_api();
     }
 
+    /// @brief Reference to a resource's parent AL context.
+    auto al_context() const noexcept -> const oalplus::shared_al_api_context& {
+        return _al_context;
+    }
+
+    /// @brief Reference to a resource's parent AL API.
+    auto al_api() const noexcept -> const oalplus::al_api& {
+        return _al_context.al_api();
+    }
+
 private:
     std::reference_wrapper<resource_loader> _loader;
     oglplus::shared_gl_api_context _gl_context;
+    oalplus::shared_al_api_context _al_context;
 };
 //------------------------------------------------------------------------------
 /// @brief Class holding shared video/audio rendering application support objects.
