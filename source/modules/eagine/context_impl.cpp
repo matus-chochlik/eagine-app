@@ -400,12 +400,12 @@ void audio_context::commit() {
 //------------------------------------------------------------------------------
 auto audio_context::init_al_api(execution_context& ec) noexcept -> bool {
     try {
-        _al_api.emplace();
-        _alut_api.emplace();
+        _al_api_context.ensure();
+        _alut_api_context.ensure();
         ec.al_initialized(*this);
     } catch(...) {
     }
-    return bool(_al_api);
+    return bool(_al_api_context);
 }
 //------------------------------------------------------------------------------
 void audio_context::clean_up() noexcept {}
