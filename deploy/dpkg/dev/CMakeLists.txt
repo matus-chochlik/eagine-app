@@ -24,7 +24,10 @@ add_custom_command(
 	COMMAND ${DPKG_DEB_COMMAND}
 	ARGS --build --root-owner-group ${PKG_NAME}
 	WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
-	DEPENDS eagine.app "${PKG_DIR}/DEBIAN/control"
+	DEPENDS
+		eagine.app
+		eagine.app.resource_provider
+		"${PKG_DIR}/DEBIAN/control"
 	COMMENT "Building ${PKG_NAME}.deb package")
 # ------------------------------------------------------------------------------
 add_custom_target(
