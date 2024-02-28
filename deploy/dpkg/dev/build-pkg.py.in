@@ -13,7 +13,7 @@ import shutil
 pkg_dir = os.path.realpath("@PKG_DIR@")
 deb_dir  = os.path.join(pkg_dir, "DEBIAN")
 pkg_prefix = os.path.join(pkg_dir, "usr")
-cpp_prefix = os.path.join(pkg_prefix, "share", "eagine", "source", "@CMAKE_BUILD_TYPE@", "app")
+cpp_prefix = os.path.join(pkg_prefix, "share", "eagine", "source", "@CMAKE_BUILD_TYPE@")
 bin_prefix = os.path.join(pkg_prefix, "bin")
 lib_prefix = os.path.join(pkg_prefix, "lib")
 cmk_prefix = os.path.join(lib_prefix, "@PKG_MULTIARCH@", "cmake", "EAGine")
@@ -24,7 +24,8 @@ for path in [cpp_prefix, bin_prefix, lib_prefix, cmk_prefix, deb_dir]:
 # ------------------------------------------------------------------------------
 def copy_module_files(build_dir, info):
     for cppm in info["interfaces"]:
-        dest = os.path.join(cpp_prefix, cppm)
+        cppm_prefix = os.path.join(cpp_prefix, *info["name"].split(".")[1:])
+        dest = os.path.join(cppm_prefix, cppm)
         if not os.path.exists(os.path.dirname(dest)):
             os.makedirs(os.path.dirname(dest))
         shutil.copy2(os.path.join(build_dir, cppm), dest)
@@ -38,9 +39,13 @@ def copy_module_files(build_dir, info):
     for subinfo in info["submodules"]:
         copy_module_files(build_dir, subinfo)
 
-with open(os.path.join("@CMAKE_CURRENT_BINARY_DIR@", "eagine.app.json"), "rb") as module_json:
-    info = json.load(module_json)
-    copy_module_files(info["build_directory"], info["module"])
+for mod_name in [
+        "eagine.app",
+        "eagine.app.resource_provider"]:
+    mod_json = mod_name + ".json"
+    with open(os.path.join("@CMAKE_CURRENT_BINARY_DIR@", mod_json), "rb") as fd:
+        info = json.load(fd)
+        copy_module_files(info["build_directory"], info["module"])
 # ------------------------------------------------------------------------------
 def dir_file_size(path):
     total_size = 0

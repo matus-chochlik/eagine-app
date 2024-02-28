@@ -8,6 +8,7 @@ set(PKG_DIR "${CMAKE_CURRENT_BINARY_DIR}/${PKG_NAME}")
 set(PKG_PREFIX "${PKG_DIR}/usr")
 # ------------------------------------------------------------------------------
 eagine_generate_module_json(eagine.app)
+eagine_generate_module_json(eagine.app.resource_provider)
 # ------------------------------------------------------------------------------
 configure_file(build-pkg.py.in build-pkg.py @ONLY)
 # ------------------------------------------------------------------------------
