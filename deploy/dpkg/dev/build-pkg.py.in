@@ -62,7 +62,7 @@ Package: eagine-app-dev
 Version: %s
 Architecture: %s
 Installed-Size: %d
-Depends: eagine-core-dev (>= @EAGINE_VERSION@),eagine-sslplus-dev (>= @EAGINE_VERSION@),eagine-msgbus-dev (>= @EAGINE_VERSION@),eagine-shapes-dev (>= @EAGINE_VERSION@),eagine-eglplus-dev (>= @EAGINE_VERSION@),eagine-oalplus-dev (>= @EAGINE_VERSION@),eagine-oglplus-dev (>= @EAGINE_VERSION@),eagine-guiplus-dev (>= @EAGINE_VERSION@)
+Depends: libzip4 (>= 1.7.3),eagine-core-dev (>= @EAGINE_VERSION@),eagine-sslplus-dev (>= @EAGINE_VERSION@),eagine-msgbus-dev (>= @EAGINE_VERSION@),eagine-shapes-dev (>= @EAGINE_VERSION@),eagine-eglplus-dev (>= @EAGINE_VERSION@),eagine-oalplus-dev (>= @EAGINE_VERSION@),eagine-oglplus-dev (>= @EAGINE_VERSION@),eagine-guiplus-dev (>= @EAGINE_VERSION@)
 Maintainer: Matus Chochlik <matus.chochlik@proton.me>
 Description: C++ utilities for building of multimedia applications.
 """ % (
