@@ -37,7 +37,7 @@ auto main(main_ctx& ctx) -> int {
 
     app::resource_provider provider{ctx};
     msgbus::optional_router opt_router{provider};
-    if(opt_router.init("app.resource_provider.with_router")) {
+    if(opt_router.init_if("app.resource_provider.with_router")) {
         provider.log_info("starting with message bus router");
     }
 
