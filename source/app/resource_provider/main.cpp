@@ -49,7 +49,12 @@ auto main(main_ctx& ctx) -> int {
 
     while(not is_done()) {
         alive.notify();
-        if(provider.update() or opt_router.update()) {
+
+        some_true something_done;
+        something_done(provider.update());
+        something_done(opt_router.update());
+
+        if(something_done) {
             std::this_thread::yield();
         } else {
             std::this_thread::sleep_for(std::chrono::microseconds{1000});
