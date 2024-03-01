@@ -36,6 +36,10 @@ auto main(main_ctx& ctx) -> int {
     ctx.system().preinitialize();
 
     app::resource_provider provider{ctx};
+    msgbus::optional_router opt_router{provider};
+    if(opt_router.init("app.resource_provider.with_router")) {
+        provider.log_info("starting with message bus router");
+    }
 
     const auto is_done{[&] {
         return interrupted or provider.is_done();
@@ -45,9 +49,13 @@ auto main(main_ctx& ctx) -> int {
 
     while(not is_done()) {
         alive.notify();
-        provider.update();
+        if(provider.update() or opt_router.update()) {
+            std::this_thread::yield();
+        } else {
+            std::this_thread::sleep_for(std::chrono::microseconds{1000});
+        }
     }
-    provider.finish();
+    opt_router.finish();
 
     return 0;
 }

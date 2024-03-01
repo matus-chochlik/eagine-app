@@ -38,15 +38,6 @@ resource_provider::resource_provider(main_ctx_parent parent) noexcept
 
     conn_setup.setup_connectors(_resource_server, address);
     conn_setup.setup_connectors(_resource_loader, address);
-
-    if(app_config().is_set("app.resource_provider.with_router")) {
-        log_info("starting with message bus router");
-
-        _router.emplace(ctx);
-        _router->add_ca_certificate_pem(ca_certificate_pem(ctx));
-        _router->add_certificate_pem(msgbus::router_certificate_pem(ctx));
-        msgbus::setup_acceptors(ctx, *_router);
-    }
 }
 //------------------------------------------------------------------------------
 auto resource_provider::is_done() noexcept -> bool {
@@ -54,27 +45,16 @@ auto resource_provider::is_done() noexcept -> bool {
            (_idle_too_long and _idle_too_long->is_expired());
 }
 //------------------------------------------------------------------------------
-void resource_provider::update() {
+auto resource_provider::update() -> work_done {
     _resource_server.update_message_age();
     some_true something_done{_resource_server.update_and_process_all()};
     something_done(_resource_loader.update_and_process_all());
-    if(_router) {
-        something_done(_router->update(8));
-    }
     if(something_done) {
         if(_idle_too_long and _resource_server.has_pending_blobs()) {
             _idle_too_long->reset();
         }
-        std::this_thread::yield();
-    } else {
-        std::this_thread::sleep_for(std::chrono::microseconds{1000});
     }
-}
-//------------------------------------------------------------------------------
-void resource_provider::finish() {
-    if(_router) {
-        _router->finish();
-    }
+    return something_done;
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

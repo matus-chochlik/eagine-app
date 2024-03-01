@@ -27,9 +27,7 @@ public:
 
     auto is_done() noexcept -> bool;
 
-    void update();
-
-    void finish();
+    auto update() -> work_done;
 
 private:
     app::external_apis _apis{as_parent()};
@@ -43,7 +41,6 @@ private:
 
     auto _get_timeout() noexcept -> std::optional<timeout>;
 
-    std::optional<msgbus::router> _router;
     std::optional<timeout> _idle_too_long;
 };
 //------------------------------------------------------------------------------
