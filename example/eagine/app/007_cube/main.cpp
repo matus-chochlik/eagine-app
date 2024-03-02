@@ -44,7 +44,7 @@ example_cube::example_cube(execution_context& ec, video_context& vc)
   : timeouting_application{ec, std::chrono::seconds{30}}
   , _video{vc}
   , _bg{0.4F, 0.F, 1.F}
-  , _cube{url{"shape:///unit_cube?position=true+normal=true"}, ec}
+  , _cube{url{"shape:///unit_cube?position=true&normal=true"}, ec}
   , _prog{url{"json:///GLProgram"}, ec} {
     const auto& glapi = _video.gl_api();
     const auto& [gl, GL] = glapi;

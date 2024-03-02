@@ -7,10 +7,10 @@
 ,"iformat":"rgb8"
 ,"tag": ["texture", "colors"]
 ,"images":
-[{"url":"eagitexi:///2d_single_rgb8?level=0+width=64+height=64+r=192+g=96+b=96","target":"texture_cube_map_positive_x"}
-,{"url":"eagitexi:///2d_single_rgb8?level=0+width=64+height=64+r=192+g=96+b=96","target":"texture_cube_map_negative_x"}
-,{"url":"eagitexi:///2d_single_rgb8?level=0+width=64+height=64+r=96+g=192+b=96","target":"texture_cube_map_positive_y"}
-,{"url":"eagitexi:///2d_single_rgb8?level=0+width=64+height=64+r=96+g=192+b=96","target":"texture_cube_map_negative_y"}
-,{"url":"eagitexi:///2d_single_rgb8?level=0+width=64+height=64+r=96+g=96+b=192","target":"texture_cube_map_positive_z"}
-,{"url":"eagitexi:///2d_single_rgb8?level=0+width=64+height=64+r=96+g=96+b=192","target":"texture_cube_map_negative_z"}]
+[{"url":"eagitexi:///2d_single_rgb8?level=0&width=64&height=64&r=192&g=96&b=96","target":"texture_cube_map_positive_x"}
+,{"url":"eagitexi:///2d_single_rgb8?level=0&width=64&height=64&r=192&g=96&b=96","target":"texture_cube_map_negative_x"}
+,{"url":"eagitexi:///2d_single_rgb8?level=0&width=64&height=64&r=96&g=192&b=96","target":"texture_cube_map_positive_y"}
+,{"url":"eagitexi:///2d_single_rgb8?level=0&width=64&height=64&r=96&g=192&b=96","target":"texture_cube_map_negative_y"}
+,{"url":"eagitexi:///2d_single_rgb8?level=0&width=64&height=64&r=96&g=96&b=192","target":"texture_cube_map_positive_z"}
+,{"url":"eagitexi:///2d_single_rgb8?level=0&width=64&height=64&r=96&g=96&b=192","target":"texture_cube_map_negative_z"}]
 }

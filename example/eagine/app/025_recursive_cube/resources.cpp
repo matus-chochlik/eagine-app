@@ -55,7 +55,7 @@ void cube_program::prepare_frame(execution_context& ec) {
 //------------------------------------------------------------------------------
 cube_geometry::cube_geometry(execution_context& ec)
   : gl_geometry_and_bindings_resource{
-      url{"shape:///unit_cube?position=true+normal=true+face_coord=true"},
+      url{"shape:///unit_cube?position=true&normal=true&face_coord=true"},
       ec} {}
 //------------------------------------------------------------------------------
 // draw buffers

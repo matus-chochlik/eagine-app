@@ -112,7 +112,7 @@ void pumpkin_texture::_on_loaded(
 //------------------------------------------------------------------------------
 screen_geometry::screen_geometry(execution_context& ctx)
   : gl_geometry_and_bindings_resource{
-      url{"eagires:///unit_screen?position=true+wrap_coord=true"},
+      url{"eagires:///unit_screen?position=true&wrap_coord=true"},
       ctx} {}
 //------------------------------------------------------------------------------
 // draw buffers
