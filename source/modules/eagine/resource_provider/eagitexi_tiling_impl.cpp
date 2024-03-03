@@ -415,13 +415,13 @@ eagitexi_tiling_noise_io::eagitexi_tiling_noise_io(
   span_size_t width,
   span_size_t height,
   url locator)
-  : simple_buffer_source_blob_io{"ITxTlgNois", parent, 1024 * 1024}
+  : simple_buffer_source_blob_io{"ITxTlgNois", parent, width * height}
   , _width{width}
   , _height{height}
   , _tiling{as_parent(), shared, std::move(locator)} {
-    append(R"({"level":0,"channels":1,"data_type":"float")"
-           R"(,"format":"red","iformat":"r32f")"
-           R"(,"tag":["generated","noise","sudoku"])");
+    append(R"({"level":0,"channels":1,"data_type":"unsigned_byte")");
+    append(R"(,"tag":["generated","noise"])");
+    append(R"(,"format":"red","iformat":"r8")");
 }
 //------------------------------------------------------------------------------
 auto eagitexi_tiling_noise_io::_get_noise(float x, float y, std::size_t i)
@@ -463,8 +463,7 @@ auto eagitexi_tiling_noise_io::prepare() noexcept -> msgbus::blob_preparation {
         std::stringstream header;
         header << R"(,"width":)" << _width;
         header << R"(,"height":)" << _height;
-        header << R"(,"depth":1)";
-        header << R"(,"data":[)";
+        header << R"(})";
         append(header.str());
 
         _header_done = true;
@@ -472,30 +471,14 @@ auto eagitexi_tiling_noise_io::prepare() noexcept -> msgbus::blob_preparation {
     }
 
     if(_value_index < _noise.size()) {
-        const auto strip_trailing_zeroes{[](std::string str) {
-            while(not str.empty() and str.back() == '0') {
-                str.pop_back();
-            }
-            if(not str.empty() and str.back() == '.') {
-                str.push_back('0');
-            }
-            return str;
-        }};
-        const auto elem_str{[&](float elem) {
-            return strip_trailing_zeroes(std::to_string(elem));
-        }};
         for(int i = 0; i < 4096 and _value_index < _noise.size();
             ++i, ++_value_index) {
-            if(_value_index) {
-                append(",");
-            }
-            append(elem_str(_noise[_value_index]));
+            append(math::map_to_min_max_01<byte>(_noise[_value_index]));
         }
         return msgbus::blob_preparation::working;
     }
 
     if(not _values_done) {
-        append("]}");
         _values_done = true;
         return msgbus::blob_preparation::working;
     }
