@@ -57,6 +57,7 @@ void resource_provider_driver::_populate() {
     _add(provider_eagitex_2d_single_rgb8(parameters));
     _add(provider_eagitexi_sphere_volume(parameters));
     _add(provider_eagitex_sphere_volume(parameters));
+    _add(provider_eagitexi_cubemap_sky(parameters));
     _add(provider_eagitexi_cubemap_blur(parameters));
     _add(provider_shape(parameters));
     _add(provider_text_lorem_ipsum(parameters));
