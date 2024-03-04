@@ -57,8 +57,9 @@ private:
     int _tile_y{0};
     int _face_index{0};
 
-    const signal_binding_key _sig_key{_cubemap.loaded.connect(
-      make_callable_ref<&eagitexi_cubemap_blur_renderer::_on_tex_loaded>(this))};
+    const signal_binding _sig_binding{
+      _cubemap.loaded.bind_to<&eagitexi_cubemap_blur_renderer::_on_tex_loaded>(
+        this)};
 };
 //------------------------------------------------------------------------------
 eagitexi_cubemap_blur_renderer::eagitexi_cubemap_blur_renderer(
@@ -81,7 +82,6 @@ eagitexi_cubemap_blur_renderer::eagitexi_cubemap_blur_renderer(
 }
 //------------------------------------------------------------------------------
 eagitexi_cubemap_blur_renderer::~eagitexi_cubemap_blur_renderer() noexcept {
-    _cubemap.loaded.disconnect(_sig_key);
     _cubemap.clean_up(resource_context());
 }
 //------------------------------------------------------------------------------

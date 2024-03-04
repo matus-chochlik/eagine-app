@@ -23,6 +23,11 @@ namespace eagine::app {
 class eagitexi_tiling_io final : public compressed_buffer_source_blob_io {
 public:
     eagitexi_tiling_io(main_ctx_parent, shared_provider_objects&, const url&);
+    eagitexi_tiling_io(eagitexi_tiling_io&&) = delete;
+    eagitexi_tiling_io(const eagitexi_tiling_io&) = delete;
+    auto operator=(eagitexi_tiling_io&&) = delete;
+    auto operator=(const eagitexi_tiling_io&) = delete;
+    ~eagitexi_tiling_io() noexcept;
 
     auto prepare() noexcept -> msgbus::blob_preparation final;
 
@@ -35,8 +40,11 @@ private:
 
     shared_provider_objects& _shared;
     string_list_resource _tiling;
-    const signal_binding _line_binding;
-    const signal_binding _done_binding;
+    const signal_binding _line_binding{
+      _shared.loader.string_line_loaded
+        .bind_to<&eagitexi_tiling_io::_line_loaded>(this)};
+    const signal_binding _done_binding{
+      _tiling.load_event.bind_to<&eagitexi_tiling_io::_loaded>(this)};
     msgbus::blob_preparation_result _prep_result;
 };
 //------------------------------------------------------------------------------
@@ -46,14 +54,14 @@ eagitexi_tiling_io::eagitexi_tiling_io(
   const url& locator)
   : compressed_buffer_source_blob_io{"ITxTlng", parent, 1024 * 1024}
   , _shared{shared}
-  , _tiling{locator, shared.loader}
-  , _line_binding{_shared.loader.string_line_loaded.bind(
-      {this, member_function_constant_t<&eagitexi_tiling_io::_line_loaded>{}})}
-  , _done_binding{_tiling.load_event.bind(
-      {this, member_function_constant_t<&eagitexi_tiling_io::_loaded>{}})} {
+  , _tiling{locator, shared.loader} {
     append(R"({"level":0,"channels":1,"data_type":"unsigned_byte")");
     append(R"(,"tag":["tiling"])");
     append(R"(,"format":"red_integer","iformat":"r8ui")");
+}
+//------------------------------------------------------------------------------
+eagitexi_tiling_io::~eagitexi_tiling_io() noexcept {
+    _tiling.clean_up(_shared.loader);
 }
 //------------------------------------------------------------------------------
 auto eagitexi_tiling_io::prepare() noexcept -> msgbus::blob_preparation {
@@ -252,6 +260,11 @@ auto tiling_data_view::get(float x, float y) const noexcept -> float {
 class tiling_data : public main_ctx_object {
 public:
     tiling_data(main_ctx_parent, shared_provider_objects&, const url&);
+    tiling_data(tiling_data&&) = delete;
+    tiling_data(const tiling_data&) = delete;
+    auto operator=(tiling_data&&) = delete;
+    auto operator=(const tiling_data&) = delete;
+    ~tiling_data() noexcept;
 
     auto is_loaded() noexcept -> bool;
 
@@ -289,7 +302,9 @@ private:
 
     shared_provider_objects& _shared;
     string_list_resource _tiling;
-    const signal_binding _line_binding;
+    const signal_binding _line_binding{
+      _shared.loader.string_line_loaded.bind_to<&tiling_data::_line_loaded>(
+        this)};
     std::vector<float> _data;
 
     span_size_t _width{0};
@@ -307,10 +322,12 @@ tiling_data::tiling_data(
   const url& locator)
   : main_ctx_object{"TilingData", parent}
   , _shared{shared}
-  , _tiling{locator, _shared.loader}
-  , _line_binding{_shared.loader.string_line_loaded.bind(
-      {this, member_function_constant_t<&tiling_data::_line_loaded>{}})} {
+  , _tiling{locator, _shared.loader} {
     _data.reserve(1024U * 1024U);
+}
+//------------------------------------------------------------------------------
+tiling_data::~tiling_data() noexcept {
+    _tiling.clean_up(_shared.loader);
 }
 //------------------------------------------------------------------------------
 void tiling_data::_process_cell(const byte b) {
