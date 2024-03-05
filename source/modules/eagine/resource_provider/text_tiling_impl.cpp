@@ -54,11 +54,9 @@ auto tiling_io<Rank>::prepare() noexcept -> msgbus::blob_preparation {
             }
             _fill.next();
         }
-        std::cout << _fill.current_count() << "/" << _fill.total_count()
-                  << std::endl;
+        // TODO: progress
         return msgbus::blob_preparation::working;
     }
-    std::cout << "DONE" << std::endl;
     return msgbus::blob_preparation::finished;
 }
 //------------------------------------------------------------------------------
@@ -66,17 +64,16 @@ template <unsigned Rank>
 auto tiling_io<Rank>::fetch_fragment(
   span_size_t offs,
   memory::block dst) noexcept -> span_size_t {
-    std::cout << offs << std::endl;
     span_size_t done{0};
     for(byte& b : dst) {
         if(offs >= total_size()) [[unlikely]] {
             break;
         }
         const auto x{int(offs % (_width + 1))};
-        const auto y{int(offs / (_width + 1))};
         if(x == _width) {
             b = byte('\n');
         } else {
+            const auto y{int(offs / (_width + 1))};
             if(auto g{_traits.to_string(_patch.get_glyph(x, y))}) {
                 b = byte(g->front());
             } else {
@@ -86,7 +83,7 @@ auto tiling_io<Rank>::fetch_fragment(
         ++offs;
         ++done;
     }
-    return dst.size();
+    return done;
 }
 //------------------------------------------------------------------------------
 // provider
