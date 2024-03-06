@@ -125,10 +125,9 @@ auto tiling_provider<Rank>::get_resource_io(const url& locator)
 }
 //------------------------------------------------------------------------------
 template <unsigned Rank>
-auto tiling_provider<Rank>::get_blob_timeout(const span_size_t) noexcept
+auto tiling_provider<Rank>::get_blob_timeout(const span_size_t size) noexcept
   -> std::chrono::seconds {
-    // TODO: make this based on size
-    return adjusted_duration(std::chrono::minutes{10});
+    return adjusted_duration(std::chrono::seconds{size});
 }
 //------------------------------------------------------------------------------
 template <unsigned Rank>
