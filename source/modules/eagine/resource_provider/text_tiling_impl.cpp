@@ -90,11 +90,23 @@ auto tiling_io<Rank>::fetch_fragment(
 //------------------------------------------------------------------------------
 template <unsigned Rank>
 struct tiling_provider final : resource_provider_interface {
+    static auto _path(unsigned_constant<3U>) noexcept -> string_view {
+        return "/tiling3";
+    }
+    static auto _loc(unsigned_constant<3U>) noexcept -> string_view {
+        return "text:///tiling3";
+    }
     static auto _path(unsigned_constant<4U>) noexcept -> string_view {
         return "/tiling4";
     }
     static auto _loc(unsigned_constant<4U>) noexcept -> string_view {
         return "text:///tiling4";
+    }
+    static auto _path(unsigned_constant<5U>) noexcept -> string_view {
+        return "/tiling5";
+    }
+    static auto _loc(unsigned_constant<5U>) noexcept -> string_view {
+        return "text:///tiling5";
     }
 
     auto has_resource(const url& locator) noexcept -> bool final;
@@ -136,11 +148,21 @@ void tiling_provider<Rank>::for_each_locator(
     callback(_loc(unsigned_constant<Rank>{}));
 }
 //------------------------------------------------------------------------------
-// factory function
+// factory functions
+//------------------------------------------------------------------------------
+auto provider_text_tiling3(const provider_parameters&)
+  -> unique_holder<resource_provider_interface> {
+    return {hold<tiling_provider<3U>>};
+}
 //------------------------------------------------------------------------------
 auto provider_text_tiling4(const provider_parameters&)
   -> unique_holder<resource_provider_interface> {
     return {hold<tiling_provider<4U>>};
+}
+//------------------------------------------------------------------------------
+auto provider_text_tiling5(const provider_parameters&)
+  -> unique_holder<resource_provider_interface> {
+    return {hold<tiling_provider<5U>>};
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

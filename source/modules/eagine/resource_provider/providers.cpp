@@ -61,9 +61,13 @@ auto provider_eagitexi_cubemap_sky(const provider_parameters&)
 auto provider_eagitexi_cubemap_blur(const provider_parameters&)
   -> unique_holder<resource_provider_interface>;
 //------------------------------------------------------------------------------
-auto provider_text_lorem_ipsum(const provider_parameters&)
+auto provider_text_tiling3(const provider_parameters&)
   -> unique_holder<resource_provider_interface>;
 auto provider_text_tiling4(const provider_parameters&)
+  -> unique_holder<resource_provider_interface>;
+auto provider_text_tiling5(const provider_parameters&)
+  -> unique_holder<resource_provider_interface>;
+auto provider_text_lorem_ipsum(const provider_parameters&)
   -> unique_holder<resource_provider_interface>;
 //------------------------------------------------------------------------------
 auto provider_text_resource_list(const provider_parameters&)
