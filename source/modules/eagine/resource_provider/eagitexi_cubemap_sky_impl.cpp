@@ -44,6 +44,9 @@ private:
     void _render_tile() noexcept;
     void _save_tile() noexcept;
 
+    auto _done_tiles() const noexcept -> span_size_t;
+    auto _total_tiles() const noexcept -> span_size_t;
+
     main_ctx_buffer _buffer;
 
     const oglplus::geometry_and_bindings _screen;
@@ -53,6 +56,11 @@ private:
     int _tile_x{0};
     int _tile_y{0};
     int _face_index{0};
+
+    activity_progress _prepare_progress{
+      main_context().progress(),
+      "rendering sky cube-map",
+      _total_tiles()};
 };
 //------------------------------------------------------------------------------
 eagitexi_cubemap_sky_renderer::eagitexi_cubemap_sky_renderer(
@@ -187,6 +195,17 @@ void eagitexi_cubemap_sky_renderer::_save_tile() noexcept {
     compress(view(_buffer));
 }
 //------------------------------------------------------------------------------
+auto eagitexi_cubemap_sky_renderer::_done_tiles() const noexcept
+  -> span_size_t {
+    return (_face_index * _tiles_per_side * _tiles_per_side) +
+           (_tile_y * _tiles_per_side) + _tile_x;
+}
+//------------------------------------------------------------------------------
+auto eagitexi_cubemap_sky_renderer::_total_tiles() const noexcept
+  -> span_size_t {
+    return 6 * _tiles_per_side * _tiles_per_side;
+}
+//------------------------------------------------------------------------------
 auto eagitexi_cubemap_sky_renderer::render() noexcept
   -> msgbus::blob_preparation {
     if(_face_index < 6) {
@@ -198,6 +217,11 @@ auto eagitexi_cubemap_sky_renderer::render() noexcept
                 _save_tile();
                 ++_face_index;
             }
+        }
+        if(_face_index < 6) {
+            _prepare_progress.update_progress(_done_tiles());
+        } else {
+            _prepare_progress.finish();
         }
         return msgbus::blob_preparation::working;
     }
