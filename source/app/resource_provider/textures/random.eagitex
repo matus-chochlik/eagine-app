@@ -12,10 +12,10 @@
 ,"wrap_t":"repeat"
 ,"tag": ["texture", "gradient"]
 ,"images":
- [{"url":"eagitexi:///random?width=512+height=512","z_offs":0,"target":"texture_2d_array"}
- ,{"url":"eagitexi:///random?width=512+height=512","z_offs":1,"target":"texture_2d_array"}
- ,{"url":"eagitexi:///random?width=512+height=512","z_offs":2,"target":"texture_2d_array"}
- ,{"url":"eagitexi:///random?width=512+height=512","z_offs":3,"target":"texture_2d_array"}
- ,{"url":"eagitexi:///random?width=512+height=512","z_offs":4,"target":"texture_2d_array"}
- ,{"url":"eagitexi:///random?width=512+height=512","z_offs":5,"target":"texture_2d_array"}]
+ [{"url":"eagitexi:///random?width=512&height=512","z_offs":0,"target":"texture_2d_array"}
+ ,{"url":"eagitexi:///random?width=512&height=512","z_offs":1,"target":"texture_2d_array"}
+ ,{"url":"eagitexi:///random?width=512&height=512","z_offs":2,"target":"texture_2d_array"}
+ ,{"url":"eagitexi:///random?width=512&height=512","z_offs":3,"target":"texture_2d_array"}
+ ,{"url":"eagitexi:///random?width=512&height=512","z_offs":4,"target":"texture_2d_array"}
+ ,{"url":"eagitexi:///random?width=512&height=512","z_offs":5,"target":"texture_2d_array"}]
 }

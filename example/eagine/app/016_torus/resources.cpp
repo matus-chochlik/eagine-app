@@ -34,7 +34,7 @@ void torus_program::_on_loaded(
 //------------------------------------------------------------------------------
 torus_geometry::torus_geometry(execution_context& ctx)
   : gl_geometry_and_bindings_resource{
-      url{"shape:///unit_torus?position=true+normal=true+wrap_coord=true"},
+      url{"shape:///unit_torus?position=true&normal=true&wrap_coord=true"},
       ctx} {}
 //------------------------------------------------------------------------------
 } // namespace eagine::app

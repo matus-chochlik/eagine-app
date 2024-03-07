@@ -286,3 +286,4 @@ eagine_embed_target_resources(
 )
 set_tests_properties(execute-test.eagine.app.resource_manager PROPERTIES COST 10)
 
+add_subdirectory(resource_provider)

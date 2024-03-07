@@ -23,7 +23,8 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 class oalplus_openal_player
   : public main_ctx_object
-  , public audio_provider {
+  , public audio_provider
+  , public oalplus::al_context_handler {
 public:
     oalplus_openal_player(main_ctx_parent parent, oalplus::alc_api& alc)
       : main_ctx_object{"OpenALC", parent}
@@ -46,10 +47,14 @@ public:
     auto audio_kind() const noexcept -> audio_context_kind final;
     auto instance_id() const noexcept -> identifier final;
 
+    auto alc_api() noexcept -> const oalplus::alc_api&;
+
     void parent_context_changed(const audio_context&) final;
     void audio_begin(execution_context&) final;
     void audio_end(execution_context&) final;
     void audio_commit(execution_context&) final;
+
+    auto make_current() noexcept -> bool final;
 
 private:
     oalplus::alc_api& _alc_api;
@@ -113,18 +118,26 @@ auto oalplus_openal_player::instance_id() const noexcept -> identifier {
     return _instance_id;
 }
 //------------------------------------------------------------------------------
+auto oalplus_openal_player::alc_api() noexcept -> const oalplus::alc_api& {
+    return _alc_api;
+}
+//------------------------------------------------------------------------------
 void oalplus_openal_player::parent_context_changed(const audio_context&) {}
 //------------------------------------------------------------------------------
 void oalplus_openal_player::audio_begin(execution_context&) {
-    _alc_api.make_context_current(_device, _context);
+    alc_api().make_context_current(_device, _context);
 }
 //------------------------------------------------------------------------------
 void oalplus_openal_player::audio_end(execution_context&) {
-    _alc_api.make_context_current.none(_device);
+    alc_api().make_context_current.none(_device);
 }
 //------------------------------------------------------------------------------
 void oalplus_openal_player::audio_commit(execution_context&) {
     //
+}
+//------------------------------------------------------------------------------
+auto oalplus_openal_player::make_current() noexcept -> bool {
+    return bool(alc_api().make_context_current(_device, _context));
 }
 //------------------------------------------------------------------------------
 // provider

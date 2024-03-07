@@ -8,6 +8,7 @@ set(PKG_DIR "${CMAKE_CURRENT_BINARY_DIR}/${PKG_NAME}")
 set(PKG_PREFIX "${PKG_DIR}/usr")
 # ------------------------------------------------------------------------------
 eagine_generate_module_json(eagine.app)
+eagine_generate_module_json(eagine.app.resource_provider)
 # ------------------------------------------------------------------------------
 configure_file(build-pkg.py.in build-pkg.py @ONLY)
 # ------------------------------------------------------------------------------
@@ -23,7 +24,10 @@ add_custom_command(
 	COMMAND ${DPKG_DEB_COMMAND}
 	ARGS --build --root-owner-group ${PKG_NAME}
 	WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
-	DEPENDS eagine.app "${PKG_DIR}/DEBIAN/control"
+	DEPENDS
+		eagine.app
+		eagine.app.resource_provider
+		"${PKG_DIR}/DEBIAN/control"
 	COMMENT "Building ${PKG_NAME}.deb package")
 # ------------------------------------------------------------------------------
 add_custom_target(

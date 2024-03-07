@@ -104,7 +104,8 @@ private:
 
     shared_provider_objects& _shared;
     string_list_resource _tiling;
-    const signal_binding _sig_binding;
+    const signal_binding _sig_binding{
+      _tiling.load_event.bind_to<&tiling_transition_tiling::_loaded>(this)};
     const int _threshold;
     msgbus::blob_preparation_result _prep_result;
 };
@@ -125,8 +126,6 @@ tiling_transition_tiling::tiling_transition_tiling(
   : main_ctx_object{"TlgTrnsTlg", parent}
   , _shared{shared}
   , _tiling{_get_source(locator), _shared.loader}
-  , _sig_binding{_tiling.load_event.bind(
-      {this, member_function_constant_t<&tiling_transition_tiling::_loaded>{}})}
   , _threshold{_get_threshold(locator)} {}
 //------------------------------------------------------------------------------
 auto tiling_transition_tiling::is_valid_locator(const url& locator) noexcept

@@ -14,5 +14,5 @@
 ,"wrap_t":"clamp_to_border"
 ,"label":"tiling noise 512"
 ,"tag": ["texture", "noise"]
-,"images":[{"url":"eagitexi:///tiling_noise?width=512+height=512+source=text%3A%2F%2F%2FTlngR4S512","target":"texture_2d_array"}]
+,"images":[{"url":"eagitexi:///tiling_noise?width=512&height=512&source=text%3A%2F%2F%2FTlngR4S512","target":"texture_2d_array"}]
 }

@@ -222,10 +222,33 @@ public:
     /// @see al_ref
     auto init_al_api(execution_context&) noexcept -> bool;
 
-    /// @brief Returns a reference to the AL sound API in this context.
+    /// @brief Returns the shared AL API context wrapper.
+    auto al_context() const noexcept -> oalplus::shared_al_api_context {
+        return _al_api_context;
+    }
+
+    /// @brief Indicates if the AL rendering API in this video context is initialized.
+    /// @see init_al_api
+    /// @see al_api
+    auto has_al_api() const noexcept {
+        return bool(_al_api_context);
+    }
+
+    /// @brief Returns a smart reference to the AL rendering API in this context.
+    /// @see init_al_api
     /// @see with_al
     auto al_ref() const noexcept -> oalplus::al_api_reference {
-        return _al_api;
+        return _al_api_context.al_ref();
+    }
+
+    /// @brief Returns a reference to the AL rendering API in this context.
+    /// @see init_al_api
+    /// @see al_ref
+    /// @see with_al
+    /// @pre has_al_api()
+    auto al_api() const noexcept -> const oalplus::al_api& {
+        assert(has_al_api());
+        return _al_api_context.al_api();
     }
 
     template <typename Function>
@@ -236,7 +259,7 @@ public:
     /// @brief Returns a reference to the ALUT sound API in this context.
     /// @see with_alut
     auto alut_ref() const noexcept -> oalplus::alut_api_reference {
-        return _alut_api;
+        return _alut_api_context.alut_ref();
     }
 
     template <typename Function>
@@ -250,8 +273,8 @@ public:
 private:
     execution_context& _parent;
     shared_holder<audio_provider> _provider{};
-    shared_holder<oalplus::al_api> _al_api{};
-    shared_holder<oalplus::alut_api> _alut_api{};
+    oalplus::shared_al_api_context _al_api_context{};
+    oalplus::shared_alut_api_context _alut_api_context{};
 };
 //------------------------------------------------------------------------------
 /// @brief Class providing various contexts to which a loaded_resource belongs
@@ -273,10 +296,15 @@ public:
         return _loader.get();
     }
 
-    auto set_gl_context(
-      const oglplus::shared_gl_api_context& gl_context) noexcept
+    auto set(const oglplus::shared_gl_api_context& gl_context) noexcept
       -> loaded_resource_context& {
         _gl_context = gl_context;
+        return *this;
+    }
+
+    auto set(const oalplus::shared_al_api_context& al_context) noexcept
+      -> loaded_resource_context& {
+        _al_context = al_context;
         return *this;
     }
 
@@ -290,9 +318,20 @@ public:
         return _gl_context.gl_api();
     }
 
+    /// @brief Reference to a resource's parent AL context.
+    auto al_context() const noexcept -> const oalplus::shared_al_api_context& {
+        return _al_context;
+    }
+
+    /// @brief Reference to a resource's parent AL API.
+    auto al_api() const noexcept -> const oalplus::al_api& {
+        return _al_context.al_api();
+    }
+
 private:
     std::reference_wrapper<resource_loader> _loader;
     oglplus::shared_gl_api_context _gl_context;
+    oalplus::shared_al_api_context _al_context;
 };
 //------------------------------------------------------------------------------
 /// @brief Class holding shared video/audio rendering application support objects.

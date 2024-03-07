@@ -107,7 +107,7 @@ protected:
 //------------------------------------------------------------------------------
 export template <typename Resource>
 class loaded_resource;
-
+//------------------------------------------------------------------------------
 export template <typename Resource>
 struct get_resource_load_params : std::type_identity<std::tuple<>> {};
 
@@ -117,13 +117,14 @@ struct get_resource_load_params<loaded_resource<Resource>>
 
 export template <typename Resource>
 using resource_load_params = typename get_resource_load_params<Resource>::type;
-
+//------------------------------------------------------------------------------
 export template <typename Params>
 struct get_resource_load_context_params : std::type_identity<Params> {};
 
 export template <typename Params>
 using resource_load_context_params =
   typename get_resource_load_context_params<Params>::type;
+//------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 export template <typename Resource>
 class loaded_resource;
@@ -294,15 +295,15 @@ private:
 //------------------------------------------------------------------------------
 export template <
   typename Derived,
-  typename Params = resource_load_params<Derived>,
-  typename CtxParams = resource_load_context_params<Params>>
+  typename LoadParams = resource_load_params<Derived>,
+  typename LoadCtxParams = resource_load_context_params<LoadParams>>
 class loaded_resource_common;
 //------------------------------------------------------------------------------
-export template <typename Resource, typename... P, typename... Cp>
+export template <typename Resource, typename... LoadP, typename... CtxLoadP>
 class loaded_resource_common<
   loaded_resource<Resource>,
-  std::tuple<P...>,
-  std::tuple<Cp...>>
+  std::tuple<LoadP...>,
+  std::tuple<CtxLoadP...>>
   : public Resource
   , public loaded_resource_base {
     using base = loaded_resource_base;
@@ -386,7 +387,7 @@ public:
     }
 
     /// @brief Updates the resource, possibly doing resource load request.
-    auto load_if_needed(loaded_resource_context& ctx, P... params)
+    auto load_if_needed(loaded_resource_context& ctx, LoadP... params)
       -> work_done {
         if(not is_loaded() and not is_loading()) {
             if(const auto request{ctx.loader().request(
@@ -400,19 +401,21 @@ public:
     /// @brief Updates the resource, possibly doing resource load request.
     auto load_if_needed(
       loaded_resource_context& ctx,
-      const std::tuple<P...>& params) -> work_done {
-        return load_if_needed(ctx, std::get<P>(params)...);
+      const std::tuple<LoadP...>& params) -> work_done {
+        return load_if_needed(ctx, std::get<LoadP>(params)...);
     }
 
     /// @brief Updates the resource, possibly doing resource load request.
-    auto load_if_needed(execution_context& ctx, Cp... params) -> work_done {
+    auto load_if_needed(execution_context& ctx, CtxLoadP... params)
+      -> work_done {
         return load_if_needed(ctx.resource_context(), std::move(params)...);
     }
 
     /// @brief Updates the resource, possibly doing resource load request.
-    auto load_if_needed(execution_context& ctx, const std::tuple<P...>& params)
-      -> work_done {
-        return load_if_needed(ctx, std::get<P>(params)...);
+    auto load_if_needed(
+      execution_context& ctx,
+      const std::tuple<LoadP...>& params) -> work_done {
+        return load_if_needed(ctx, std::get<LoadP>(params)...);
     }
 
     /// @brief Cleans up this resource.
