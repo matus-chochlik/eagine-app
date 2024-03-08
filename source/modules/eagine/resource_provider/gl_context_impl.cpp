@@ -340,4 +340,112 @@ void gl_blob_renderer::compress(const byte b) noexcept {
     _parent.compress(b);
 }
 //------------------------------------------------------------------------------
+// eagitexi_cubemap_renderer
+//------------------------------------------------------------------------------
+auto eagitexi_cubemap_renderer::_build_screen() noexcept
+  -> oglplus::geometry_and_bindings {
+    oglplus::geometry_and_bindings screen{
+      gl_api(),
+      oglplus::shape_generator{
+        gl_api(), shapes::unit_screen(shapes::vertex_attrib_kind::position)},
+      _buffer};
+    screen.use(gl_api());
+
+    return screen;
+}
+//------------------------------------------------------------------------------
+eagitexi_cubemap_renderer::eagitexi_cubemap_renderer(
+  gl_rendered_source_blob_io& parent,
+  string_view progress_label,
+  const gl_rendered_blob_params& params,
+  shared_holder<gl_rendered_blob_context> context,
+  int size,
+  int tile_size) noexcept
+  : gl_blob_renderer{parent, std::move(context)}
+  , _buffer{*this, size * size * 4, nothing}
+  , _screen{_build_screen()}
+  , _size{size}
+  , _tile_size{tile_size}
+  , _tiles_per_side{std::max(_size / _tile_size, 1)}
+  , _prepare_progress{
+      main_context().progress(),
+      progress_label,
+      _total_tiles()} {
+    const auto& [gl, GL]{gl_api()};
+    gl.viewport(0, 0, _size, _size);
+    gl.disable(GL.depth_test);
+}
+//------------------------------------------------------------------------------
+void eagitexi_cubemap_renderer::_render_tile() noexcept {
+    const auto& glapi{gl_api()};
+    const auto& [gl, GL]{glapi};
+    if((_tile_x == 0) and (_tile_y == 0)) {
+        gl.disable(GL.scissor_test);
+        gl.clear_color(0.5, 0.5, 0.5, 0.0);
+        gl.clear(GL.color_buffer_bit);
+        glapi.try_set_uniform(_prog, "faceIdx", _face_index);
+    }
+    gl.enable(GL.scissor_test);
+    gl.scissor(
+      _tile_x * _tile_size, _tile_y * _tile_size, _tile_size, _tile_size);
+    _screen.draw(glapi);
+}
+//------------------------------------------------------------------------------
+void eagitexi_cubemap_renderer::_save_tile() noexcept {
+    const auto& [gl, GL]{gl_api()};
+    _buffer.resize(span_size(_size * _size * 4));
+
+    gl.disable(GL.scissor_test);
+    gl.finish();
+    gl.read_pixels(
+      0,
+      0,
+      oglplus::gl_types::sizei_type(_size),
+      oglplus::gl_types::sizei_type(_size),
+      GL.rgba,
+      GL.unsigned_byte_,
+      cover(_buffer));
+
+    compress(view(_buffer));
+}
+//------------------------------------------------------------------------------
+auto eagitexi_cubemap_renderer::_done_tiles() const noexcept -> span_size_t {
+    return (_face_index * _tiles_per_side * _tiles_per_side) +
+           (_tile_y * _tiles_per_side) + _tile_x;
+}
+//------------------------------------------------------------------------------
+auto eagitexi_cubemap_renderer::_total_tiles() const noexcept -> span_size_t {
+    return 6 * _tiles_per_side * _tiles_per_side;
+}
+//------------------------------------------------------------------------------
+auto eagitexi_cubemap_renderer::prepare_render() noexcept
+  -> msgbus::blob_preparation {
+    return msgbus::blob_preparation::finished;
+}
+//------------------------------------------------------------------------------
+auto eagitexi_cubemap_renderer::render() noexcept -> msgbus::blob_preparation {
+    if(const auto prep_result{prepare_render()};
+       prep_result != msgbus::blob_preparation::finished) {
+        return prep_result;
+    }
+    if(_face_index < 6) {
+        _render_tile();
+        if(++_tile_x >= _tiles_per_side) {
+            _tile_x = 0;
+            if(++_tile_y >= _tiles_per_side) {
+                _tile_y = 0;
+                _save_tile();
+                ++_face_index;
+            }
+        }
+        if(_face_index < 6) {
+            _prepare_progress.update_progress(_done_tiles());
+        } else {
+            _prepare_progress.finish();
+        }
+        return msgbus::blob_preparation::working;
+    }
+    return msgbus::blob_preparation::finished;
+}
+//------------------------------------------------------------------------------
 } // namespace eagine::app

@@ -56,7 +56,7 @@ cubemap_scene::cubemap_scene(const url& l) noexcept
 //------------------------------------------------------------------------------
 // Renderer
 //------------------------------------------------------------------------------
-class eagitexi_cubemap_sky_renderer final : public gl_blob_renderer {
+class eagitexi_cubemap_sky_renderer final : public eagitexi_cubemap_renderer {
 public:
     eagitexi_cubemap_sky_renderer(
       gl_rendered_source_blob_io& parent,
@@ -67,37 +67,13 @@ public:
 
     ~eagitexi_cubemap_sky_renderer() noexcept final;
 
-    auto render() noexcept -> msgbus::blob_preparation final;
-
 private:
     static auto _tile_size() noexcept -> int;
     static auto _vs_source() noexcept -> string_view;
     static auto _fs_source() noexcept -> string_view;
-    auto _build_screen() noexcept -> oglplus::geometry_and_bindings;
     auto _build_program(
       const gl_rendered_blob_params&,
       const cubemap_scene&) noexcept -> oglplus::program_object;
-
-    void _render_tile() noexcept;
-    void _save_tile() noexcept;
-
-    auto _done_tiles() const noexcept -> span_size_t;
-    auto _total_tiles() const noexcept -> span_size_t;
-
-    main_ctx_buffer _buffer;
-
-    const oglplus::geometry_and_bindings _screen;
-    const oglplus::program_object _prog;
-    const int _size;
-    const int _tiles_per_side{1};
-    int _tile_x{0};
-    int _tile_y{0};
-    int _face_index{0};
-
-    activity_progress _prepare_progress{
-      main_context().progress(),
-      "rendering sky cube-map",
-      _total_tiles()};
 };
 //------------------------------------------------------------------------------
 eagitexi_cubemap_sky_renderer::eagitexi_cubemap_sky_renderer(
@@ -106,15 +82,14 @@ eagitexi_cubemap_sky_renderer::eagitexi_cubemap_sky_renderer(
   const cubemap_scene& scene,
   shared_holder<gl_rendered_blob_context> context,
   int size) noexcept
-  : gl_blob_renderer{parent, std::move(context)}
-  , _buffer{*this, size * size * 4, nothing}
-  , _screen{_build_screen()}
-  , _prog{_build_program(params, scene)}
-  , _size{size}
-  , _tiles_per_side{std::max(_size / _tile_size(), 1)} {
-    const auto& [gl, GL]{gl_api()};
-    gl.viewport(0, 0, _size, _size);
-    gl.disable(GL.depth_test);
+  : eagitexi_cubemap_renderer{
+      parent,
+      "rendering sky cube-map",
+      params,
+      context,
+      size,
+      _tile_size()} {
+    _init_program(_build_program(params, scene));
 }
 //------------------------------------------------------------------------------
 eagitexi_cubemap_sky_renderer::~eagitexi_cubemap_sky_renderer() noexcept {
@@ -123,18 +98,6 @@ eagitexi_cubemap_sky_renderer::~eagitexi_cubemap_sky_renderer() noexcept {
 //------------------------------------------------------------------------------
 auto eagitexi_cubemap_sky_renderer::_tile_size() noexcept -> int {
     return 8;
-}
-//------------------------------------------------------------------------------
-auto eagitexi_cubemap_sky_renderer::_build_screen() noexcept
-  -> oglplus::geometry_and_bindings {
-    oglplus::geometry_and_bindings screen{
-      gl_api(),
-      oglplus::shape_generator{
-        gl_api(), shapes::unit_screen(shapes::vertex_attrib_kind::position)},
-      _buffer};
-    screen.use(gl_api());
-
-    return screen;
 }
 //------------------------------------------------------------------------------
 auto eagitexi_cubemap_sky_renderer::_vs_source() noexcept -> string_view {
@@ -317,7 +280,7 @@ auto eagitexi_cubemap_sky_renderer::_build_program(
     gl.link_program(prog);
     gl.use_program(prog);
 
-    gl.bind_attrib_location(prog, _screen.position_loc(), "Position");
+    gl.bind_attrib_location(prog, _screen_position_loc(), "Position");
 
     glapi.try_set_uniform(prog, "planetRadius", scene.planet_radius_m);
     glapi.try_set_uniform(prog, "atmThickness", scene.atmosphere_thickness_m);
@@ -327,75 +290,6 @@ auto eagitexi_cubemap_sky_renderer::_build_program(
     glapi.try_set_uniform(prog, "sunZ", scene.sun_z);
 
     return prog;
-}
-//------------------------------------------------------------------------------
-void eagitexi_cubemap_sky_renderer::_render_tile() noexcept {
-    const auto& glapi{gl_api()};
-    const auto& [gl, GL]{glapi};
-    if((_tile_x == 0) and (_tile_y == 0)) {
-        gl.disable(GL.scissor_test);
-        gl.clear_color(0.5, 0.5, 0.5, 0.0);
-        gl.clear(GL.color_buffer_bit);
-        glapi.try_set_uniform(_prog, "faceIdx", _face_index);
-    }
-    gl.enable(GL.scissor_test);
-    gl.scissor(
-      _tile_x * _tile_size(),
-      _tile_y * _tile_size(),
-      _tile_size(),
-      _tile_size());
-    _screen.draw(glapi);
-}
-//------------------------------------------------------------------------------
-void eagitexi_cubemap_sky_renderer::_save_tile() noexcept {
-    const auto& [gl, GL]{gl_api()};
-    _buffer.resize(span_size(_size * _size * 4));
-
-    gl.disable(GL.scissor_test);
-    gl.finish();
-    gl.read_pixels(
-      0,
-      0,
-      oglplus::gl_types::sizei_type(_size),
-      oglplus::gl_types::sizei_type(_size),
-      GL.rgba,
-      GL.unsigned_byte_,
-      cover(_buffer));
-
-    compress(view(_buffer));
-}
-//------------------------------------------------------------------------------
-auto eagitexi_cubemap_sky_renderer::_done_tiles() const noexcept
-  -> span_size_t {
-    return (_face_index * _tiles_per_side * _tiles_per_side) +
-           (_tile_y * _tiles_per_side) + _tile_x;
-}
-//------------------------------------------------------------------------------
-auto eagitexi_cubemap_sky_renderer::_total_tiles() const noexcept
-  -> span_size_t {
-    return 6 * _tiles_per_side * _tiles_per_side;
-}
-//------------------------------------------------------------------------------
-auto eagitexi_cubemap_sky_renderer::render() noexcept
-  -> msgbus::blob_preparation {
-    if(_face_index < 6) {
-        _render_tile();
-        if(++_tile_x >= _tiles_per_side) {
-            _tile_x = 0;
-            if(++_tile_y >= _tiles_per_side) {
-                _tile_y = 0;
-                _save_tile();
-                ++_face_index;
-            }
-        }
-        if(_face_index < 6) {
-            _prepare_progress.update_progress(_done_tiles());
-        } else {
-            _prepare_progress.finish();
-        }
-        return msgbus::blob_preparation::working;
-    }
-    return msgbus::blob_preparation::finished;
 }
 //------------------------------------------------------------------------------
 // I/O
