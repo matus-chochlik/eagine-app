@@ -33,6 +33,9 @@ struct cubemap_scene {
     float planet_radius_m;
     float atmosphere_thickness_m;
     float above_ground_m;
+    float sun_x;
+    float sun_y;
+    float sun_z;
 };
 //------------------------------------------------------------------------------
 template <typename T>
@@ -46,7 +49,10 @@ auto cubemap_scene::query_arg(
 cubemap_scene::cubemap_scene(const url& l) noexcept
   : planet_radius_m{query_arg<float>(l, "planet_radius_m", 6'370'000.F)}
   , atmosphere_thickness_m{query_arg<float>(l, "planet_atmosphere_m", 100'000.F)}
-  , above_ground_m{query_arg<float>(l, "above_ground_m", 100.F)} {}
+  , above_ground_m{query_arg<float>(l, "above_ground_m", 100.F)}
+  , sun_x{query_arg<float>(l, "sun_x", 1.0F)}
+  , sun_y{query_arg<float>(l, "sun_y", 1.0F)}
+  , sun_z{query_arg<float>(l, "sun_z", 1.0F)} {}
 //------------------------------------------------------------------------------
 // Renderer
 //------------------------------------------------------------------------------
@@ -153,7 +159,10 @@ uniform int faceIdx;
 uniform float planetRadius;
 uniform float atmThickness;
 uniform float aboveGround;
-const vec3 sunDirection = normalize(vec3(1.0));
+uniform float sunX;
+uniform float sunY;
+uniform float sunZ;
+vec3 sunDirection = normalize(vec3(sunX, sunY, sunZ));
 const float sunDot = 0.003;
 
 struct Ray {
@@ -286,7 +295,8 @@ void main() {
 auto eagitexi_cubemap_sky_renderer::_build_program(
   const gl_rendered_blob_params& params,
   const cubemap_scene& scene) noexcept -> oglplus::program_object {
-    const auto& [gl, GL]{gl_api()};
+    const auto& glapi{gl_api()};
+    const auto& [gl, GL]{glapi};
 
     // vertex shader
     const auto vs{gl.create_shader.object(GL.vertex_shader)};
@@ -308,28 +318,25 @@ auto eagitexi_cubemap_sky_renderer::_build_program(
     gl.use_program(prog);
 
     gl.bind_attrib_location(prog, _screen.position_loc(), "Position");
-    gl.get_uniform_location(prog, "planetRadius").and_then([&, this](auto loc) {
-        gl_api().set_uniform(prog, loc, scene.planet_radius_m);
-    });
-    gl.get_uniform_location(prog, "atmThickness").and_then([&, this](auto loc) {
-        gl_api().set_uniform(prog, loc, scene.atmosphere_thickness_m);
-    });
-    gl.get_uniform_location(prog, "aboveGround").and_then([&, this](auto loc) {
-        gl_api().set_uniform(prog, loc, scene.above_ground_m);
-    });
+
+    glapi.try_set_uniform(prog, "planetRadius", scene.planet_radius_m);
+    glapi.try_set_uniform(prog, "atmThickness", scene.atmosphere_thickness_m);
+    glapi.try_set_uniform(prog, "aboveGround", scene.above_ground_m);
+    glapi.try_set_uniform(prog, "sunX", scene.sun_x);
+    glapi.try_set_uniform(prog, "sunY", scene.sun_y);
+    glapi.try_set_uniform(prog, "sunZ", scene.sun_z);
 
     return prog;
 }
 //------------------------------------------------------------------------------
 void eagitexi_cubemap_sky_renderer::_render_tile() noexcept {
-    const auto& [gl, GL]{gl_api()};
+    const auto& glapi{gl_api()};
+    const auto& [gl, GL]{glapi};
     if((_tile_x == 0) and (_tile_y == 0)) {
         gl.disable(GL.scissor_test);
         gl.clear_color(0.5, 0.5, 0.5, 0.0);
         gl.clear(GL.color_buffer_bit);
-        gl.get_uniform_location(_prog, "faceIdx").and_then([&](auto loc) {
-            gl_api().set_uniform(_prog, loc, _face_index);
-        });
+        glapi.try_set_uniform(_prog, "faceIdx", _face_index);
     }
     gl.enable(GL.scissor_test);
     gl.scissor(
@@ -337,7 +344,7 @@ void eagitexi_cubemap_sky_renderer::_render_tile() noexcept {
       _tile_y * _tile_size(),
       _tile_size(),
       _tile_size());
-    _screen.draw(gl_api());
+    _screen.draw(glapi);
 }
 //------------------------------------------------------------------------------
 void eagitexi_cubemap_sky_renderer::_save_tile() noexcept {
@@ -606,6 +613,9 @@ auto eagitex_cubemap_sky_io::make_header(const url& locator, int size)
     add.operator()<float>("planet_radius_m");
     add.operator()<float>("planet_atmosphere_m");
     add.operator()<float>("above_ground_m");
+    add.operator()<float>("sun_x");
+    add.operator()<float>("sun_y");
+    add.operator()<float>("sun_z");
     hdr << R"("}]})";
 
     return hdr.str();

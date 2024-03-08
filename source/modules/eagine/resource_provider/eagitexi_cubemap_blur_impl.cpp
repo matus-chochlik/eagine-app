@@ -112,7 +112,8 @@ auto eagitexi_cubemap_blur_renderer::_build_screen() noexcept
 auto eagitexi_cubemap_blur_renderer::_build_program(
   const gl_rendered_blob_params& params,
   int sharpness) noexcept -> oglplus::program_object {
-    const auto& [gl, GL]{gl_api()};
+    const auto& glapi{gl_api()};
+    const auto& [gl, GL]{glapi};
 
     // vertex shader
     const string_view vs_source{
@@ -189,18 +190,15 @@ auto eagitexi_cubemap_blur_renderer::_build_program(
     gl.use_program(prog);
 
     gl.bind_attrib_location(prog, _screen.position_loc(), "Position");
-    gl.get_uniform_location(prog, "cubeSide").and_then([&, this](auto loc) {
-        const auto side{std::min(
-          std::max(params.surface_width.value(), params.surface_height.value()),
-          128)};
-        gl_api().set_uniform(prog, loc, side);
-    });
-    gl.get_uniform_location(prog, "sharpness").and_then([&, this](auto loc) {
-        gl_api().set_uniform(prog, loc, sharpness);
-    });
-    gl.get_uniform_location(prog, "cubeMap").and_then([&, this](auto loc) {
-        gl_api().set_uniform(prog, loc, 0);
-    });
+    glapi.try_set_uniform(
+      prog,
+      "cubeSide",
+      std::min(
+        std::max(params.surface_width.value(), params.surface_height.value()),
+        128));
+
+    glapi.try_set_uniform(prog, "sharpness", sharpness);
+    glapi.try_set_uniform(prog, "cubeMap", 0);
 
     return prog;
 }
@@ -215,14 +213,13 @@ void eagitexi_cubemap_blur_renderer::_on_tex_loaded(
 }
 //------------------------------------------------------------------------------
 void eagitexi_cubemap_blur_renderer::_render_tile() noexcept {
-    const auto& [gl, GL]{gl_api()};
+    const auto& glapi{gl_api()};
+    const auto& [gl, GL]{glapi};
     if((_tile_x == 0) and (_tile_y == 0)) {
         gl.disable(GL.scissor_test);
         gl.clear_color(0.5, 0.5, 0.5, 0.0);
         gl.clear(GL.color_buffer_bit);
-        gl.get_uniform_location(_prog, "faceIdx").and_then([&](auto loc) {
-            gl_api().set_uniform(_prog, loc, _face_index);
-        });
+        glapi.try_set_uniform(_prog, "faceIdx", _face_index);
     }
     gl.enable(GL.scissor_test);
     gl.scissor(
@@ -230,7 +227,7 @@ void eagitexi_cubemap_blur_renderer::_render_tile() noexcept {
       _tile_y * _tile_size(),
       _tile_size(),
       _tile_size());
-    _screen.draw(gl_api());
+    _screen.draw(glapi);
 }
 //------------------------------------------------------------------------------
 void eagitexi_cubemap_blur_renderer::_save_tile() noexcept {
