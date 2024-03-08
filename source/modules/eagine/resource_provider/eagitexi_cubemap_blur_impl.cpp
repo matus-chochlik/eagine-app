@@ -39,6 +39,8 @@ public:
 
 private:
     static auto _tile_size() noexcept -> int;
+    static auto _vs_source() noexcept -> string_view;
+    static auto _fs_source() noexcept -> string_view;
     auto _build_program(const gl_rendered_blob_params&, int) noexcept
       -> oglplus::program_object;
     void _on_tex_loaded(const gl_texture_resource::load_info&) noexcept;
@@ -70,6 +72,73 @@ auto eagitexi_cubemap_blur_renderer::_tile_size() noexcept -> int {
     return 16;
 }
 //------------------------------------------------------------------------------
+auto eagitexi_cubemap_blur_renderer::_vs_source() noexcept -> string_view {
+    return {R"(
+/* -------------------------------------------------------------------------- */
+#version 140
+in vec2 Position;
+out vec2 vertCoord;
+void main() {
+	gl_Position = vec4(Position, 0.0, 1.0);
+	vertCoord = Position;
+}
+/* -------------------------------------------------------------------------- */
+	)"};
+}
+//------------------------------------------------------------------------------
+auto eagitexi_cubemap_blur_renderer::_fs_source() noexcept -> string_view {
+    return {R"(
+/* -------------------------------------------------------------------------- */
+#version 140
+in vec2 vertCoord;
+out vec4 fragColor;
+uniform samplerCube cubeMap;
+uniform int faceIdx;
+uniform int cubeSide;
+uniform int sharpness;
+const mat3[6] cubeFaces = mat3[6](
+  mat3( 0.0, 0.0,-1.0, 0.0,-1.0, 0.0, 1.0, 0.0, 0.0),
+  mat3( 0.0, 0.0, 1.0, 0.0,-1.0, 0.0,-1.0, 0.0, 0.0),
+  mat3( 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0),
+  mat3( 1.0, 0.0, 0.0, 0.0, 0.0,-1.0, 0.0,-1.0, 0.0),
+  mat3( 1.0, 0.0, 0.0, 0.0,-1.0, 0.0, 0.0, 0.0, 1.0),
+  mat3(-1.0, 0.0, 0.0, 0.0,-1.0, 0.0, 0.0, 0.0,-1.0));
+void main() {
+  mat3 cubeFace = cubeFaces[faceIdx];
+  vec3 cubeCoord =
+    cubeFace[0]*vertCoord.x+
+    cubeFace[1]*vertCoord.y+
+    cubeFace[2];
+  float ics = 1.0 / float(cubeSide-1);
+  vec4 accumColor = vec4(0.0);
+  float accumWeight = 0.0;
+  for(int f = 0; f < 6; ++f) {
+    mat3 sampleFace = cubeFaces[f];
+    for(int y = 0; y < cubeSide; ++y) {
+      for(int x = 0; x < cubeSide; ++x) {
+        vec2 sampleCoord = vec2(
+          mix(-1.0, 1.0, float(x)*ics),
+          mix(-1.0, 1.0, float(y)*ics));
+        vec3 sampleCubeCoord =
+          sampleFace[0]*sampleCoord.x+
+          sampleFace[1]*sampleCoord.y+
+          sampleFace[2];
+        vec4 sampleColor = texture(cubeMap, sampleCubeCoord);
+        float sampleWeight = pow(max(dot(
+            normalize(cubeCoord),
+            normalize(sampleCubeCoord)),
+          0.0), pow(2.0, float(sharpness)));
+        accumColor = accumColor + sampleColor * sampleWeight;
+        accumWeight += sampleWeight;
+      }
+    }
+  }
+  fragColor = accumColor / accumWeight;
+}
+/* -------------------------------------------------------------------------- */
+	)"};
+}
+//------------------------------------------------------------------------------
 auto eagitexi_cubemap_blur_renderer::_build_program(
   const gl_rendered_blob_params& params,
   int sharpness) noexcept -> oglplus::program_object {
@@ -77,70 +146,13 @@ auto eagitexi_cubemap_blur_renderer::_build_program(
     const auto& [gl, GL]{glapi};
 
     // vertex shader
-    const string_view vs_source{
-      "#version 140\n"
-      "in vec2 Position;\n"
-      "out vec2 vertCoord;\n"
-      "void main() {\n"
-      "  gl_Position = vec4(Position, 0.0, 1.0);\n"
-      "  vertCoord = Position;\n"
-      "}\n"};
-
     const auto vs{gl.create_shader.object(GL.vertex_shader)};
-    gl.shader_source(vs, oglplus::glsl_string_ref(vs_source));
+    gl.shader_source(vs, oglplus::glsl_string_ref(_vs_source()));
     gl.compile_shader(vs);
 
     // fragment shader
-    const string_view fs_source{
-      "#version 140\n"
-      "in vec2 vertCoord;\n"
-      "out vec4 fragColor;\n"
-      "uniform samplerCube cubeMap;\n"
-      "uniform int faceIdx;\n"
-      "uniform int cubeSide;\n"
-      "uniform int sharpness;\n"
-      "const mat3[6] cubeFaces = mat3[6](\n"
-      "  mat3( 0.0, 0.0,-1.0, 0.0,-1.0, 0.0, 1.0, 0.0, 0.0),\n"
-      "  mat3( 0.0, 0.0, 1.0, 0.0,-1.0, 0.0,-1.0, 0.0, 0.0),\n"
-      "  mat3( 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0),\n"
-      "  mat3( 1.0, 0.0, 0.0, 0.0, 0.0,-1.0, 0.0,-1.0, 0.0),\n"
-      "  mat3( 1.0, 0.0, 0.0, 0.0,-1.0, 0.0, 0.0, 0.0, 1.0),\n"
-      "  mat3(-1.0, 0.0, 0.0, 0.0,-1.0, 0.0, 0.0, 0.0,-1.0));\n"
-      "void main() {\n"
-      "  mat3 cubeFace = cubeFaces[faceIdx];\n"
-      "  vec3 cubeCoord =\n"
-      "    cubeFace[0]*vertCoord.x+\n"
-      "    cubeFace[1]*vertCoord.y+\n"
-      "    cubeFace[2];\n"
-      "  float ics = 1.0 / float(cubeSide-1);\n"
-      "  vec4 accumColor = vec4(0.0);\n"
-      "  float accumWeight = 0.0;\n"
-      "  for(int f = 0; f < 6; ++f) {\n"
-      "    mat3 sampleFace = cubeFaces[f];\n"
-      "    for(int y = 0; y < cubeSide; ++y) {\n"
-      "      for(int x = 0; x < cubeSide; ++x) {\n"
-      "        vec2 sampleCoord = vec2(\n"
-      "          mix(-1.0, 1.0, float(x)*ics),\n"
-      "          mix(-1.0, 1.0, float(y)*ics));\n"
-      "        vec3 sampleCubeCoord =\n"
-      "          sampleFace[0]*sampleCoord.x+\n"
-      "          sampleFace[1]*sampleCoord.y+\n"
-      "          sampleFace[2];\n"
-      "        vec4 sampleColor = texture(cubeMap, sampleCubeCoord);\n"
-      "        float sampleWeight = pow(max(dot(\n"
-      "            normalize(cubeCoord),\n"
-      "            normalize(sampleCubeCoord)),\n"
-      "          0.0), pow(2.0, float(sharpness)));\n"
-      "        accumColor = accumColor + sampleColor * sampleWeight;\n"
-      "        accumWeight += sampleWeight;\n"
-      "      }\n"
-      "    }\n"
-      "  }\n"
-      "  fragColor = accumColor / accumWeight;\n"
-      "}\n"};
-
     const auto fs{gl.create_shader.object(GL.fragment_shader)};
-    gl.shader_source(fs, oglplus::glsl_string_ref(fs_source));
+    gl.shader_source(fs, oglplus::glsl_string_ref(_fs_source()));
     gl.compile_shader(fs);
 
     // program
