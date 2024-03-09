@@ -104,24 +104,10 @@ auto eagitexi_cubemap_sky_renderer::_build_program(
     const auto& glapi{gl_api()};
     const auto& [gl, GL]{glapi};
 
-    // vertex shader
-    const auto vs{gl.create_shader.object(GL.vertex_shader)};
-    gl.shader_source(
-      vs, oglplus::glsl_string_ref(embedded<"iCmSkyVS">().unpack(*this)));
-    gl.compile_shader(vs);
-
-    // fragment shader
-    const auto fs{gl.create_shader.object(GL.fragment_shader)};
-    gl.shader_source(
-      fs, oglplus::glsl_string_ref(embedded<"iCmSkyVS">().unpack(*this)));
-    gl.compile_shader(fs);
-    gl_api().shader_info_log(fs).and_then(
-      [](const auto& s) { std::cout << s << std::endl; });
-
     // program
     auto prog{gl.create_program.object()};
-    gl.attach_shader(prog, vs);
-    gl.attach_shader(prog, fs);
+    glapi.add_shader(prog, GL.vertex_shader, embedded<"iCmSkyVS">());
+    glapi.add_shader(prog, GL.fragment_shader, embedded<"iCmSkyFS">());
     gl.link_program(prog);
     gl.use_program(prog);
 
