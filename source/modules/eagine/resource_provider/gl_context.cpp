@@ -90,7 +90,7 @@ private:
     void _init_fbo(const gl_rendered_blob_params&) noexcept;
 
     shared_holder<egl_context_handler> _egl_context;
-    loaded_resource_context _resource_context{shared().loader, _egl_context};
+    loaded_resource_context _resource_context;
     oglplus::renderbuffer_object _color_rbo;
     oglplus::framebuffer_object _offscreen_fbo;
 };

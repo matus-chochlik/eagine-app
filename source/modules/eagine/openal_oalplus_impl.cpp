@@ -166,7 +166,7 @@ public:
       callable_ref<void(shared_holder<audio_provider>)>) final;
 
 private:
-    oalplus::alc_api _alc_api;
+    oalplus::alc_api _alc_api{*this};
 
     std::map<identifier, shared_holder<oalplus_openal_player>> _players;
 };

@@ -512,7 +512,7 @@ public:
       callable_ref<void(shared_holder<audio_provider>)>) final;
 
 private:
-    shared_holder<eglplus::egl_api> _egl_api{default_selector};
+    shared_holder<eglplus::egl_api> _egl_api{default_selector, as_parent()};
 
     std::map<identifier, shared_holder<eglplus_opengl_surface>> _surfaces;
 };

@@ -288,7 +288,7 @@ video_context::video_context(
 //------------------------------------------------------------------------------
 auto video_context::init_gl_api(execution_context& ec) noexcept -> bool {
     try {
-        _gl_api_context.ensure();
+        _gl_api_context.ensure(_parent.as_parent());
         ec.gl_initialized(*this);
         const auto& [gl, GL] = gl_api();
 
@@ -400,8 +400,8 @@ void audio_context::commit() {
 //------------------------------------------------------------------------------
 auto audio_context::init_al_api(execution_context& ec) noexcept -> bool {
     try {
-        _al_api_context.ensure();
-        _alut_api_context.ensure();
+        _al_api_context.ensure(_parent.as_parent());
+        _alut_api_context.ensure(_parent.as_parent());
         ec.al_initialized(*this);
     } catch(...) {
     }

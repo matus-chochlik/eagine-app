@@ -14,7 +14,6 @@ eagine_embed_target_resources(
 		GLProgram glprog.json
 	PACKED
 	ENABLE_SEARCH
-	PACKED
 )
 eagine_add_exe_analysis(app-016_torus)
 
