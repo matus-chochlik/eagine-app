@@ -79,7 +79,7 @@ auto eagitexi_cubemap_blur_renderer::_build_program(
     const auto& [gl, GL]{glapi};
 
     // program
-    auto prog{gl.create_program.object()};
+    auto prog{glapi.create_program_object()};
     glapi.add_shader(prog, GL.vertex_shader, embedded<"iCmBlurVS">());
     glapi.add_shader(prog, GL.fragment_shader, embedded<"iCmBlurFS">());
     gl.link_program(prog);
