@@ -57,14 +57,9 @@ example_occlusion::example_occlusion(
     // program
     gl.create_program() >> prog;
     glapi.add_shader(
-      prog,
-      GL.vertex_shader,
-      oglplus::glsl_string_ref(embed<"VertShader">("vertex.glsl").unpack(ec)));
+      prog, GL.vertex_shader, embed<"VertShader">("vertex.glsl"));
     glapi.add_shader(
-      prog,
-      GL.fragment_shader,
-      oglplus::glsl_string_ref(
-        embed<"FragShader">("fragment.glsl").unpack(ec)));
+      prog, GL.fragment_shader, embed<"FragShader">("fragment.glsl"));
     gl.link_program(prog);
     gl.use_program(prog);
 
