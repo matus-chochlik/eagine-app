@@ -84,11 +84,7 @@ example_shape::example_shape(execution_context& ec, video_context& vc)
         return embed<"ShapeJson">("shape.json");
     };
     oglplus::shape_generator shape(
-      glapi,
-      shapes::from_value_tree(
-        valtree::from_json_text(
-          as_chars(get_json_source().unpack(vc.parent())), ec.main_context()),
-        ec.as_parent()));
+      glapi, shapes::from_json_resource(get_json_source(), ec.main_context()));
 
     _ops.resize(std_size(shape.operation_count()));
     shape.instructions(glapi, cover(_ops));

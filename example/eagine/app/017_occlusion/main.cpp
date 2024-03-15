@@ -64,7 +64,7 @@ example_occlusion::example_occlusion(
     gl.use_program(prog);
 
     // geometry
-    auto load_shape_data = [&]() {
+    const auto load_shape_data{[&] {
         if(shape_file_path) {
             if(const auto json_content{file_contents(shape_file_path)}) {
                 if(const auto json_text = as_chars(json_content.block())) {
@@ -76,7 +76,7 @@ example_occlusion::example_occlusion(
         const auto json_src{embed<"ShapeJson">("traffic_cone.json")};
         return valtree::from_json_text(
           as_chars(json_src.unpack(ec)), ec.main_context());
-    };
+    }};
 
     oglplus::shape_generator shape(
       glapi, shapes::from_value_tree(load_shape_data(), ec.as_parent()));
