@@ -51,7 +51,7 @@ auto example_fur::_tex_url() noexcept -> url {
 auto example_fur::_gen_url() noexcept -> url {
     return url{
       "shapes:///unit_torus?"
-      "position=true+normal=true+wrap_coord=true+occlusion=true+"
+      "position=true&normal=true&wrap_coord=true&occlusion=true&"
       "radius_ratio=0.6"};
 }
 //------------------------------------------------------------------------------
