@@ -90,10 +90,8 @@ public:
       video_context& vc) noexcept
       : gl_geometry_and_bindings{gen, vc, vc.parent().buffer()} {}
 
-    auto init(gl_geometry_and_bindings&& temp) noexcept -> auto& {
-        *this = std::move(temp);
-        return *this;
-    }
+    auto init(gl_geometry_and_bindings&& temp) noexcept
+      -> gl_geometry_and_bindings&;
 
     auto reinit(video_context& vc, gl_geometry_and_bindings&& temp) noexcept
       -> gl_geometry_and_bindings&;

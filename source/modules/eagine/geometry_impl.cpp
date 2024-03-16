@@ -46,7 +46,7 @@ gl_geometry_and_bindings::gl_geometry_and_bindings(
   memory::buffer& temp) noexcept
   : gl_geometry_and_bindings{
       shape,
-      oglplus::make_default_vertex_attrib_bindings(shape),
+      oglplus::make_all_vertex_attrib_bindings(shape),
       vc,
       temp} {}
 //------------------------------------------------------------------------------
@@ -58,6 +58,12 @@ gl_geometry_and_bindings::gl_geometry_and_bindings(
       oglplus::shape_generator{vc.gl_api(), gen},
       vc,
       temp} {}
+//------------------------------------------------------------------------------
+auto gl_geometry_and_bindings::init(gl_geometry_and_bindings&& temp) noexcept
+  -> gl_geometry_and_bindings& {
+    *this = std::move(temp);
+    return *this;
+}
 //------------------------------------------------------------------------------
 auto gl_geometry_and_bindings::reinit(
   video_context& vc,
