@@ -210,6 +210,7 @@ eagine_add_module(
 	SOURCES
 		options
 		state
+		geometry
 		framedump_raw
 		openal_oalplus
 		opengl_eglplus
