@@ -530,7 +530,8 @@ void pending_resource_info::_handle_gl_shape(
             auto temp{_parent.buffers().get()};
             const auto cleanup_temp{_parent.buffers().eat_later(temp)};
             if(not pggbs->bindings) {
-                pggbs->bindings = oglplus::vertex_attrib_bindings{shape};
+                pggbs->bindings = oglplus::vertex_attrib_bindings{
+                  oglplus::make_default_vertex_attrib_bindings(shape)};
             }
             gl_geometry_and_bindings geom{
               pggbs->gl_context.gl_api(),

@@ -61,9 +61,9 @@ model_viewer_models::model_viewer_models(
       video);
     load(
       "Cube",
-      url{"shape:///unit_cube"
+      url{"shape:///model_cube"
           "?position=true&normal=true&tangent=true&bitangent=true"
-          "&wrap_coord=true"},
+          "&wrap_coord=true&color=true&occlusion=true"},
       ctx,
       video);
     load("Arrow", url{"json:///Arrow"}, ctx, video);

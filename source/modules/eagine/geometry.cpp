@@ -85,7 +85,11 @@ public:
       const oglplus::shape_generator& shape,
       video_context& vc,
       memory::buffer& temp) noexcept
-      : base{vc.gl_api(), shape, temp} {}
+      : gl_geometry_and_bindings{
+          shape,
+          oglplus::make_default_vertex_attrib_bindings(shape),
+          vc,
+          temp} {}
 
     gl_geometry_and_bindings(
       const oglplus::shape_generator& shape,
