@@ -3,6 +3,7 @@ in vec3 vertNormal;
 in vec3 vertViewDir;
 in vec3 vertLightDir;
 in vec3 vertColor;
+in float vertRough;
 in float vertOccl;
 out vec3 fragColor;
 
@@ -10,9 +11,9 @@ uniform samplerCube SkyBox;
 
 void main() {
     vec3 ReflCoord = reflect(normalize(vertViewDir), normalize(vertNormal));
-    vec3 CubeCoord = normalize(mix(vertNormal, ReflCoord, vertOccl));
+    vec3 CubeCoord = normalize(mix(ReflCoord, vertNormal, pow(vertRough, 2.0)));
 
-    float lod = mix(7.0, 0.0, pow(vertOccl, 2.0));
+    float lod = mix(0.0, 7.0, sqrt(vertRough));
     vec3 Reflect = mix(
         textureLod(SkyBox, CubeCoord, int(floor(lod))).rgb,
         textureLod(SkyBox, CubeCoord, int(ceil(lod))).rgb,

@@ -43,7 +43,7 @@ model_viewer_models::model_viewer_models(
       "Torus",
       url{"shape:///unit_torus"
           "?position=true&normal=true&tangent=true&bitangent=true"
-          "&wrap_coord=true&occlusion=true"
+          "&wrap_coord=true&roughness=true&occlusion=true"
           "&rings=36&sections=72"},
       ctx,
       video);
