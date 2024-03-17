@@ -147,7 +147,7 @@ example_occlusion::example_occlusion(
       roughness,
       roughness_loc,
       shape.find_variant_or(
-        eagine::shapes::vertex_attrib_kind::weight, "Roughness", 0),
+        eagine::shapes::vertex_attrib_kind::roughness, "Roughness", 0),
       context().buffer());
     gl.bind_attrib_location(prog, roughness_loc, "Roughness");
 
