@@ -53,6 +53,13 @@ model_viewer_models::model_viewer_models(
       ctx,
       video);
     load(
+      "Spikosahedron",
+      url{"shape:///model_spikosahedron"
+          "?position=true&normal=true&tangent=true&bitangent=true"
+          "&wrap_coord=true&color=true&roughness=true&occlusion=true"},
+      ctx,
+      video);
+    load(
       "Round cube",
       url{"shape:///unit_round_cube"
           "?position=true&normal=true&tangent=true&bitangent=true"
