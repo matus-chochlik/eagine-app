@@ -46,7 +46,9 @@ gl_geometry_and_bindings::gl_geometry_and_bindings(
   memory::buffer& temp) noexcept
   : gl_geometry_and_bindings{
       shape,
-      oglplus::make_all_vertex_attrib_bindings(shape),
+      oglplus::vertex_attrib_bindings{
+        shapes::shared_vertex_attrib_variants::basic(),
+        shape},
       vc,
       temp} {}
 //------------------------------------------------------------------------------
