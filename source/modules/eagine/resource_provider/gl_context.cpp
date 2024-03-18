@@ -90,7 +90,7 @@ private:
     void _init_fbo(const gl_rendered_blob_params&) noexcept;
 
     shared_holder<egl_context_handler> _egl_context;
-    loaded_resource_context _resource_context{shared().loader, _egl_context};
+    loaded_resource_context _resource_context;
     oglplus::renderbuffer_object _color_rbo;
     oglplus::framebuffer_object _offscreen_fbo;
 };
@@ -125,6 +125,51 @@ protected:
 private:
     gl_rendered_source_blob_io& _parent;
     shared_holder<gl_rendered_blob_context> _gl_context;
+};
+//------------------------------------------------------------------------------
+class eagitexi_cubemap_renderer : public gl_blob_renderer {
+public:
+    auto render() noexcept -> msgbus::blob_preparation final;
+
+protected:
+    eagitexi_cubemap_renderer(
+      gl_rendered_source_blob_io& parent,
+      string_view progress_label,
+      const gl_rendered_blob_params& params,
+      shared_holder<gl_rendered_blob_context> context,
+      int size,
+      int tile_size) noexcept;
+
+    static auto _screen_position_loc() noexcept {
+        return oglplus::vertex_attrib_location{0};
+    }
+
+    auto _init_program(oglplus::program_object prog) noexcept {
+        _prog = std::move(prog);
+    }
+
+    virtual auto prepare_render() noexcept -> msgbus::blob_preparation;
+
+private:
+    auto _build_screen() noexcept -> oglplus::geometry_and_bindings;
+    void _render_tile() noexcept;
+    void _save_tile() noexcept;
+
+    auto _done_tiles() const noexcept -> span_size_t;
+    auto _total_tiles() const noexcept -> span_size_t;
+
+    main_ctx_buffer _buffer;
+
+    const oglplus::geometry_and_bindings _screen;
+    oglplus::program_object _prog;
+    const int _size;
+    const int _tile_size;
+    const int _tiles_per_side{1};
+    int _tile_x{0};
+    int _tile_y{0};
+    int _face_index{0};
+
+    activity_progress _prepare_progress;
 };
 //------------------------------------------------------------------------------
 } // namespace eagine::app

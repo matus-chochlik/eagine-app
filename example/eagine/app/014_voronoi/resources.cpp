@@ -44,24 +44,15 @@ void random_texture::clean_up(execution_context&, video_context& vc) {
 // voronoi program
 //------------------------------------------------------------------------------
 void voronoi_program::init(execution_context&, video_context& vc) {
-    const auto& [gl, GL] = vc.gl_api();
-
-    // vertex shader
-    auto vs_source = embed<"VertShader">("vertex.glsl");
-    gl.create_shader(GL.vertex_shader) >> vs;
-    gl.shader_source(vs, oglplus::glsl_string_ref(vs_source));
-    gl.compile_shader(vs);
-
-    // fragment shader
-    auto fs_source = embed<"FragShader">("fragment.glsl");
-    gl.create_shader(GL.fragment_shader) >> fs;
-    gl.shader_source(fs, oglplus::glsl_string_ref(fs_source));
-    gl.compile_shader(fs);
+    const auto& glapi{vc.gl_api()};
+    const auto& [gl, GL]{glapi};
 
     // program
     gl.create_program() >> prog;
-    gl.attach_shader(prog, vs);
-    gl.attach_shader(prog, fs);
+    glapi.add_shader(
+      prog, GL.vertex_shader, embed<"VertShader">("vertex.glsl"));
+    glapi.add_shader(
+      prog, GL.fragment_shader, embed<"FragShader">("fragment.glsl"));
     gl.link_program(prog);
     gl.use_program(prog);
 

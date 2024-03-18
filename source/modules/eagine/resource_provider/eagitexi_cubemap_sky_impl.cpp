@@ -21,62 +21,73 @@ import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
+// Planet params
+//------------------------------------------------------------------------------
+struct cubemap_scene {
+    template <typename T>
+    static auto query_arg(const url&, string_view name, T fallback) noexcept
+      -> T;
+
+    cubemap_scene(const url& locator) noexcept;
+
+    float planet_radius_m;
+    float atmosphere_thickness_m;
+    float above_ground_m;
+    float sun_x;
+    float sun_y;
+    float sun_z;
+};
+//------------------------------------------------------------------------------
+template <typename T>
+auto cubemap_scene::query_arg(
+  const url& locator,
+  string_view name,
+  T fallback) noexcept -> T {
+    return locator.query().arg_value_as<T>(name).value_or(fallback);
+}
+//------------------------------------------------------------------------------
+cubemap_scene::cubemap_scene(const url& l) noexcept
+  : planet_radius_m{query_arg<float>(l, "planet_radius_m", 6'370'000.F)}
+  , atmosphere_thickness_m{query_arg<float>(l, "planet_atmosphere_m", 100'000.F)}
+  , above_ground_m{query_arg<float>(l, "above_ground_m", 100.F)}
+  , sun_x{query_arg<float>(l, "sun_x", 1.0F)}
+  , sun_y{query_arg<float>(l, "sun_y", 1.0F)}
+  , sun_z{query_arg<float>(l, "sun_z", 1.0F)} {}
+//------------------------------------------------------------------------------
 // Renderer
 //------------------------------------------------------------------------------
-class eagitexi_cubemap_sky_renderer final : public gl_blob_renderer {
+class eagitexi_cubemap_sky_renderer final : public eagitexi_cubemap_renderer {
 public:
     eagitexi_cubemap_sky_renderer(
       gl_rendered_source_blob_io& parent,
       const gl_rendered_blob_params& params,
+      const cubemap_scene& scene,
       shared_holder<gl_rendered_blob_context> context,
       int size) noexcept;
 
     ~eagitexi_cubemap_sky_renderer() noexcept final;
 
-    auto render() noexcept -> msgbus::blob_preparation final;
-
 private:
     static auto _tile_size() noexcept -> int;
-    auto _build_screen() noexcept -> oglplus::geometry_and_bindings;
-    auto _build_program(const gl_rendered_blob_params&) noexcept
-      -> oglplus::program_object;
-
-    void _render_tile() noexcept;
-    void _save_tile() noexcept;
-
-    auto _done_tiles() const noexcept -> span_size_t;
-    auto _total_tiles() const noexcept -> span_size_t;
-
-    main_ctx_buffer _buffer;
-
-    const oglplus::geometry_and_bindings _screen;
-    const oglplus::program_object _prog;
-    const int _size;
-    const int _tiles_per_side{1};
-    int _tile_x{0};
-    int _tile_y{0};
-    int _face_index{0};
-
-    activity_progress _prepare_progress{
-      main_context().progress(),
-      "rendering sky cube-map",
-      _total_tiles()};
+    auto _build_program(
+      const gl_rendered_blob_params&,
+      const cubemap_scene&) noexcept -> oglplus::program_object;
 };
 //------------------------------------------------------------------------------
 eagitexi_cubemap_sky_renderer::eagitexi_cubemap_sky_renderer(
   gl_rendered_source_blob_io& parent,
   const gl_rendered_blob_params& params,
+  const cubemap_scene& scene,
   shared_holder<gl_rendered_blob_context> context,
   int size) noexcept
-  : gl_blob_renderer{parent, std::move(context)}
-  , _buffer{*this, size * size * 4, nothing}
-  , _screen{_build_screen()}
-  , _prog{_build_program(params)}
-  , _size{size}
-  , _tiles_per_side{std::max(_size / _tile_size(), 1)} {
-    const auto& [gl, GL]{gl_api()};
-    gl.viewport(0, 0, _size, _size);
-    gl.disable(GL.depth_test);
+  : eagitexi_cubemap_renderer{
+      parent,
+      "rendering sky cube-map",
+      params,
+      context,
+      size,
+      _tile_size()} {
+    _init_program(_build_program(params, scene));
 }
 //------------------------------------------------------------------------------
 eagitexi_cubemap_sky_renderer::~eagitexi_cubemap_sky_renderer() noexcept {
@@ -84,148 +95,32 @@ eagitexi_cubemap_sky_renderer::~eagitexi_cubemap_sky_renderer() noexcept {
 }
 //------------------------------------------------------------------------------
 auto eagitexi_cubemap_sky_renderer::_tile_size() noexcept -> int {
-    return 32;
-}
-//------------------------------------------------------------------------------
-auto eagitexi_cubemap_sky_renderer::_build_screen() noexcept
-  -> oglplus::geometry_and_bindings {
-    oglplus::geometry_and_bindings screen{
-      gl_api(),
-      oglplus::shape_generator{
-        gl_api(), shapes::unit_screen(shapes::vertex_attrib_kind::position)},
-      _buffer};
-    screen.use(gl_api());
-
-    return screen;
+    return 8;
 }
 //------------------------------------------------------------------------------
 auto eagitexi_cubemap_sky_renderer::_build_program(
-  const gl_rendered_blob_params& params) noexcept -> oglplus::program_object {
-    const auto& [gl, GL]{gl_api()};
-
-    // vertex shader
-    const string_view vs_source{
-      "#version 140\n"
-      "in vec2 Position;\n"
-      "out vec2 vertCoord;\n"
-      "void main() {\n"
-      "  gl_Position = vec4(Position, 0.0, 1.0);\n"
-      "  vertCoord = Position;\n"
-      "}\n"};
-
-    const auto vs{gl.create_shader.object(GL.vertex_shader)};
-    gl.shader_source(vs, oglplus::glsl_string_ref(vs_source));
-    gl.compile_shader(vs);
-
-    // fragment shader
-    const string_view fs_source{
-      "#version 140\n"
-      "in vec2 vertCoord;\n"
-      "out vec4 fragColor;\n"
-      "uniform int faceIdx;\n"
-      "const mat3[6] cubeFaces = mat3[6](\n"
-      "  mat3( 0.0, 0.0,-1.0, 0.0,-1.0, 0.0, 1.0, 0.0, 0.0),\n"
-      "  mat3( 0.0, 0.0, 1.0, 0.0,-1.0, 0.0,-1.0, 0.0, 0.0),\n"
-      "  mat3( 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.0),\n"
-      "  mat3( 1.0, 0.0, 0.0, 0.0, 0.0,-1.0, 0.0,-1.0, 0.0),\n"
-      "  mat3( 1.0, 0.0, 0.0, 0.0,-1.0, 0.0, 0.0, 0.0, 1.0),\n"
-      "  mat3(-1.0, 0.0, 0.0, 0.0,-1.0, 0.0, 0.0, 0.0,-1.0));\n"
-      "void main() {\n"
-      "  mat3 cubeFace = cubeFaces[faceIdx];\n"
-      "  vec3 cubeCoord =\n"
-      "    cubeFace[0]*vertCoord.x+\n"
-      "    cubeFace[1]*vertCoord.y+\n"
-      "    cubeFace[2];\n"
-      "  fragColor = mix(\n"
-      "    vec4(0.3, 0.2, 0.1, 0.0),\n"
-      "    vec4(0.1, 0.1, 1.0, 0.5),\n"
-      "    max(sign(cubeCoord.y), 0.0));\n"
-      "}\n"};
-
-    const auto fs{gl.create_shader.object(GL.fragment_shader)};
-    gl.shader_source(fs, oglplus::glsl_string_ref(fs_source));
-    gl.compile_shader(fs);
+  const gl_rendered_blob_params& params,
+  const cubemap_scene& scene) noexcept -> oglplus::program_object {
+    const auto& glapi{gl_api()};
+    const auto& [gl, GL]{glapi};
 
     // program
-    auto prog{gl.create_program.object()};
-    gl.attach_shader(prog, vs);
-    gl.attach_shader(prog, fs);
+    auto prog{glapi.create_program_object()};
+    glapi.add_shader(prog, GL.vertex_shader, embedded<"iCmSkyVS">());
+    glapi.add_shader(prog, GL.fragment_shader, embedded<"iCmSkyFS">());
     gl.link_program(prog);
     gl.use_program(prog);
 
-    gl.bind_attrib_location(prog, _screen.position_loc(), "Position");
+    gl.bind_attrib_location(prog, _screen_position_loc(), "Position");
+
+    glapi.try_set_uniform(prog, "planetRadius", scene.planet_radius_m);
+    glapi.try_set_uniform(prog, "atmThickness", scene.atmosphere_thickness_m);
+    glapi.try_set_uniform(prog, "aboveGround", scene.above_ground_m);
+    glapi.try_set_uniform(prog, "sunX", scene.sun_x);
+    glapi.try_set_uniform(prog, "sunY", scene.sun_y);
+    glapi.try_set_uniform(prog, "sunZ", scene.sun_z);
 
     return prog;
-}
-//------------------------------------------------------------------------------
-void eagitexi_cubemap_sky_renderer::_render_tile() noexcept {
-    const auto& [gl, GL]{gl_api()};
-    if((_tile_x == 0) and (_tile_y == 0)) {
-        gl.disable(GL.scissor_test);
-        gl.clear_color(0.5, 0.5, 0.5, 0.0);
-        gl.clear(GL.color_buffer_bit);
-        gl.get_uniform_location(_prog, "faceIdx").and_then([&](auto loc) {
-            gl_api().set_uniform(_prog, loc, _face_index);
-        });
-    }
-    gl.enable(GL.scissor_test);
-    gl.scissor(
-      _tile_x * _tile_size(),
-      _tile_y * _tile_size(),
-      _tile_size(),
-      _tile_size());
-    _screen.draw(gl_api());
-}
-//------------------------------------------------------------------------------
-void eagitexi_cubemap_sky_renderer::_save_tile() noexcept {
-    const auto& [gl, GL]{gl_api()};
-    _buffer.resize(span_size(_size * _size * 4));
-
-    gl.disable(GL.scissor_test);
-    gl.finish();
-    gl.read_pixels(
-      0,
-      0,
-      oglplus::gl_types::sizei_type(_size),
-      oglplus::gl_types::sizei_type(_size),
-      GL.rgba,
-      GL.unsigned_byte_,
-      cover(_buffer));
-
-    compress(view(_buffer));
-}
-//------------------------------------------------------------------------------
-auto eagitexi_cubemap_sky_renderer::_done_tiles() const noexcept
-  -> span_size_t {
-    return (_face_index * _tiles_per_side * _tiles_per_side) +
-           (_tile_y * _tiles_per_side) + _tile_x;
-}
-//------------------------------------------------------------------------------
-auto eagitexi_cubemap_sky_renderer::_total_tiles() const noexcept
-  -> span_size_t {
-    return 6 * _tiles_per_side * _tiles_per_side;
-}
-//------------------------------------------------------------------------------
-auto eagitexi_cubemap_sky_renderer::render() noexcept
-  -> msgbus::blob_preparation {
-    if(_face_index < 6) {
-        _render_tile();
-        if(++_tile_x >= _tiles_per_side) {
-            _tile_x = 0;
-            if(++_tile_y >= _tiles_per_side) {
-                _tile_y = 0;
-                _save_tile();
-                ++_face_index;
-            }
-        }
-        if(_face_index < 6) {
-            _prepare_progress.update_progress(_done_tiles());
-        } else {
-            _prepare_progress.finish();
-        }
-        return msgbus::blob_preparation::working;
-    }
-    return msgbus::blob_preparation::finished;
 }
 //------------------------------------------------------------------------------
 // I/O
@@ -236,6 +131,7 @@ public:
       main_ctx_parent,
       const shared_provider_objects& shared,
       const gl_rendered_blob_params& params,
+      const url& locator,
       int size) noexcept;
 
 protected:
@@ -246,6 +142,7 @@ private:
     void _make_header_bgn(int size) noexcept;
     void _make_header_end(eagitexi_cubemap_sky_renderer&) noexcept;
 
+    const url _locator;
     const int _size;
 };
 //------------------------------------------------------------------------------
@@ -259,7 +156,7 @@ void eagitexi_cubemap_sky_io::_make_header_bgn(int size) noexcept {
     hdr << R"(,"data_type":"unsigned_byte")";
     hdr << R"(,"format":"rgba")";
     hdr << R"(,"iformat":"rgba8")";
-    hdr << R"(,"tag":["sky","cubemap"])";
+    hdr << R"(,"tag":["sky","cubemap","generated"])";
     hdr << R"(,"data_filter":"zlib")";
     append(hdr.str());
 }
@@ -290,8 +187,10 @@ eagitexi_cubemap_sky_io::eagitexi_cubemap_sky_io(
   main_ctx_parent parent,
   const shared_provider_objects& shared,
   const gl_rendered_blob_params& params,
+  const url& locator,
   int size) noexcept
   : gl_rendered_source_blob_io{"ITxSkySky", parent, shared, params, size * size * 6}
+  , _locator{locator}
   , _size{size} {
     _make_header_bgn(size);
 }
@@ -300,7 +199,12 @@ auto eagitexi_cubemap_sky_io::make_renderer(
   shared_holder<gl_rendered_blob_context> context) noexcept
   -> unique_holder<gl_blob_renderer> {
     unique_holder<eagitexi_cubemap_sky_renderer> renderer{
-      default_selector, *this, params(), std::move(context), _size};
+      default_selector,
+      *this,
+      params(),
+      cubemap_scene(_locator),
+      std::move(context),
+      _size};
 
     assert(renderer);
     _make_header_end(*renderer);
@@ -308,7 +212,7 @@ auto eagitexi_cubemap_sky_io::make_renderer(
     return renderer;
 }
 //------------------------------------------------------------------------------
-// provider
+// image provider
 //------------------------------------------------------------------------------
 class eagitexi_cubemap_sky_provider final
   : public main_ctx_object
@@ -337,7 +241,7 @@ private:
 //------------------------------------------------------------------------------
 eagitexi_cubemap_sky_provider::eagitexi_cubemap_sky_provider(
   const provider_parameters& params) noexcept
-  : main_ctx_object{"PTxCubeSky", params.parent}
+  : main_ctx_object{"PTiCubeSky", params.parent}
   , _shared{params.shared} {}
 //------------------------------------------------------------------------------
 auto eagitexi_cubemap_sky_provider::has_resource(const url& locator) noexcept
@@ -365,7 +269,12 @@ auto eagitexi_cubemap_sky_provider::get_resource_io(const url& locator)
           .and_then(_1.assign_to(params.device_index));
 
         return {
-          hold<eagitexi_cubemap_sky_io>, as_parent(), _shared, params, size};
+          hold<eagitexi_cubemap_sky_io>,
+          as_parent(),
+          _shared,
+          params,
+          locator,
+          size};
     }
     return {};
 }
@@ -380,9 +289,119 @@ void eagitexi_cubemap_sky_provider::for_each_locator(
     callback("eagitexi:///cube_map_sky");
 }
 //------------------------------------------------------------------------------
+// texture I/O
+//------------------------------------------------------------------------------
+struct eagitex_cubemap_sky_io final : simple_string_source_blob_io {
+    auto make_header(const url&, int size) -> std::string;
+
+    eagitex_cubemap_sky_io(main_ctx_parent parent, const url& locator);
+};
+//------------------------------------------------------------------------------
+eagitex_cubemap_sky_io::eagitex_cubemap_sky_io(
+  main_ctx_parent parent,
+  const url& locator)
+  : simple_string_source_blob_io{
+      "ITxCubeSky",
+      parent,
+      make_header(
+        locator,
+        locator.query().arg_value_as<int>("size").value_or(1024))} {}
+//------------------------------------------------------------------------------
+auto eagitex_cubemap_sky_io::make_header(const url& locator, int size)
+  -> std::string {
+    const auto& q{locator.query()};
+    std::stringstream hdr;
+    hdr << R"({"levels":1)";
+    hdr << R"(,"width":)" << size;
+    hdr << R"(,"height":)" << size;
+    hdr << R"(,"channels":4)";
+    hdr << R"(,"data_type":"unsigned_byte")";
+    hdr << R"(,"format":"rgba")";
+    hdr << R"(,"iformat":"rgba8")";
+    hdr << R"(,"wrap_s":"clamp_to_edge")";
+    hdr << R"(,"wrap_t":"clamp_to_edge")";
+    hdr << R"(,"tag":["sky","cubemap","generated"])";
+    hdr << R"(,"images":[)";
+    hdr << R"({"url":"eagitexi:///cube_map_sky)";
+    auto add{[&, first{true}]<typename T>(std::string_view name) mutable {
+        if(const auto opt{q.arg_value_as<T>(name)}) {
+            if(first) {
+                hdr << '?';
+                first = false;
+            } else {
+                hdr << '&';
+            }
+            hdr << name << '=' << *opt;
+        }
+    }};
+    add.operator()<int>("size");
+    add.operator()<float>("planet_radius_m");
+    add.operator()<float>("planet_atmosphere_m");
+    add.operator()<float>("above_ground_m");
+    add.operator()<float>("sun_x");
+    add.operator()<float>("sun_y");
+    add.operator()<float>("sun_z");
+    hdr << R"("}]})";
+
+    return hdr.str();
+}
+//------------------------------------------------------------------------------
+// texture provider
+//------------------------------------------------------------------------------
+class eagitex_cubemap_sky_provider final
+  : public main_ctx_object
+  , public resource_provider_interface {
+public:
+    eagitex_cubemap_sky_provider(const provider_parameters&) noexcept;
+
+    auto has_resource(const url& locator) noexcept -> bool final;
+
+    auto get_resource_io(const url& locator)
+      -> unique_holder<msgbus::source_blob_io> final;
+
+    void for_each_locator(
+      callable_ref<void(string_view) noexcept>) noexcept final;
+
+private:
+};
+//------------------------------------------------------------------------------
+eagitex_cubemap_sky_provider::eagitex_cubemap_sky_provider(
+  const provider_parameters& params) noexcept
+  : main_ctx_object{"PTxCubeSky", params.parent} {}
+//------------------------------------------------------------------------------
+auto eagitex_cubemap_sky_provider::has_resource(const url& locator) noexcept
+  -> bool {
+    if(
+      is_valid_eagitex_resource_url(locator) and
+      locator.has_path("cube_map_sky")) {
+        return true;
+    }
+    return false;
+}
+//------------------------------------------------------------------------------
+auto eagitex_cubemap_sky_provider::get_resource_io(const url& locator)
+  -> unique_holder<msgbus::source_blob_io> {
+    if(has_resource(locator)) {
+        return {hold<eagitex_cubemap_sky_io>, as_parent(), locator};
+    }
+    return {};
+}
+//------------------------------------------------------------------------------
+void eagitex_cubemap_sky_provider::for_each_locator(
+  callable_ref<void(string_view) noexcept> callback) noexcept {
+    callback("eagitex:///cube_map_sky");
+}
+//------------------------------------------------------------------------------
+// provider factory functions
+//------------------------------------------------------------------------------
 auto provider_eagitexi_cubemap_sky(const provider_parameters& params)
   -> unique_holder<resource_provider_interface> {
     return {hold<eagitexi_cubemap_sky_provider>, params};
+}
+//------------------------------------------------------------------------------
+auto provider_eagitex_cubemap_sky(const provider_parameters& params)
+  -> unique_holder<resource_provider_interface> {
+    return {hold<eagitex_cubemap_sky_provider>, params};
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

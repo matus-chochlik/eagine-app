@@ -2,6 +2,7 @@
 {"Position": {"attrib":"position"}
 ,"Normal": {"attrib":"normal"}
 ,"Color": {"attrib":"color"}
+,"Roughness": {"attrib":"roughness"}
 ,"Occlusion": {"attrib":"occlusion"}}
 ,"shaders":
 [{"url":"glsl:///MetalVert","type":"vertex_shader"}

@@ -1,0 +1,8 @@
+#version 140
+in vec2 Position;
+out vec2 vertCoord;
+void main() {
+    gl_Position = vec4(Position, 0.0, 1.0);
+    vertCoord = Position;
+}
+

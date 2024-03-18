@@ -89,3 +89,13 @@ eagine_add_module(
 		eagine.app
 	PRIVATE_LINK_LIBRARIES
 		EAGine::Deps::Zip)
+
+eagine_embed_target_resources(
+	TARGET eagine.app.resource_provider
+	RESOURCES
+		iCmBlurVS  "resources/eagitexi_cubemap_blur_vs.glsl"
+		iCmBlurFS  "resources/eagitexi_cubemap_blur_fs.glsl"
+		iCmSkyVS   "resources/eagitexi_cubemap_sky_vs.glsl"
+		iCmSkyFS   "resources/eagitexi_cubemap_sky_fs.glsl"
+	PACKED)
+

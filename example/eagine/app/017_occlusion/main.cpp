@@ -57,19 +57,14 @@ example_occlusion::example_occlusion(
     // program
     gl.create_program() >> prog;
     glapi.add_shader(
-      prog,
-      GL.vertex_shader,
-      oglplus::glsl_string_ref(embed<"VertShader">("vertex.glsl").unpack(ec)));
+      prog, GL.vertex_shader, embed<"VertShader">("vertex.glsl"));
     glapi.add_shader(
-      prog,
-      GL.fragment_shader,
-      oglplus::glsl_string_ref(
-        embed<"FragShader">("fragment.glsl").unpack(ec)));
+      prog, GL.fragment_shader, embed<"FragShader">("fragment.glsl"));
     gl.link_program(prog);
     gl.use_program(prog);
 
     // geometry
-    auto load_shape_data = [&]() {
+    const auto load_shape_data{[&] {
         if(shape_file_path) {
             if(const auto json_content{file_contents(shape_file_path)}) {
                 if(const auto json_text = as_chars(json_content.block())) {
@@ -81,7 +76,7 @@ example_occlusion::example_occlusion(
         const auto json_src{embed<"ShapeJson">("traffic_cone.json")};
         return valtree::from_json_text(
           as_chars(json_src.unpack(ec)), ec.main_context());
-    };
+    }};
 
     oglplus::shape_generator shape(
       glapi, shapes::from_value_tree(load_shape_data(), ec.as_parent()));
@@ -152,7 +147,7 @@ example_occlusion::example_occlusion(
       roughness,
       roughness_loc,
       shape.find_variant_or(
-        eagine::shapes::vertex_attrib_kind::weight, "Roughness", 0),
+        eagine::shapes::vertex_attrib_kind::roughness, "Roughness", 0),
       context().buffer());
     gl.bind_attrib_location(prog, roughness_loc, "Roughness");
 

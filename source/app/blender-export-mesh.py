@@ -719,8 +719,11 @@ def export_single(options, bdata, names, objs, meshes):
                 if options.exp_face_area:
                     face_areas.append(_vert_info()["face_area"])
                 if options.exp_weight:
-                    for name, value in _vert_groups().items():
-                        groups[name].append(value)
+                    try:
+                        for name, value in _vert_groups().items():
+                            groups[name].append(value)
+                    except:
+                        pass
                 if options.exp_occlusion:
                     for name, value in _vert_occls().items():
                         occls[name].append(value)

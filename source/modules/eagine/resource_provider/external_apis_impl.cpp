@@ -26,7 +26,7 @@ external_apis::~external_apis() noexcept {
 }
 //------------------------------------------------------------------------------
 auto external_apis::egl() noexcept -> optional_reference<eglplus::egl_api> {
-    return _egl.ensure().ref();
+    return _egl.ensure(as_parent()).ref();
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

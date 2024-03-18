@@ -141,10 +141,8 @@ public:
         opts.no_audio().require_input().require_video();
 
         if(ctx.args().find("--monkey")) {
-            const auto json_text =
-              as_chars(embed<"MonkeyJson">("monkey.json").unpack(ctx));
-            _gen = shapes::from_value_tree(
-              valtree::from_json_text(json_text, ctx), ctx);
+            _gen = shapes::from_json_resource(
+              embed<"MonkeyJson">("monkey.json"), ctx);
         } else if(ctx.args().find("--twisted-torus")) {
             _gen = shapes::unit_twisted_torus(
               shapes::vertex_attrib_kind::position |
