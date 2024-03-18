@@ -29,7 +29,7 @@ public:
     auto operator=(const eagitexi_tiling_io&) = delete;
     ~eagitexi_tiling_io() noexcept;
 
-    auto prepare() noexcept -> msgbus::blob_preparation final;
+    auto prepare() noexcept -> msgbus::blob_preparation_result final;
 
 private:
     void _process_cell(const byte);
@@ -45,7 +45,7 @@ private:
         .bind_to<&eagitexi_tiling_io::_line_loaded>(this)};
     const signal_binding _done_binding{
       _tiling.load_event.bind_to<&eagitexi_tiling_io::_loaded>(this)};
-    msgbus::blob_preparation_result _prep_result;
+    msgbus::blob_preparation_context _prep_status;
 };
 //------------------------------------------------------------------------------
 eagitexi_tiling_io::eagitexi_tiling_io(
@@ -64,9 +64,9 @@ eagitexi_tiling_io::~eagitexi_tiling_io() noexcept {
     _tiling.clean_up(_shared.loader);
 }
 //------------------------------------------------------------------------------
-auto eagitexi_tiling_io::prepare() noexcept -> msgbus::blob_preparation {
+auto eagitexi_tiling_io::prepare() noexcept -> msgbus::blob_preparation_result {
     loaded_resource_context context{_shared.loader};
-    return _prep_result(_tiling.load_if_needed(context));
+    return _prep_status(_tiling.load_if_needed(context));
 }
 //------------------------------------------------------------------------------
 void eagitexi_tiling_io::_process_cell(const byte b) {
@@ -75,7 +75,7 @@ void eagitexi_tiling_io::_process_cell(const byte b) {
 //------------------------------------------------------------------------------
 void eagitexi_tiling_io::_process_line(const string_view line) {
     if(not line.empty()) {
-        if(_prep_result.first()) {
+        if(_prep_status.first()) {
             std::stringstream hdr;
             hdr << R"(,"width":)" << line.size();
             hdr << R"(,"height":)" << line.size();
@@ -409,7 +409,7 @@ public:
       span_size_t height,
       url);
 
-    auto prepare() noexcept -> msgbus::blob_preparation final;
+    auto prepare() noexcept -> msgbus::blob_preparation_result final;
 
 private:
     auto _get_noise(float x, float y, std::size_t i) const noexcept -> float;
@@ -447,9 +447,10 @@ auto eagitexi_tiling_noise_io::_get_noise(float x, float y, std::size_t i)
     return data.get(x / div, y / div);
 }
 //------------------------------------------------------------------------------
-auto eagitexi_tiling_noise_io::prepare() noexcept -> msgbus::blob_preparation {
+auto eagitexi_tiling_noise_io::prepare() noexcept
+  -> msgbus::blob_preparation_result {
     if(not _tiling.is_loaded()) {
-        return msgbus::blob_preparation::working;
+        return {msgbus::blob_preparation_status::working};
     }
     if(_width == 0) {
         _width = _tiling.width();
@@ -459,11 +460,11 @@ auto eagitexi_tiling_noise_io::prepare() noexcept -> msgbus::blob_preparation {
     }
     if(_octaves.empty()) {
         _octaves.emplace_back(1.F, _tiling.whole());
-        return msgbus::blob_preparation::working;
+        return {msgbus::blob_preparation_status::working};
     }
     if(_noise.empty()) {
         _noise.resize(std_size(_tiling.width() * _tiling.height()));
-        return msgbus::blob_preparation::working;
+        return {msgbus::blob_preparation_status::working};
     }
     if(_pixel_index < _noise.size()) {
         for(int i = 0; i < 256 and _pixel_index < _noise.size();
@@ -474,7 +475,7 @@ auto eagitexi_tiling_noise_io::prepare() noexcept -> msgbus::blob_preparation {
                 _noise[_pixel_index] = _get_noise(x, y, o);
             }
         }
-        return msgbus::blob_preparation::working;
+        return {msgbus::blob_preparation_status::working};
     }
     if(not _header_done) {
         std::stringstream header;
@@ -484,7 +485,7 @@ auto eagitexi_tiling_noise_io::prepare() noexcept -> msgbus::blob_preparation {
         append(header.str());
 
         _header_done = true;
-        return msgbus::blob_preparation::working;
+        return {msgbus::blob_preparation_status::working};
     }
 
     if(_value_index < _noise.size()) {
@@ -492,15 +493,15 @@ auto eagitexi_tiling_noise_io::prepare() noexcept -> msgbus::blob_preparation {
             ++i, ++_value_index) {
             append(math::map_to_min_max_01<byte>(_noise[_value_index]));
         }
-        return msgbus::blob_preparation::working;
+        return {msgbus::blob_preparation_status::working};
     }
 
     if(not _values_done) {
         _values_done = true;
-        return msgbus::blob_preparation::working;
+        return {msgbus::blob_preparation_status::working};
     }
 
-    return msgbus::blob_preparation::finished;
+    return msgbus::blob_preparation_result::finished();
 }
 //------------------------------------------------------------------------------
 // noise image provider

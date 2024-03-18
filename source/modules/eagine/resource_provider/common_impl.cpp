@@ -212,7 +212,7 @@ gl_rendered_source_blob_io::gl_rendered_source_blob_io(
 static bool gl_renderer_active{false};
 //------------------------------------------------------------------------------
 auto gl_rendered_source_blob_io::prepare() noexcept
-  -> msgbus::blob_preparation {
+  -> msgbus::blob_preparation_result {
     if(not _finished) {
         if(not _renderer) {
             if(not gl_renderer_active) {
@@ -221,25 +221,25 @@ auto gl_rendered_source_blob_io::prepare() noexcept
                         _renderer = make_renderer(std::move(context));
                         gl_renderer_active = true;
                     } catch(...) {
-                        return msgbus::blob_preparation::failed;
+                        return {msgbus::blob_preparation_status::failed};
                     }
                 }
             }
             if(not _renderer) {
-                return msgbus::blob_preparation::working;
+                return {msgbus::blob_preparation_status::working};
             }
         }
         const auto render_result{_renderer->render()};
-        if(render_result == msgbus::blob_preparation::finished) {
+        if(render_result.has_finished()) {
             finish();
             _renderer.reset();
             gl_renderer_active = false;
             _finished = true;
-            return msgbus::blob_preparation::working;
+            return {msgbus::blob_preparation_status::working};
         }
         return render_result;
     }
-    return msgbus::blob_preparation::finished;
+    return msgbus::blob_preparation_result::finished();
 }
 //------------------------------------------------------------------------------
 // ostream_io

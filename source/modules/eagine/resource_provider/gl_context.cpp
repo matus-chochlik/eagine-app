@@ -104,7 +104,7 @@ public:
       gl_rendered_source_blob_io& parent,
       shared_holder<gl_rendered_blob_context>) noexcept;
 
-    virtual auto render() noexcept -> msgbus::blob_preparation = 0;
+    virtual auto render() noexcept -> msgbus::blob_preparation_result = 0;
 
     auto renderer_name() const noexcept -> valid_if_not_empty<std::string>;
     auto vendor_name() const noexcept -> valid_if_not_empty<std::string>;
@@ -129,7 +129,7 @@ private:
 //------------------------------------------------------------------------------
 class eagitexi_cubemap_renderer : public gl_blob_renderer {
 public:
-    auto render() noexcept -> msgbus::blob_preparation final;
+    auto render() noexcept -> msgbus::blob_preparation_result final;
 
 protected:
     eagitexi_cubemap_renderer(
@@ -148,7 +148,7 @@ protected:
         _prog = std::move(prog);
     }
 
-    virtual auto prepare_render() noexcept -> msgbus::blob_preparation;
+    virtual auto prepare_render() noexcept -> msgbus::blob_preparation_result;
 
 private:
     auto _build_screen() noexcept -> oglplus::geometry_and_bindings;

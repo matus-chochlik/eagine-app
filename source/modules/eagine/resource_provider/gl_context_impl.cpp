@@ -420,13 +420,14 @@ auto eagitexi_cubemap_renderer::_total_tiles() const noexcept -> span_size_t {
 }
 //------------------------------------------------------------------------------
 auto eagitexi_cubemap_renderer::prepare_render() noexcept
-  -> msgbus::blob_preparation {
-    return msgbus::blob_preparation::finished;
+  -> msgbus::blob_preparation_result {
+    return msgbus::blob_preparation_result::finished();
 }
 //------------------------------------------------------------------------------
-auto eagitexi_cubemap_renderer::render() noexcept -> msgbus::blob_preparation {
+auto eagitexi_cubemap_renderer::render() noexcept
+  -> msgbus::blob_preparation_result {
     if(const auto prep_result{prepare_render()};
-       prep_result != msgbus::blob_preparation::finished) {
+       not prep_result.has_finished()) {
         return prep_result;
     }
     if(_face_index < 6) {
@@ -444,9 +445,9 @@ auto eagitexi_cubemap_renderer::render() noexcept -> msgbus::blob_preparation {
         } else {
             _prepare_progress.finish();
         }
-        return msgbus::blob_preparation::working;
+        return {msgbus::blob_preparation_status::working};
     }
-    return msgbus::blob_preparation::finished;
+    return msgbus::blob_preparation_result::finished();
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

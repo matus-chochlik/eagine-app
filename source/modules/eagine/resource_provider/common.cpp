@@ -100,7 +100,7 @@ private:
 //------------------------------------------------------------------------------
 class gl_rendered_source_blob_io : public compressed_buffer_source_blob_io {
 public:
-    auto prepare() noexcept -> msgbus::blob_preparation final;
+    auto prepare() noexcept -> msgbus::blob_preparation_result final;
 
     auto shared() const noexcept -> const shared_provider_objects& {
         return _shared;

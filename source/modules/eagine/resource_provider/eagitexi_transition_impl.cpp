@@ -21,7 +21,7 @@ namespace eagine::app {
 // transition mask interface
 //------------------------------------------------------------------------------
 struct tiling_transition_mask : interface<tiling_transition_mask> {
-    virtual auto prepare() noexcept -> msgbus::blob_preparation = 0;
+    virtual auto prepare() noexcept -> msgbus::blob_preparation_result = 0;
     virtual auto width() noexcept -> valid_if_positive<int> = 0;
     virtual auto height() noexcept -> valid_if_positive<int> = 0;
     virtual auto batch_size() noexcept -> int = 0;
@@ -39,8 +39,8 @@ public:
 
     static auto is_valid_locator(const url& locator) noexcept -> bool;
 
-    auto prepare() noexcept -> msgbus::blob_preparation final {
-        return msgbus::blob_preparation::finished;
+    auto prepare() noexcept -> msgbus::blob_preparation_result final {
+        return {msgbus::blob_preparation_status::finished};
     }
 
     auto width() noexcept -> valid_if_positive<int> final {
@@ -89,7 +89,7 @@ public:
 
     static auto is_valid_locator(const url& locator) noexcept -> bool;
 
-    auto prepare() noexcept -> msgbus::blob_preparation final;
+    auto prepare() noexcept -> msgbus::blob_preparation_result final;
 
     auto width() noexcept -> valid_if_positive<int> final;
     auto height() noexcept -> valid_if_positive<int> final;
@@ -107,7 +107,7 @@ private:
     const signal_binding _sig_binding{
       _tiling.load_event.bind_to<&tiling_transition_tiling::_loaded>(this)};
     const int _threshold;
-    msgbus::blob_preparation_result _prep_result;
+    msgbus::blob_preparation_context _prep_status;
 };
 //------------------------------------------------------------------------------
 auto tiling_transition_tiling::_get_source(const url& locator) noexcept -> url {
@@ -136,9 +136,10 @@ auto tiling_transition_tiling::is_valid_locator(const url& locator) noexcept
     return false;
 }
 //------------------------------------------------------------------------------
-auto tiling_transition_tiling::prepare() noexcept -> msgbus::blob_preparation {
+auto tiling_transition_tiling::prepare() noexcept
+  -> msgbus::blob_preparation_result {
     loaded_resource_context context{_shared.loader};
-    return _prep_result(_tiling.load_if_needed(context));
+    return _prep_status(_tiling.load_if_needed(context));
 }
 //------------------------------------------------------------------------------
 auto tiling_transition_tiling::width() noexcept -> valid_if_positive<int> {
@@ -243,7 +244,7 @@ public:
       main_ctx_parent,
       shared_holder<tiling_transition_mask>) noexcept;
 
-    auto prepare() noexcept -> msgbus::blob_preparation final;
+    auto prepare() noexcept -> msgbus::blob_preparation_result final;
 
 private:
     auto value(int x, int y, int ox, int oy) noexcept -> bool;
@@ -363,8 +364,8 @@ auto eagitexi_tiling_transition_io::_element(int x, int y) noexcept -> byte {
 }
 //------------------------------------------------------------------------------
 auto eagitexi_tiling_transition_io::prepare() noexcept
-  -> msgbus::blob_preparation {
-    if(_mask->prepare() == msgbus::blob_preparation::finished) {
+  -> msgbus::blob_preparation_result {
+    if(_mask->prepare().has_finished()) {
         if(not _header_done) {
             _width = _w(_mask);
             _height = _h(_mask);
@@ -378,7 +379,7 @@ auto eagitexi_tiling_transition_io::prepare() noexcept
         for(int i = 0, n = _mask->batch_size(); i < n; ++i) {
             if(_y >= _height) {
                 if(_data_done) {
-                    return msgbus::blob_preparation::finished;
+                    return {msgbus::blob_preparation_status::finished};
                 } else {
                     finish();
                     _data_done = true;
@@ -393,7 +394,7 @@ auto eagitexi_tiling_transition_io::prepare() noexcept
         }
     }
 
-    return msgbus::blob_preparation::working;
+    return msgbus::blob_preparation_result::finished();
 }
 //------------------------------------------------------------------------------
 // tiling transition image provider
