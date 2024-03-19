@@ -1205,15 +1205,25 @@ void glfw3_opengl_window::update_gui(
         _gui.imgui.glfw_new_frame();
         _gui.imgui.new_frame();
 
-        if(not activities.empty()) {
+        const bool some_activities{[&] {
+            for(const auto& info : activities) {
+                if(info.current_steps > 0) {
+                    return true;
+                }
+            }
+            return false;
+        }()};
+        if(some_activities) {
             bool visible{true};
             _gui.imgui.set_next_window_size({float(_window_width) * 0.8F, 0.F});
             if(_gui.imgui.begin(
                  "Activities", visible, _gui.imgui.window_no_resize)) {
                 for(const auto& info : activities) {
-                    const auto progress =
-                      float(info.current_steps) / float(info.total_steps);
-                    _gui.imgui.progress_bar(progress, info.title);
+                    if(info.current_steps > 0) {
+                        const auto progress{
+                          float(info.current_steps) / float(info.total_steps)};
+                        _gui.imgui.progress_bar(progress, info.title);
+                    }
                 }
                 _gui.imgui.end();
             }

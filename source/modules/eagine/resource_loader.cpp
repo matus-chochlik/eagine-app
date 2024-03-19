@@ -20,6 +20,7 @@ import eagine.core.value_tree;
 import eagine.core.utility;
 import eagine.core.runtime;
 import eagine.core.logging;
+import eagine.core.progress;
 import eagine.core.main_ctx;
 import eagine.shapes;
 import eagine.oglplus;
@@ -120,11 +121,7 @@ public:
       resource_loader& loader,
       identifier_t req_id,
       url loc,
-      resource_kind k) noexcept
-      : _parent{loader}
-      , _request_id{req_id}
-      , _locator{std::move(loc)}
-      , _kind{k} {}
+      resource_kind k) noexcept;
 
     auto request_id() const noexcept -> identifier_t {
         return _request_id;
@@ -229,6 +226,8 @@ public:
       const memory::const_block) noexcept;
     auto handle_gl_buffer_params(const resource_gl_buffer_params&) noexcept
       -> bool;
+
+    void preparation_progressed(float) noexcept;
 
     auto update() noexcept -> work_done;
     void cleanup() noexcept;
@@ -418,6 +417,8 @@ private:
     resource_loader& _parent;
     const identifier_t _request_id;
     const url _locator;
+    activity_progress _preparation;
+
     std::string _label;
     weak_holder<pending_resource_info> _continuation{};
 

@@ -98,6 +98,7 @@ eagine_add_module(
 		eagine.core.utility
 		eagine.core.runtime
 		eagine.core.logging
+		eagine.core.progress
 		eagine.core.main_ctx
 		eagine.shapes
 		eagine.oglplus

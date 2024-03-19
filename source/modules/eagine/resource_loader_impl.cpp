@@ -31,6 +31,29 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 // pending_resource_info
 //------------------------------------------------------------------------------
+static auto _activity(resource_loader& loader) noexcept -> auto& {
+    return loader.main_context().progress();
+}
+//------------------------------------------------------------------------------
+static auto _progress_label(const url& locator) noexcept {
+    return locator.path_str().or_default();
+}
+//------------------------------------------------------------------------------
+pending_resource_info::pending_resource_info(
+  resource_loader& loader,
+  identifier_t req_id,
+  url loc,
+  resource_kind k) noexcept
+  : _parent{loader}
+  , _request_id{req_id}
+  , _locator{std::move(loc)}
+  , _preparation{_activity(_parent), _progress_label(_locator), 1000}
+  , _kind{k} {}
+//------------------------------------------------------------------------------
+void pending_resource_info::preparation_progressed(float progress) noexcept {
+    _preparation.update_progress(span_size_t(1000.F * progress));
+}
+//------------------------------------------------------------------------------
 void pending_resource_info::mark_loaded() noexcept {
     if(auto pgps{get_if<_pending_gl_program_state>(_state)}) {
         pgps->loaded = true;
@@ -831,7 +854,7 @@ void resource_loader::_handle_preparation_progressed(
   float progress) noexcept {
     if(const auto found{find(_pending, request_id)}) {
         if(const auto& prinfo{*found}) {
-            (void)progress; // TODO
+            prinfo->preparation_progressed(progress);
         }
     }
 }
