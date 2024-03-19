@@ -826,6 +826,16 @@ auto resource_loader::_is_json_resource(const url& locator) const noexcept
     return locator.has_path_suffix(".json") or locator.has_scheme("json");
 }
 //------------------------------------------------------------------------------
+void resource_loader::_handle_preparation_progressed(
+  identifier_t request_id,
+  float progress) noexcept {
+    if(const auto found{find(_pending, request_id)}) {
+        if(const auto& prinfo{*found}) {
+            (void)progress; // TODO
+        }
+    }
+}
+//------------------------------------------------------------------------------
 void resource_loader::_handle_stream_data_appended(
   const msgbus::blob_stream_chunk& chunk) noexcept {
     if(const auto found{find(_pending, chunk.request_id)}) {
@@ -887,6 +897,8 @@ auto resource_loader::_new_resource(
 }
 //------------------------------------------------------------------------------
 void resource_loader::_init() noexcept {
+    connect<&resource_loader::_handle_preparation_progressed>(
+      this, blob_preparation_progressed);
     connect<&resource_loader::_handle_stream_data_appended>(
       this, blob_stream_data_appended);
     connect<&resource_loader::_handle_stream_finished>(

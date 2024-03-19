@@ -69,7 +69,7 @@ auto tiling_io<Rank>::prepare() noexcept -> msgbus::blob_preparation_result {
         if(_fill.is_done()) {
             _prepare_progress.finish();
         }
-        return {msgbus::blob_preparation_status::working};
+        return {_fill.current_count(), _fill.total_count()};
     }
     return {msgbus::blob_preparation_status::finished};
 }

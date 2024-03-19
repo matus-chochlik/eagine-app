@@ -445,7 +445,7 @@ auto eagitexi_cubemap_renderer::render() noexcept
         } else {
             _prepare_progress.finish();
         }
-        return {msgbus::blob_preparation_status::working};
+        return {_done_tiles(), _total_tiles()};
     }
     return msgbus::blob_preparation_result::finished();
 }

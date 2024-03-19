@@ -1130,6 +1130,12 @@ concept resource_load_event_observer = requires(
 };
 
 template <typename T>
+concept resource_blob_preparation_progressed_observer =
+  requires(T v, const msgbus::blob_stream_chunk& chunk) {
+      v.handle_blob_preparation_progressed(chunk);
+  };
+
+template <typename T>
 concept resource_blob_stream_data_appended_observer =
   requires(T v, const msgbus::blob_stream_chunk& chunk) {
       v.handle_blob_stream_data_appended(chunk);
@@ -1208,6 +1214,10 @@ public:
 
     template <typename O>
     void connect_observer(O& observer) noexcept {
+        if constexpr(resource_blob_preparation_progressed_observer<O>) {
+            connect<&O::handle_blob_preparation_progressed>(
+              &observer, this->blob_preparation_progressed);
+        }
         if constexpr(resource_blob_stream_data_appended_observer<O>) {
             connect<&O::handle_blob_stream_data_appended>(
               &observer, this->blob_stream_data_appended);
@@ -1516,6 +1526,7 @@ private:
 
     void _init() noexcept;
 
+    void _handle_preparation_progressed(identifier_t blob_id, float) noexcept;
     void _handle_stream_data_appended(const msgbus::blob_stream_chunk&) noexcept;
     void _handle_stream_finished(identifier_t blob_id) noexcept;
     void _handle_stream_cancelled(identifier_t blob_id) noexcept;
