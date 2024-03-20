@@ -58,8 +58,11 @@ void pending_resource_info::_preparation_progressed(float progress) noexcept {
 void pending_resource_info::_streaming_progressed(
   const msgbus::blob_stream_chunk& chunk) noexcept {
     _received_size += chunk.total_data_size();
-    _streaming.update_progress(span_size_t(
-      float(_received_size) / float(chunk.info.total_size) * 1000.F));
+    if(chunk.info.total_size > 0) {
+        const auto progress{span_size_t(
+          float(_received_size) / float(chunk.info.total_size) * 1000.F)};
+        _streaming.update_progress(progress);
+    }
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::mark_loaded() noexcept {
