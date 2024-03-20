@@ -1205,15 +1205,7 @@ void glfw3_opengl_window::update_gui(
         _gui.imgui.glfw_new_frame();
         _gui.imgui.new_frame();
 
-        const bool some_activities{[&] {
-            for(const auto& info : activities) {
-                if(info.current_steps > 0) {
-                    return true;
-                }
-            }
-            return false;
-        }()};
-        if(some_activities) {
+        if(not activities.empty()) {
             bool visible{true};
             _gui.imgui.set_next_window_size({float(_window_width) * 0.8F, 0.F});
             if(_gui.imgui.begin(
@@ -1644,6 +1636,9 @@ void glfw3_opengl_provider::activity_updated(
       });
     if(pos != _activities.end()) [[likely]] {
         pos->current_steps = current_steps;
+        if(pos->current_steps >= pos->total_steps) {
+            _activities.erase(pos);
+        }
     }
 #endif
 }

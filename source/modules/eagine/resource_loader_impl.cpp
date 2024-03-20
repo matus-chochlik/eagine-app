@@ -36,7 +36,7 @@ static auto _activity(resource_loader& loader) noexcept -> auto& {
 }
 //------------------------------------------------------------------------------
 static auto _progress_label(const url& locator) noexcept {
-    return locator.path_str().or_default();
+    return locator.str();
 }
 //------------------------------------------------------------------------------
 pending_resource_info::pending_resource_info(
@@ -48,10 +48,18 @@ pending_resource_info::pending_resource_info(
   , _request_id{req_id}
   , _locator{std::move(loc)}
   , _preparation{_activity(_parent), _progress_label(_locator), 1000}
+  , _streaming{_activity(_parent), _progress_label(_locator), 1000}
   , _kind{k} {}
 //------------------------------------------------------------------------------
-void pending_resource_info::preparation_progressed(float progress) noexcept {
+void pending_resource_info::_preparation_progressed(float progress) noexcept {
     _preparation.update_progress(span_size_t(1000.F * progress));
+}
+//------------------------------------------------------------------------------
+void pending_resource_info::_streaming_progressed(
+  const msgbus::blob_stream_chunk& chunk) noexcept {
+    _received_size += chunk.total_data_size();
+    _streaming.update_progress(span_size_t(
+      float(_received_size) / float(chunk.info.total_size) * 1000.F));
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::mark_loaded() noexcept {
@@ -69,9 +77,11 @@ void pending_resource_info::mark_loaded() noexcept {
     } else if(_kind == resource_kind::input_setup) {
         _parent.resource_loaded(_request_id, _kind, _locator);
     }
+    _preparation.finish();
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::mark_finished() noexcept {
+    _preparation.finish();
     _kind = resource_kind::finished;
 }
 //------------------------------------------------------------------------------
@@ -778,25 +788,24 @@ auto pending_resource_info::_finish_gl_texture(
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::handle_source_data(
-  const msgbus::blob_info& binfo,
-  const pending_resource_info& rinfo,
-  const span_size_t offset,
-  const memory::span<const memory::const_block> data) noexcept {
+  const msgbus::blob_stream_chunk& c,
+  const pending_resource_info& rinfo) noexcept {
+    _streaming_progressed(c);
     switch(rinfo._kind) {
         case resource_kind::plain_text:
-            _handle_plain_text(binfo, rinfo, offset, data);
+            _handle_plain_text(c.info, rinfo, c.offset, c.data);
             break;
         case resource_kind::string_list:
-            _handle_string_list(binfo, rinfo, offset, data);
+            _handle_string_list(c.info, rinfo, c.offset, c.data);
             break;
         case resource_kind::json_text:
-            _handle_json_text(binfo, rinfo, offset, data);
+            _handle_json_text(c.info, rinfo, c.offset, c.data);
             break;
         case resource_kind::yaml_text:
-            _handle_yaml_text(binfo, rinfo, offset, data);
+            _handle_yaml_text(c.info, rinfo, c.offset, c.data);
             break;
         case resource_kind::glsl_text:
-            _handle_glsl_strings(binfo, rinfo, offset, data);
+            _handle_glsl_strings(c.info, rinfo, c.offset, c.data);
             break;
         default:
             break;
@@ -854,7 +863,7 @@ void resource_loader::_handle_preparation_progressed(
   float progress) noexcept {
     if(const auto found{find(_pending, request_id)}) {
         if(const auto& prinfo{*found}) {
-            prinfo->preparation_progressed(progress);
+            prinfo->_preparation_progressed(progress);
         }
     }
 }
@@ -864,8 +873,7 @@ void resource_loader::_handle_stream_data_appended(
     if(const auto found{find(_pending, chunk.request_id)}) {
         if(const auto& prinfo{*found}) {
             if(const auto continuation{prinfo->continuation()}) {
-                continuation->handle_source_data(
-                  chunk.info, *prinfo, chunk.offset, chunk.data);
+                continuation->handle_source_data(chunk, *prinfo);
             }
         }
     }
@@ -1477,7 +1485,7 @@ auto resource_loader::update_and_process_all() noexcept -> work_done {
 
     std::swap(_pending, _finished);
 
-    something_done(_finished.erase_if([this](auto& entry) {
+    for(auto& entry : _finished) {
         auto& [request_id, pinfo] = entry;
         assert(pinfo);
         auto& info{*pinfo};
@@ -1486,8 +1494,9 @@ auto resource_loader::update_and_process_all() noexcept -> work_done {
         } else {
             _pending.emplace(request_id, std::move(pinfo));
         }
-        return true;
-    }) > 0);
+        something_done();
+    }
+    _finished.clear();
 
     for(auto& entry : _pending) {
         auto& pinfo{std::get<1>(entry)};

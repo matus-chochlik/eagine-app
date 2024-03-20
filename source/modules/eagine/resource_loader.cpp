@@ -227,17 +227,13 @@ public:
     auto handle_gl_buffer_params(const resource_gl_buffer_params&) noexcept
       -> bool;
 
-    void preparation_progressed(float) noexcept;
-
     auto update() noexcept -> work_done;
     void cleanup() noexcept;
 
     // continuation handlers
     void handle_source_data(
-      const msgbus::blob_info&,
-      const pending_resource_info& source,
-      const span_size_t offset,
-      const memory::span<const memory::const_block> data) noexcept;
+      const msgbus::blob_stream_chunk&,
+      const pending_resource_info& source) noexcept;
 
     void handle_source_finished(const pending_resource_info&) noexcept;
     void handle_source_cancelled(const pending_resource_info&) noexcept;
@@ -311,6 +307,10 @@ private:
         flat_set<identifier_t> pending_requests;
         bool loaded{false};
     };
+
+    // progress_update
+    void _preparation_progressed(float) noexcept;
+    void _streaming_progressed(const msgbus::blob_stream_chunk&) noexcept;
 
     // resource loaded handlers
     void _handle_plain_text(
@@ -417,7 +417,9 @@ private:
     resource_loader& _parent;
     const identifier_t _request_id;
     const url _locator;
+    span_size_t _received_size{0};
     activity_progress _preparation;
+    activity_progress _streaming;
 
     std::string _label;
     weak_holder<pending_resource_info> _continuation{};
