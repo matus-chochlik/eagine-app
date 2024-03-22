@@ -23,6 +23,8 @@ public:
       -> model_viewer_backgrounds&;
 
     auto clear(video_context&, orbiting_camera&) -> model_viewer_backgrounds&;
+    auto clear_default(video_context&, orbiting_camera&)
+      -> model_viewer_backgrounds&;
 };
 //------------------------------------------------------------------------------
 } // namespace eagine::app

@@ -118,9 +118,13 @@ protected:
 
     void _add_name(std::string name);
 
+    auto _at(std::size_t index, auto& items) const noexcept -> auto& {
+        assert(index < items.size());
+        return items[index];
+    }
+
     auto _current(auto& items) const noexcept -> auto& {
-        assert(_selected_index < items.size());
-        return items[_selected_index];
+        return _at(_selected_index, items);
     }
 
 protected:
@@ -160,6 +164,10 @@ public:
             }
         }
         return result;
+    }
+
+    auto at(std::size_t index) noexcept -> Wrapper& {
+        return _at(index, _loaded);
     }
 
     auto current() noexcept -> Wrapper& {

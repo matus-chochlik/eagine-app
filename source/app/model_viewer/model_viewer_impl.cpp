@@ -125,16 +125,11 @@ auto model_viewer::is_done() noexcept -> bool {
 //------------------------------------------------------------------------------
 void model_viewer::_clear_background() noexcept {
     _cube_maps.use(_video);
-    _backgrounds.use(_video);
     _backgrounds.clear(_video, _camera);
 }
 //------------------------------------------------------------------------------
 void model_viewer::_clear_background_default() noexcept {
-    _video.with_gl([](auto& gl, auto& GL) {
-        gl.clear_color(0.45F, 0.45F, 0.45F, 1.F);
-        gl.clear_depth(1.F);
-        gl.clear(GL.color_buffer_bit | GL.depth_buffer_bit);
-    });
+    _backgrounds.clear_default(_video, _camera);
 }
 //------------------------------------------------------------------------------
 void model_viewer::_view_model() noexcept {
