@@ -57,11 +57,14 @@ void pending_resource_info::_preparation_progressed(float progress) noexcept {
 //------------------------------------------------------------------------------
 void pending_resource_info::_streaming_progressed(
   const msgbus::blob_stream_chunk& chunk) noexcept {
+    _preparation.finish();
     _received_size += chunk.total_data_size();
     if(chunk.info.total_size > 0) {
-        const auto progress{span_size_t(
-          float(_received_size) / float(chunk.info.total_size) * 1000.F)};
-        _streaming.update_progress(progress);
+        const auto progress{
+          float(_received_size) / float(chunk.info.total_size)};
+        _streaming.update_progress(span_size_t(1000.F * progress));
+    } else {
+        _streaming.update_progress(500.F);
     }
 }
 //------------------------------------------------------------------------------
@@ -80,11 +83,11 @@ void pending_resource_info::mark_loaded() noexcept {
     } else if(_kind == resource_kind::input_setup) {
         _parent.resource_loaded(_request_id, _kind, _locator);
     }
-    _preparation.finish();
+    _streaming.finish();
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::mark_finished() noexcept {
-    _preparation.finish();
+    _streaming.finish();
     _kind = resource_kind::finished;
 }
 //------------------------------------------------------------------------------
