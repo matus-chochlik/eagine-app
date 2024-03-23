@@ -416,6 +416,7 @@ public:
       shared_provider_objects&,
       span_size_t width,
       span_size_t height,
+      span_size_t seed,
       url);
 
     auto prepare() noexcept -> msgbus::blob_preparation_result final;
@@ -426,6 +427,7 @@ private:
 
     span_size_t _width;
     span_size_t _height;
+    const span_size_t _seed;
 
     tiling_data _tiling;
     std::vector<std::tuple<float, float, tiling_data_view>> _octaves;
@@ -441,10 +443,12 @@ eagitexi_tiling_noise_io::eagitexi_tiling_noise_io(
   shared_provider_objects& shared,
   span_size_t width,
   span_size_t height,
+  span_size_t seed,
   url locator)
   : simple_buffer_source_blob_io{"ITxTlgNois", parent, width * height}
   , _width{width}
   , _height{height}
+  , _seed{seed}
   , _tiling{as_parent(), shared, std::move(locator)} {
     append(R"({"level":0,"channels":1,"data_type":"unsigned_byte")");
     append(R"(,"tag":["generated","noise"])");
@@ -454,7 +458,7 @@ eagitexi_tiling_noise_io::eagitexi_tiling_noise_io(
 auto eagitexi_tiling_noise_io::_get_noise(float x, float y, std::size_t i)
   const noexcept -> float {
     const auto [div, weight, data]{_octaves[i]};
-    return weight * data.get(x / div, y / div);
+    return weight * data.get(float(_seed) + x / div, float(_seed) + y / div);
 }
 //------------------------------------------------------------------------------
 auto eagitexi_tiling_noise_io::_get_weight(std::size_t i) const noexcept
@@ -594,6 +598,7 @@ auto eagitexi_tiling_noise_provider::get_resource_io(const url& locator)
       shared,
       q.arg_value_as<span_size_t>("width").value_or(0),
       q.arg_value_as<span_size_t>("height").value_or(0),
+      q.arg_value_as<span_size_t>("seed").value_or(0),
       q.decoded_arg_value("source").or_default()};
 }
 //------------------------------------------------------------------------------
