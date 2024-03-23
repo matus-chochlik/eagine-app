@@ -239,6 +239,16 @@ public:
         derived().clean_up(ctx.loader());
     }
 
+    /// @brief Indicates if the load info originated from this loaded resource.
+    auto originated(const base_load_info& info) const noexcept -> bool {
+        return info.request_id == _request_id;
+    }
+
+    /// @brief Indicates if the load info originated from this loaded resource.
+    auto originated(const load_info& info) const noexcept -> bool {
+        return originated(info.base);
+    }
+
     /// @brief Updates the resource, possibly doing resource load request.
     auto load_if_needed(loaded_resource_context& ctx) -> work_done {
         if(not is_loaded() and not is_loading()) {
@@ -384,6 +394,16 @@ public:
     /// @brief Returns a const reference to the underlying resource.
     auto resource() const noexcept -> const Resource& {
         return *this;
+    }
+
+    /// @brief Indicates if the load info originated from this loaded resource.
+    auto originated(const base_load_info& info) const noexcept -> bool {
+        return info.request_id == _request_id;
+    }
+
+    /// @brief Indicates if the load info originated from this loaded resource.
+    auto originated(const load_info& info) const noexcept -> bool {
+        return originated(info.base);
     }
 
     /// @brief Updates the resource, possibly doing resource load request.
