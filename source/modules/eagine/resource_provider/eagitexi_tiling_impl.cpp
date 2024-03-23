@@ -99,10 +99,12 @@ void eagitexi_tiling_io::_process_line(const string_view line) {
 //------------------------------------------------------------------------------
 void eagitexi_tiling_io::_line_loaded(
   resource_loader::string_list_load_info& info) noexcept {
-    for(const auto& line : info.strings) {
-        _process_line(line);
+    if(_tiling.originated(info)) {
+        for(const auto& line : info.strings) {
+            _process_line(line);
+        }
+        info.strings.clear();
     }
-    info.strings.clear();
 }
 //------------------------------------------------------------------------------
 void eagitexi_tiling_io::_loaded(const loaded_resource_base&) noexcept {
@@ -392,10 +394,12 @@ void tiling_data::_process_line(const string_view line) {
 //------------------------------------------------------------------------------
 void tiling_data::_line_loaded(
   resource_loader::string_list_load_info& info) noexcept {
-    for(const auto& line : info.strings) {
-        _process_line(line);
+    if(_tiling.originated(info)) {
+        for(const auto& line : info.strings) {
+            _process_line(line);
+        }
+        info.strings.clear();
     }
-    info.strings.clear();
 }
 //------------------------------------------------------------------------------
 // noise I/O
