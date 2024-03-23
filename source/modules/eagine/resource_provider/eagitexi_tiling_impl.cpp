@@ -290,6 +290,11 @@ public:
         return {*this, 0, 0, _width, _height};
     }
 
+    auto view(span_size_t xo, span_size_t yo) const noexcept
+      -> tiling_data_view {
+        return {*this, xo, yo, _width, _height};
+    }
+
 private:
     static auto _wrap_coord(
       span_size_t o,
@@ -417,12 +422,13 @@ public:
 
 private:
     auto _get_noise(float x, float y, std::size_t i) const noexcept -> float;
+    auto _get_weight(std::size_t i) const noexcept -> float;
 
     span_size_t _width;
     span_size_t _height;
 
     tiling_data _tiling;
-    std::vector<std::tuple<float, tiling_data_view>> _octaves;
+    std::vector<std::tuple<float, float, tiling_data_view>> _octaves;
     std::vector<float> _noise;
     std::size_t _pixel_index{0};
     std::size_t _value_index{0};
@@ -447,8 +453,13 @@ eagitexi_tiling_noise_io::eagitexi_tiling_noise_io(
 //------------------------------------------------------------------------------
 auto eagitexi_tiling_noise_io::_get_noise(float x, float y, std::size_t i)
   const noexcept -> float {
-    const auto [div, data]{_octaves[i]};
-    return data.get(x / div, y / div);
+    const auto [div, weight, data]{_octaves[i]};
+    return weight * data.get(x / div, y / div);
+}
+//------------------------------------------------------------------------------
+auto eagitexi_tiling_noise_io::_get_weight(std::size_t i) const noexcept
+  -> float {
+    return std::get<1>(_octaves[i]);
 }
 //------------------------------------------------------------------------------
 auto eagitexi_tiling_noise_io::prepare() noexcept
@@ -463,7 +474,19 @@ auto eagitexi_tiling_noise_io::prepare() noexcept
         _height = _tiling.height();
     }
     if(_octaves.empty()) {
-        _octaves.emplace_back(1.F, _tiling.whole());
+        _octaves.emplace_back(1.000F, 0.25F, _tiling.whole());
+        _octaves.emplace_back(
+          1.618F, 0.33F, _tiling.view(17 + _width / 3, 19 + _height / 5));
+        _octaves.emplace_back(
+          3.141F, 0.31F, _tiling.view(63 + _width / 7, 41 + _height / 3));
+        _octaves.emplace_back(
+          17.93F, 0.29F, _tiling.view(61 + _width / 5, 43 + _height / 9));
+        _octaves.emplace_back(
+          26.91F, 0.25F, _tiling.view(23 + _width / 3, 33 + _height / 5));
+        _octaves.emplace_back(
+          81.13F, 0.13F, _tiling.view(11 + _width / 11, 37 + _height / 3));
+        _octaves.emplace_back(
+          223.9F, 0.11F, _tiling.view(37 + _width / 7, 31 + _height / 2));
         return {msgbus::blob_preparation_status::working};
     }
     if(_noise.empty()) {
@@ -475,9 +498,13 @@ auto eagitexi_tiling_noise_io::prepare() noexcept
             ++i, ++_pixel_index) {
             const auto y{float(_pixel_index / _tiling.width())};
             const auto x{float(_pixel_index % _tiling.width())};
+            float n = 0.F;
+            float w = 0.F;
             for(const auto o : index_range(_octaves)) {
-                _noise[_pixel_index] = _get_noise(x, y, o);
+                n += _get_noise(x, y, o);
+                w += _get_weight(o);
             }
+            _noise[_pixel_index] = n / w;
         }
         return {_pixel_index, _noise.size() * 2U + 2U};
     }
