@@ -475,7 +475,7 @@ auto eagitexi_tiling_noise_io::prepare() noexcept
                 _noise[_pixel_index] = _get_noise(x, y, o);
             }
         }
-        return {msgbus::blob_preparation_status::working};
+        return {_pixel_index, _noise.size() * 2U + 2U};
     }
     if(not _header_done) {
         std::stringstream header;
@@ -485,7 +485,7 @@ auto eagitexi_tiling_noise_io::prepare() noexcept
         append(header.str());
 
         _header_done = true;
-        return {msgbus::blob_preparation_status::working};
+        return {0.5F};
     }
 
     if(_value_index < _noise.size()) {
@@ -493,12 +493,12 @@ auto eagitexi_tiling_noise_io::prepare() noexcept
             ++i, ++_value_index) {
             append(math::map_to_min_max_01<byte>(_noise[_value_index]));
         }
-        return {msgbus::blob_preparation_status::working};
+        return {_noise.size() + _value_index, _noise.size() * 2U + 2U};
     }
 
     if(not _values_done) {
         _values_done = true;
-        return {msgbus::blob_preparation_status::working};
+        return {_noise.size() * 2U, _noise.size() * 2U + 2U};
     }
 
     return msgbus::blob_preparation_result::finished();
