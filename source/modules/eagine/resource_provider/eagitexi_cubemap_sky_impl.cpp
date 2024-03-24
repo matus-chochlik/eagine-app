@@ -24,19 +24,52 @@ namespace eagine::app {
 // Planet params
 //------------------------------------------------------------------------------
 struct cubemap_scene {
+    float planet_radius_m{6'370'000.F};
+    float atmosphere_thickness_m{100'000.F};
+    float above_ground_m{100.F};
+    float sun_azimuth_deg{0.F};
+    float sun_elevation_deg{15.F};
+
+    std::string tiling_url;
+
     template <typename T>
     static auto query_arg(const url&, string_view name, T fallback) noexcept
       -> T;
 
     cubemap_scene(const url& locator) noexcept;
 
-    float planet_radius_m;
-    float atmosphere_thickness_m;
-    float above_ground_m;
-    float sun_x;
-    float sun_y;
-    float sun_z;
+    auto sun_coord() const noexcept
+      -> math::unit_spherical_coordinate<float, true>;
+
+    auto sun_xyz() const noexcept -> math::vector<float, 3, true>;
 };
+//------------------------------------------------------------------------------
+template <identifier_t Id>
+constexpr auto data_member_mapping(
+  const std::type_identity<cubemap_scene>,
+  const selector<Id>) noexcept {
+    return make_data_member_mapping<
+      cubemap_scene,
+      float,
+      float,
+      float,
+      float,
+      float,
+      std::string>(
+      {"planet_radius_m", &cubemap_scene::planet_radius_m},
+      {"atmosphere_thickness_m", &cubemap_scene::atmosphere_thickness_m},
+      {"above_ground_m", &cubemap_scene::above_ground_m},
+      {"sun_azimuth_deg", &cubemap_scene::sun_azimuth_deg},
+      {"sun_elevation_deg", &cubemap_scene::sun_elevation_deg},
+      {"tiling_url", &cubemap_scene::tiling_url});
+}
+//------------------------------------------------------------------------------
+cubemap_scene::cubemap_scene(const url& l) noexcept
+  : planet_radius_m{query_arg<float>(l, "planet_radius_m", 6'370'000.F)}
+  , atmosphere_thickness_m{query_arg<float>(l, "planet_atmosphere_m", 100'000.F)}
+  , above_ground_m{query_arg<float>(l, "above_ground_m", 100.F)}
+  , sun_azimuth_deg{query_arg<float>(l, "sun_azimuth_deg", 0.0F)}
+  , sun_elevation_deg{query_arg<float>(l, "sun_elevation_deg", 75.0F)} {}
 //------------------------------------------------------------------------------
 template <typename T>
 auto cubemap_scene::query_arg(
@@ -46,13 +79,14 @@ auto cubemap_scene::query_arg(
     return locator.query().arg_value_as<T>(name).value_or(fallback);
 }
 //------------------------------------------------------------------------------
-cubemap_scene::cubemap_scene(const url& l) noexcept
-  : planet_radius_m{query_arg<float>(l, "planet_radius_m", 6'370'000.F)}
-  , atmosphere_thickness_m{query_arg<float>(l, "planet_atmosphere_m", 100'000.F)}
-  , above_ground_m{query_arg<float>(l, "above_ground_m", 100.F)}
-  , sun_x{query_arg<float>(l, "sun_x", 1.0F)}
-  , sun_y{query_arg<float>(l, "sun_y", 1.0F)}
-  , sun_z{query_arg<float>(l, "sun_z", 1.0F)} {}
+auto cubemap_scene::sun_coord() const noexcept
+  -> math::unit_spherical_coordinate<float, true> {
+    return {degrees_(sun_azimuth_deg), degrees_(sun_elevation_deg)};
+}
+//------------------------------------------------------------------------------
+auto cubemap_scene::sun_xyz() const noexcept -> math::vector<float, 3, true> {
+    return math::to_cartesian(sun_coord());
+}
 //------------------------------------------------------------------------------
 // Renderer
 //------------------------------------------------------------------------------
@@ -69,6 +103,7 @@ public:
 
 private:
     static auto _tile_size() noexcept -> int;
+
     auto _build_program(
       const gl_rendered_blob_params&,
       const cubemap_scene&) noexcept -> oglplus::program_object;
@@ -116,9 +151,7 @@ auto eagitexi_cubemap_sky_renderer::_build_program(
     glapi.try_set_uniform(prog, "planetRadius", scene.planet_radius_m);
     glapi.try_set_uniform(prog, "atmThickness", scene.atmosphere_thickness_m);
     glapi.try_set_uniform(prog, "aboveGround", scene.above_ground_m);
-    glapi.try_set_uniform(prog, "sunX", scene.sun_x);
-    glapi.try_set_uniform(prog, "sunY", scene.sun_y);
-    glapi.try_set_uniform(prog, "sunZ", scene.sun_z);
+    glapi.try_set_uniform(prog, "sunDirection", scene.sun_xyz());
 
     return prog;
 }
@@ -135,6 +168,7 @@ public:
       int size) noexcept;
 
 protected:
+    auto load_resources() noexcept -> msgbus::blob_preparation_result final;
     auto make_renderer(shared_holder<gl_rendered_blob_context>) noexcept
       -> unique_holder<gl_blob_renderer> final;
 
@@ -144,6 +178,9 @@ private:
 
     const url _locator;
     const int _size;
+    cubemap_scene _scene{_locator};
+    std::optional<resource_request_result> _scene_request{};
+    resource_load_status _scene_load_status{resource_load_status::not_found};
 };
 //------------------------------------------------------------------------------
 void eagitexi_cubemap_sky_io::_make_header_bgn(int size) noexcept {
@@ -192,7 +229,24 @@ eagitexi_cubemap_sky_io::eagitexi_cubemap_sky_io(
   : gl_rendered_source_blob_io{"ITxSkySky", parent, shared, params, size * size * 6}
   , _locator{locator}
   , _size{size} {
+    if(const auto params_url{_locator.query().arg_url("params")}) {
+        _scene_request.emplace(shared.loader.request_value_tree_traversal(
+          params_url, make_mapped_struct_loader(_scene, _scene_load_status)));
+    } else {
+        _scene_load_status = resource_load_status::loaded;
+    }
     _make_header_bgn(size);
+}
+//------------------------------------------------------------------------------
+auto eagitexi_cubemap_sky_io::load_resources() noexcept
+  -> msgbus::blob_preparation_result {
+    if(_scene_request) {
+        if(not _scene_request->info().is_done()) {
+            return {msgbus::blob_preparation_status::working};
+        }
+        _scene_request.reset();
+    }
+    return msgbus::blob_preparation_result::finished();
 }
 //------------------------------------------------------------------------------
 auto eagitexi_cubemap_sky_io::make_renderer(
@@ -338,9 +392,9 @@ auto eagitex_cubemap_sky_io::make_header(const url& locator, int size)
     add.operator()<float>("planet_radius_m");
     add.operator()<float>("planet_atmosphere_m");
     add.operator()<float>("above_ground_m");
-    add.operator()<float>("sun_x");
-    add.operator()<float>("sun_y");
-    add.operator()<float>("sun_z");
+    add.operator()<float>("sun_azimuth_deg");
+    add.operator()<float>("sun_elevation_deg");
+    add.operator()<std::string>("params");
     hdr << R"("}]})";
 
     return hdr.str();

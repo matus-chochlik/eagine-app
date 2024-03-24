@@ -6,10 +6,7 @@ uniform int faceIdx;
 uniform float planetRadius;
 uniform float atmThickness;
 uniform float aboveGround;
-uniform float sunX;
-uniform float sunY;
-uniform float sunZ;
-vec3 sunDirection = normalize(vec3(sunX, sunY, sunZ));
+uniform vec3 sunDirection;
 const float sunDot = 0.003;
 
 struct Ray {
