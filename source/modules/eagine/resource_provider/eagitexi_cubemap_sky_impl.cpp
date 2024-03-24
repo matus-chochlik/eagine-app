@@ -21,11 +21,13 @@ import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-// Planet params
+// planet parameters
 //------------------------------------------------------------------------------
 struct cubemap_scene {
     float planet_radius_m{6'370'000.F};
     float atmosphere_thickness_m{100'000.F};
+    float cloud_altitude_m{3'000.F};
+    float cloud_thickness_m{1'000.F};
     float above_ground_m{100.F};
     float sun_azimuth_deg{0.F};
     float sun_elevation_deg{45.F};
@@ -57,9 +59,13 @@ constexpr auto data_member_mapping(
       float,
       float,
       float,
+      float,
+      float,
       std::string>(
       {"planet_radius_m", &cubemap_scene::planet_radius_m},
       {"atmosphere_thickness_m", &cubemap_scene::atmosphere_thickness_m},
+      {"cloud_altitude_m", &cubemap_scene::cloud_altitude_m},
+      {"cloud_thickness_m", &cubemap_scene::cloud_thickness_m},
       {"above_ground_m", &cubemap_scene::above_ground_m},
       {"sun_azimuth_deg", &cubemap_scene::sun_azimuth_deg},
       {"sun_elevation_deg", &cubemap_scene::sun_elevation_deg},
@@ -69,7 +75,9 @@ constexpr auto data_member_mapping(
 //------------------------------------------------------------------------------
 cubemap_scene::cubemap_scene(const url& l) noexcept
   : planet_radius_m{query_arg<float>(l, "planet_radius_m", 6'370'000.F)}
-  , atmosphere_thickness_m{query_arg<float>(l, "planet_atmosphere_m", 100'000.F)}
+  , atmosphere_thickness_m{query_arg<float>(l, "atm_thickness_m", 100'000.F)}
+  , cloud_altitude_m{query_arg<float>(l, "cloud_altitude_m", 3'000.F)}
+  , cloud_thickness_m{query_arg<float>(l, "cloud_thickness_m", 1'000.F)}
   , above_ground_m{query_arg<float>(l, "above_ground_m", 100.F)}
   , sun_azimuth_deg{query_arg<float>(l, "sun_azimuth_deg", 0.0F)}
   , sun_elevation_deg{query_arg<float>(l, "sun_elevation_deg", 45.0F)}
