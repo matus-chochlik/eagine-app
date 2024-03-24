@@ -98,10 +98,10 @@ vec4 bgColor(Ray ray, float rayDist) {
 vec4 skyColor(Ray viewRay, Sphere planet, Sphere atmosphere) {
 	float atmHit = max(sphereHit(viewRay, atmosphere), 0.0);
 	float dt = 0.5 + 0.5*dot(viewRay.direction, sunDirection);
-	vec4 result = mix(
+	vec4 result = mix(mix(
 		vec4(0.25, 0.35, 0.50, 0.5),
 		vec4(1.00, 0.90, 0.75, 1.0),
-		pow(dt, 16.0));
+		pow(dt, 16.0)), sunColor(), sunHit(viewRay));
 	return result;
 }
 

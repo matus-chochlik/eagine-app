@@ -28,7 +28,7 @@ struct cubemap_scene {
     float atmosphere_thickness_m{100'000.F};
     float above_ground_m{100.F};
     float sun_azimuth_deg{0.F};
-    float sun_elevation_deg{15.F};
+    float sun_elevation_deg{45.F};
 
     std::string tiling_url;
 
@@ -69,7 +69,7 @@ cubemap_scene::cubemap_scene(const url& l) noexcept
   , atmosphere_thickness_m{query_arg<float>(l, "planet_atmosphere_m", 100'000.F)}
   , above_ground_m{query_arg<float>(l, "above_ground_m", 100.F)}
   , sun_azimuth_deg{query_arg<float>(l, "sun_azimuth_deg", 0.0F)}
-  , sun_elevation_deg{query_arg<float>(l, "sun_elevation_deg", 75.0F)} {}
+  , sun_elevation_deg{query_arg<float>(l, "sun_elevation_deg", 45.0F)} {}
 //------------------------------------------------------------------------------
 template <typename T>
 auto cubemap_scene::query_arg(
@@ -253,12 +253,7 @@ auto eagitexi_cubemap_sky_io::make_renderer(
   shared_holder<gl_rendered_blob_context> context) noexcept
   -> unique_holder<gl_blob_renderer> {
     unique_holder<eagitexi_cubemap_sky_renderer> renderer{
-      default_selector,
-      *this,
-      params(),
-      cubemap_scene(_locator),
-      std::move(context),
-      _size};
+      default_selector, *this, params(), _scene, std::move(context), _size};
 
     assert(renderer);
     _make_header_end(*renderer);
