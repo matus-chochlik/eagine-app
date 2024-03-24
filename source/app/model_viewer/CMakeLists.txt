@@ -126,6 +126,7 @@ eagine_embed_target_resources(
 		CheckerImg "textures/checker.eagitexi"
 		CheckerTex "textures/checker.eagitex"
 		CheckerCub "textures/checker_cube.eagitex"
+		NoiseCube  "textures/noise_cube.eagitex"
 	PACKED
 	ENABLE_SEARCH)
 eagine_add_exe_analysis(eagine-app-model-viewer)

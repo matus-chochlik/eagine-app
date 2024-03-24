@@ -31,8 +31,9 @@ model_viewer_cube_maps::model_viewer_cube_maps(
               arg, ctx, video, GL.texture_cube_map, GL.texture0 + tex_unit++);
         }
 
-        const std::array<std::tuple<std::string, url>, 1> args{
-          {{"Checker", url{"eagitex:///CheckerCub"}}}};
+        const std::array<std::tuple<std::string, url>, 2> args{
+          {{"Checker", url{"eagitex:///CheckerCub"}},
+           {"Noise", url{"eagitex:///NoiseCube"}}}};
 
         for(const auto& [name, loc] : args) {
             load(
