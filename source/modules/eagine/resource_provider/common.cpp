@@ -127,6 +127,10 @@ protected:
     virtual auto context_attribs(const shared_provider_objects&) noexcept
       -> eglplus::context_attributes;
 
+    virtual auto load_resources() noexcept -> msgbus::blob_preparation_result {
+        return msgbus::blob_preparation_result::finished();
+    }
+
     virtual auto make_renderer(shared_holder<gl_rendered_blob_context>)
       -> unique_holder<gl_blob_renderer> = 0;
 

@@ -214,6 +214,11 @@ static bool gl_renderer_active{false};
 auto gl_rendered_source_blob_io::prepare() noexcept
   -> msgbus::blob_preparation_result {
     if(not _finished) {
+        const auto progress_split{0.1F};
+        const auto loading{load_resources()};
+        if(not loading.has_finished()) {
+            return {progress_split * loading.progress()};
+        }
         if(not _renderer) {
             if(not gl_renderer_active) {
                 if(auto context{_create_context()}) {
@@ -226,18 +231,18 @@ auto gl_rendered_source_blob_io::prepare() noexcept
                 }
             }
             if(not _renderer) {
-                return {msgbus::blob_preparation_status::working};
+                return {progress_split};
             }
         }
-        const auto render_result{_renderer->render()};
-        if(render_result.has_finished()) {
+        const auto rendering{_renderer->render()};
+        if(rendering.has_finished()) {
             finish();
             _renderer.reset();
             gl_renderer_active = false;
             _finished = true;
-            return {msgbus::blob_preparation_status::working};
+            return {1.F, msgbus::blob_preparation_status::working};
         }
-        return render_result;
+        return {progress_split + (1.F - progress_split) * rendering.progress()};
     }
     return msgbus::blob_preparation_result::finished();
 }
