@@ -52,8 +52,9 @@ void torus_program::set_texture_map(
 torus_geometry::torus_geometry(execution_context& ctx)
   : gl_geometry_and_bindings_resource{
       url{"shape:///unit_torus?"
-          "position=true&normal=true&tangent=true&wrap_coord=true&"
-          "rings=48&sections=72"},
+          "position=true&normal=true&tangent=true&bitangent=true&"
+          "wrap_coord=true&roughness=true&occlusion=true&rings=48&"
+          "sections=72"},
       ctx} {}
 //------------------------------------------------------------------------------
 // textures
