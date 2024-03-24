@@ -7,7 +7,7 @@ uniform float planetRadius;
 uniform float atmThickness;
 uniform float aboveGround;
 uniform vec3 sunDirection;
-const float sunDot = 0.003;
+uniform float sunDot = 0.003;
 
 struct Ray {
 	vec3 origin;
