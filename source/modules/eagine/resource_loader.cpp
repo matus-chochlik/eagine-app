@@ -480,7 +480,7 @@ public:
 // valtree_mapped_struct_builder
 //------------------------------------------------------------------------------
 template <default_mapped_struct O>
-class valtree_mapped_struct_builder
+class valtree_mapped_struct_builder final
   : public valtree_builder_base<valtree_mapped_struct_builder<O>> {
     using base = valtree_builder_base<valtree_mapped_struct_builder<O>>;
 
@@ -513,12 +513,56 @@ auto valtree_mapped_struct_builder<O>::finish() noexcept -> bool {
     return false;
 }
 //------------------------------------------------------------------------------
-template <default_mapped_struct O>
+export template <default_mapped_struct O>
 auto make_mapped_struct_builder(
   const shared_holder<pending_resource_info>& parent,
   std::type_identity<O> = {}) noexcept
   -> unique_holder<valtree::object_builder> {
     return {hold<valtree_mapped_struct_builder<O>>, "StrctBuldr", parent};
+}
+//------------------------------------------------------------------------------
+// valtree_mapped_struct_loader
+//------------------------------------------------------------------------------
+template <default_mapped_struct O>
+class valtree_mapped_struct_loader final
+  : public valtree::object_builder_impl<valtree_mapped_struct_loader<O>> {
+
+public:
+    valtree_mapped_struct_loader(
+      O& object,
+      resource_load_status& status) noexcept
+      : _object{object}
+      , _status{status} {
+        _status = resource_load_status::loading;
+    }
+
+    auto max_token_size() noexcept -> span_size_t final {
+        return max_identifier_length(_object);
+    }
+
+    template <typename T>
+    void do_add(const basic_string_path& path, span<const T> data) noexcept {
+        _forwarder.forward_data(path, data, _object);
+    }
+
+    auto finish() noexcept -> bool final {
+        _status = resource_load_status::loaded;
+        return true;
+    }
+    void failed() noexcept final {
+        _status = resource_load_status::error;
+    }
+
+private:
+    valtree::object_builder_data_forwarder _forwarder;
+    O& _object{};
+    resource_load_status& _status;
+};
+//------------------------------------------------------------------------------
+export template <default_mapped_struct O>
+auto make_mapped_struct_loader(O& object, resource_load_status& status) noexcept
+  -> unique_holder<valtree::object_builder> {
+    return {hold<valtree_mapped_struct_loader<O>>, object, status};
 }
 //------------------------------------------------------------------------------
 // other builders
