@@ -106,6 +106,7 @@ class eagitexi_cubemap_sky_renderer final : public eagitexi_cubemap_renderer {
 public:
     eagitexi_cubemap_sky_renderer(
       gl_rendered_source_blob_io& parent,
+      const shared_provider_objects& shared,
       const gl_rendered_blob_params& params,
       const cubemap_scene& scene,
       shared_holder<gl_rendered_blob_context> context,
@@ -113,36 +114,60 @@ public:
 
     ~eagitexi_cubemap_sky_renderer() noexcept final;
 
+    auto prepare_render() noexcept -> msgbus::blob_preparation_result final;
+
 private:
     static auto _tile_size() noexcept -> int;
+    void _process_cell(const byte);
+    void _process_line(const string_view);
+
+    void _line_loaded(resource_loader::string_list_load_info& info) noexcept;
+    void _loaded(const loaded_resource_base& info) noexcept;
 
     auto _build_program(
       const gl_rendered_blob_params&,
       const cubemap_scene&) noexcept -> oglplus::program_object;
+
+    const shared_provider_objects& _shared;
+    oglplus::texture_object _tiling_tex;
+    main_ctx_buffer _tiling_line;
+    string_list_resource _tiling;
+    const signal_binding _line_binding{
+      _shared.loader.string_line_loaded
+        .bind_to<&eagitexi_cubemap_sky_renderer::_line_loaded>(this)};
+    const signal_binding _done_binding{
+      _tiling.load_event.bind_to<&eagitexi_cubemap_sky_renderer::_loaded>(
+        this)};
+    msgbus::blob_preparation_context _prep_status;
 };
 //------------------------------------------------------------------------------
 eagitexi_cubemap_sky_renderer::eagitexi_cubemap_sky_renderer(
   gl_rendered_source_blob_io& parent,
+  const shared_provider_objects& shared,
   const gl_rendered_blob_params& params,
   const cubemap_scene& scene,
   shared_holder<gl_rendered_blob_context> context,
   int size) noexcept
-  : eagitexi_cubemap_renderer{
-      parent,
-      "rendering sky cube-map",
-      params,
-      context,
-      size,
-      _tile_size()} {
+  : eagitexi_cubemap_renderer{parent, "rendering sky cube-map", params, context, size, _tile_size()}
+  , _tiling_tex{gl_api().create_texture_object(gl_api().texture_2d)}
+  , _shared{shared}
+  , _tiling_line{*this, 1024}
+  , _tiling{url{scene.tiling_url}, shared.loader} {
     _init_program(_build_program(params, scene));
 }
 //------------------------------------------------------------------------------
 eagitexi_cubemap_sky_renderer::~eagitexi_cubemap_sky_renderer() noexcept {
-    (void)0; // TODO
+    _tiling.clean_up(_shared.loader);
 }
 //------------------------------------------------------------------------------
 auto eagitexi_cubemap_sky_renderer::_tile_size() noexcept -> int {
     return 8;
+}
+//------------------------------------------------------------------------------
+auto eagitexi_cubemap_sky_renderer::prepare_render() noexcept
+  -> msgbus::blob_preparation_result {
+    loaded_resource_context context{_shared.loader};
+    return _prep_status(_tiling.load_if_needed(context));
 }
 //------------------------------------------------------------------------------
 auto eagitexi_cubemap_sky_renderer::_build_program(
@@ -169,6 +194,44 @@ auto eagitexi_cubemap_sky_renderer::_build_program(
     return prog;
 }
 //------------------------------------------------------------------------------
+void eagitexi_cubemap_sky_renderer::_process_cell(const byte b) {
+    append_to(view_one(b), _tiling_line);
+}
+//------------------------------------------------------------------------------
+void eagitexi_cubemap_sky_renderer::_process_line(const string_view line) {
+    if(not line.empty()) {
+        _tiling_line.clear();
+        if(_prep_status.first()) {
+        }
+    }
+    for(const char c : line) {
+        if('0' <= c and c <= '9') {
+            _process_cell(byte(c - '0'));
+        } else if('A' <= c and c <= 'F') {
+            _process_cell(byte(c - 'A' + 10));
+        } else if('a' <= c and c <= 'f') {
+            _process_cell(byte(c - 'a' + 10));
+        } else {
+            _process_cell(byte(0));
+        }
+    }
+}
+//------------------------------------------------------------------------------
+void eagitexi_cubemap_sky_renderer::_line_loaded(
+  resource_loader::string_list_load_info& info) noexcept {
+    if(_tiling.originated(info)) {
+        for(const auto& line : info.strings) {
+            _process_line(line);
+        }
+        info.strings.clear();
+    }
+}
+//------------------------------------------------------------------------------
+void eagitexi_cubemap_sky_renderer::_loaded(
+  const loaded_resource_base&) noexcept {
+    // TODO
+}
+//------------------------------------------------------------------------------
 // I/O
 //------------------------------------------------------------------------------
 class eagitexi_cubemap_sky_io final : public gl_rendered_source_blob_io {
@@ -189,6 +252,7 @@ private:
     void _make_header_bgn(int size) noexcept;
     void _make_header_end(eagitexi_cubemap_sky_renderer&) noexcept;
 
+    const shared_provider_objects& _shared;
     const url _locator;
     const int _size;
     cubemap_scene _scene{_locator};
@@ -240,6 +304,7 @@ eagitexi_cubemap_sky_io::eagitexi_cubemap_sky_io(
   const url& locator,
   int size) noexcept
   : gl_rendered_source_blob_io{"ITxSkySky", parent, shared, params, size * size * 6}
+  , _shared{shared}
   , _locator{locator}
   , _size{size} {
     if(const auto params_url{_locator.query().arg_url("params")}) {
@@ -266,7 +331,13 @@ auto eagitexi_cubemap_sky_io::make_renderer(
   shared_holder<gl_rendered_blob_context> context) noexcept
   -> unique_holder<gl_blob_renderer> {
     unique_holder<eagitexi_cubemap_sky_renderer> renderer{
-      default_selector, *this, params(), _scene, std::move(context), _size};
+      default_selector,
+      *this,
+      _shared,
+      params(),
+      _scene,
+      std::move(context),
+      _size};
 
     assert(renderer);
     _make_header_end(*renderer);
