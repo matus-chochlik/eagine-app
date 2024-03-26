@@ -78,7 +78,7 @@ vec3 cloudCoord(vec3 sample, float scale) {
 	float alt_max = cloudAltitude + cloudThickness * 0.5;
 	float altitude = length(sample) - planetRadius;
 	if(alt_min <= altitude && altitude <= alt_max) {
-		scale = scale * 10.0;
+		scale = 10.0 / scale;
 		float depth = 2.0*(altitude - alt_min)/(0.001 + alt_max - alt_min) - 1.0;
 		sample = normalize(sample);
 		if(abs(sample.z) > 0.0) {
