@@ -5,9 +5,13 @@ out vec4 fragColor;
 uniform int faceIdx;
 uniform float planetRadius;
 uniform float atmThickness;
+uniform float cloudAltitude;
+uniform float cloudThickness;
 uniform float aboveGround;
 uniform vec3 sunDirection;
 uniform float sunDot = 0.003;
+uniform float tilingSide = 512;
+uniform isampler2D tilingTex;
 
 struct Ray {
 	vec3 origin;
@@ -61,6 +65,38 @@ Ray getViewRay() {
 		mat3(-1.0, 0.0, 0.0, 0.0,-1.0, 0.0, 0.0, 0.0,-1.0))[faceIdx];
 	return Ray(vec3(0.0), normalize(
 		cubeFace[0]*vertCoord.x + cubeFace[1]*vertCoord.y + cubeFace[2]));
+}
+
+float tilingSample(vec2 coord) {
+	coord = coord * (512.0 / tilingSide);
+	return float(texture(tilingTex, coord).r) / 16.0;
+}
+
+vec3 cloudCoord(vec3 sample, float scale) {
+	sample = sample + vec3(0.0, planetRadius+aboveGround, 0.0);
+	float alt_min = cloudAltitude - cloudThickness * 0.5;
+	float alt_max = cloudAltitude + cloudThickness * 0.5;
+	float altitude = length(sample) - planetRadius;
+	if(alt_min <= altitude && altitude <= alt_max) {
+		scale = scale * 10.0;
+		float depth = 2.0*(altitude - alt_min)/(0.001 + alt_max - alt_min) - 1.0;
+		sample = normalize(sample);
+		if(abs(sample.z) > 0.0) {
+			return vec3(
+				scale*(atan(sample.y, sample.x)+3.14157),
+				scale*asin(sample.z),
+				depth);
+		} else {
+			return vec3(0.0, scale*asin(sample.z), depth);
+		}
+	} else {
+		return vec3(1.0);
+	}
+}
+
+float cloudSample(vec3 sample, float scale) {
+	// TODO
+	return tilingSample(cloudCoord(sample, scale).xy);
 }
 
 float vaporDensity(vec3 sample, Sphere planet, Sphere atmosphere) {

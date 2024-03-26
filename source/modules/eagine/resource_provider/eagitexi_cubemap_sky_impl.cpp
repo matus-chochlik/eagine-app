@@ -129,6 +129,7 @@ private:
       const cubemap_scene&) noexcept -> oglplus::program_object;
     void _setup_tex_storage() noexcept;
     void _add_tex_image_row() noexcept;
+    void _set_tex_parameters() noexcept;
 
     const shared_provider_objects& _shared;
     oglplus::gl_types::sizei_type _tiling_side{0};
@@ -157,6 +158,7 @@ eagitexi_cubemap_sky_renderer::eagitexi_cubemap_sky_renderer(
   , _shared{shared}
   , _tiling_line{*this, 1024}
   , _tiling{url{scene.tiling_url}, shared.loader} {
+    _tiling_line.clear();
     _init_program(_build_program(params, scene));
 }
 //------------------------------------------------------------------------------
@@ -186,11 +188,18 @@ auto eagitexi_cubemap_sky_renderer::_build_program(
     glapi.add_shader(prog, GL.fragment_shader, embedded<"iCmSkyFS">());
     gl.link_program(prog);
     gl.use_program(prog);
+    // TODO: remove this
+    std::array<char, 1024> temp;
+    if(auto info{gl.get_program_info_log(prog, cover(temp))}) {
+        std::cerr << *info << std::endl;
+    }
 
     gl.bind_attrib_location(prog, _screen_position_loc(), "Position");
 
     glapi.try_set_uniform(prog, "planetRadius", scene.planet_radius_m);
     glapi.try_set_uniform(prog, "atmThickness", scene.atmosphere_thickness_m);
+    glapi.try_set_uniform(prog, "cloudAltitude", scene.cloud_altitude_m);
+    glapi.try_set_uniform(prog, "cloudThickness", scene.cloud_thickness_m);
     glapi.try_set_uniform(prog, "aboveGround", scene.above_ground_m);
     glapi.try_set_uniform(prog, "sunDot", scene.sun_dot);
     glapi.try_set_uniform(prog, "sunDirection", scene.sun_xyz());
@@ -253,26 +262,38 @@ void eagitexi_cubemap_sky_renderer::_add_tex_image_row() noexcept {
     _tiling_yofs += 1;
 }
 //------------------------------------------------------------------------------
+void eagitexi_cubemap_sky_renderer::_set_tex_parameters() noexcept {
+    const auto& glapi{gl_api()};
+    const auto& [gl, GL]{glapi};
+    if(gl.texture_parameter_i) {
+        gl.texture_parameter_i(_tiling_tex, GL.texture_wrap_s, GL.repeat);
+        gl.texture_parameter_i(_tiling_tex, GL.texture_wrap_t, GL.repeat);
+    } else if(gl.tex_parameter_i) {
+        gl.tex_parameter_i(GL.texture_2d, GL.texture_wrap_s, GL.repeat);
+        gl.tex_parameter_i(GL.texture_2d, GL.texture_wrap_t, GL.repeat);
+    }
+    glapi.try_set_uniform(prog(), "tilingSide", float(_tiling_side));
+    glapi.try_set_uniform(prog(), "tilingTex", GL.texture0);
+}
+//------------------------------------------------------------------------------
 void eagitexi_cubemap_sky_renderer::_process_cell(const byte b) {
     append_to(view_one(b), _tiling_line);
 }
 //------------------------------------------------------------------------------
 void eagitexi_cubemap_sky_renderer::_process_line(const string_view line) {
-    if(not line.empty()) {
-        _tiling_line.clear();
-    }
     for(const char c : line) {
         _process_cell(hex_char2byte(c).value_or(byte{}));
     }
     if(not _tiling_side) {
-        if(math::is_positive_power_of_2(_tiling_line.size())) {
-            if(assign_if_fits(_tiling_line.size(), _tiling_side)) {
-                _setup_tex_storage();
-            }
+        if(assign_if_fits(_tiling_line.size(), _tiling_side)) {
+            _setup_tex_storage();
         }
     }
-    if(not line.empty()) {
-        _add_tex_image_row();
+    if(_tiling_side and (_tiling_side == _tiling_line.size())) {
+        if(_tiling_yofs < _tiling_side) {
+            _add_tex_image_row();
+            _tiling_line.clear();
+        }
     }
 }
 //------------------------------------------------------------------------------
@@ -280,7 +301,11 @@ void eagitexi_cubemap_sky_renderer::_line_loaded(
   resource_loader::string_list_load_info& info) noexcept {
     if(_tiling.originated(info)) {
         for(const auto& line : info.strings) {
-            _process_line(line);
+            if(not line.empty()) {
+                if(math::is_positive_power_of_2(line.size())) {
+                    _process_line(line);
+                }
+            }
         }
         info.strings.clear();
     }
@@ -288,7 +313,7 @@ void eagitexi_cubemap_sky_renderer::_line_loaded(
 //------------------------------------------------------------------------------
 void eagitexi_cubemap_sky_renderer::_loaded(
   const loaded_resource_base&) noexcept {
-    // TODO
+    _set_tex_parameters();
 }
 //------------------------------------------------------------------------------
 // I/O

@@ -150,6 +150,10 @@ protected:
 
     virtual auto prepare_render() noexcept -> msgbus::blob_preparation_result;
 
+    auto prog() const noexcept -> oglplus::program_name {
+        return _prog;
+    }
+
 private:
     auto _build_screen() noexcept -> oglplus::geometry_and_bindings;
     void _render_tile() noexcept;
