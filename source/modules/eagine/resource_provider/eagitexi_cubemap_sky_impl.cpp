@@ -127,8 +127,12 @@ private:
     auto _build_program(
       const gl_rendered_blob_params&,
       const cubemap_scene&) noexcept -> oglplus::program_object;
+    void _setup_tex_storage() noexcept;
+    void _add_tex_image_row() noexcept;
 
     const shared_provider_objects& _shared;
+    oglplus::gl_types::sizei_type _tiling_side{0};
+    oglplus::gl_types::int_type _tiling_yofs{0};
     oglplus::texture_object _tiling_tex;
     main_ctx_buffer _tiling_line;
     string_list_resource _tiling;
@@ -194,6 +198,61 @@ auto eagitexi_cubemap_sky_renderer::_build_program(
     return prog;
 }
 //------------------------------------------------------------------------------
+void eagitexi_cubemap_sky_renderer::_setup_tex_storage() noexcept {
+    const auto& glapi{gl_api()};
+    const auto& [gl, GL]{glapi};
+    gl.active_texture(GL.texture0);
+    gl.bind_texture(GL.texture_2d, _tiling_tex);
+    if(gl.texture_storage2d) {
+        gl.texture_storage2d(
+          _tiling_tex, 1, GL.r8ui, _tiling_side, _tiling_side);
+    } else if(glapi.tex_storage2d) {
+        gl.tex_storage2d(GL.texture_2d, 1, GL.r8ui, _tiling_side, _tiling_side);
+    } else if(glapi.tex_image2d) {
+        gl.tex_image2d(
+          GL.texture_2d,
+          0,
+          GL.r8ui,
+          _tiling_side,
+          _tiling_side,
+          0, // border
+          GL.red_integer,
+          GL.unsigned_byte_,
+          {});
+    }
+}
+//------------------------------------------------------------------------------
+void eagitexi_cubemap_sky_renderer::_add_tex_image_row() noexcept {
+    const auto& glapi{gl_api()};
+    const auto& [gl, GL]{glapi};
+    if(gl.texture_sub_image2d) {
+        gl.texture_sub_image2d(
+          _tiling_tex,
+          0,
+          0,
+          _tiling_yofs,
+          _tiling_side,
+          1,
+          GL.red_integer,
+          GL.unsigned_byte_,
+          view(_tiling_line));
+    } else if(gl.tex_sub_image2d) {
+        gl.active_texture(GL.texture0);
+        gl.bind_texture(GL.texture_2d, _tiling_tex);
+        gl.tex_sub_image2d(
+          GL.texture_2d,
+          0,
+          0,
+          _tiling_yofs,
+          _tiling_side,
+          1,
+          GL.red_integer,
+          GL.unsigned_byte_,
+          view(_tiling_line));
+    }
+    _tiling_yofs += 1;
+}
+//------------------------------------------------------------------------------
 void eagitexi_cubemap_sky_renderer::_process_cell(const byte b) {
     append_to(view_one(b), _tiling_line);
 }
@@ -201,19 +260,19 @@ void eagitexi_cubemap_sky_renderer::_process_cell(const byte b) {
 void eagitexi_cubemap_sky_renderer::_process_line(const string_view line) {
     if(not line.empty()) {
         _tiling_line.clear();
-        if(_prep_status.first()) {
-        }
     }
     for(const char c : line) {
-        if('0' <= c and c <= '9') {
-            _process_cell(byte(c - '0'));
-        } else if('A' <= c and c <= 'F') {
-            _process_cell(byte(c - 'A' + 10));
-        } else if('a' <= c and c <= 'f') {
-            _process_cell(byte(c - 'a' + 10));
-        } else {
-            _process_cell(byte(0));
+        _process_cell(hex_char2byte(c).value_or(byte{}));
+    }
+    if(not _tiling_side) {
+        if(math::is_positive_power_of_2(_tiling_line.size())) {
+            if(assign_if_fits(_tiling_line.size(), _tiling_side)) {
+                _setup_tex_storage();
+            }
         }
+    }
+    if(not line.empty()) {
+        _add_tex_image_row();
     }
 }
 //------------------------------------------------------------------------------

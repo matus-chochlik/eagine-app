@@ -85,15 +85,7 @@ void eagitexi_tiling_io::_process_line(const string_view line) {
         }
     }
     for(const char c : line) {
-        if('0' <= c and c <= '9') {
-            _process_cell(byte(c - '0'));
-        } else if('A' <= c and c <= 'F') {
-            _process_cell(byte(c - 'A' + 10));
-        } else if('a' <= c and c <= 'f') {
-            _process_cell(byte(c - 'a' + 10));
-        } else {
-            _process_cell(byte(0));
-        }
+        _process_cell(hex_char2byte(c).value_or(byte{}));
     }
 }
 //------------------------------------------------------------------------------
@@ -384,15 +376,7 @@ void tiling_data::_process_line(const string_view line) {
         }
         ++_height;
         for(const char c : line) {
-            if('0' <= c and c <= '9') {
-                _process_cell(byte(c - '0'));
-            } else if('A' <= c and c <= 'F') {
-                _process_cell(byte(c - 'A' + 10));
-            } else if('a' <= c and c <= 'f') {
-                _process_cell(byte(c - 'a' + 10));
-            } else {
-                _process_cell(byte(0));
-            }
+            _process_cell(hex_char2byte(c).value_or(byte{}));
         }
     }
 }

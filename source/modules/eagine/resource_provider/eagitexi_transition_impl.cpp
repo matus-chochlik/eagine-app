@@ -159,18 +159,7 @@ auto tiling_transition_tiling::batch_size() noexcept -> int {
 //------------------------------------------------------------------------------
 auto tiling_transition_tiling::value(int x, int y) noexcept -> bool {
     const auto evaluate{[this](const char c) {
-        const auto compare{[this](const int i) {
-            return i >= _threshold;
-        }};
-        if('0' <= c and c <= '9') {
-            return compare(int(c - '0'));
-        } else if('A' <= c and c <= 'F') {
-            return compare(int(c - 'A' + 10));
-        } else if('a' <= c and c <= 'f') {
-            return compare(int(c - 'a' + 10));
-        } else {
-            return compare(int(0));
-        }
+        return int(hex_char2byte(c).value_or(byte{})) >= _threshold;
     }};
     if(not _tiling.empty()) {
         y = y % limit_cast<int>(_tiling.size());
