@@ -28,6 +28,7 @@ struct cubemap_scene {
     float atmosphere_thickness_m{100'000.F};
     float cloud_altitude_m{3'000.F};
     float cloud_thickness_m{1'000.F};
+    float cloudiness_factor{0.5F};
     float above_ground_m{100.F};
     float sun_azimuth_deg{0.F};
     float sun_elevation_deg{45.F};
@@ -61,11 +62,13 @@ constexpr auto data_member_mapping(
       float,
       float,
       float,
+      float,
       std::string>(
       {"planet_radius_m", &cubemap_scene::planet_radius_m},
       {"atmosphere_thickness_m", &cubemap_scene::atmosphere_thickness_m},
       {"cloud_altitude_m", &cubemap_scene::cloud_altitude_m},
       {"cloud_thickness_m", &cubemap_scene::cloud_thickness_m},
+      {"cloudiness_factor", &cubemap_scene::cloudiness_factor},
       {"above_ground_m", &cubemap_scene::above_ground_m},
       {"sun_azimuth_deg", &cubemap_scene::sun_azimuth_deg},
       {"sun_elevation_deg", &cubemap_scene::sun_elevation_deg},
@@ -78,6 +81,7 @@ cubemap_scene::cubemap_scene(const url& l) noexcept
   , atmosphere_thickness_m{query_arg<float>(l, "atm_thickness_m", 100'000.F)}
   , cloud_altitude_m{query_arg<float>(l, "cloud_altitude_m", 3'000.F)}
   , cloud_thickness_m{query_arg<float>(l, "cloud_thickness_m", 1'000.F)}
+  , cloudiness_factor{query_arg<float>(l, "cloudiness_factor", 0.5F)}
   , above_ground_m{query_arg<float>(l, "above_ground_m", 100.F)}
   , sun_azimuth_deg{query_arg<float>(l, "sun_azimuth_deg", 0.0F)}
   , sun_elevation_deg{query_arg<float>(l, "sun_elevation_deg", 45.0F)}
@@ -200,6 +204,7 @@ auto eagitexi_cubemap_sky_renderer::_build_program(
     glapi.try_set_uniform(prog, "atmThickness", scene.atmosphere_thickness_m);
     glapi.try_set_uniform(prog, "cloudAltitude", scene.cloud_altitude_m);
     glapi.try_set_uniform(prog, "cloudThickness", scene.cloud_thickness_m);
+    glapi.try_set_uniform(prog, "cloudiness", scene.cloudiness_factor);
     glapi.try_set_uniform(prog, "aboveGround", scene.above_ground_m);
     glapi.try_set_uniform(prog, "sunDot", scene.sun_dot);
     glapi.try_set_uniform(prog, "sunDirection", scene.sun_xyz());
@@ -268,9 +273,13 @@ void eagitexi_cubemap_sky_renderer::_set_tex_parameters() noexcept {
     if(gl.texture_parameter_i) {
         gl.texture_parameter_i(_tiling_tex, GL.texture_wrap_s, GL.repeat);
         gl.texture_parameter_i(_tiling_tex, GL.texture_wrap_t, GL.repeat);
+        gl.texture_parameter_i(_tiling_tex, GL.texture_min_filter, GL.linear);
+        gl.texture_parameter_i(_tiling_tex, GL.texture_mag_filter, GL.linear);
     } else if(gl.tex_parameter_i) {
         gl.tex_parameter_i(GL.texture_2d, GL.texture_wrap_s, GL.repeat);
         gl.tex_parameter_i(GL.texture_2d, GL.texture_wrap_t, GL.repeat);
+        gl.tex_parameter_i(GL.texture_2d, GL.texture_min_filter, GL.linear);
+        gl.tex_parameter_i(GL.texture_2d, GL.texture_mag_filter, GL.linear);
     }
     glapi.try_set_uniform(prog(), "tilingSide", float(_tiling_side));
     glapi.try_set_uniform(prog(), "tilingTex", GL.texture0);
