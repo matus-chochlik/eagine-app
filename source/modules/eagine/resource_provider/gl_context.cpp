@@ -154,6 +154,10 @@ protected:
         return _prog;
     }
 
+    auto cube_size_px() const noexcept -> int {
+        return _size;
+    }
+
 private:
     auto _build_screen() noexcept -> oglplus::geometry_and_bindings;
     void _render_tile() noexcept;

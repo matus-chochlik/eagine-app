@@ -160,7 +160,7 @@ float thinCloudSample(Ray sample, Sphere planet, vec2 offset, float scale) {
 }
 //------------------------------------------------------------------------------
 float thinCloudDensity(Ray sample, Sphere planet, Sphere atmosphere) {
-	return 0.00025*
+	return 0.0001*
 		mix(
 			thinCloudSample(sample, planet, vec2(11.1, 63.1), 0.33),
 			thinCloudSample(sample, planet, vec2(23.7, 31.5), 0.19),
@@ -211,13 +211,14 @@ vec4 clearAirColor(Ray viewRay, Sphere planet, Sphere atmosphere) {
 
 	float atmHit = max(sphereHit(viewRay, atmosphere), 0.0);
 	float vapor = min(thinCloudDensity(viewRay, planet, atmosphere, atmHit), 1.0);
-	float sunDown = max(to01(0.90-sunDirection.y), 0.0);
 	float atmDepth = max(atmHit - atmThickness, 0.0) / (atmThickness * 2.0);
+	float sunDown1 = clamp((0.1-sunDirection.y), 0.0, 0.2);
+	float sunDown2 = max(to01(0.9-sunDirection.y), 0.0);
 
 	float directLight = dot01(viewRay.direction, sunDirection);
 	float scatterLight = pow(
 		directLight,
-		mix(64.0, 0.25, min(vapor + sunDown*0.5, 1.0)));
+		mix(64.0, 0.5, min(vapor + sunDown1 * atmDepth, 1.0)));
 
 	float atmShadow = max(sphereHit(
 		raySample(
@@ -226,7 +227,7 @@ vec4 clearAirColor(Ray viewRay, Sphere planet, Sphere atmosphere) {
 			sunDirection),
 		atmosphere), 0.0);
 	atmShadow = min(sqrt(atmShadow / atmThickness), 1.0);
-	atmShadow += atmDepth * pow(sunDown, 4.0);
+	atmShadow += atmDepth * pow(sunDown2, 4.0);
 	atmShadow = 1.0 - sqrt(exp(-atmShadow));
 
 	float planetShadow = clamp(sphereHit(
@@ -235,7 +236,7 @@ vec4 clearAirColor(Ray viewRay, Sphere planet, Sphere atmosphere) {
 			atmHit * 1.1,
 			sunDirection),
 		planet), 0.0, 1.0);
-	planetShadow *= min(pow(max(-sunDirection.y*2.2, 0.0), 2.0), 1.0);
+	planetShadow *= min(pow(max(-sunDirection.y*2.0, 0.0), 2.0), 1.0);
 
 	vec4 sun = mix(
 		mix(vec4(1.1), vec4(0.90, 0.80, 0.55, 0.80), atmShadow),

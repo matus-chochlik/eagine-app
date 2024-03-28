@@ -29,7 +29,7 @@ struct cubemap_scene {
     float cloud_altitude_m{3'000.F};
     float cloud_thickness_m{1'000.F};
     float cloudiness_factor{0.5F};
-    float above_ground_m{100.F};
+    float above_ground_m{25.F};
     float sun_azimuth_deg{0.F};
     float sun_elevation_deg{45.F};
     float sun_dot{0.003F};
@@ -121,7 +121,7 @@ public:
     auto prepare_render() noexcept -> msgbus::blob_preparation_result final;
 
 private:
-    static auto _tile_size() noexcept -> int;
+    static auto _tile_size(int) noexcept -> int;
     void _process_cell(const byte);
     void _process_line(const string_view);
 
@@ -157,7 +157,7 @@ eagitexi_cubemap_sky_renderer::eagitexi_cubemap_sky_renderer(
   const cubemap_scene& scene,
   shared_holder<gl_rendered_blob_context> context,
   int size) noexcept
-  : eagitexi_cubemap_renderer{parent, "rendering sky cube-map", params, context, size, _tile_size()}
+  : eagitexi_cubemap_renderer{parent, "rendering sky cube-map", params, context, size, _tile_size(size)}
   , _tiling_tex{gl_api().create_texture_object(gl_api().texture_2d)}
   , _shared{shared}
   , _tiling_line{*this, 1024}
@@ -170,8 +170,17 @@ eagitexi_cubemap_sky_renderer::~eagitexi_cubemap_sky_renderer() noexcept {
     _tiling.clean_up(_shared.loader);
 }
 //------------------------------------------------------------------------------
-auto eagitexi_cubemap_sky_renderer::_tile_size() noexcept -> int {
-    return 8;
+auto eagitexi_cubemap_sky_renderer::_tile_size(int size) noexcept -> int {
+    if(size <= 256) {
+        return 16;
+    }
+    if(size <= 1024) {
+        return 8;
+    }
+    if(size <= 4092) {
+        return 4;
+    }
+    return 2;
 }
 //------------------------------------------------------------------------------
 auto eagitexi_cubemap_sky_renderer::prepare_render() noexcept
@@ -507,7 +516,7 @@ auto eagitexi_cubemap_sky_provider::get_resource_io(const url& locator)
 //------------------------------------------------------------------------------
 auto eagitexi_cubemap_sky_provider::get_blob_timeout(const span_size_t) noexcept
   -> std::chrono::seconds {
-    return adjusted_duration(std::chrono::minutes{10});
+    return adjusted_duration(std::chrono::hours{4});
 }
 //------------------------------------------------------------------------------
 void eagitexi_cubemap_sky_provider::for_each_locator(
