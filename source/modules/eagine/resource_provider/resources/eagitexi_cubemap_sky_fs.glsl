@@ -145,7 +145,7 @@ float cloudSample(vec3 sample, Sphere planet, vec2 offset, float scale) {
 	return tilingSample(cloudCoord(sample, planet, offset, scale).xy);
 }
 //------------------------------------------------------------------------------
-float groundVaporSample(Ray sample, Sphere planet, vec2 offset, float scale) {
+float thinCloudSample(Ray sample, Sphere planet, vec2 offset, float scale) {
 	vec3 coord = cloudCoord(
 		sample.origin,
 		planet,
@@ -159,24 +159,24 @@ float groundVaporSample(Ray sample, Sphere planet, vec2 offset, float scale) {
 		exp(-coord.z * 2.0);
 }
 //------------------------------------------------------------------------------
-float groundVaporDensity(Ray sample, Sphere planet, Sphere atmosphere) {
+float thinCloudDensity(Ray sample, Sphere planet, Sphere atmosphere) {
 	return 0.00025*
 		mix(
-			groundVaporSample(sample, planet, vec2(11.1, 63.1), 0.33),
-			groundVaporSample(sample, planet, vec2(23.7, 31.5), 0.19),
+			thinCloudSample(sample, planet, vec2(11.1, 63.1), 0.33),
+			thinCloudSample(sample, planet, vec2(23.7, 31.5), 0.19),
 			0.5)*
 		mix(
-			groundVaporSample(sample, planet, vec2(93.1, 99.3), 0.07),
-			groundVaporSample(sample, planet, vec2(41.7, 31.5), 0.03),
+			thinCloudSample(sample, planet, vec2(93.1, 99.3), 0.07),
+			thinCloudSample(sample, planet, vec2(41.7, 31.5), 0.03),
 			0.5)*
 		mix(
-			groundVaporSample(sample, planet, vec2(29.1, 59.1), 0.02),
-			groundVaporSample(sample, planet, vec2(71.3, 97.1), 0.01),
+			thinCloudSample(sample, planet, vec2(29.1, 59.1), 0.02),
+			thinCloudSample(sample, planet, vec2(71.3, 97.1), 0.01),
 			0.5);
 }
 //------------------------------------------------------------------------------
 float vaporDensity(Ray sample, Sphere planet, Sphere atmosphere) {
-	return groundVaporDensity(sample, planet, atmosphere);
+	return thinCloudDensity(sample, planet, atmosphere);
 }
 //------------------------------------------------------------------------------
 float airDensity(vec3 sample, Sphere planet, Sphere atmosphere) {
@@ -189,10 +189,6 @@ float sunHit(Ray ray) {
 	float d = dot(ray.direction, sunDirection);
 	return max(sign(d + sunDot - 1.0), 0.0);
 }
-
-vec4 sunLight() {
-	return vec4(1.0);
-}
 //------------------------------------------------------------------------------
 float thinCloudDensity(
 	Ray viewRay,
@@ -203,18 +199,18 @@ float thinCloudDensity(
 	int sampleCount = 1000;
 	float sampleLen = atmHit / float(sampleCount);
 	for(int s=1; s<=sampleCount; ++s) {
-		vapor += sampleLen * vaporDensity(
+		vapor += sampleLen * thinCloudDensity(
 			raySample(viewRay, s*sampleLen),
 			planet,
 			atmosphere);
 	}
-	return pow(vapor, 0.5);
+	return sqrt(vapor);
 }
 //------------------------------------------------------------------------------
 vec4 clearAirColor(Ray viewRay, Sphere planet, Sphere atmosphere) {
 
 	float atmHit = max(sphereHit(viewRay, atmosphere), 0.0);
-	float vapor = thinCloudDensity(viewRay, planet, atmosphere, atmHit);
+	float vapor = min(thinCloudDensity(viewRay, planet, atmosphere, atmHit), 1.0);
 
 	float directLight = dot01(viewRay.direction, sunDirection);
 	float scatterLight = pow(directLight, mix(128.0, 0.5, min(vapor, 1.0)));
@@ -226,7 +222,10 @@ vec4 clearAirColor(Ray viewRay, Sphere planet, Sphere atmosphere) {
 			sunDirection),
 		atmosphere), 0.0);
 	atmShadow = min(sqrt(atmShadow / atmThickness), 1.0);
-	atmShadow = 1.0 - atmShadow;
+	atmShadow +=
+		max(atmHit - atmThickness, 0.0) / (atmThickness * 2.0)*
+		pow(to01(1.0-sunDirection.y), 4.0);
+	atmShadow = 1.0 - sqrt(exp(-atmShadow));
 
 	float planetShadow = clamp(sphereHit(
 		raySample(
@@ -234,14 +233,23 @@ vec4 clearAirColor(Ray viewRay, Sphere planet, Sphere atmosphere) {
 			atmHit * 1.1,
 			sunDirection),
 		planet), 0.0, 1.0);
-	planetShadow = 1.0 - planetShadow;
 
-	vec4 sun = mix(sunLight(), vec4(0.7), vapor);
+	vec4 sun = mix(
+		mix(vec4(1.1), vec4(0.90, 0.80, 0.55, 0.80), atmShadow),
+		mix(vec4(0.9), vec4(0.81, 0.79, 0.75, 0.80), atmShadow),
+		vapor);
 	vec4 c1 = mix(
 		mix(vec4(0.15, 0.25, 0.40, 0.5), vec4(0.7), vapor),
 		mix(vec4(1.00, 0.95, 0.80, 1.0), vec4(0.7), vapor),
 		scatterLight);
-	return mix(c1, sun, sunHit(viewRay));
+	vec4 c2 = mix(
+		mix(vec4(0.25, 0.15, 0.05, 0.2), vec4(0.30, 0.23, 0.20, 0.2), vapor),
+		mix(vec4(0.80, 0.55, 0.20, 0.3), vec4(0.50, 0.35, 0.30, 0.3), vapor),
+		scatterLight);
+	return mix(
+		mix(c1, c2, atmShadow),
+		sun,
+		sunHit(viewRay));
 }
 //------------------------------------------------------------------------------
 vec3 planetCenter() {
