@@ -102,9 +102,10 @@ vec3 cloudCoord(
 	float altitude = distance(planet.center, sample) - planet.radius;
 	scale = 10.0 / scale;
 	sample = normalize(sample);
+	offset = (scale * offset / tilingSide);
 	return vec3(
-		offset.x+scale*(atan(sample.y, sample.x)+3.14157),
-		offset.y+scale*(asin(sample.z)),
+		offset.x+scale * (atan(sample.y, sample.x)+3.14157),
+		offset.y+scale * (asin(sample.z)),
 		2.0*(altitude - altMin)/(0.001 + altMax - altMin)-1.0);
 }
 //------------------------------------------------------------------------------
@@ -120,7 +121,7 @@ vec3 cloudCoord(vec3 sample, Sphere planet, vec2 offset, float scale) {
 //------------------------------------------------------------------------------
 float tilingSample(vec2 coord) {
 	coord = coord * (512.0 / tilingSide);
-	return float(texture(tilingTex, coord).r) / 16.0;
+	return float(texture(tilingTex, coord).r) / 15.0;
 }
 //------------------------------------------------------------------------------
 float tilingSample(
@@ -155,7 +156,7 @@ float groundVaporSample(Ray sample, Sphere planet, vec2 offset, float scale) {
 
 	return tilingSample(coord.xy+offset*float(int(coord.z*20.0))*0.05)*
 		max(1.0-sample.direction.y, 0.0)*
-		exp(-coord.z * 4.0);
+		exp(-coord.z * 2.0);
 }
 //------------------------------------------------------------------------------
 float groundVaporDensity(Ray sample, Sphere planet, Sphere atmosphere) {
@@ -237,8 +238,8 @@ vec4 clearAirColor(Ray viewRay, Sphere planet, Sphere atmosphere) {
 
 	vec4 sun = mix(sunLight(), vec4(0.7), vapor);
 	vec4 c1 = mix(
-		mix(vec4(0.15, 0.25, 0.40, 0.5), vec4(0.8), vapor),
-		mix(vec4(1.00, 0.95, 0.80, 1.0), vec4(0.8), vapor),
+		mix(vec4(0.15, 0.25, 0.40, 0.5), vec4(0.7), vapor),
+		mix(vec4(1.00, 0.95, 0.80, 1.0), vec4(0.7), vapor),
 		scatterLight);
 	return mix(c1, sun, sunHit(viewRay));
 }
