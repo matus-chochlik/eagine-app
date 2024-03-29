@@ -17,16 +17,6 @@ uniform isampler2D tilingTex;
 vec3 clearDirection = normalize(vec3(0.1, 0.2, 1.0));
 float atmRadius = planetRadius+atmThickness;
 //------------------------------------------------------------------------------
-struct Ray {
-	vec3 origin;
-	vec3 direction;
-};
-//------------------------------------------------------------------------------
-struct Sphere {
-	vec3 center;
-	float radius;
-};
-//------------------------------------------------------------------------------
 float to01(float x) {
 	return 0.5 + 0.5 * x;
 }
@@ -38,6 +28,51 @@ float sin01(float x) {
 float dot01(vec3 l, vec3 r) {
 	return to01(dot(l, r));
 }
+
+float inf01(float x, float f) {
+	return 1.0 - pow(exp(-f*x), 0.5 / f);
+}
+//------------------------------------------------------------------------------
+struct Ray {
+	vec3 origin;
+	vec3 direction;
+};
+
+struct Sphere {
+	vec3 center;
+	float radius;
+};
+
+#define SphereHit vec2
+//------------------------------------------------------------------------------
+SphereHit sphereHit(Ray ray, Sphere sphere) {
+    float rad2 = pow(sphere.radius, 2.0);
+    vec3 dir = sphere.center - ray.origin;
+    float tca = dot(dir, ray.direction);
+
+    float d2 = dot(dir, dir) - pow(tca, 2.0);
+	float radd2 = rad2 - d2;
+	float sradd2 = sign(radd2);
+    float thc = sqrt(sradd2*radd2) * max(sradd2, 0.0);
+	vec2 t = vec2(tca) - vec2(thc,-thc);
+	vec2 p = max(sign(t), vec2(0.0));
+
+	return vec2(
+		mix(tca, mix(t.y, t.x, p.x), p.y),
+		mix(tca, t.y, p.y));
+}
+//------------------------------------------------------------------------------
+float hitNear(SphereHit hit) {
+	return hit.x;
+}
+//------------------------------------------------------------------------------
+float hitFar(SphereHit hit) {
+	return hit.y;
+}
+//------------------------------------------------------------------------------
+bool isValidHit(SphereHit hit) {
+	return hitNear(hit) >= 0.0;
+}
 //------------------------------------------------------------------------------
 Ray raySample(Ray ray, float rayDist) {
 	return Ray(ray.origin + ray.direction * rayDist, ray.direction);
@@ -45,34 +80,6 @@ Ray raySample(Ray ray, float rayDist) {
 //------------------------------------------------------------------------------
 Ray raySample(Ray ray, float rayDist, vec3 direction) {
 	return Ray(ray.origin + ray.direction * rayDist, normalize(direction));
-}
-//------------------------------------------------------------------------------
-bool isValidHit(float param) {
-	return param >= 0.0;
-}
-//------------------------------------------------------------------------------
-float sphereHit(Ray ray, Sphere sphere) {
-    float rad2 = pow(sphere.radius, 2.0);
-    vec3 dir = sphere.center - ray.origin;
-    float tca = dot(dir, ray.direction);
-
-    float d2 = dot(dir, dir) - pow(tca, 2.0);
-    if(rad2 < d2) {
-		return -1.0;
-	}
-    float thc = sqrt(rad2 - d2);
-    float t0 = tca - thc;
-    float t1 = tca + thc;
-
-    if (t0 >= 0.0) {
-        return t0;
-    } 
-
-    if (t1 >= 0.0) {
-        return t1;
-    }
-
-    return -1.0;
 }
 //------------------------------------------------------------------------------
 Ray getViewRay() {
@@ -207,15 +214,11 @@ float thinCloudDensity(
 	return pow(vapor, 0.25);
 }
 //------------------------------------------------------------------------------
-float inf01(float x, float f) {
-	return 1.0 - pow(exp(-f*x), 0.5 / f);
-}
-//------------------------------------------------------------------------------
 vec4 clearAirColor(Ray viewRay, Sphere planet, Sphere atmosphere) {
 
 	float directLight = dot01(viewRay.direction, sunDirection);
 
-	float atmHit = max(sphereHit(viewRay, atmosphere), 0.0);
+	float atmHit = max(hitNear(sphereHit(viewRay, atmosphere)), 0.0);
 	float vapor = min(thinCloudDensity(viewRay, planet, atmosphere, atmHit), 1.0);
 	float atmDepth1 = 0.5 * sqrt(atmHit / atmThickness);
 	float atmDepth2 = max(atmDepth1 - 1.0, 0.0);
@@ -225,12 +228,12 @@ vec4 clearAirColor(Ray viewRay, Sphere planet, Sphere atmosphere) {
 		directLight,
 		mix(64.0, 0.5, min(vapor * atmDepth2, 1.0)));
 
-	float atmShadowHit = max(sphereHit(
+	float atmShadowHit = max(hitNear(sphereHit(
 		raySample(
 			viewRay,
 			atmHit * mix(0.99, 1.0, directLight),
 			sunDirection),
-		atmosphere), 0.0);
+		atmosphere)), 0.0);
 	float atmShadowDepth1 = sqrt(atmShadowHit / atmThickness);
 	float atmShadowDepth2 = max(
 		atmShadowDepth1 +
@@ -240,12 +243,12 @@ vec4 clearAirColor(Ray viewRay, Sphere planet, Sphere atmosphere) {
 	float atmScatter1 = inf01(atmShadowDepth1, 4.0);
 	float atmScatter2 = inf01(atmShadowDepth2, 4.0);
 
-	float planetShadow = max(sphereHit(
+	float planetShadow = max(hitNear(sphereHit(
 		raySample(
 			viewRay,
 			atmHit * 1.1,
 			sunDirection),
-		planet), 0.0);
+		planet)), 0.0);
 	planetShadow = sign(planetShadow);
 	planetShadow = min(pow(max(-sunDirection.y*2.0, 0.0), 2.0), 1.0);
 
@@ -308,9 +311,9 @@ Sphere getAtmosphere() {
 void main() {
 	Ray viewRay = getViewRay();
 	Sphere planet = getPlanet();
-	float planetHit = sphereHit(viewRay, planet);
+	SphereHit planetHit = sphereHit(viewRay, planet);
 	if(isValidHit(planetHit)) {
-		fragColor = surfaceColor(viewRay, planetHit, planet);
+		fragColor = surfaceColor(viewRay, hitNear(planetHit), planet);
 	} else {
 		fragColor = skyColor(viewRay, planet, getAtmosphere());
 	}
