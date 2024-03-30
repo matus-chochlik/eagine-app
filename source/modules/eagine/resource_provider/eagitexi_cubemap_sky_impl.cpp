@@ -26,6 +26,7 @@ namespace eagine::app {
 struct cubemap_scene {
     float planet_radius_m{6'370'000.F};
     float atmosphere_thickness_m{100'000.F};
+    float vapor_thickness_ratio{0.04F};
     float cloud_altitude_m{3'000.F};
     float cloud_thickness_m{1'000.F};
     float cloudiness_factor{0.5F};
@@ -63,9 +64,11 @@ constexpr auto data_member_mapping(
       float,
       float,
       float,
+      float,
       std::string>(
       {"planet_radius_m", &cubemap_scene::planet_radius_m},
       {"atmosphere_thickness_m", &cubemap_scene::atmosphere_thickness_m},
+      {"vapor_thickness_ratio", &cubemap_scene::vapor_thickness_ratio},
       {"cloud_altitude_m", &cubemap_scene::cloud_altitude_m},
       {"cloud_thickness_m", &cubemap_scene::cloud_thickness_m},
       {"cloudiness_factor", &cubemap_scene::cloudiness_factor},
@@ -79,6 +82,7 @@ constexpr auto data_member_mapping(
 cubemap_scene::cubemap_scene(const url& l) noexcept
   : planet_radius_m{query_arg<float>(l, "planet_radius_m", 6'370'000.F)}
   , atmosphere_thickness_m{query_arg<float>(l, "atm_thickness_m", 100'000.F)}
+  , vapor_thickness_ratio{query_arg<float>(l, "vapor_thickness_ratio", 0.04F)}
   , cloud_altitude_m{query_arg<float>(l, "cloud_altitude_m", 3'000.F)}
   , cloud_thickness_m{query_arg<float>(l, "cloud_thickness_m", 1'000.F)}
   , cloudiness_factor{query_arg<float>(l, "cloudiness_factor", 0.5F)}
@@ -122,7 +126,7 @@ public:
 
 private:
     static auto _tile_size(int) noexcept -> int;
-    void _process_cell(const byte);
+    void _process_cell(byte);
     void _process_line(const string_view);
 
     void _line_loaded(resource_loader::string_list_load_info& info) noexcept;
@@ -172,15 +176,15 @@ eagitexi_cubemap_sky_renderer::~eagitexi_cubemap_sky_renderer() noexcept {
 //------------------------------------------------------------------------------
 auto eagitexi_cubemap_sky_renderer::_tile_size(int size) noexcept -> int {
     if(size <= 256) {
-        return 16;
-    }
-    if(size <= 1024) {
         return 8;
     }
-    if(size <= 4092) {
+    if(size <= 1024) {
         return 4;
     }
-    return 2;
+    if(size <= 4092) {
+        return 2;
+    }
+    return 1;
 }
 //------------------------------------------------------------------------------
 auto eagitexi_cubemap_sky_renderer::prepare_render() noexcept
@@ -211,6 +215,7 @@ auto eagitexi_cubemap_sky_renderer::_build_program(
 
     glapi.try_set_uniform(prog, "planetRadius", scene.planet_radius_m);
     glapi.try_set_uniform(prog, "atmThickness", scene.atmosphere_thickness_m);
+    glapi.try_set_uniform(prog, "vaporThickness", scene.vapor_thickness_ratio);
     glapi.try_set_uniform(prog, "cloudAltitude", scene.cloud_altitude_m);
     glapi.try_set_uniform(prog, "cloudThickness", scene.cloud_thickness_m);
     glapi.try_set_uniform(prog, "cloudiness", scene.cloudiness_factor);
@@ -227,19 +232,18 @@ void eagitexi_cubemap_sky_renderer::_setup_tex_storage() noexcept {
     gl.active_texture(GL.texture0);
     gl.bind_texture(GL.texture_2d, _tiling_tex);
     if(gl.texture_storage2d) {
-        gl.texture_storage2d(
-          _tiling_tex, 1, GL.r8ui, _tiling_side, _tiling_side);
+        gl.texture_storage2d(_tiling_tex, 1, GL.r8, _tiling_side, _tiling_side);
     } else if(glapi.tex_storage2d) {
-        gl.tex_storage2d(GL.texture_2d, 1, GL.r8ui, _tiling_side, _tiling_side);
+        gl.tex_storage2d(GL.texture_2d, 1, GL.r8, _tiling_side, _tiling_side);
     } else if(glapi.tex_image2d) {
         gl.tex_image2d(
           GL.texture_2d,
           0,
-          GL.r8ui,
+          GL.r8,
           _tiling_side,
           _tiling_side,
           0, // border
-          GL.red_integer,
+          GL.red,
           GL.unsigned_byte_,
           {});
     }
@@ -256,7 +260,7 @@ void eagitexi_cubemap_sky_renderer::_add_tex_image_row() noexcept {
           _tiling_yofs,
           _tiling_side,
           1,
-          GL.red_integer,
+          GL.red,
           GL.unsigned_byte_,
           view(_tiling_line));
     } else if(gl.tex_sub_image2d) {
@@ -269,7 +273,7 @@ void eagitexi_cubemap_sky_renderer::_add_tex_image_row() noexcept {
           _tiling_yofs,
           _tiling_side,
           1,
-          GL.red_integer,
+          GL.red,
           GL.unsigned_byte_,
           view(_tiling_line));
     }
@@ -294,7 +298,8 @@ void eagitexi_cubemap_sky_renderer::_set_tex_parameters() noexcept {
     glapi.try_set_uniform(prog(), "tilingTex", GL.texture0);
 }
 //------------------------------------------------------------------------------
-void eagitexi_cubemap_sky_renderer::_process_cell(const byte b) {
+void eagitexi_cubemap_sky_renderer::_process_cell(byte b) {
+    b = b << 4U | b;
     append_to(view_one(b), _tiling_line);
 }
 //------------------------------------------------------------------------------
