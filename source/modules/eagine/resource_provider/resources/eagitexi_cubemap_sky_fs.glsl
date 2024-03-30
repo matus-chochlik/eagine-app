@@ -248,7 +248,7 @@ Segment cloudsIntersection(Ray ray, Sphere planet) {
 		vec2 hMinMax = vec2(
 			min(hitNear(topHit), hitNear(bottomHit)),
 			max(hitFar(topHit), hitFar(bottomHit)));
-	 
+
 		return Segment(
 			raySample(ray, hMinMax.x).origin,
 			raySample(ray, hMinMax.y).origin,
@@ -268,18 +268,32 @@ Segment cloudsIntersection(Ray ray, Sphere planet) {
 	}
 }
 //------------------------------------------------------------------------------
-float thickCloudSample(
+float thickCloudSampleB(
 	vec3 sample,
 	Sphere planet,
 	vec2 offset,
-	float omult,
 	float scale,
 	vec2 coordAlt) {
 
 	return tilingSample(cloudCoord(
 		sample,
 		planet,
-		offset*(1.0 + omult*fsteps(coordAlt.x, 31)/scale),
+		offset,
+		scale*0.5,
+		coordAlt).xy);
+}
+//------------------------------------------------------------------------------
+float thickCloudSampleN(
+	vec3 sample,
+	Sphere planet,
+	vec2 offset,
+	float scale,
+	vec2 coordAlt) {
+
+	return tilingSample(cloudCoord(
+		sample,
+		planet,
+		offset*(1.0 + fsteps(coordAlt.x, 31)/scale),
 		scale,
 		coordAlt).xy);
 }
@@ -293,23 +307,26 @@ float thickCloudDensity(vec3 sample, Sphere planet) {
 
 	float sc = 8.0;
 
-	float s320000 = thickCloudSample(sample, planet, fibofs( 0, 0), 0.0, 32.000, ca);
-	float s160000 = thickCloudSample(sample, planet, fibofs( 2, 3), 0.0, 16.000, ca);
-	float s080000 = thickCloudSample(sample, planet, fibofs( 4, 5), 0.0,  8.000, ca);
-	float s040000 = thickCloudSample(sample, planet, fibofs( 5, 6), 0.0,  4.000, ca);
-	float s020000 = thickCloudSample(sample, planet, fibofs( 6, 7), 0.0,  2.000, ca);
-	float s005000 = thickCloudSample(sample, planet, fibofs( 8, 9), 0.0, 0.5000, ca);
-	float s002500 = thickCloudSample(sample, planet, fibofs( 9,10), 0.0, 0.2500, ca);
-	float s001250 = thickCloudSample(sample, planet, fibofs(10,11), 0.0, 0.1250, ca);
-	float s000625 = thickCloudSample(sample, planet, fibofs(11,12), 0.0, 0.0625, ca);
-	float snoise  = thickCloudSample(sample, planet, fibofs(12,13), 1.0, 0.0618, ca);
+	float s320000 = thickCloudSampleB(sample, planet, fibofs( 0, 0), 32.000, ca);
+	float s160000 = thickCloudSampleB(sample, planet, fibofs( 2, 3), 16.000, ca);
+	float s080000 = thickCloudSampleB(sample, planet, fibofs( 4, 5),  8.000, ca);
+	float s040000 = thickCloudSampleB(sample, planet, fibofs( 5, 6),  4.000, ca);
+	float s020000 = thickCloudSampleB(sample, planet, fibofs( 6, 7),  2.000, ca);
+	float s010000 = thickCloudSampleB(sample, planet, fibofs( 7, 8),  1.000, ca);
+	float s005000 = thickCloudSampleB(sample, planet, fibofs( 8, 9), 0.5000, ca);
+	float s002500 = thickCloudSampleB(sample, planet, fibofs( 9,10), 0.2500, ca);
+	float s001250 = thickCloudSampleB(sample, planet, fibofs(10,11), 0.1250, ca);
+	float s000625 = thickCloudSampleB(sample, planet, fibofs(11,12), 0.0625, ca);
+	float snoise  = thickCloudSampleN(sample, planet, fibofs(12,13), 0.0314, ca);
 
 	float v = 1.0;
-	v = v * max(1.07*pow(s320000, 2.00)-0.07, 0.0); 
-	v = v * max(1.15*pow(s160000, 2.00)-0.15, 0.0); 
-	v = v * max(1.20*pow(s080000, 2.00)-0.20, 0.0); 
-	v = v * max(1.25*pow(s040000, 2.00)-0.25, 0.0); 
-	v = v * max(1.10*pow(s020000, 3.00)-0.10, 0.0); 
+	v = v * max(1.05*pow(s320000, 2.00)-0.05, 0.0);
+	v = v * max(1.15*pow(s160000, 2.00)-0.15, 0.0);
+	v = v * max(1.20*pow(s080000, 2.00)-0.20, 0.0);
+	v = v * max(1.25*pow(s040000, 2.00)-0.25, 0.0);
+	v = v * max(1.15*pow(s020000, 3.00)-0.15, 0.0);
+	v = v * max(1.10*pow(s020000, 3.00)-0.10, 0.0);
+	v = v * max(1.10*pow(s010000, 3.00)-0.10, 0.0);
 
 	v = sqrt(v);
 
