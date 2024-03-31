@@ -233,9 +233,7 @@ float thickCloudDensity(vec3 location, Sphere planet) {
 		cloudAltitude-cloudThickness*0.5,
 		cloudAltitude+cloudThickness*0.5);
 
-	float sc = 8.0;
-
-	float s320000 = thickCloudSampleB(location, planet, fib2( 0, 0), 32.000);
+	float s640000 = thickCloudSampleB(location, planet, fib2( 0, 0), 64.000);
 	float s160000 = thickCloudSampleB(location, planet, fib2( 2, 3), 16.000);
 	float s080000 = thickCloudSampleB(location, planet, fib2( 4, 5),  8.000);
 	float s040000 = thickCloudSampleB(location, planet, fib2( 5, 6),  4.000);
@@ -248,25 +246,26 @@ float thickCloudDensity(vec3 location, Sphere planet) {
 	float snoise  = thickCloudSampleN(location, planet, fib2(12,13), 0.0314, ca);
 
 	float v = 1.0;
-	v = v * max(1.05*pow(s320000, 2.00)-0.05, 0.0);
-	v = v * max(1.10*pow(s160000, 2.00)-0.10, 0.0);
-	v = v * max(1.20*pow(s080000, 2.00)-0.20, 0.0);
-	v = v * max(1.25*pow(s040000, 2.00)-0.25, 0.0);
-	v = v * max(1.15*pow(s020000, 2.00)-0.15, 0.0);
-	v = v * max(1.10*pow(s020000, 3.00)-0.10, 0.0);
-	v = v * max(1.10*pow(s010000, 3.00)-0.10, 0.0);
+	v = v * max(2.00*sqrt(s640000)-1.00, 0.0);
+	v = v * max(2.00*sqrt(s160000)-1.00, 0.0);
+	v = v * max(2.00*sqrt(s080000)-1.00, 0.0);
+	v = v * max(1.50*sqrt(s040000)-0.50, 0.0);
+	v = v * max(1.50*sqrt(s020000)-0.50, 0.0);
+	v = v * max(1.25*sqrt(s020000)-0.25, 0.0);
+	v = v * max(1.25*sqrt(s010000)-0.25, 0.0);
 
-	v = sqrt(v);
+	v = pow(v, 1.0 / 7.0);
 
 	v *= mix(mix(s005000, s002500, 0.5), mix(s001250, s000625, 0.5), 0.5);
 
 	return pow(ca.y, 1.0 / 4.0)*
-		max(sign(8.0*sqrt(v) - abs(ca.x)), 0.0)*
-		mix(1.0, snoise, 0.65);
+		max(sign(sqrt(v) - abs(ca.x)), 0.0)*
+		mix(1.0, snoise, 0.55);
 }
 //------------------------------------------------------------------------------
 struct AtmosphereSample {
 	Ray viewRay;
+	Ray lightRay;
 	Segment cloudsIntersection;
 	float hitLight;
 	float directLight;
@@ -290,6 +289,7 @@ AtmosphereSample atmSample(
 	float sunDown = max(-lightDirection.y, 0.0);
 	return AtmosphereSample(
 		viewRay,
+		lightRay,
 		cloudsIntersection(lightRay, planet),
 		max(sign(lightAngle-acos(directLight)), 0.0),
 		directLight,
@@ -306,6 +306,27 @@ AtmosphereSample atmSample(
 			sign(max(hitNear(sphereHit(lightRay, planet)), 0.0))*sqrt(sunDown),
 			1.0,
 			sunDown));
+}
+//------------------------------------------------------------------------------
+vec2 cloudSample(AtmosphereSample a, Sphere planet) {
+	float occlusion = 1.0;
+	if(a.cloudsIntersection.is_valid) {
+		const int sampleCount = 100;
+		const float isc = 1.0 / float(sampleCount);
+		vec3 direction = a.cloudsIntersection.far - a.lightRay.origin;
+		float l = length(direction);
+		direction = direction / l;
+		for(int s = 1; s <= sampleCount; ++s) {
+			float z = float(s) * isc;
+			float density = min(0.5 * l * thickCloudDensity(
+				a.lightRay.origin + direction * l * z,
+				planet), 1.0);
+			occlusion = occlusion * mix(1.0, 0.95, density);
+		}
+	}
+	return vec2(
+		occlusion,
+		min(2.0 * thickCloudDensity(a.lightRay.origin, planet), 1.0));
 }
 //------------------------------------------------------------------------------
 vec4 sunlightColor(AtmosphereSample a) {
@@ -403,12 +424,17 @@ vec4 skyColor(Ray viewRay, Sphere planet, Sphere atmosphere) {
 			dist,
 			planet,
 			atmosphere);
+
+		vec2 cloud = cloudSample(a, planet);
 		vec4 sunLight = sunlightColor(a);
 		vec4 airLight = clearAirColor(a, sampleLen);
 		color = mix(
-			mix(color, airLight, airDensityMult * sampleRatio),
-			sunLight,
-			a.hitLight*airLight.a);
+			mix(
+				mix(color, airLight, airDensityMult * sampleRatio),
+				sunLight,
+				a.hitLight*airLight.a*cloud.y),
+			sunLight * cloud.x,
+			cloud.y);
 	}
 
 	sampleLen = 10.0;
@@ -422,12 +448,8 @@ vec4 skyColor(Ray viewRay, Sphere planet, Sphere atmosphere) {
 			dist,
 			planet,
 			atmosphere);
-		vec4 sunLight = sunlightColor(a);
 		vec4 airLight = clearAirColor(a, sampleLen);
-		color = mix(
-			mix(color, airLight, airDensityMult * sampleRatio),
-			sunLight,
-			a.hitLight*airLight.a);
+		color = mix(color, airLight, airDensityMult * sampleRatio * airLight.a);
 	}
 
 	return color;
