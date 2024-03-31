@@ -222,7 +222,7 @@ float thickCloudSampleN(
 	return tilingSample(cloudCoord(
 		location,
 		planet,
-		offset*(1.0 + fsteps(coordAlt.x, 31)/scale),
+		offset*(1.0 + offset*fsteps(coordAlt.x, 31)/scale),
 		scale));
 }
 //------------------------------------------------------------------------------
@@ -246,20 +246,22 @@ float thickCloudDensity(vec3 location, Sphere planet) {
 	float snoise  = thickCloudSampleN(location, planet, fib2(12,13), 0.0314, ca);
 
 	float v = 1.0;
-	v = v * max(2.00*sqrt(s640000)-1.00, 0.0);
-	v = v * max(2.00*sqrt(s160000)-1.00, 0.0);
-	v = v * max(2.00*sqrt(s080000)-1.00, 0.0);
-	v = v * max(1.50*sqrt(s040000)-0.50, 0.0);
-	v = v * max(1.50*sqrt(s020000)-0.50, 0.0);
-	v = v * max(1.25*sqrt(s020000)-0.25, 0.0);
-	v = v * max(1.25*sqrt(s010000)-0.25, 0.0);
+	v = max(v - max(sqrt(s640000)-0.37, 0.0), 0.0);
+	v = max(v - max(sqrt(s160000)-0.41, 0.0), 0.0);
+	v = max(v - max(sqrt(s080000)-0.53, 0.0), 0.0);
+	v = max(v - max(sqrt(s040000)-0.61, 0.0), 0.0);
+	v = max(v - max(sqrt(s020000)-0.67, 0.0), 0.0);
+	v = max(v - max(sqrt(s010000)-0.71, 0.0), 0.0);
+	v = max(v - max(sqrt(s005000)-0.73, 0.0), 0.0);
+	v = max(v - max(sqrt(s002500)-0.83, 0.0), 0.0);
 
-	v = pow(v, 1.0 / 7.0);
+	float w = mix(
+		mix(s020000, s010000, 0.6),
+		mix(mix(s005000, s002500, 0.5), mix(s001250, s000625, 0.5), 0.5),
+		0.6);
 
-	v *= mix(mix(s005000, s002500, 0.5), mix(s001250, s000625, 0.5), 0.5);
-
-	return pow(ca.y, 1.0 / 4.0)*
-		max(sign(sqrt(v) - abs(ca.x)), 0.0)*
+	return pow(ca.y, 1.0 / 3.0)*
+		max(sign(v*w - abs(ca.x*pow(v, 0.75))), 0.0)*
 		mix(1.0, snoise, 0.55);
 }
 //------------------------------------------------------------------------------
@@ -326,7 +328,7 @@ vec2 cloudSample(AtmosphereSample a, Sphere planet) {
 	}
 	return vec2(
 		occlusion,
-		min(2.0 * thickCloudDensity(a.lightRay.origin, planet), 1.0));
+		min(3.0 * thickCloudDensity(a.lightRay.origin, planet), 1.0));
 }
 //------------------------------------------------------------------------------
 vec4 sunlightColor(AtmosphereSample a) {
