@@ -26,14 +26,14 @@ namespace eagine::app {
 struct cubemap_scene {
     float planet_radius_m{6'370'000.F};
     float atmosphere_thickness_m{100'000.F};
-    float vapor_thickness_ratio{0.04F};
+    float vapor_thickness_ratio{0.03F};
     float cloud_altitude_m{4'000.F};
     float cloud_thickness_m{2'000.F};
     float cloudiness_factor{0.5F};
     float above_ground_m{25.F};
     float sun_azimuth_deg{0.F};
     float sun_elevation_deg{45.F};
-    float sun_dot{0.003F};
+    float sun_apparent_angle{0.07F};
 
     std::string tiling_url;
 
@@ -75,21 +75,21 @@ constexpr auto data_member_mapping(
       {"above_ground_m", &cubemap_scene::above_ground_m},
       {"sun_azimuth_deg", &cubemap_scene::sun_azimuth_deg},
       {"sun_elevation_deg", &cubemap_scene::sun_elevation_deg},
-      {"sun_dot", &cubemap_scene::sun_dot},
+      {"sun_apparent_angle", &cubemap_scene::sun_apparent_angle},
       {"tiling_url", &cubemap_scene::tiling_url});
 }
 //------------------------------------------------------------------------------
 cubemap_scene::cubemap_scene(const url& l) noexcept
   : planet_radius_m{query_arg<float>(l, "planet_radius_m", 6'370'000.F)}
   , atmosphere_thickness_m{query_arg<float>(l, "atm_thickness_m", 100'000.F)}
-  , vapor_thickness_ratio{query_arg<float>(l, "vapor_thickness_ratio", 0.04F)}
+  , vapor_thickness_ratio{query_arg<float>(l, "vapor_thickness_ratio", 0.03F)}
   , cloud_altitude_m{query_arg<float>(l, "cloud_altitude_m", 4'000.F)}
   , cloud_thickness_m{query_arg<float>(l, "cloud_thickness_m", 2'000.F)}
   , cloudiness_factor{query_arg<float>(l, "cloudiness_factor", 0.5F)}
   , above_ground_m{query_arg<float>(l, "above_ground_m", 100.F)}
   , sun_azimuth_deg{query_arg<float>(l, "sun_azimuth_deg", 0.0F)}
   , sun_elevation_deg{query_arg<float>(l, "sun_elevation_deg", 45.0F)}
-  , sun_dot{query_arg<float>(l, "sun_dot", 0.003F)} {}
+  , sun_apparent_angle{query_arg<float>(l, "sun_apparent_angle", 0.07F)} {}
 //------------------------------------------------------------------------------
 template <typename T>
 auto cubemap_scene::query_arg(
@@ -220,7 +220,7 @@ auto eagitexi_cubemap_sky_renderer::_build_program(
     glapi.try_set_uniform(prog, "cloudThickness", scene.cloud_thickness_m);
     glapi.try_set_uniform(prog, "cloudiness", scene.cloudiness_factor);
     glapi.try_set_uniform(prog, "aboveGround", scene.above_ground_m);
-    glapi.try_set_uniform(prog, "sunDot", scene.sun_dot);
+    glapi.try_set_uniform(prog, "sunApparentAngle", scene.sun_apparent_angle);
     glapi.try_set_uniform(prog, "sunDirection", scene.sun_xyz());
 
     return prog;
