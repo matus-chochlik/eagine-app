@@ -176,9 +176,12 @@ eagitexi_cubemap_sky_renderer::~eagitexi_cubemap_sky_renderer() noexcept {
 //------------------------------------------------------------------------------
 auto eagitexi_cubemap_sky_renderer::_tile_size(int size) noexcept -> int {
     if(size <= 256) {
+        return 8;
+    }
+    if(size <= 1024) {
         return 4;
     }
-    if(size <= 512) {
+    if(size <= 2048) {
         return 2;
     }
     return 1;
