@@ -521,7 +521,7 @@ auto eagitexi_cubemap_sky_provider::get_resource_io(const url& locator)
 //------------------------------------------------------------------------------
 auto eagitexi_cubemap_sky_provider::get_blob_timeout(const span_size_t) noexcept
   -> std::chrono::seconds {
-    return adjusted_duration(std::chrono::hours{4});
+    return adjusted_duration(std::chrono::hours{24});
 }
 //------------------------------------------------------------------------------
 void eagitexi_cubemap_sky_provider::for_each_locator(

@@ -246,7 +246,7 @@ float thickCloudDensity(vec3 location, Sphere planet) {
 	float snoise  = thickCloudSampleN(location, planet, fib2(12,13), 0.0314, ca);
 
 	float v = 1.0;
-	v = max(v - max(sqrt(s640000)-0.41, 0.0), 0.0);
+	v = max(v - max(sqrt(s640000)-0.31, 0.0), 0.0);
 	v = max(v - max(sqrt(s160000)-0.47, 0.0), 0.0);
 	v = max(v - max(sqrt(s080000)-0.53, 0.0), 0.0);
 	v = max(v - max(sqrt(s040000)-0.61, 0.0), 0.0);
