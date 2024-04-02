@@ -20,6 +20,7 @@ import eagine.core.value_tree;
 import eagine.core.utility;
 import eagine.core.runtime;
 import eagine.core.logging;
+import eagine.core.progress;
 import eagine.core.main_ctx;
 import eagine.shapes;
 import eagine.oglplus;
@@ -120,11 +121,7 @@ public:
       resource_loader& loader,
       identifier_t req_id,
       url loc,
-      resource_kind k) noexcept
-      : _parent{loader}
-      , _request_id{req_id}
-      , _locator{std::move(loc)}
-      , _kind{k} {}
+      resource_kind k) noexcept;
 
     auto request_id() const noexcept -> identifier_t {
         return _request_id;
@@ -235,10 +232,8 @@ public:
 
     // continuation handlers
     void handle_source_data(
-      const msgbus::blob_info&,
-      const pending_resource_info& source,
-      const span_size_t offset,
-      const memory::span<const memory::const_block> data) noexcept;
+      const msgbus::blob_stream_chunk&,
+      const pending_resource_info& source) noexcept;
 
     void handle_source_finished(const pending_resource_info&) noexcept;
     void handle_source_cancelled(const pending_resource_info&) noexcept;
@@ -312,6 +307,10 @@ private:
         flat_set<identifier_t> pending_requests;
         bool loaded{false};
     };
+
+    // progress_update
+    void _preparation_progressed(float) noexcept;
+    void _streaming_progressed(const msgbus::blob_stream_chunk&) noexcept;
 
     // resource loaded handlers
     void _handle_plain_text(
@@ -418,6 +417,10 @@ private:
     resource_loader& _parent;
     const identifier_t _request_id;
     const url _locator;
+    span_size_t _received_size{0};
+    activity_progress _preparation;
+    activity_progress _streaming;
+
     std::string _label;
     weak_holder<pending_resource_info> _continuation{};
 
@@ -477,7 +480,7 @@ public:
 // valtree_mapped_struct_builder
 //------------------------------------------------------------------------------
 template <default_mapped_struct O>
-class valtree_mapped_struct_builder
+class valtree_mapped_struct_builder final
   : public valtree_builder_base<valtree_mapped_struct_builder<O>> {
     using base = valtree_builder_base<valtree_mapped_struct_builder<O>>;
 
@@ -510,12 +513,56 @@ auto valtree_mapped_struct_builder<O>::finish() noexcept -> bool {
     return false;
 }
 //------------------------------------------------------------------------------
-template <default_mapped_struct O>
+export template <default_mapped_struct O>
 auto make_mapped_struct_builder(
   const shared_holder<pending_resource_info>& parent,
   std::type_identity<O> = {}) noexcept
   -> unique_holder<valtree::object_builder> {
     return {hold<valtree_mapped_struct_builder<O>>, "StrctBuldr", parent};
+}
+//------------------------------------------------------------------------------
+// valtree_mapped_struct_loader
+//------------------------------------------------------------------------------
+template <default_mapped_struct O>
+class valtree_mapped_struct_loader final
+  : public valtree::object_builder_impl<valtree_mapped_struct_loader<O>> {
+
+public:
+    valtree_mapped_struct_loader(
+      O& object,
+      resource_load_status& status) noexcept
+      : _object{object}
+      , _status{status} {
+        _status = resource_load_status::loading;
+    }
+
+    auto max_token_size() noexcept -> span_size_t final {
+        return max_identifier_length(_object);
+    }
+
+    template <typename T>
+    void do_add(const basic_string_path& path, span<const T> data) noexcept {
+        _forwarder.forward_data(path, data, _object);
+    }
+
+    auto finish() noexcept -> bool final {
+        _status = resource_load_status::loaded;
+        return true;
+    }
+    void failed() noexcept final {
+        _status = resource_load_status::error;
+    }
+
+private:
+    valtree::object_builder_data_forwarder _forwarder;
+    O& _object{};
+    resource_load_status& _status;
+};
+//------------------------------------------------------------------------------
+export template <default_mapped_struct O>
+auto make_mapped_struct_loader(O& object, resource_load_status& status) noexcept
+  -> unique_holder<valtree::object_builder> {
+    return {hold<valtree_mapped_struct_loader<O>>, object, status};
 }
 //------------------------------------------------------------------------------
 // other builders
@@ -1130,6 +1177,12 @@ concept resource_load_event_observer = requires(
 };
 
 template <typename T>
+concept resource_blob_preparation_progressed_observer =
+  requires(T v, const msgbus::blob_stream_chunk& chunk) {
+      v.handle_blob_preparation_progressed(chunk);
+  };
+
+template <typename T>
 concept resource_blob_stream_data_appended_observer =
   requires(T v, const msgbus::blob_stream_chunk& chunk) {
       v.handle_blob_stream_data_appended(chunk);
@@ -1208,6 +1261,10 @@ public:
 
     template <typename O>
     void connect_observer(O& observer) noexcept {
+        if constexpr(resource_blob_preparation_progressed_observer<O>) {
+            connect<&O::handle_blob_preparation_progressed>(
+              &observer, this->blob_preparation_progressed);
+        }
         if constexpr(resource_blob_stream_data_appended_observer<O>) {
             connect<&O::handle_blob_stream_data_appended>(
               &observer, this->blob_stream_data_appended);
@@ -1516,6 +1573,7 @@ private:
 
     void _init() noexcept;
 
+    void _handle_preparation_progressed(identifier_t blob_id, float) noexcept;
     void _handle_stream_data_appended(const msgbus::blob_stream_chunk&) noexcept;
     void _handle_stream_finished(identifier_t blob_id) noexcept;
     void _handle_stream_cancelled(identifier_t blob_id) noexcept;

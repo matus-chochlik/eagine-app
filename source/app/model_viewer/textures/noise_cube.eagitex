@@ -1,0 +1,23 @@
+{"levels":1
+,"width":256
+,"height":256
+,"channels":1
+,"data_type":"unsigned_byte"
+,"format":"red"
+,"iformat":"r8"
+,"swizzle_g":"red"
+,"swizzle_b":"red"
+,"min_filter":"linear"
+,"mag_filter":"linear"
+,"wrap_s":"clamp_to_edge"
+,"wrap_t":"clamp_to_edge"
+,"label":"gray noise"
+,"tag": ["texture", "noise"]
+,"images":
+[{"url":"eagitexi:///tiling_noise?width=256&height=256&seed=113&source=text%3A%2F%2F%2FTlngR4S256","target":"texture_cube_map_positive_x"}
+,{"url":"eagitexi:///tiling_noise?width=256&height=256&seed=241&source=text%3A%2F%2F%2FTlngR4S256","target":"texture_cube_map_negative_x"}
+,{"url":"eagitexi:///tiling_noise?width=256&height=256&seed=359&source=text%3A%2F%2F%2FTlngR4S256","target":"texture_cube_map_positive_y"}
+,{"url":"eagitexi:///tiling_noise?width=256&height=256&seed=571&source=text%3A%2F%2F%2FTlngR4S256","target":"texture_cube_map_negative_y"}
+,{"url":"eagitexi:///tiling_noise?width=256&height=256&seed=729&source=text%3A%2F%2F%2FTlngR4S256","target":"texture_cube_map_positive_z"}
+,{"url":"eagitexi:///tiling_noise?width=256&height=256&seed=971&source=text%3A%2F%2F%2FTlngR4S256","target":"texture_cube_map_negative_z"}]
+}

@@ -100,7 +100,7 @@ private:
 //------------------------------------------------------------------------------
 class gl_rendered_source_blob_io : public compressed_buffer_source_blob_io {
 public:
-    auto prepare() noexcept -> msgbus::blob_preparation final;
+    auto prepare() noexcept -> msgbus::blob_preparation_result final;
 
     auto shared() const noexcept -> const shared_provider_objects& {
         return _shared;
@@ -126,6 +126,10 @@ protected:
 
     virtual auto context_attribs(const shared_provider_objects&) noexcept
       -> eglplus::context_attributes;
+
+    virtual auto load_resources() noexcept -> msgbus::blob_preparation_result {
+        return msgbus::blob_preparation_result::finished();
+    }
 
     virtual auto make_renderer(shared_holder<gl_rendered_blob_context>)
       -> unique_holder<gl_blob_renderer> = 0;

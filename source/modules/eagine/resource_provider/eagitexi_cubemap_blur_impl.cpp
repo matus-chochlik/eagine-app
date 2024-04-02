@@ -35,7 +35,7 @@ public:
 
     ~eagitexi_cubemap_blur_renderer() noexcept final;
 
-    auto prepare_render() noexcept -> msgbus::blob_preparation final;
+    auto prepare_render() noexcept -> msgbus::blob_preparation_result final;
 
 private:
     static auto _tile_size() noexcept -> int;
@@ -109,13 +109,13 @@ void eagitexi_cubemap_blur_renderer::_on_tex_loaded(
 }
 //------------------------------------------------------------------------------
 auto eagitexi_cubemap_blur_renderer::prepare_render() noexcept
-  -> msgbus::blob_preparation {
+  -> msgbus::blob_preparation_result {
     const auto& GL{gl_api().constants()};
     if(_cubemap.load_if_needed(
          resource_context(), GL.texture_cube_map, GL.texture0)) {
-        return msgbus::blob_preparation::working;
+        return {msgbus::blob_preparation_status::working};
     }
-    return msgbus::blob_preparation::finished;
+    return msgbus::blob_preparation_result::finished();
 }
 //------------------------------------------------------------------------------
 // I/O

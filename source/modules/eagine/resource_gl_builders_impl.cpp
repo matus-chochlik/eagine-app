@@ -378,9 +378,8 @@ public:
             if(_success) {
                 _decompression.finish();
                 parent->handle_gl_texture_image(_target, _params, _tex_data);
-            } else {
-                parent->mark_finished();
             }
+            parent->mark_finished();
             return _success;
         }
         return false;

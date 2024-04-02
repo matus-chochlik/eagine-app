@@ -29,7 +29,7 @@ public:
     tiling_io(main_ctx_parent parent, span_size_t size) noexcept
       : tiling_io{parent, size, size} {}
 
-    auto prepare() noexcept -> msgbus::blob_preparation final;
+    auto prepare() noexcept -> msgbus::blob_preparation_result final;
 
     auto total_size() noexcept -> span_size_t final {
         return (_width + 1) * _height;
@@ -57,7 +57,7 @@ private:
 };
 //------------------------------------------------------------------------------
 template <unsigned Rank>
-auto tiling_io<Rank>::prepare() noexcept -> msgbus::blob_preparation {
+auto tiling_io<Rank>::prepare() noexcept -> msgbus::blob_preparation_result {
     if(not _fill.is_done()) {
         for(int s = 0; s < int(1U << (10U - Rank)); ++s) {
             if(_fill.is_done()) {
@@ -69,9 +69,9 @@ auto tiling_io<Rank>::prepare() noexcept -> msgbus::blob_preparation {
         if(_fill.is_done()) {
             _prepare_progress.finish();
         }
-        return msgbus::blob_preparation::working;
+        return {_fill.current_count(), _fill.total_count()};
     }
-    return msgbus::blob_preparation::finished;
+    return {msgbus::blob_preparation_status::finished};
 }
 //------------------------------------------------------------------------------
 template <unsigned Rank>

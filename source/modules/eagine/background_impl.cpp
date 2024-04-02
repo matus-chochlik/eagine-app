@@ -381,7 +381,8 @@ auto background_skybox::set_skybox_unit(
   video_context& video,
   oglplus::texture_unit tu) noexcept -> background_skybox& {
     video.with_gl([&, this](auto&, auto&, auto& glapi) {
-        glapi.set_uniform(_prog, _tex_loc, int(tu));
+        glapi.use_program(_prog);
+        glapi.set_uniform(_prog, _tex_loc, tu);
     });
     return *this;
 }
