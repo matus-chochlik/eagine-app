@@ -278,8 +278,10 @@ filesystem_search_paths::filesystem_search_paths(
   main_ctx_parent parent) noexcept
   : main_ctx_object{id, parent} {
     std::vector<std::string> paths;
-    main_context().config().fetch("app.resource_provider.root_path", paths);
-    main_context().config().fetch("app.resource_provider.root_paths", paths);
+    main_context().config().fetch(
+      "application.resource_provider.root_path", paths);
+    main_context().config().fetch(
+      "application.resource_provider.root_paths", paths);
 
     using fspath = std::filesystem::path;
 

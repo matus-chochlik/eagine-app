@@ -17,9 +17,10 @@ import eagine.app;
 namespace eagine::app {
 //------------------------------------------------------------------------------
 auto resource_provider::_get_timeout() noexcept -> std::optional<timeout> {
-    if(app_config().is_set("app.resource_provider.only_if_busy")) {
+    if(app_config().is_set("application.resource_provider.only_if_busy")) {
         return app_config()
-          .get<std::chrono::seconds>("app.resource_provider.max_idle_time")
+          .get<std::chrono::seconds>(
+            "application.resource_provider.max_idle_time")
           .and_then([&](auto max_idle_time) -> std::optional<timeout> {
               return {{max_idle_time}};
           });
