@@ -1,3 +1,15 @@
+application:
+  resource_provider:
+    with_router: true
+    allow_symlinks: false
+    root_path: /usr/share/eagine/assets
+    cubemap_blur:
+      device_index: 0
+      tile_size: 16
+    cubemap_sky:
+      device_index: 0
+      tile_size: 2
+
 msgbus:
   router:
     id_major: 1200
