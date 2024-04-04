@@ -27,8 +27,8 @@ struct cubemap_scene {
     float planet_radius_m{6'370'000.F};
     float atmosphere_thickness_m{100'000.F};
     float vapor_thickness_ratio{0.03F};
-    float cloud_altitude_m{3'000.F};
-    float cloud_thickness_m{1'500.F};
+    float cloud_altitude_m{2'500.F};
+    float cloud_thickness_m{1'200.F};
     float cloudiness_factor{0.5F};
     float above_ground_m{25.F};
     float sun_azimuth_deg{0.F};
@@ -83,8 +83,8 @@ cubemap_scene::cubemap_scene(const url& l) noexcept
   : planet_radius_m{query_arg<float>(l, "planet_radius_m", 6'370'000.F)}
   , atmosphere_thickness_m{query_arg<float>(l, "atm_thickness_m", 100'000.F)}
   , vapor_thickness_ratio{query_arg<float>(l, "vapor_thickness_ratio", 0.03F)}
-  , cloud_altitude_m{query_arg<float>(l, "cloud_altitude_m", 3'000.F)}
-  , cloud_thickness_m{query_arg<float>(l, "cloud_thickness_m", 1'500.F)}
+  , cloud_altitude_m{query_arg<float>(l, "cloud_altitude_m", 2'500.F)}
+  , cloud_thickness_m{query_arg<float>(l, "cloud_thickness_m", 1'200.F)}
   , cloudiness_factor{query_arg<float>(l, "cloudiness_factor", 0.5F)}
   , above_ground_m{query_arg<float>(l, "above_ground_m", 100.F)}
   , sun_azimuth_deg{query_arg<float>(l, "sun_azimuth_deg", 0.0F)}
