@@ -23,7 +23,36 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 // Renderer
 //------------------------------------------------------------------------------
-class eagitexi_cubemap_blur_renderer final : public eagitexi_cubemap_renderer {
+class eagitexi_cubemap_blur_renderer_base : public eagitexi_cubemap_renderer {
+protected:
+    eagitexi_cubemap_blur_renderer_base(
+      gl_rendered_source_blob_io& parent,
+      const gl_rendered_blob_params& params,
+      shared_holder<gl_rendered_blob_context> context,
+      int size) noexcept
+      : eagitexi_cubemap_renderer{
+          parent,
+          "blurring cube-map",
+          params,
+          std::move(context),
+          size,
+          _tile_size(parent)} {}
+
+private:
+    static auto _tile_size(gl_rendered_source_blob_io& parent) noexcept -> int;
+};
+//------------------------------------------------------------------------------
+auto eagitexi_cubemap_blur_renderer_base::_tile_size(
+  gl_rendered_source_blob_io& p) noexcept -> int {
+    if(const auto size{p.app_config().get<int>(
+         "application.resource_provider.cubemap_blur.tile_size")}) {
+        return *size;
+    }
+    return 16;
+}
+//------------------------------------------------------------------------------
+class eagitexi_cubemap_blur_renderer final
+  : public eagitexi_cubemap_blur_renderer_base {
 public:
     eagitexi_cubemap_blur_renderer(
       gl_rendered_source_blob_io& parent,
@@ -38,7 +67,6 @@ public:
     auto prepare_render() noexcept -> msgbus::blob_preparation_result final;
 
 private:
-    static auto _tile_size() noexcept -> int;
     static auto _vs_source() noexcept -> string_view;
     static auto _fs_source() noexcept -> string_view;
     auto _build_program(const gl_rendered_blob_params&, int) noexcept
@@ -59,17 +87,13 @@ eagitexi_cubemap_blur_renderer::eagitexi_cubemap_blur_renderer(
   url source,
   int size,
   int sharpness) noexcept
-  : eagitexi_cubemap_renderer{parent, "blurring cube-map", params, std::move(context), size, _tile_size()}
+  : eagitexi_cubemap_blur_renderer_base{parent, params, std::move(context), size}
   , _cubemap{std::move(source), resource_context()} {
     _init_program(_build_program(params, sharpness));
 }
 //------------------------------------------------------------------------------
 eagitexi_cubemap_blur_renderer::~eagitexi_cubemap_blur_renderer() noexcept {
     _cubemap.clean_up(resource_context());
-}
-//------------------------------------------------------------------------------
-auto eagitexi_cubemap_blur_renderer::_tile_size() noexcept -> int {
-    return 16;
 }
 //------------------------------------------------------------------------------
 auto eagitexi_cubemap_blur_renderer::_build_program(

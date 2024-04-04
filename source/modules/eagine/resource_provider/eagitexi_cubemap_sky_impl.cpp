@@ -110,7 +110,47 @@ auto cubemap_scene::sun_xyz() const noexcept -> math::vector<float, 3, true> {
 //------------------------------------------------------------------------------
 // Renderer
 //------------------------------------------------------------------------------
-class eagitexi_cubemap_sky_renderer final : public eagitexi_cubemap_renderer {
+class eagitexi_cubemap_sky_renderer_base : public eagitexi_cubemap_renderer {
+protected:
+    eagitexi_cubemap_sky_renderer_base(
+      gl_rendered_source_blob_io& parent,
+      const shared_provider_objects& shared,
+      const gl_rendered_blob_params& params,
+      shared_holder<gl_rendered_blob_context> context,
+      int size) noexcept
+      : eagitexi_cubemap_renderer{
+          parent,
+          "rendering sky cube-map",
+          params,
+          context,
+          size,
+          _tile_size(parent, size)} {}
+
+private:
+    static auto _tile_size(gl_rendered_source_blob_io&, int) noexcept -> int;
+};
+//------------------------------------------------------------------------------
+auto eagitexi_cubemap_sky_renderer_base::_tile_size(
+  gl_rendered_source_blob_io& p,
+  int size) noexcept -> int {
+    if(const auto size{p.app_config().get<int>(
+         "application.resource_provider.cubemap_sky.tile_size")}) {
+        return *size;
+    }
+    if(size <= 256) {
+        return 8;
+    }
+    if(size <= 1024) {
+        return 4;
+    }
+    if(size <= 2048) {
+        return 2;
+    }
+    return 1;
+}
+//------------------------------------------------------------------------------
+class eagitexi_cubemap_sky_renderer final
+  : public eagitexi_cubemap_sky_renderer_base {
 public:
     eagitexi_cubemap_sky_renderer(
       gl_rendered_source_blob_io& parent,
@@ -125,7 +165,6 @@ public:
     auto prepare_render() noexcept -> msgbus::blob_preparation_result final;
 
 private:
-    static auto _tile_size(int) noexcept -> int;
     void _process_cell(byte);
     void _process_line(const string_view);
 
@@ -161,7 +200,7 @@ eagitexi_cubemap_sky_renderer::eagitexi_cubemap_sky_renderer(
   const cubemap_scene& scene,
   shared_holder<gl_rendered_blob_context> context,
   int size) noexcept
-  : eagitexi_cubemap_renderer{parent, "rendering sky cube-map", params, context, size, _tile_size(size)}
+  : eagitexi_cubemap_sky_renderer_base{parent, shared, params, context, size}
   , _tiling_tex{gl_api().create_texture_object(gl_api().texture_2d)}
   , _shared{shared}
   , _tiling_line{*this, 1024}
@@ -172,19 +211,6 @@ eagitexi_cubemap_sky_renderer::eagitexi_cubemap_sky_renderer(
 //------------------------------------------------------------------------------
 eagitexi_cubemap_sky_renderer::~eagitexi_cubemap_sky_renderer() noexcept {
     _tiling.clean_up(_shared.loader);
-}
-//------------------------------------------------------------------------------
-auto eagitexi_cubemap_sky_renderer::_tile_size(int size) noexcept -> int {
-    if(size <= 256) {
-        return 8;
-    }
-    if(size <= 1024) {
-        return 4;
-    }
-    if(size <= 2048) {
-        return 2;
-    }
-    return 1;
 }
 //------------------------------------------------------------------------------
 auto eagitexi_cubemap_sky_renderer::prepare_render() noexcept
