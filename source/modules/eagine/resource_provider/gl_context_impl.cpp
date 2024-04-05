@@ -390,6 +390,7 @@ void eagitexi_cubemap_renderer::_render_tile() noexcept {
     gl.scissor(
       _tile_x * _tile_size, _tile_y * _tile_size, _tile_size, _tile_size);
     _screen.draw(glapi);
+    gl.finish();
 }
 //------------------------------------------------------------------------------
 void eagitexi_cubemap_renderer::_save_tile() noexcept {
@@ -445,7 +446,10 @@ auto eagitexi_cubemap_renderer::render() noexcept
         } else {
             _prepare_progress.finish();
         }
-        return {_done_tiles(), _total_tiles()};
+        return {
+          _done_tiles(),
+          _total_tiles(),
+          msgbus::blob_preparation_status::working};
     }
     return msgbus::blob_preparation_result::finished();
 }
