@@ -336,7 +336,7 @@ vec2 cloudSample(AtmosphereSample a, Sphere planet) {
 			float density = min(
 				0.5 * l * thickCloudDensity(location, planet),
 				1.0);
-			shadow = shadow * mix(1.0, 0.997, density);
+			shadow = shadow * mix(1.0, 0.996, density);
 		}
 	}
 	return vec2(
@@ -385,46 +385,51 @@ vec4 clearAirColor(AtmosphereSample a, float sampleLen, float shadow) {
 		sampleLen,
 		1.0);
 
+	vec4 airColor = mix(
+		mixColor012n(
+			vec4(0.30, 0.45, 0.75, 1.0),
+			vec4(0.25, 0.40, 0.70, 1.0),
+			vec4(0.50, 0.40, 0.25, 0.9),
+			vec4(0.40, 0.10, 0.25, 0.8),
+			a.atmDistRatio, 1.0),
+		mixColor012n(
+			vec4(0.30, 0.45, 0.75, 1.0),
+			vec4(0.25, 0.40, 0.70, 1.0),
+			vec4(0.25, 0.40, 0.70, 0.9),
+			vec4(0.50, 0.40, 0.35, 0.8),
+			a.atmDistRatio * 0.7, 0.5),
+		sunDown);
+
+	airColor = vec4(airColor.rgb, mix(airColor.a, 1.00, a.hitLight));
+
+	vec4 vaporColor = mix(
+		mixColor012n(
+			mix(
+				vec4(0.95, 0.95, 0.96, 0.4),
+				vec4(1.05, 1.05, 1.06, 0.4),
+				directLight),
+			mix(
+				vec4(0.94, 0.94, 1.94, 0.4),
+				vec4(1.02, 1.02, 1.02, 0.4),
+				directLight),
+			vec4(0.90, 0.90, 0.90, 0.3),
+			vec4(0.55, 0.55, 0.54, 0.2),
+			a.atmDistRatio, 0.5),
+		mixColor012n(
+			mix(
+				vec4(0.95, 0.95, 0.96, 0.4),
+				vec4(1.05, 1.05, 1.04, 0.3),
+				directLight),
+			vec4(0.95, 0.95, 0.96, 0.3),
+			vec4(0.85, 0.85, 0.85, 0.2),
+			vec4(0.58, 0.43, 0.41, 0.1),
+			a.atmDistRatio, 0.5),
+		sunDown);
+
+	vaporColor = vec4(vaporColor.rgb, mix(vaporColor.a, 1.00, a.hitLight));
+
 	return mix(
-		mix(1.0, 0.9, shadow) * mix(
-			mix(
-				mixColor012n(
-					vec4(0.30, 0.45, 0.75, 1.0),
-					vec4(0.25, 0.40, 0.70, 1.0),
-					vec4(0.50, 0.40, 0.25, 0.9),
-					vec4(0.40, 0.10, 0.25, 0.8),
-					a.atmDistRatio, 1.0),
-				mixColor012n(
-					vec4(0.30, 0.45, 0.75, 1.0),
-					vec4(0.25, 0.40, 0.70, 1.0),
-					vec4(0.25, 0.40, 0.70, 0.9),
-					vec4(0.50, 0.40, 0.35, 0.8),
-					a.atmDistRatio * 0.7, 0.5),
-				sunDown),
-			mix(
-				mixColor012n(
-					mix(
-						vec4(0.95, 0.95, 0.96, 0.4),
-						vec4(1.05, 1.05, 1.06, 0.4),
-						directLight),
-					mix(
-						vec4(0.94, 0.94, 1.94, 0.4),
-						vec4(1.02, 1.02, 1.02, 0.4),
-						directLight),
-					vec4(0.90, 0.90, 0.90, 0.3),
-					vec4(0.55, 0.55, 0.54, 0.2),
-					a.atmDistRatio, 0.5),
-				mixColor012n(
-					mix(
-						vec4(0.95, 0.95, 0.96, 0.4),
-						vec4(1.05, 1.05, 1.04, 0.3),
-						directLight),
-					vec4(0.95, 0.95, 0.96, 0.3),
-					vec4(0.85, 0.85, 0.85, 0.2),
-					vec4(0.58, 0.43, 0.41, 0.1),
-					a.atmDistRatio, 0.5),
-				sunDown),
-			min(vapor, 1.0)),
+		mix(airColor, vaporColor, min(vapor, 1.0)),
 		mix(
 			vec4(0.0, 0.0, 0.0, 1.0),
 			vec4(0.0, 0.0, 0.0, 0.3),
