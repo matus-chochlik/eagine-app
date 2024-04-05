@@ -20,7 +20,6 @@ uniform float sunApparentAngle;
 uniform float tilingSide = 512;
 uniform sampler2D tilingTex;
 
-vec3 clearDirection = normalize(vec3(0.1, 0.2, 1.0));
 //------------------------------------------------------------------------------
 float to01(float x) {
 	return 0.5 + 0.5 * x;
@@ -178,7 +177,7 @@ float thinCloudDensity(vec3 location, Sphere planet) {
 		thinCloudSample(location, planet, om*fib2(11, 12), 0.31)*
 		thinCloudSample(location, planet, om*fib2(12, 13), 0.13)*
 		thinCloudSample(location, planet, om*fib2(12, 13), 0.07),
-		1.0 / 6.0);
+		1.0 / 3.0);
 }
 //------------------------------------------------------------------------------
 Segment cloudsIntersection(Ray ray, Sphere planet) {
@@ -273,7 +272,7 @@ float thickCloudDensity(vec3 location, Sphere planet) {
 		max(
 			mix(pow(s040000, 2.0), pow(s020000, 2.0), 0.4),
 			mix(pow(s010000, 2.0), pow(s005000, 2.0), 0.4)),
-		0.6);
+		0.7);
 
 	return pow(snoise, 2.0) * sqrt(ca.y) * max(sign(v*w - abs(ca.x-b)), 0.0);
 }
@@ -351,16 +350,15 @@ float cloudShadow(AtmosphereSample a, Sphere planet) {
 		const int sampleCount = 50;
 		const float isc = 1.0 / float(sampleCount);
 		float l = distance(a.cloudsIntersection.far, a.cloudsIntersection.near);
+		float density = 0.0;
 		for(int s = 0; s <= sampleCount; ++s) {
 			vec3 location = mix(
 				a.cloudsIntersection.far,
 				a.cloudsIntersection.near,
 				float(s) * isc);
-			float density = min(
-				0.5 * l * thickCloudDensity(location, planet),
-				1.0);
-			shadow = shadow * mix(1.0, 0.9, density);
+			density += min(l * thickCloudDensity(location, planet), 1.0);
 		}
+		shadow = 1.0 - density * isc;
 	}
 	return shadow;
 }
@@ -387,8 +385,8 @@ vec4 clearAirColor(AtmosphereSample a, float sampleLen, float shadow) {
 		sampleLen,
 		1.0);
 
-	return mix(0.9, 1.0, shadow) * mix(
-		mix(
+	return mix(
+		mix(1.0, 0.9, shadow) * mix(
 			mix(
 				mixColor012n(
 					vec4(0.30, 0.45, 0.75, 1.0),
@@ -446,7 +444,7 @@ vec4 skyColor(Ray viewRay, Sphere planet, Sphere atmosphere) {
 
 	vec4 color = vec4(0.0);
 
-	const float airDensityMult = 10.0;
+	const float airDensityMult = 5.0;
 	float sampleLen = 50.0;
 	float sampleRatio = sampleLen / atmThickness;
 
@@ -483,7 +481,7 @@ vec4 skyColor(Ray viewRay, Sphere planet, Sphere atmosphere) {
 
 		vec2 cloud = cloudSample(a, planet);
 		vec4 sunLight = sunlightColor(a);
-		vec4 airLight = clearAirColor(a, sampleLen, cloud.x);
+		vec4 airLight = clearAirColor(a, sampleLen, cloud.y);
 		color = mix(
 			mix(
 				mix(color, airLight, airDensityMult * sampleRatio),
