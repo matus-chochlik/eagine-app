@@ -406,6 +406,7 @@ void eagitexi_cubemap_renderer::_save_cube_face() noexcept {
       GL.rgba,
       GL.unsigned_byte_,
       cover(_buffer));
+    gl.finish();
 
     compress(view(_buffer));
 }
@@ -445,11 +446,11 @@ auto eagitexi_cubemap_renderer::render() noexcept
                     _finishing_face = gl_api().fence();
                 }
             }
-            if(_face_index < 6) {
-                _prepare_progress.update_progress(_done_tiles());
-            } else {
-                _prepare_progress.finish();
-            }
+        }
+        if(_face_index < 6) {
+            _prepare_progress.update_progress(_done_tiles());
+        } else {
+            _prepare_progress.finish();
         }
         return {
           _done_tiles(),

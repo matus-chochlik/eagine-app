@@ -272,7 +272,7 @@ float thickCloudDensity(vec3 location, Sphere planet) {
 		max(
 			mix(pow(s040000, 2.0), pow(s020000, 2.0), 0.4),
 			mix(pow(s010000, 2.0), pow(s005000, 2.0), 0.4)),
-		0.7);
+		0.8);
 
 	return pow(snoise, 2.0) * sqrt(ca.y) * max(sign(v*w - abs(ca.x-b)), 0.0);
 }
@@ -336,7 +336,7 @@ vec2 cloudSample(AtmosphereSample a, Sphere planet) {
 			float density = min(
 				0.5 * l * thickCloudDensity(location, planet),
 				1.0);
-			shadow = shadow * mix(1.0, 0.996, density);
+			shadow = shadow * mix(1.0, 0.995, density);
 		}
 	}
 	return vec2(
