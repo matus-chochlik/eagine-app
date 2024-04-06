@@ -449,13 +449,13 @@ auto eagitexi_cubemap_renderer::render() noexcept
         }
         if(_face_index < 6) {
             _prepare_progress.update_progress(_done_tiles());
+            return {
+              _done_tiles(),
+              _total_tiles(),
+              msgbus::blob_preparation_status::working};
         } else {
             _prepare_progress.finish();
         }
-        return {
-          _done_tiles(),
-          _total_tiles(),
-          msgbus::blob_preparation_status::working};
     }
     return msgbus::blob_preparation_result::finished();
 }
