@@ -29,7 +29,7 @@ struct cubemap_scene {
     float vapor_thickness_ratio{0.05F};
     float cloud_altitude_m{5'500.F};
     float cloud_thickness_m{8'000.F};
-    float cloudiness_factor{0.5F};
+    float cloudiness_ratio{0.5F};
     float above_ground_m{25.F};
     float sun_azimuth_deg{0.F};
     float sun_elevation_deg{45.F};
@@ -71,7 +71,7 @@ constexpr auto data_member_mapping(
       {"vapor_thickness_ratio", &cubemap_scene::vapor_thickness_ratio},
       {"cloud_altitude_m", &cubemap_scene::cloud_altitude_m},
       {"cloud_thickness_m", &cubemap_scene::cloud_thickness_m},
-      {"cloudiness_factor", &cubemap_scene::cloudiness_factor},
+      {"cloudiness_ratio", &cubemap_scene::cloudiness_ratio},
       {"above_ground_m", &cubemap_scene::above_ground_m},
       {"sun_azimuth_deg", &cubemap_scene::sun_azimuth_deg},
       {"sun_elevation_deg", &cubemap_scene::sun_elevation_deg},
@@ -85,7 +85,7 @@ cubemap_scene::cubemap_scene(const url& l) noexcept
   , vapor_thickness_ratio{query_arg<float>(l, "vapor_thickness_ratio", 0.05F)}
   , cloud_altitude_m{query_arg<float>(l, "cloud_altitude_m", 5'500.F)}
   , cloud_thickness_m{query_arg<float>(l, "cloud_thickness_m", 8'000.F)}
-  , cloudiness_factor{query_arg<float>(l, "cloudiness_factor", 0.5F)}
+  , cloudiness_ratio{query_arg<float>(l, "cloudiness_ratio", 0.5F)}
   , above_ground_m{query_arg<float>(l, "above_ground_m", 100.F)}
   , sun_azimuth_deg{query_arg<float>(l, "sun_azimuth_deg", 0.0F)}
   , sun_elevation_deg{query_arg<float>(l, "sun_elevation_deg", 45.0F)}
@@ -244,7 +244,7 @@ auto eagitexi_cubemap_sky_renderer::_build_program(
     glapi.try_set_uniform(prog, "vaporThickness", scene.vapor_thickness_ratio);
     glapi.try_set_uniform(prog, "cloudAltitude", scene.cloud_altitude_m);
     glapi.try_set_uniform(prog, "cloudThickness", scene.cloud_thickness_m);
-    glapi.try_set_uniform(prog, "cloudiness", scene.cloudiness_factor);
+    glapi.try_set_uniform(prog, "cloudiness", scene.cloudiness_ratio);
     glapi.try_set_uniform(prog, "aboveGround", scene.above_ground_m);
     glapi.try_set_uniform(prog, "sunApparentAngle", scene.sun_apparent_angle);
     glapi.try_set_uniform(prog, "sunDirection", scene.sun_xyz());

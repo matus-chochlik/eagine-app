@@ -251,12 +251,12 @@ float thickCloudDensity(vec3 location, Sphere planet) {
 	float snoise  = thickCloudSampleN(location, planet, fib2(12,13), 0.0314, ca);
 
 	float v = 1.0;
-	v = max(v - max(sqrt(s640000)-0.97, 0.0), 0.0);
-	v = max(v - max(sqrt(s320000)-0.47, 0.0), 0.0);
-	v = max(v - max(sqrt(s160000)-0.51, 0.0), 0.0);
-	v = max(v - max(sqrt(s080000)-0.57, 0.0), 0.0);
-	v = max(v - max(sqrt(s040000)-0.61, 0.0), 0.0);
-	v = max(v - max(sqrt(s020000)-0.67, 0.0), 0.0);
+	v = max(v - max(sqrt(s640000)-mix(0.17, 0.97, cloudiness), 0.0), 0.0);
+	v = max(v - max(sqrt(s320000)-mix(0.27, 0.87, cloudiness), 0.0), 0.0);
+	v = max(v - max(sqrt(s160000)-mix(0.31, 0.81, cloudiness), 0.0), 0.0);
+	v = max(v - max(sqrt(s080000)-mix(0.37, 0.79, cloudiness), 0.0), 0.0);
+	v = max(v - max(sqrt(s040000)-mix(0.41, 0.77, cloudiness), 0.0), 0.0);
+	v = max(v - max(sqrt(s020000)-mix(0.47, 0.71, cloudiness), 0.0), 0.0);
 	v = max(v - max(sqrt(s010000)-0.71, 0.0), 0.0);
 	v = max(v - max(sqrt(s005000)-0.73, 0.0), 0.0);
 	v = max(v - max(sqrt(s002500)-0.74, 0.0), 0.0);
@@ -334,7 +334,7 @@ vec2 cloudSample(AtmosphereSample a, Sphere planet) {
 		for(int s = 1; s <= sampleCount; ++s) {
 			vec3 location = a.lightRay.origin + direction * l * float(s) * isc;
 			float density = min(
-				0.5 * l * thickCloudDensity(location, planet),
+				cloudiness * l * thickCloudDensity(location, planet),
 				1.0);
 			shadow = shadow * mix(1.0, 0.995, density);
 		}
@@ -493,7 +493,7 @@ vec4 skyColor(Ray viewRay, Sphere planet, Sphere atmosphere) {
 				sunLight,
 				a.hitLight * airLight.a * cloud.y),
 			sunLight * cloud.x,
-			cloud.y * 0.75);
+			cloud.y);
 	}
 
 	sampleLen = 25.0;
