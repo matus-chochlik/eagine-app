@@ -66,6 +66,9 @@ public:
     /// @see commit
     void end();
 
+    /// @brief Explicitly dump frame data into a file.
+    void dump_frame(const long frame_no);
+
     /// @brief Apply the rendering commands done since the last commit (swap buffers).
     /// @see begin
     /// @see end

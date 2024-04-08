@@ -47,12 +47,12 @@ public:
 
     void clean_up(video_context&) noexcept;
 
-private:
-    auto _dump_frame(
+    auto dump_frame(
       const long frame_number,
       video_provider& provider,
       const oglplus::gl_api& api) -> bool;
 
+private:
     void _clean_up(auto&) noexcept;
 
     const video_options& _options;
@@ -105,27 +105,27 @@ auto video_context_state::framedump_number(const long frame_no) const noexcept
     return _options.framedump_number(frame_no);
 }
 //------------------------------------------------------------------------------
-auto video_context_state::_dump_frame(
+auto video_context_state::dump_frame(
   const long frame_number,
   video_provider& provider,
   const oglplus::gl_api& api) -> bool {
     bool result = true;
-    const auto& [gl, GL] = api;
+    const auto& [gl, GL]{api};
 
     if(gl.read_pixels) [[likely]] {
-        const auto dump_frame{[&, this](
-                                framedump& target,
-                                const auto gl_format,
-                                const auto gl_type,
-                                const framedump_pixel_format format,
-                                const framedump_data_type type,
-                                const int elements,
-                                const span_size_t element_size) {
+        const auto do_dump_frame{[&, this](
+                                   framedump& target,
+                                   const auto gl_format,
+                                   const auto gl_type,
+                                   const framedump_pixel_format format,
+                                   const framedump_data_type type,
+                                   const int elements,
+                                   const span_size_t element_size) {
             const auto [width, height] = provider.surface_size();
 
             if(const auto framedump_no{framedump_number(frame_number)}) {
-                const auto size =
-                  span_size(width * height * elements * element_size);
+                const auto size{
+                  span_size(width * height * elements * element_size)};
                 auto buffer{target.get_buffer(size)};
 
                 api.operations().read_pixels(
@@ -156,7 +156,7 @@ auto video_context_state::_dump_frame(
                 case framedump_data_type::none:
                     break;
                 case framedump_data_type::float_type:
-                    dump_frame(
+                    do_dump_frame(
                       *_framedump_color,
                       GL.rgba,
                       GL.float_,
@@ -166,7 +166,7 @@ auto video_context_state::_dump_frame(
                       span_size_of<oglplus::gl_types::float_type>());
                     break;
                 case framedump_data_type::byte_type:
-                    dump_frame(
+                    do_dump_frame(
                       *_framedump_color,
                       GL.rgba,
                       GL.unsigned_byte_,
@@ -184,7 +184,7 @@ auto video_context_state::_dump_frame(
                 case framedump_data_type::byte_type:
                     break;
                 case framedump_data_type::float_type:
-                    dump_frame(
+                    do_dump_frame(
                       *_framedump_depth,
                       GL.depth_component,
                       GL.float_,
@@ -202,7 +202,7 @@ auto video_context_state::_dump_frame(
                 case framedump_data_type::float_type:
                     break;
                 case framedump_data_type::byte_type:
-                    dump_frame(
+                    do_dump_frame(
                       *_framedump_stencil,
                       GL.stencil_index,
                       GL.unsigned_byte_,
@@ -223,7 +223,7 @@ inline auto video_context_state::commit(
   const oglplus::gl_api& api) -> bool {
     bool result = true;
     if(doing_framedump()) [[unlikely]] {
-        result = _dump_frame(frame_number, provider, api) and result;
+        result = dump_frame(frame_number, provider, api) and result;
     }
     return result;
 }
@@ -340,6 +340,12 @@ void video_context::begin() {
 //------------------------------------------------------------------------------
 void video_context::end() {
     _provider->video_end(_parent);
+}
+//------------------------------------------------------------------------------
+void video_context::dump_frame(const long frame_no) {
+    if(_gl_api_context) [[likely]] {
+        _state->dump_frame(frame_no, *_provider, gl_api());
+    }
 }
 //------------------------------------------------------------------------------
 void video_context::commit() {
