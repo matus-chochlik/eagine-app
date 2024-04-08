@@ -49,10 +49,10 @@ void sky_viewer::_init_inputs() {
 void sky_viewer::_init_camera() {
     const auto sr{1.0};
     _camera.set_fov(degrees_(_fov))
-      .set_near(sr * 0.01F)
+      .set_orbit_min(sr * 1.414F)
+      .set_orbit_max(sr * 25.0F)
       .set_far(sr * 100.0F)
-      .set_orbit_min(sr * 1.2F)
-      .set_orbit_max(sr * 25.0F);
+      .set_near(sr * 0.01F);
 }
 //------------------------------------------------------------------------------
 auto sky_viewer::_all_resource_count() noexcept -> span_size_t {
@@ -157,8 +157,12 @@ void sky_viewer::update() noexcept {
     }
 
     auto& state = context().state();
+
     if(state.user_idle_too_long()) {
-        _camera.idle_update(state);
+        const auto sec{state.frame_time().value()};
+        _camera.update_orbit(state.frame_duration().value() * 0.02F)
+          .set_azimuth(radians_(sec * 0.1F))
+          .set_elevation(radians_(-math::sine_wave01(sec * 0.02F)));
     }
 
     _video.commit();
