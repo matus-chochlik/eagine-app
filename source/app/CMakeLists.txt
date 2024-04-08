@@ -5,6 +5,7 @@
 add_custom_target(eagine-apps ALL)
 add_subdirectory(model_viewer)
 add_subdirectory(tiling_viewer)
+add_subdirectory(sky_viewer)
 add_subdirectory(resource_provider)
 
 install(
