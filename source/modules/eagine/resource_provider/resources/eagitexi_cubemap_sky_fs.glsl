@@ -11,6 +11,7 @@ uniform int faceIdx;
 uniform float planetRadius;
 uniform float atmThickness;
 uniform float vaporThickness;
+uniform float cloudOffset;
 uniform float cloudAltitude;
 uniform float cloudThickness;
 uniform float cloudiness;
@@ -140,10 +141,10 @@ vec2 cloudCoord(
 	location = location - planet.center;
 	scale = 10.0 / scale;
 	location = normalize(location);
-	offset = (scale * offset / tilingSide);
-	return vec2(
-		offset.x+scale * (atan(location.y, location.x)+3.14157),
-		offset.y+scale * (asin(location.z)));
+	vec2 sph = vec2(atan(location.y, location.x)+3.14157, asin(location.z));
+	vec2 sca = vec2(scale);
+	offset = (sca * offset / tilingSide);
+	return cloudOffset / scale + offset + sca * sph;
 }
 //------------------------------------------------------------------------------
 float tilingSample(vec2 coord) {

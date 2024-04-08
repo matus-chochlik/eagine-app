@@ -27,6 +27,8 @@ struct cubemap_scene {
     float planet_radius_m{6'370'000.F};
     float atmosphere_thickness_m{100'000.F};
     float vapor_thickness_ratio{0.05F};
+    float cloud_offset_x{0.F};
+    float cloud_offset_y{0.F};
     float cloud_altitude_m{5'500.F};
     float cloud_thickness_m{8'000.F};
     float cloudiness_ratio{0.5F};
@@ -42,6 +44,8 @@ struct cubemap_scene {
       -> T;
 
     cubemap_scene(const url& locator) noexcept;
+
+    auto cloud_offset() const noexcept -> math::vector<float, 2, true>;
 
     auto sun_coord() const noexcept
       -> math::unit_spherical_coordinate<float, true>;
@@ -65,11 +69,15 @@ constexpr auto data_member_mapping(
       float,
       float,
       float,
+      float,
+      float,
       std::string>(
       {"planet_radius_m", &cubemap_scene::planet_radius_m},
       {"atmosphere_thickness_m", &cubemap_scene::atmosphere_thickness_m},
       {"vapor_thickness_ratio", &cubemap_scene::vapor_thickness_ratio},
       {"cloud_altitude_m", &cubemap_scene::cloud_altitude_m},
+      {"cloud_offset_x", &cubemap_scene::cloud_offset_x},
+      {"cloud_offset_y", &cubemap_scene::cloud_offset_y},
       {"cloud_thickness_m", &cubemap_scene::cloud_thickness_m},
       {"cloudiness_ratio", &cubemap_scene::cloudiness_ratio},
       {"above_ground_m", &cubemap_scene::above_ground_m},
@@ -83,6 +91,8 @@ cubemap_scene::cubemap_scene(const url& l) noexcept
   : planet_radius_m{query_arg<float>(l, "planet_radius_m", 6'370'000.F)}
   , atmosphere_thickness_m{query_arg<float>(l, "atm_thickness_m", 100'000.F)}
   , vapor_thickness_ratio{query_arg<float>(l, "vapor_thickness_ratio", 0.05F)}
+  , cloud_offset_x{query_arg<float>(l, "cloud_offset_x", 0.F)}
+  , cloud_offset_y{query_arg<float>(l, "cloud_offset_y", 0.F)}
   , cloud_altitude_m{query_arg<float>(l, "cloud_altitude_m", 5'500.F)}
   , cloud_thickness_m{query_arg<float>(l, "cloud_thickness_m", 8'000.F)}
   , cloudiness_ratio{query_arg<float>(l, "cloudiness_ratio", 0.5F)}
@@ -97,6 +107,11 @@ auto cubemap_scene::query_arg(
   string_view name,
   T fallback) noexcept -> T {
     return locator.query().arg_value_as<T>(name).value_or(fallback);
+}
+//------------------------------------------------------------------------------
+auto cubemap_scene::cloud_offset() const noexcept
+  -> math::vector<float, 2, true> {
+    return {cloud_offset_x, cloud_offset_y};
 }
 //------------------------------------------------------------------------------
 auto cubemap_scene::sun_coord() const noexcept
@@ -242,6 +257,7 @@ auto eagitexi_cubemap_sky_renderer::_build_program(
     glapi.try_set_uniform(prog, "planetRadius", scene.planet_radius_m);
     glapi.try_set_uniform(prog, "atmThickness", scene.atmosphere_thickness_m);
     glapi.try_set_uniform(prog, "vaporThickness", scene.vapor_thickness_ratio);
+    glapi.try_set_uniform(prog, "cloudOffset", scene.cloud_offset());
     glapi.try_set_uniform(prog, "cloudAltitude", scene.cloud_altitude_m);
     glapi.try_set_uniform(prog, "cloudThickness", scene.cloud_thickness_m);
     glapi.try_set_uniform(prog, "cloudiness", scene.cloudiness_ratio);
