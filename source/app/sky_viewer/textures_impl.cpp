@@ -18,29 +18,31 @@ import std;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
-static int tex_unit = 0;
-//------------------------------------------------------------------------------
 // Cube maps
 //------------------------------------------------------------------------------
 sky_viewer_cube_maps::sky_viewer_cube_maps(
   execution_context& ctx,
   video_context& video) {
     video.with_gl([&, this](auto&, auto& GL) {
-        const std::array<std::tuple<std::string, url>, 1> args{
-          {{"Default",
-            url{"eagitex:///"
-                "cube_map_sky?size=256&params=json%3A%2F%2F%2FSkyParams"}}}};
-
-        for(const auto& [name, loc] : args) {
-            load(
-              name,
-              loc,
-              ctx,
-              video,
-              GL.texture_cube_map,
-              GL.texture0 + tex_unit++);
-        }
+        load(
+          "Default",
+          url{"eagitex:///"
+              "cube_map_sky?size=256&params=json%3A%2F%2F%2FSkyParams"},
+          ctx,
+          video,
+          GL.texture_cube_map,
+          GL.texture0);
     });
+}
+//------------------------------------------------------------------------------
+auto sky_viewer_cube_maps::load_default(
+  execution_context& ctx,
+  video_context& video,
+  const url& locator) noexcept -> sky_viewer_cube_maps& {
+    video.with_gl([&, this](auto&, auto& GL) {
+        load("Default", locator, ctx, video, GL.texture_cube_map, GL.texture0);
+    });
+    return *this;
 }
 //------------------------------------------------------------------------------
 auto sky_viewer_cube_maps::texture_unit(video_context& video)
