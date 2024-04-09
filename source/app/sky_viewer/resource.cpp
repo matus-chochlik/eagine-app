@@ -30,6 +30,7 @@ struct sky_viewer_resource_intf
 
     virtual auto is_loaded() noexcept -> bool = 0;
     virtual void load_if_needed(execution_context&, video_context&) = 0;
+    virtual void load(const url& locator) = 0;
     virtual void use(video_context&) = 0;
     virtual void clean_up(execution_context&, video_context&) = 0;
     virtual auto settings_height() -> float {
@@ -67,6 +68,13 @@ public:
       -> sky_viewer_resource_wrapper& {
         if(_impl) [[likely]] {
             _impl->load_if_needed(ctx, video);
+        }
+        return *this;
+    }
+
+    auto load(const url& locator) -> sky_viewer_resource_wrapper& {
+        if(_impl) [[likely]] {
+            _impl->load(locator);
         }
         return *this;
     }
@@ -235,6 +243,11 @@ public:
       const string_view head,
       const guiplus::imgui_api& gui) noexcept {
         return this->_settings(head, current().implementation(), gui);
+    }
+
+protected:
+    void _load_default(const url&) {
+        assert(not _loaded.empty());
     }
 
 private:

@@ -18,8 +18,8 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 //  Application
 //------------------------------------------------------------------------------
-auto sky_viewer::_load_handler() noexcept {
-    return make_callable_ref<&sky_viewer::_on_loaded>(this);
+auto sky_viewer::_cube_map_load_handler() noexcept {
+    return make_callable_ref<&sky_viewer::_on_cube_map_loaded>(this);
 }
 //------------------------------------------------------------------------------
 auto sky_viewer::_select_handler() noexcept {
@@ -55,6 +55,21 @@ void sky_viewer::_init_camera() {
       .set_near(sr * 0.01F);
 }
 //------------------------------------------------------------------------------
+auto sky_viewer::_make_anim_url() noexcept -> url {
+    _anim_frame_no_make++;
+
+    std::string loc;
+    loc.append("eagitex:///cube_map_sky");
+    loc.append("?size=");
+    loc.append(std::to_string(256));
+    loc.append("&cloud_offset_x=");
+    loc.append(std::to_string(0.01F * _anim_frame_no_make));
+
+    std::cout << _anim_frame_no_make << std::endl;
+
+    return url{std::move(loc)};
+}
+//------------------------------------------------------------------------------
 auto sky_viewer::_all_resource_count() noexcept -> span_size_t {
     return _backgrounds.all_resource_count() + _cube_maps.all_resource_count();
 }
@@ -64,11 +79,9 @@ auto sky_viewer::_loaded_resource_count() noexcept -> span_size_t {
            _cube_maps.loaded_resource_count();
 }
 //------------------------------------------------------------------------------
-void sky_viewer::_on_loaded() noexcept {
-    _load_progress.update_progress(_loaded_resource_count());
-    if(_loaded_resource_count() == _all_resource_count()) {
-        _load_progress.finish();
-    }
+void sky_viewer::_on_cube_map_loaded() noexcept {
+    // TODO: only in animation mode
+    _cube_maps.load_default(_make_anim_url());
 }
 //------------------------------------------------------------------------------
 void sky_viewer::_on_selected() noexcept {
@@ -83,11 +96,9 @@ sky_viewer::sky_viewer(execution_context& ctx, video_context& video)
   : common_application{ctx}
   , _video{video}
   , _backgrounds{ctx, video}
-  , _cube_maps{ctx, video}
-  , _load_progress{ctx.progress(), "loading resources", _all_resource_count()} {
-    _backgrounds.loaded.connect(_load_handler());
+  , _cube_maps{ctx, video} {
     _backgrounds.selected.connect(_select_handler());
-    _cube_maps.loaded.connect(_load_handler());
+    _cube_maps.loaded.connect(_cube_map_load_handler());
     _cube_maps.selected.connect(_select_handler());
 
     _init_camera();

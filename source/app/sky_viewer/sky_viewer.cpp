@@ -35,8 +35,8 @@ private:
 
     auto _all_resource_count() noexcept -> span_size_t;
     auto _loaded_resource_count() noexcept -> span_size_t;
-    void _on_loaded() noexcept;
-    auto _load_handler() noexcept;
+    void _on_cube_map_loaded() noexcept;
+    auto _cube_map_load_handler() noexcept;
     void _on_selected() noexcept;
     auto _select_handler() noexcept;
     void _clear_background() noexcept;
@@ -46,13 +46,15 @@ private:
     auto _show_settings_handler() noexcept;
     void _setting_window(const guiplus::imgui_api&) noexcept;
 
+    auto _make_anim_url() noexcept -> url;
+
     video_context& _video;
     sky_viewer_backgrounds _backgrounds;
     sky_viewer_cube_maps _cube_maps;
-    activity_progress _load_progress;
 
     orbiting_camera _camera;
     float _fov{70.F};
+    long _anim_frame_no_make{0};
     bool _show_setting_window{false};
 };
 //------------------------------------------------------------------------------

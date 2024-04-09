@@ -35,13 +35,8 @@ sky_viewer_cube_maps::sky_viewer_cube_maps(
     });
 }
 //------------------------------------------------------------------------------
-auto sky_viewer_cube_maps::load_default(
-  execution_context& ctx,
-  video_context& video,
-  const url& locator) noexcept -> sky_viewer_cube_maps& {
-    video.with_gl([&, this](auto&, auto& GL) {
-        load("Default", locator, ctx, video, GL.texture_cube_map, GL.texture0);
-    });
+auto sky_viewer_cube_maps::load_default(const url& locator) noexcept
+  -> sky_viewer_cube_maps& {
     return *this;
 }
 //------------------------------------------------------------------------------

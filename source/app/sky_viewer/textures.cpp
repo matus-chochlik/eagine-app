@@ -17,11 +17,12 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 export class sky_viewer_cube_maps
   : public sky_viewer_resources<sky_viewer_texture> {
+    using base = sky_viewer_resources<sky_viewer_texture>;
+
 public:
     sky_viewer_cube_maps(execution_context&, video_context&);
 
-    auto load_default(execution_context&, video_context&, const url&) noexcept
-      -> sky_viewer_cube_maps&;
+    auto load_default(const url&) noexcept -> sky_viewer_cube_maps&;
 
     auto texture_unit(video_context&) -> oglplus::texture_unit;
 };
