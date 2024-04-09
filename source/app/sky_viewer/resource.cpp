@@ -71,13 +71,6 @@ public:
         return *this;
     }
 
-    auto load(const url& locator) -> sky_viewer_resource_wrapper& {
-        if(_impl) [[likely]] {
-            _impl->load(locator);
-        }
-        return *this;
-    }
-
     auto use(video_context& video) -> sky_viewer_resource_wrapper& {
         if(_impl) [[likely]] {
             _impl->use(video);
