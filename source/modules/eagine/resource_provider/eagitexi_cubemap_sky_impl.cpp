@@ -35,13 +35,18 @@ struct cubemap_scene {
     float above_ground_m{25.F};
     float sun_azimuth_deg{0.F};
     float sun_elevation_deg{45.F};
-    float sun_apparent_angle{0.07F};
+    float sun_apparent_angle{0.05F};
 
     std::string tiling_url;
 
     template <typename T>
     static auto query_arg(const url&, string_view name, T fallback) noexcept
       -> T;
+
+    static auto query_arg_str(
+      const url&,
+      string_view name,
+      string_view fallback) noexcept -> std::string;
 
     cubemap_scene(const url& locator) noexcept;
 
@@ -99,7 +104,8 @@ cubemap_scene::cubemap_scene(const url& l) noexcept
   , above_ground_m{query_arg<float>(l, "above_ground_m", 100.F)}
   , sun_azimuth_deg{query_arg<float>(l, "sun_azimuth_deg", 0.0F)}
   , sun_elevation_deg{query_arg<float>(l, "sun_elevation_deg", 45.0F)}
-  , sun_apparent_angle{query_arg<float>(l, "sun_apparent_angle", 0.07F)} {}
+  , sun_apparent_angle{query_arg<float>(l, "sun_apparent_angle", 0.05F)}
+  , tiling_url{query_arg_str(l, "tiling_url", "text:///TlngR4S512")} {}
 //------------------------------------------------------------------------------
 template <typename T>
 auto cubemap_scene::query_arg(
@@ -107,6 +113,14 @@ auto cubemap_scene::query_arg(
   string_view name,
   T fallback) noexcept -> T {
     return locator.query().arg_value_as<T>(name).value_or(fallback);
+}
+//------------------------------------------------------------------------------
+auto cubemap_scene::query_arg_str(
+  const url& locator,
+  string_view name,
+  string_view fallback) noexcept -> std::string {
+    return locator.query().decoded_arg_value(name).value_or(
+      to_string(fallback));
 }
 //------------------------------------------------------------------------------
 auto cubemap_scene::cloud_offset() const noexcept
@@ -618,10 +632,17 @@ auto eagitex_cubemap_sky_io::make_header(const url& locator, int size)
     }};
     add.operator()<int>("size");
     add.operator()<float>("planet_radius_m");
-    add.operator()<float>("planet_atmosphere_m");
+    add.operator()<float>("atm_thickness_m");
+    add.operator()<float>("vapor_thickness_ratio");
+    add.operator()<float>("cloud_offset_x");
+    add.operator()<float>("cloud_offset_y");
+    add.operator()<float>("cloud_altitude_m");
+    add.operator()<float>("cloud_thickness_m");
+    add.operator()<float>("cloudiness_ratio");
     add.operator()<float>("above_ground_m");
     add.operator()<float>("sun_azimuth_deg");
     add.operator()<float>("sun_elevation_deg");
+    add.operator()<float>("sun_apparent_angle");
     add.operator()<std::string>("params");
     hdr << R"("}]})";
 

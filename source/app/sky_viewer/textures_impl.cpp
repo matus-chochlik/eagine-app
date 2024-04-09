@@ -26,8 +26,7 @@ sky_viewer_cube_maps::sky_viewer_cube_maps(
     video.with_gl([&, this](auto&, auto& GL) {
         load(
           "Default",
-          url{"eagitex:///"
-              "cube_map_sky?size=256&params=json%3A%2F%2F%2FSkyParams"},
+          url{"eagitex:///cube_map_sky?size=256"},
           ctx,
           video,
           GL.texture_cube_map,
@@ -35,8 +34,11 @@ sky_viewer_cube_maps::sky_viewer_cube_maps(
     });
 }
 //------------------------------------------------------------------------------
-auto sky_viewer_cube_maps::load_default(const url& locator) noexcept
-  -> sky_viewer_cube_maps& {
+auto sky_viewer_cube_maps::update_default(
+  execution_context& ctx,
+  video_context& video,
+  const url& locator) noexcept -> sky_viewer_cube_maps& {
+    _get_default().request_update(locator, ctx, video);
     return *this;
 }
 //------------------------------------------------------------------------------

@@ -81,7 +81,7 @@ auto sky_viewer::_loaded_resource_count() noexcept -> span_size_t {
 //------------------------------------------------------------------------------
 void sky_viewer::_on_cube_map_loaded() noexcept {
     // TODO: only in animation mode
-    _cube_maps.load_default(_make_anim_url());
+    //_cube_maps.update_default(context(), _video, _make_anim_url());
 }
 //------------------------------------------------------------------------------
 void sky_viewer::_on_selected() noexcept {

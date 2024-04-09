@@ -22,7 +22,8 @@ export class sky_viewer_cube_maps
 public:
     sky_viewer_cube_maps(execution_context&, video_context&);
 
-    auto load_default(const url&) noexcept -> sky_viewer_cube_maps&;
+    auto update_default(execution_context&, video_context&, const url&) noexcept
+      -> sky_viewer_cube_maps&;
 
     auto texture_unit(video_context&) -> oglplus::texture_unit;
 };

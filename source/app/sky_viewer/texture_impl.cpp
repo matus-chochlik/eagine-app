@@ -40,6 +40,7 @@ public:
       oglplus::texture_unit);
     auto is_loaded() noexcept -> bool final;
     void load_if_needed(execution_context&, video_context&) final;
+    void request_update(const url&, execution_context&, video_context&) final;
     void use(video_context&) final;
     auto texture_unit(video_context&) -> oglplus::texture_unit final;
     void clean_up(execution_context&, video_context&) final;
@@ -78,6 +79,20 @@ void sky_viewer_texture_resource::load_if_needed(
     video.with_gl([&, this](auto&, auto& GL) {
         gl_texture_resource::load_if_needed(
           ctx, _tex_target, texture_unit(video));
+    });
+}
+//------------------------------------------------------------------------------
+void sky_viewer_texture_resource::request_update(
+  const url& locator,
+  execution_context& ctx,
+  video_context& video) {
+    video.with_gl([&, this](auto&, auto& GL) {
+        gl_texture_resource::request_update(
+          locator,
+          ctx.loader(),
+          ctx.resource_context(),
+          _tex_target,
+          texture_unit(video));
     });
 }
 //------------------------------------------------------------------------------
