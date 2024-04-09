@@ -30,7 +30,6 @@ struct sky_viewer_resource_intf
 
     virtual auto is_loaded() noexcept -> bool = 0;
     virtual void load_if_needed(execution_context&, video_context&) = 0;
-    virtual void load(const url& locator) = 0;
     virtual void use(video_context&) = 0;
     virtual void clean_up(execution_context&, video_context&) = 0;
     virtual auto settings_height() -> float {

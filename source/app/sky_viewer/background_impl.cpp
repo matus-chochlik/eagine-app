@@ -45,7 +45,6 @@ public:
 
     auto is_loaded() noexcept -> bool final;
     void load_if_needed(execution_context&, video_context&) final;
-    void load(const url& locator) final;
     void use(video_context&) final;
     void set_skybox_unit(video_context&, oglplus::texture_unit) final;
     void clear(video_context&, const mat4& camera, const float distance) final;
@@ -95,8 +94,6 @@ auto sky_viewer_default_background::is_loaded() noexcept -> bool {
 void sky_viewer_default_background::load_if_needed(
   execution_context&,
   video_context&) {}
-//------------------------------------------------------------------------------
-void sky_viewer_default_background::load(const url& locator) {}
 //------------------------------------------------------------------------------
 void sky_viewer_default_background::use(video_context&) {}
 //------------------------------------------------------------------------------
@@ -167,7 +164,6 @@ public:
 
     auto is_loaded() noexcept -> bool final;
     void load_if_needed(execution_context&, video_context&) final;
-    void load(const url& locator) final;
     void use(video_context&) final;
     void set_skybox_unit(video_context&, oglplus::texture_unit) final;
     void clear(video_context&, const mat4& camera, const float distance) final;
@@ -191,8 +187,6 @@ auto sky_viewer_skybox_background::is_loaded() noexcept -> bool {
 void sky_viewer_skybox_background::load_if_needed(
   execution_context&,
   video_context&) {}
-//------------------------------------------------------------------------------
-void sky_viewer_skybox_background::load(const url& locator) {}
 //------------------------------------------------------------------------------
 void sky_viewer_skybox_background::use(video_context&) {}
 //------------------------------------------------------------------------------
