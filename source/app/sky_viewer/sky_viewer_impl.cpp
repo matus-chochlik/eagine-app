@@ -55,33 +55,22 @@ void sky_viewer::_init_camera() {
       .set_near(sr * 0.01F);
 }
 //------------------------------------------------------------------------------
-auto sky_viewer::_make_anim_url() noexcept -> url {
-    _anim_frame_no_make++;
+auto sky_viewer::_make_anim_url(long frame_no) noexcept -> url {
 
     std::string loc;
     loc.append("eagitex:///cube_map_sky");
     loc.append("?size=");
     loc.append(std::to_string(256));
     loc.append("&cloud_offset_x=");
-    loc.append(std::to_string(0.01F * _anim_frame_no_make));
-
-    std::cout << _anim_frame_no_make << std::endl;
+    loc.append(std::to_string(0.01F * frame_no));
 
     return url{std::move(loc)};
 }
 //------------------------------------------------------------------------------
-auto sky_viewer::_all_resource_count() noexcept -> span_size_t {
-    return _backgrounds.all_resource_count() + _cube_maps.all_resource_count();
-}
-//------------------------------------------------------------------------------
-auto sky_viewer::_loaded_resource_count() noexcept -> span_size_t {
-    return _backgrounds.loaded_resource_count() +
-           _cube_maps.loaded_resource_count();
-}
-//------------------------------------------------------------------------------
 void sky_viewer::_on_cube_map_loaded() noexcept {
     // TODO: only in animation mode
-    //_cube_maps.update_default(context(), _video, _make_anim_url());
+    //++_anim_frame_no_make++;
+    //_cube_maps.update_default(context(), _video, _make_anim_url(_anim_frame_no_make));
 }
 //------------------------------------------------------------------------------
 void sky_viewer::_on_selected() noexcept {
@@ -96,7 +85,7 @@ sky_viewer::sky_viewer(execution_context& ctx, video_context& video)
   : common_application{ctx}
   , _video{video}
   , _backgrounds{ctx, video}
-  , _cube_maps{ctx, video} {
+  , _cube_maps{ctx, video, _make_anim_url(0)} {
     _backgrounds.selected.connect(_select_handler());
     _cube_maps.loaded.connect(_cube_map_load_handler());
     _cube_maps.selected.connect(_select_handler());

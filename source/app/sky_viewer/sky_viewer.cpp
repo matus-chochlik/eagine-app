@@ -33,20 +33,17 @@ private:
     void _init_inputs();
     void _init_camera();
 
-    auto _all_resource_count() noexcept -> span_size_t;
-    auto _loaded_resource_count() noexcept -> span_size_t;
     void _on_cube_map_loaded() noexcept;
     auto _cube_map_load_handler() noexcept;
     void _on_selected() noexcept;
     auto _select_handler() noexcept;
     void _clear_background() noexcept;
     void _clear_background_default() noexcept;
-    void _view_model() noexcept;
     void _show_settings(const input& i) noexcept;
     auto _show_settings_handler() noexcept;
     void _setting_window(const guiplus::imgui_api&) noexcept;
 
-    auto _make_anim_url() noexcept -> url;
+    auto _make_anim_url(long frame_no) noexcept -> url;
 
     video_context& _video;
     sky_viewer_backgrounds _backgrounds;

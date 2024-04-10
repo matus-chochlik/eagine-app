@@ -22,11 +22,12 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 sky_viewer_cube_maps::sky_viewer_cube_maps(
   execution_context& ctx,
-  video_context& video) {
+  video_context& video,
+  url default_locator) {
     video.with_gl([&, this](auto&, auto& GL) {
         load(
           "Default",
-          url{"eagitex:///cube_map_sky?size=256"},
+          std::move(default_locator),
           ctx,
           video,
           GL.texture_cube_map,
