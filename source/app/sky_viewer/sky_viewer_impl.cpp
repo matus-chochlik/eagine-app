@@ -146,13 +146,13 @@ void sky_viewer::update_overlays(guiplus::gui_utils& utils) noexcept {
 void sky_viewer::update() noexcept {
 
     _cube_maps.update();
+    _cube_maps.load_if_needed(context(), _video);
     _backgrounds.update();
 
     if(_backgrounds and _cube_maps) {
         _clear_background();
     } else {
         _clear_background_default();
-        _cube_maps.load_if_needed(context(), _video);
         _backgrounds.load_if_needed(context(), _video);
     }
 

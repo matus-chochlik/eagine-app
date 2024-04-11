@@ -49,6 +49,7 @@ private:
     void _on_loaded(const gl_texture_resource::load_info&) noexcept;
     oglplus::texture_target _tex_target;
     oglplus::texture_unit _tex_unit{0};
+    bool _was_loaded{false};
 };
 //------------------------------------------------------------------------------
 sky_viewer_texture_resource::sky_viewer_texture_resource(
@@ -66,11 +67,12 @@ sky_viewer_texture_resource::sky_viewer_texture_resource(
 //------------------------------------------------------------------------------
 void sky_viewer_texture_resource::_on_loaded(
   const gl_texture_resource::load_info&) noexcept {
+    _was_loaded = gl_texture_resource::is_loaded();
     signal_loaded();
 }
 //------------------------------------------------------------------------------
 auto sky_viewer_texture_resource::is_loaded() noexcept -> bool {
-    return gl_texture_resource::is_loaded();
+    return _was_loaded;
 }
 //------------------------------------------------------------------------------
 void sky_viewer_texture_resource::load_if_needed(
