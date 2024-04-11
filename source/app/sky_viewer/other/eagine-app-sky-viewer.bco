@@ -10,9 +10,6 @@ function _eagine_app_sky_viewer()
 
     local only_once_opts=" \
         -h --help \
-        --model \
-        --program \
-        --texture \
         --cube-map \
     "
 
