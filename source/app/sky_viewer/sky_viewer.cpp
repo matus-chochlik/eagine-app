@@ -51,6 +51,7 @@ private:
 
     orbiting_camera _camera;
     float _fov{70.F};
+    valid_if_power_of_two<int> _resolution{256};
     long _anim_frame_no_make{0};
     bool _show_setting_window{false};
 };

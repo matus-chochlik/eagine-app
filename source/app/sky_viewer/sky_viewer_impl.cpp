@@ -60,9 +60,11 @@ auto sky_viewer::_make_anim_url(long frame_no) noexcept -> url {
     std::string loc;
     loc.append("eagitex:///cube_map_sky");
     loc.append("?size=");
-    loc.append(std::to_string(256));
-    loc.append("&cloud_offset_x=");
-    loc.append(std::to_string(0.01F * frame_no));
+    loc.append(std::to_string(_resolution.value_or(256)));
+    if(frame_no > 0) {
+        loc.append("&cloud_offset_x=");
+        loc.append(std::to_string(0.01F * frame_no));
+    }
 
     return url{std::move(loc)};
 }
