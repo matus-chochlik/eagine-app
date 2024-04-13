@@ -121,7 +121,7 @@ void example_triangle::update() noexcept {
     const auto& [gl, GL] = _video.gl_api();
     gl.draw_arrays(GL.triangles, 0, 3);
 
-    _video.commit();
+    _video.commit(*this);
 }
 //------------------------------------------------------------------------------
 void example_triangle::clean_up() noexcept {

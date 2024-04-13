@@ -125,7 +125,7 @@ void example_arrow::update() noexcept {
         _draw_prog.load_if_needed(context());
     }
 
-    _video.commit();
+    _video.commit(*this);
 }
 //------------------------------------------------------------------------------
 void example_arrow::clean_up() noexcept {

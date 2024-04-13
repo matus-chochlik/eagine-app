@@ -97,7 +97,7 @@ void example_checker::update() noexcept {
 
     gl.end();
 
-    _video.commit();
+    _video.commit(*this);
 }
 //------------------------------------------------------------------------------
 void example_checker::clean_up() noexcept {

@@ -126,7 +126,7 @@ void example_uv_map::update() noexcept {
         _resources.load();
     }
 
-    _video.commit();
+    _video.commit(*this);
 }
 //------------------------------------------------------------------------------
 void example_uv_map::clean_up() noexcept {

@@ -108,7 +108,7 @@ void example_shape::update() noexcept {
     }
     geom.use_and_draw(_video);
 
-    _video.commit();
+    _video.commit(*this);
 }
 //------------------------------------------------------------------------------
 void example_shape::clean_up() noexcept {

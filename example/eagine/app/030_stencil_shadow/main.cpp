@@ -202,7 +202,7 @@ void example_stencil_shadow::update() noexcept {
         _light_tex.load_if_needed(context(), GL.texture_2d, GL.texture0 + 2);
     }
 
-    _video.commit();
+    _video.commit(*this);
 }
 //------------------------------------------------------------------------------
 void example_stencil_shadow::clean_up() noexcept {

@@ -85,7 +85,7 @@ void example_edges::update() noexcept {
         _prog.load_if_needed(context());
     }
 
-    _video.commit();
+    _video.commit(*this);
 }
 //------------------------------------------------------------------------------
 void example_edges::clean_up() noexcept {

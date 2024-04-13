@@ -193,7 +193,7 @@ void example_occlusion::update() noexcept {
     }
     oglplus::draw_using_instructions(glapi, view(_ops));
 
-    _video.commit();
+    _video.commit(*this);
 }
 //------------------------------------------------------------------------------
 void example_occlusion::clean_up() noexcept {

@@ -86,7 +86,7 @@ void example_sphere::update() noexcept {
         _prog.load_if_needed(context());
     }
 
-    _video.commit();
+    _video.commit(*this);
 }
 //------------------------------------------------------------------------------
 void example_sphere::clean_up() noexcept {

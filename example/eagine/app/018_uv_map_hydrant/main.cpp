@@ -149,7 +149,7 @@ void example_uv_map::update() noexcept {
         _tex.load_if_needed(context(), GL.texture_2d_array, GL.texture0);
     }
 
-    _video.commit();
+    _video.commit(*this);
 }
 //------------------------------------------------------------------------------
 void example_uv_map::clean_up() noexcept {

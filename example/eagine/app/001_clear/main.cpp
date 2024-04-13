@@ -43,7 +43,7 @@ public:
 
         gl.clear(GL.color_buffer_bit);
 
-        _video.commit();
+        _video.commit(*this);
     }
 
     void clean_up() noexcept final {

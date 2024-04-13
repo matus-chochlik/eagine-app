@@ -167,7 +167,7 @@ void sky_viewer::update() noexcept {
           .set_elevation(radians_(-math::sine_wave01(sec * 0.02F)));
     }
 
-    _video.commit();
+    _video.commit(*this);
 }
 //------------------------------------------------------------------------------
 void sky_viewer::clean_up() noexcept {

@@ -149,7 +149,7 @@ void example_parallax::update() noexcept {
         _stones.load_if_needed(context());
     }
 
-    _video.commit();
+    _video.commit(*this);
 }
 //------------------------------------------------------------------------------
 void example_parallax::clean_up() noexcept {

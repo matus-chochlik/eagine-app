@@ -148,7 +148,7 @@ void example_fur::update() noexcept {
 
     prev_model = model;
 
-    _video.commit();
+    _video.commit(*this);
 }
 //------------------------------------------------------------------------------
 void example_fur::clean_up() noexcept {

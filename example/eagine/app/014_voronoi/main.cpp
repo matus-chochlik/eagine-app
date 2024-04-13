@@ -193,7 +193,7 @@ void example_voronoi::update() noexcept {
     gl.clear(GL.color_buffer_bit);
     gl.draw_arrays(GL.triangle_strip, 0, 4);
 
-    _video.commit();
+    _video.commit(*this);
 }
 //------------------------------------------------------------------------------
 void example_voronoi::clean_up() noexcept {

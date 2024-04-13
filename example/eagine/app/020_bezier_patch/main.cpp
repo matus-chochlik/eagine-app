@@ -95,7 +95,7 @@ void example_bpatch::update() noexcept {
         _prog.load_if_needed(context());
     }
 
-    _video.commit();
+    _video.commit(*this);
 }
 //------------------------------------------------------------------------------
 void example_bpatch::clean_up() noexcept {

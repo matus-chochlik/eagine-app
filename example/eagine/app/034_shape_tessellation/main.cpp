@@ -149,7 +149,7 @@ void example_tess::update() noexcept {
         _geom.load_if_needed(context());
     }
 
-    _video.commit();
+    _video.commit(*this);
 }
 //------------------------------------------------------------------------------
 void example_tess::clean_up() noexcept {

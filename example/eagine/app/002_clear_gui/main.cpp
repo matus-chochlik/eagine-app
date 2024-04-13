@@ -39,7 +39,7 @@ public:
         gl.clear_color(r, g, b, 0.F);
         gl.clear(GL.color_buffer_bit);
 
-        _video.commit();
+        _video.commit(*this);
     }
 
     void update_gui(const guiplus::imgui_api& gui) noexcept final {

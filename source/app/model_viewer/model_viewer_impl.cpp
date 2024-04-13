@@ -205,7 +205,7 @@ void model_viewer::update() noexcept {
         _textures.load_if_needed(context(), _video);
     }
 
-    _video.commit();
+    _video.commit(*this);
 }
 //------------------------------------------------------------------------------
 void model_viewer::clean_up() noexcept {

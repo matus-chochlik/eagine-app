@@ -90,7 +90,7 @@ void example_cel::update() noexcept {
         _prog.load_if_needed(context());
     }
 
-    _video.commit();
+    _video.commit(*this);
 }
 //------------------------------------------------------------------------------
 void example_cel::clean_up() noexcept {

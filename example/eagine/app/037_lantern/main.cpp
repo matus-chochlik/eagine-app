@@ -166,7 +166,7 @@ void example_lantern::update() noexcept {
         }
     }
 
-    _video.commit();
+    _video.commit(*this);
 }
 //------------------------------------------------------------------------------
 void example_lantern::clean_up() noexcept {

@@ -247,7 +247,7 @@ void tiling_viewer::update() noexcept {
         _tilesets.load_if_needed(context(), _video);
     }
 
-    _video.commit();
+    _video.commit(*this);
 }
 //------------------------------------------------------------------------------
 void tiling_viewer::clean_up() noexcept {

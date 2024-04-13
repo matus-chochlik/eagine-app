@@ -113,7 +113,7 @@ void example_atomics::update() noexcept {
     gl.buffer_data(
       GL.atomic_counter_buffer, view(counter_values), GL.dynamic_draw);
 
-    _video.commit();
+    _video.commit(*this);
 }
 //------------------------------------------------------------------------------
 void example_atomics::clean_up() noexcept {

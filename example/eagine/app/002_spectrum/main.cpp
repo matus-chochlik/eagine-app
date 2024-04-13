@@ -97,7 +97,7 @@ public:
 
         gl.end();
 
-        _video.commit();
+        _video.commit(*this);
     }
 
     void clean_up() noexcept final {

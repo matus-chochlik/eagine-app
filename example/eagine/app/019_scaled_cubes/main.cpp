@@ -91,7 +91,7 @@ void example_cubes::update() noexcept {
         _prog.load_if_needed(context());
     }
 
-    _video.commit();
+    _video.commit(*this);
 }
 //------------------------------------------------------------------------------
 void example_cubes::clean_up() noexcept {

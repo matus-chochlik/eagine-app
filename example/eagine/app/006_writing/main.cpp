@@ -122,7 +122,7 @@ void example_writing::update() noexcept {
     gl.clear(GL.color_buffer_bit);
     gl.draw_arrays(GL.line_strip, 0, point_count);
 
-    _video.commit();
+    _video.commit(*this);
 }
 //------------------------------------------------------------------------------
 void example_writing::clean_up() noexcept {
