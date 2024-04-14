@@ -60,10 +60,10 @@ auto sky_viewer::_make_anim_url(long frame_no) noexcept -> url {
     loc.append("eagitex:///cube_map_sky");
     loc.append("?size=");
     loc.append(std::to_string(_resolution.value_or(256)));
-    if(frame_no > 0) {
-        loc.append("&cloud_offset_x=");
-        loc.append(std::to_string(0.01F * frame_no));
-    }
+    loc.append("&sun_elevation_deg=");
+    loc.append(std::to_string(0.5F * frame_no));
+    loc.append("&cloud_offset_x=");
+    loc.append(std::to_string(0.00002F * frame_no));
 
     return url{std::move(loc)};
 }
@@ -158,19 +158,7 @@ void sky_viewer::update_overlays(guiplus::gui_utils& utils) noexcept {
     }
 }
 //------------------------------------------------------------------------------
-void sky_viewer::update() noexcept {
-
-    _cube_maps.update();
-    _cube_maps.load_if_needed(context(), _video);
-    _backgrounds.update();
-
-    if(_backgrounds and _cube_maps) {
-        _clear_background();
-    } else {
-        _clear_background_default();
-        _backgrounds.load_if_needed(context(), _video);
-    }
-
+void sky_viewer::_update_camera() noexcept {
     auto& state = context().state();
 
     if(_animation_mode) {
@@ -186,6 +174,21 @@ void sky_viewer::update() noexcept {
         _camera.update_orbit(state.frame_duration().value() * 0.02F)
           .set_azimuth(radians_(sec * 0.1F))
           .set_elevation(radians_(-math::sine_wave01(sec * 0.02F)));
+    }
+}
+//------------------------------------------------------------------------------
+void sky_viewer::update() noexcept {
+    _update_camera();
+
+    _cube_maps.update();
+    _cube_maps.load_if_needed(context(), _video);
+    _backgrounds.update();
+
+    if(_backgrounds and _cube_maps) {
+        _clear_background();
+    } else {
+        _clear_background_default();
+        _backgrounds.load_if_needed(context(), _video);
     }
 
     _video.commit(*this);

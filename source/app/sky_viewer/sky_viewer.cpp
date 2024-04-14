@@ -38,6 +38,7 @@ private:
     auto _cube_map_load_handler() noexcept;
     void _on_selected() noexcept;
     auto _select_handler() noexcept;
+    void _update_camera() noexcept;
     void _clear_background() noexcept;
     void _clear_background_default() noexcept;
     void _show_settings(const input& i) noexcept;
