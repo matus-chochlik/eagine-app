@@ -37,7 +37,7 @@ public:
 
     auto should_dump_frame(application&) const noexcept -> bool;
 
-    auto framedump_number(const long frame_no) const noexcept
+    auto framedump_number(const long frame_no) noexcept
       -> valid_if_nonnegative<long>;
 
     auto commit(
@@ -66,6 +66,7 @@ private:
     shared_holder<framedump> _framedump_depth{};
     shared_holder<framedump> _framedump_stencil{};
     std::vector<callable_ref<void(video_context&) noexcept>> _cleanup_ops;
+    long _dump_frame_no{0};
 };
 //------------------------------------------------------------------------------
 inline auto video_context_state::should_dump_frame(
@@ -103,9 +104,9 @@ inline auto video_context_state::init_framebuffer(
     return true;
 }
 //------------------------------------------------------------------------------
-auto video_context_state::framedump_number(const long frame_no) const noexcept
+auto video_context_state::framedump_number(const long) noexcept
   -> valid_if_nonnegative<long> {
-    return _options.framedump_number(frame_no);
+    return _options.framedump_number(_dump_frame_no++);
 }
 //------------------------------------------------------------------------------
 auto video_context_state::_dump_frame(
