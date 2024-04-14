@@ -139,10 +139,9 @@ vec2 cloudCoord(
 	vec2 offset,
 	float scale) {
 	location = location - planet.center;
-	scale = 10.0 / scale;
 	location = normalize(location);
 	vec2 sph = vec2(atan(location.y, location.x)+3.14157, asin(location.z));
-	vec2 sca = vec2(scale);
+	vec2 sca = vec2(10.0 / scale);
 	offset = (sca * offset / tilingSide);
 	return cloudOffset / scale + offset + sca * sph;
 }
