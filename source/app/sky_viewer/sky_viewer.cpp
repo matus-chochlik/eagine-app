@@ -25,6 +25,7 @@ public:
     sky_viewer(execution_context&, video_context&);
 
     auto is_done() noexcept -> bool final;
+    auto should_dump_frame() noexcept -> bool final;
     void update() noexcept final;
     void update_overlays(guiplus::gui_utils& gui) noexcept final;
     void clean_up() noexcept final;
@@ -52,7 +53,9 @@ private:
     orbiting_camera _camera;
     float _fov{70.F};
     valid_if_power_of_two<int> _resolution{256};
-    long _anim_frame_no_make{0};
+    long _anim_frame_no{0};
+    bool _animation_mode{true};
+    bool _anim_frame_ready{false};
     bool _show_setting_window{false};
 };
 //------------------------------------------------------------------------------

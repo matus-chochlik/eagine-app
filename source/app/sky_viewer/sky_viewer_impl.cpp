@@ -56,7 +56,6 @@ void sky_viewer::_init_camera() {
 }
 //------------------------------------------------------------------------------
 auto sky_viewer::_make_anim_url(long frame_no) noexcept -> url {
-
     std::string loc;
     loc.append("eagitex:///cube_map_sky");
     loc.append("?size=");
@@ -70,9 +69,12 @@ auto sky_viewer::_make_anim_url(long frame_no) noexcept -> url {
 }
 //------------------------------------------------------------------------------
 void sky_viewer::_on_cube_map_loaded() noexcept {
-    // TODO: only in animation mode
-    //++_anim_frame_no_make++;
-    //_cube_maps.update_default(context(), _video, _make_anim_url(_anim_frame_no_make));
+    if(_animation_mode) {
+        ++_anim_frame_no;
+        _cube_maps.update_default(
+          context(), _video, _make_anim_url(_anim_frame_no));
+        _anim_frame_ready = true;
+    }
 }
 //------------------------------------------------------------------------------
 void sky_viewer::_on_selected() noexcept {
@@ -104,6 +106,17 @@ void sky_viewer::_show_settings(const input& i) noexcept {
 //------------------------------------------------------------------------------
 auto sky_viewer::is_done() noexcept -> bool {
     return false;
+}
+//------------------------------------------------------------------------------
+auto sky_viewer::should_dump_frame() noexcept -> bool {
+    if(_animation_mode) {
+        if(_anim_frame_ready) {
+            _anim_frame_ready = false;
+        } else {
+            return false;
+        }
+    }
+    return true;
 }
 //------------------------------------------------------------------------------
 void sky_viewer::_clear_background() noexcept {
@@ -160,7 +173,15 @@ void sky_viewer::update() noexcept {
 
     auto& state = context().state();
 
-    if(state.user_idle_too_long()) {
+    if(_animation_mode) {
+        if(_anim_frame_ready) {
+            const auto frame_duration{1.F / 30.F};
+            const auto sec{float(_anim_frame_no) * frame_duration};
+            _camera.update_orbit(frame_duration * 0.02F)
+              .set_azimuth(radians_(sec * 0.1F))
+              .set_elevation(radians_(-math::sine_wave01(sec * 0.02F)));
+        }
+    } else if(state.user_idle_too_long()) {
         const auto sec{state.frame_time().value()};
         _camera.update_orbit(state.frame_duration().value() * 0.02F)
           .set_azimuth(radians_(sec * 0.1F))
