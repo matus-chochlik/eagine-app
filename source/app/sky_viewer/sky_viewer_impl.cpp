@@ -62,6 +62,8 @@ auto sky_viewer::_make_anim_url(long frame_no) noexcept -> url {
     loc.append(std::to_string(_resolution.value_or(256)));
     loc.append("&sun_elevation_deg=");
     loc.append(std::to_string(0.5F * frame_no));
+    loc.append("&sun_azimuth_deg=");
+    loc.append(std::to_string(0.5F * frame_no + 180.F));
     loc.append("&cloud_offset_x=");
     loc.append(std::to_string(0.00002F * frame_no));
 
@@ -83,6 +85,10 @@ void sky_viewer::_on_selected() noexcept {
         _backgrounds.set_skybox_unit(_video, _cube_maps.texture_unit(_video));
         _cube_maps.use(_video);
     }
+}
+//------------------------------------------------------------------------------
+auto sky_viewer::_get_animation_mode() noexcept -> bool {
+    return context().main_context().args().find("--animation");
 }
 //------------------------------------------------------------------------------
 sky_viewer::sky_viewer(execution_context& ctx, video_context& video)
