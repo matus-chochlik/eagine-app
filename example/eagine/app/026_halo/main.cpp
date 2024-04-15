@@ -111,7 +111,7 @@ void example_halo::update() noexcept {
         _shape.load_if_needed(context());
     }
 
-    _video.commit();
+    _video.commit(*this);
 }
 //------------------------------------------------------------------------------
 void example_halo::clean_up() noexcept {

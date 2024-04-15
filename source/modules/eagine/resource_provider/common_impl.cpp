@@ -217,7 +217,9 @@ auto gl_rendered_source_blob_io::prepare() noexcept
         const auto progress_split{0.1F};
         const auto loading{load_resources()};
         if(not loading.has_finished()) {
-            return {progress_split * loading.progress()};
+            return {
+              progress_split * loading.progress(),
+              msgbus::blob_preparation_status::working};
         }
         if(not _renderer) {
             if(not gl_renderer_active) {
@@ -231,7 +233,8 @@ auto gl_rendered_source_blob_io::prepare() noexcept
                 }
             }
             if(not _renderer) {
-                return {progress_split};
+                return {
+                  progress_split, msgbus::blob_preparation_status::working};
             }
         }
         const auto rendering{_renderer->render()};
@@ -242,7 +245,9 @@ auto gl_rendered_source_blob_io::prepare() noexcept
             _finished = true;
             return {1.F, msgbus::blob_preparation_status::working};
         }
-        return {progress_split + (1.F - progress_split) * rendering.progress()};
+        return {
+          progress_split + (1.F - progress_split) * rendering.progress(),
+          msgbus::blob_preparation_status::working};
     }
     return msgbus::blob_preparation_result::finished();
 }
@@ -278,8 +283,10 @@ filesystem_search_paths::filesystem_search_paths(
   main_ctx_parent parent) noexcept
   : main_ctx_object{id, parent} {
     std::vector<std::string> paths;
-    main_context().config().fetch("app.resource_provider.root_path", paths);
-    main_context().config().fetch("app.resource_provider.root_paths", paths);
+    main_context().config().fetch(
+      "application.resource_provider.root_path", paths);
+    main_context().config().fetch(
+      "application.resource_provider.root_paths", paths);
 
     using fspath = std::filesystem::path;
 

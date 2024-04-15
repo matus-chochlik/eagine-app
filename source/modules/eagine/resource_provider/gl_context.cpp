@@ -161,7 +161,7 @@ protected:
 private:
     auto _build_screen() noexcept -> oglplus::geometry_and_bindings;
     void _render_tile() noexcept;
-    void _save_tile() noexcept;
+    void _save_cube_face() noexcept;
 
     auto _done_tiles() const noexcept -> span_size_t;
     auto _total_tiles() const noexcept -> span_size_t;
@@ -176,6 +176,7 @@ private:
     int _tile_x{0};
     int _tile_y{0};
     int _face_index{0};
+    oglplus::owned_sync _finishing_face;
 
     activity_progress _prepare_progress;
 };

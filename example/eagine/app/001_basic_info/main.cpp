@@ -34,7 +34,7 @@ public:
         _print_egl_info();
         _print_gl_info();
         _print_al_info();
-        _video.commit();
+        _video.commit(*this);
     }
 
     void clean_up() noexcept final {

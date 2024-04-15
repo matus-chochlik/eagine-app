@@ -26,14 +26,16 @@ namespace eagine::app {
 struct cubemap_scene {
     float planet_radius_m{6'370'000.F};
     float atmosphere_thickness_m{100'000.F};
-    float vapor_thickness_ratio{0.03F};
-    float cloud_altitude_m{4'000.F};
-    float cloud_thickness_m{2'000.F};
-    float cloudiness_factor{0.5F};
+    float vapor_thickness_ratio{0.05F};
+    float cloud_offset_x{0.F};
+    float cloud_offset_y{0.F};
+    float cloud_altitude_m{5'500.F};
+    float cloud_thickness_m{8'000.F};
+    float cloudiness_ratio{0.5F};
     float above_ground_m{25.F};
     float sun_azimuth_deg{0.F};
     float sun_elevation_deg{45.F};
-    float sun_apparent_angle{0.07F};
+    float sun_apparent_angle{0.05F};
 
     std::string tiling_url;
 
@@ -41,7 +43,14 @@ struct cubemap_scene {
     static auto query_arg(const url&, string_view name, T fallback) noexcept
       -> T;
 
+    static auto query_arg_str(
+      const url&,
+      string_view name,
+      string_view fallback) noexcept -> std::string;
+
     cubemap_scene(const url& locator) noexcept;
+
+    auto cloud_offset() const noexcept -> math::vector<float, 2, true>;
 
     auto sun_coord() const noexcept
       -> math::unit_spherical_coordinate<float, true>;
@@ -65,13 +74,17 @@ constexpr auto data_member_mapping(
       float,
       float,
       float,
+      float,
+      float,
       std::string>(
       {"planet_radius_m", &cubemap_scene::planet_radius_m},
       {"atmosphere_thickness_m", &cubemap_scene::atmosphere_thickness_m},
       {"vapor_thickness_ratio", &cubemap_scene::vapor_thickness_ratio},
       {"cloud_altitude_m", &cubemap_scene::cloud_altitude_m},
+      {"cloud_offset_x", &cubemap_scene::cloud_offset_x},
+      {"cloud_offset_y", &cubemap_scene::cloud_offset_y},
       {"cloud_thickness_m", &cubemap_scene::cloud_thickness_m},
-      {"cloudiness_factor", &cubemap_scene::cloudiness_factor},
+      {"cloudiness_ratio", &cubemap_scene::cloudiness_ratio},
       {"above_ground_m", &cubemap_scene::above_ground_m},
       {"sun_azimuth_deg", &cubemap_scene::sun_azimuth_deg},
       {"sun_elevation_deg", &cubemap_scene::sun_elevation_deg},
@@ -82,14 +95,17 @@ constexpr auto data_member_mapping(
 cubemap_scene::cubemap_scene(const url& l) noexcept
   : planet_radius_m{query_arg<float>(l, "planet_radius_m", 6'370'000.F)}
   , atmosphere_thickness_m{query_arg<float>(l, "atm_thickness_m", 100'000.F)}
-  , vapor_thickness_ratio{query_arg<float>(l, "vapor_thickness_ratio", 0.03F)}
-  , cloud_altitude_m{query_arg<float>(l, "cloud_altitude_m", 4'000.F)}
-  , cloud_thickness_m{query_arg<float>(l, "cloud_thickness_m", 2'000.F)}
-  , cloudiness_factor{query_arg<float>(l, "cloudiness_factor", 0.5F)}
+  , vapor_thickness_ratio{query_arg<float>(l, "vapor_thickness_ratio", 0.05F)}
+  , cloud_offset_x{query_arg<float>(l, "cloud_offset_x", 0.F)}
+  , cloud_offset_y{query_arg<float>(l, "cloud_offset_y", 0.F)}
+  , cloud_altitude_m{query_arg<float>(l, "cloud_altitude_m", 5'500.F)}
+  , cloud_thickness_m{query_arg<float>(l, "cloud_thickness_m", 8'000.F)}
+  , cloudiness_ratio{query_arg<float>(l, "cloudiness_ratio", 0.5F)}
   , above_ground_m{query_arg<float>(l, "above_ground_m", 100.F)}
   , sun_azimuth_deg{query_arg<float>(l, "sun_azimuth_deg", 0.0F)}
   , sun_elevation_deg{query_arg<float>(l, "sun_elevation_deg", 45.0F)}
-  , sun_apparent_angle{query_arg<float>(l, "sun_apparent_angle", 0.07F)} {}
+  , sun_apparent_angle{query_arg<float>(l, "sun_apparent_angle", 0.05F)}
+  , tiling_url{query_arg_str(l, "tiling_url", "text:///TlngR4S512")} {}
 //------------------------------------------------------------------------------
 template <typename T>
 auto cubemap_scene::query_arg(
@@ -97,6 +113,19 @@ auto cubemap_scene::query_arg(
   string_view name,
   T fallback) noexcept -> T {
     return locator.query().arg_value_as<T>(name).value_or(fallback);
+}
+//------------------------------------------------------------------------------
+auto cubemap_scene::query_arg_str(
+  const url& locator,
+  string_view name,
+  string_view fallback) noexcept -> std::string {
+    return locator.query().decoded_arg_value(name).value_or(
+      to_string(fallback));
+}
+//------------------------------------------------------------------------------
+auto cubemap_scene::cloud_offset() const noexcept
+  -> math::vector<float, 2, true> {
+    return {cloud_offset_x, cloud_offset_y};
 }
 //------------------------------------------------------------------------------
 auto cubemap_scene::sun_coord() const noexcept
@@ -110,7 +139,47 @@ auto cubemap_scene::sun_xyz() const noexcept -> math::vector<float, 3, true> {
 //------------------------------------------------------------------------------
 // Renderer
 //------------------------------------------------------------------------------
-class eagitexi_cubemap_sky_renderer final : public eagitexi_cubemap_renderer {
+class eagitexi_cubemap_sky_renderer_base : public eagitexi_cubemap_renderer {
+protected:
+    eagitexi_cubemap_sky_renderer_base(
+      gl_rendered_source_blob_io& parent,
+      const shared_provider_objects& shared,
+      const gl_rendered_blob_params& params,
+      shared_holder<gl_rendered_blob_context> context,
+      int size) noexcept
+      : eagitexi_cubemap_renderer{
+          parent,
+          "rendering sky cube-map",
+          params,
+          context,
+          size,
+          _tile_size(parent, size)} {}
+
+private:
+    static auto _tile_size(gl_rendered_source_blob_io&, int) noexcept -> int;
+};
+//------------------------------------------------------------------------------
+auto eagitexi_cubemap_sky_renderer_base::_tile_size(
+  gl_rendered_source_blob_io& p,
+  int size) noexcept -> int {
+    if(const auto size{p.app_config().get<int>(
+         "application.resource_provider.cubemap_sky.tile_size")}) {
+        return *size;
+    }
+    if(size <= 256) {
+        return 8;
+    }
+    if(size <= 1024) {
+        return 4;
+    }
+    if(size <= 2048) {
+        return 2;
+    }
+    return 1;
+}
+//------------------------------------------------------------------------------
+class eagitexi_cubemap_sky_renderer final
+  : public eagitexi_cubemap_sky_renderer_base {
 public:
     eagitexi_cubemap_sky_renderer(
       gl_rendered_source_blob_io& parent,
@@ -125,7 +194,6 @@ public:
     auto prepare_render() noexcept -> msgbus::blob_preparation_result final;
 
 private:
-    static auto _tile_size(int) noexcept -> int;
     void _process_cell(byte);
     void _process_line(const string_view);
 
@@ -161,7 +229,7 @@ eagitexi_cubemap_sky_renderer::eagitexi_cubemap_sky_renderer(
   const cubemap_scene& scene,
   shared_holder<gl_rendered_blob_context> context,
   int size) noexcept
-  : eagitexi_cubemap_renderer{parent, "rendering sky cube-map", params, context, size, _tile_size(size)}
+  : eagitexi_cubemap_sky_renderer_base{parent, shared, params, context, size}
   , _tiling_tex{gl_api().create_texture_object(gl_api().texture_2d)}
   , _shared{shared}
   , _tiling_line{*this, 1024}
@@ -172,19 +240,6 @@ eagitexi_cubemap_sky_renderer::eagitexi_cubemap_sky_renderer(
 //------------------------------------------------------------------------------
 eagitexi_cubemap_sky_renderer::~eagitexi_cubemap_sky_renderer() noexcept {
     _tiling.clean_up(_shared.loader);
-}
-//------------------------------------------------------------------------------
-auto eagitexi_cubemap_sky_renderer::_tile_size(int size) noexcept -> int {
-    if(size <= 256) {
-        return 8;
-    }
-    if(size <= 1024) {
-        return 4;
-    }
-    if(size <= 2048) {
-        return 2;
-    }
-    return 1;
 }
 //------------------------------------------------------------------------------
 auto eagitexi_cubemap_sky_renderer::prepare_render() noexcept
@@ -216,9 +271,10 @@ auto eagitexi_cubemap_sky_renderer::_build_program(
     glapi.try_set_uniform(prog, "planetRadius", scene.planet_radius_m);
     glapi.try_set_uniform(prog, "atmThickness", scene.atmosphere_thickness_m);
     glapi.try_set_uniform(prog, "vaporThickness", scene.vapor_thickness_ratio);
+    glapi.try_set_uniform(prog, "cloudOffset", scene.cloud_offset());
     glapi.try_set_uniform(prog, "cloudAltitude", scene.cloud_altitude_m);
     glapi.try_set_uniform(prog, "cloudThickness", scene.cloud_thickness_m);
-    glapi.try_set_uniform(prog, "cloudiness", scene.cloudiness_factor);
+    glapi.try_set_uniform(prog, "cloudiness", scene.cloudiness_ratio);
     glapi.try_set_uniform(prog, "aboveGround", scene.above_ground_m);
     glapi.try_set_uniform(prog, "sunApparentAngle", scene.sun_apparent_angle);
     glapi.try_set_uniform(prog, "sunDirection", scene.sun_xyz());
@@ -576,10 +632,17 @@ auto eagitex_cubemap_sky_io::make_header(const url& locator, int size)
     }};
     add.operator()<int>("size");
     add.operator()<float>("planet_radius_m");
-    add.operator()<float>("planet_atmosphere_m");
+    add.operator()<float>("atm_thickness_m");
+    add.operator()<float>("vapor_thickness_ratio");
+    add.operator()<float>("cloud_offset_x");
+    add.operator()<float>("cloud_offset_y");
+    add.operator()<float>("cloud_altitude_m");
+    add.operator()<float>("cloud_thickness_m");
+    add.operator()<float>("cloudiness_ratio");
     add.operator()<float>("above_ground_m");
     add.operator()<float>("sun_azimuth_deg");
     add.operator()<float>("sun_elevation_deg");
+    add.operator()<float>("sun_apparent_angle");
     add.operator()<std::string>("params");
     hdr << R"("}]})";
 

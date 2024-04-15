@@ -88,7 +88,7 @@ void example::update() noexcept {
         _srfce_prog.load_if_needed(context());
     }
 
-    _video.commit();
+    _video.commit(*this);
 }
 //------------------------------------------------------------------------------
 void example::clean_up() noexcept {

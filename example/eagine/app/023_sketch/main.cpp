@@ -87,7 +87,7 @@ void example_sketch::update() noexcept {
         _sketch_prog.load_if_needed(context());
     }
 
-    _video.commit();
+    _video.commit(*this);
 }
 //------------------------------------------------------------------------------
 void example_sketch::clean_up() noexcept {

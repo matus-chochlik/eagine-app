@@ -100,7 +100,7 @@ void example_labels::update() noexcept {
         _shapes.load_if_needed(context());
     }
 
-    _video.commit();
+    _video.commit(*this);
 }
 //------------------------------------------------------------------------------
 void example_labels::clean_up() noexcept {

@@ -35,13 +35,16 @@ public:
     auto init_framebuffer(execution_context&, const oglplus::gl_api&) noexcept
       -> bool;
 
-    auto doing_framedump() const noexcept -> bool;
+    auto should_dump_frame(application&) const noexcept -> bool;
 
-    auto framedump_number(const long frame_no) const noexcept
+    auto framedump_number(const long frame_no) noexcept
       -> valid_if_nonnegative<long>;
 
-    auto commit(long frame_number, video_provider&, const oglplus::gl_api&)
-      -> bool;
+    auto commit(
+      long frame_number,
+      application&,
+      video_provider&,
+      const oglplus::gl_api&) -> bool;
 
     void add_cleanup_op(callable_ref<void(video_context&) noexcept> op);
 
@@ -52,7 +55,6 @@ private:
       const long frame_number,
       video_provider& provider,
       const oglplus::gl_api& api) -> bool;
-
     void _clean_up(auto&) noexcept;
 
     const video_options& _options;
@@ -64,7 +66,13 @@ private:
     shared_holder<framedump> _framedump_depth{};
     shared_holder<framedump> _framedump_stencil{};
     std::vector<callable_ref<void(video_context&) noexcept>> _cleanup_ops;
+    long _dump_frame_no{0};
 };
+//------------------------------------------------------------------------------
+inline auto video_context_state::should_dump_frame(
+  application& app) const noexcept -> bool {
+    return _options.doing_framedump() and app.should_dump_frame();
+}
 //------------------------------------------------------------------------------
 inline video_context_state::video_context_state(
   execution_context& ctx,
@@ -96,13 +104,9 @@ inline auto video_context_state::init_framebuffer(
     return true;
 }
 //------------------------------------------------------------------------------
-inline auto video_context_state::doing_framedump() const noexcept -> bool {
-    return _options.doing_framedump();
-}
-//------------------------------------------------------------------------------
-auto video_context_state::framedump_number(const long frame_no) const noexcept
+auto video_context_state::framedump_number(const long) noexcept
   -> valid_if_nonnegative<long> {
-    return _options.framedump_number(frame_no);
+    return _options.framedump_number(_dump_frame_no++);
 }
 //------------------------------------------------------------------------------
 auto video_context_state::_dump_frame(
@@ -110,22 +114,22 @@ auto video_context_state::_dump_frame(
   video_provider& provider,
   const oglplus::gl_api& api) -> bool {
     bool result = true;
-    const auto& [gl, GL] = api;
+    const auto& [gl, GL]{api};
 
     if(gl.read_pixels) [[likely]] {
-        const auto dump_frame{[&, this](
-                                framedump& target,
-                                const auto gl_format,
-                                const auto gl_type,
-                                const framedump_pixel_format format,
-                                const framedump_data_type type,
-                                const int elements,
-                                const span_size_t element_size) {
+        const auto do_dump_frame{[&, this](
+                                   framedump& target,
+                                   const auto gl_format,
+                                   const auto gl_type,
+                                   const framedump_pixel_format format,
+                                   const framedump_data_type type,
+                                   const int elements,
+                                   const span_size_t element_size) {
             const auto [width, height] = provider.surface_size();
 
             if(const auto framedump_no{framedump_number(frame_number)}) {
-                const auto size =
-                  span_size(width * height * elements * element_size);
+                const auto size{
+                  span_size(width * height * elements * element_size)};
                 auto buffer{target.get_buffer(size)};
 
                 api.operations().read_pixels(
@@ -156,7 +160,7 @@ auto video_context_state::_dump_frame(
                 case framedump_data_type::none:
                     break;
                 case framedump_data_type::float_type:
-                    dump_frame(
+                    do_dump_frame(
                       *_framedump_color,
                       GL.rgba,
                       GL.float_,
@@ -166,7 +170,7 @@ auto video_context_state::_dump_frame(
                       span_size_of<oglplus::gl_types::float_type>());
                     break;
                 case framedump_data_type::byte_type:
-                    dump_frame(
+                    do_dump_frame(
                       *_framedump_color,
                       GL.rgba,
                       GL.unsigned_byte_,
@@ -184,7 +188,7 @@ auto video_context_state::_dump_frame(
                 case framedump_data_type::byte_type:
                     break;
                 case framedump_data_type::float_type:
-                    dump_frame(
+                    do_dump_frame(
                       *_framedump_depth,
                       GL.depth_component,
                       GL.float_,
@@ -202,7 +206,7 @@ auto video_context_state::_dump_frame(
                 case framedump_data_type::float_type:
                     break;
                 case framedump_data_type::byte_type:
-                    dump_frame(
+                    do_dump_frame(
                       *_framedump_stencil,
                       GL.stencil_index,
                       GL.unsigned_byte_,
@@ -219,10 +223,11 @@ auto video_context_state::_dump_frame(
 //------------------------------------------------------------------------------
 inline auto video_context_state::commit(
   const long frame_number,
+  application& app,
   video_provider& provider,
   const oglplus::gl_api& api) -> bool {
     bool result = true;
-    if(doing_framedump()) [[unlikely]] {
+    if(should_dump_frame(app)) [[unlikely]] {
         result = _dump_frame(frame_number, provider, api) and result;
     }
     return result;
@@ -342,9 +347,10 @@ void video_context::end() {
     _provider->video_end(_parent);
 }
 //------------------------------------------------------------------------------
-void video_context::commit() {
+void video_context::commit(application& app) {
     if(_gl_api_context) [[likely]] {
-        if(not _state->commit(_frame_no, *_provider, gl_api())) [[unlikely]] {
+        if(not _state->commit(_frame_no, app, *_provider, gl_api()))
+          [[unlikely]] {
             _parent.stop_running();
         }
     }
@@ -394,7 +400,7 @@ void audio_context::end() {
     _provider->audio_end(_parent);
 }
 //------------------------------------------------------------------------------
-void audio_context::commit() {
+void audio_context::commit(application&) {
     _provider->audio_commit(_parent);
 }
 //------------------------------------------------------------------------------

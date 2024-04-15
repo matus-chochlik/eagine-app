@@ -144,7 +144,7 @@ void example_picking::update() noexcept {
     gl.clear(GL.color_buffer_bit);
     gl.draw_arrays(GL.triangles, 0, 3);
 
-    _video.commit();
+    _video.commit(*this);
 }
 //------------------------------------------------------------------------------
 void example_picking::clean_up() noexcept {

@@ -995,6 +995,32 @@ class loaded_resource<oglplus::owned_texture_name>
 public:
     using common::common;
 
+    /// @brief Request the update of the texture image data.
+    auto request_update(
+      url new_locator,
+      resource_loader& loader,
+      loaded_resource_context& ctx,
+      oglplus::texture_target tgt,
+      oglplus::texture_unit tu) -> auto& {
+        _locator_str = new_locator.release_string();
+        if(const auto request{loader.request_gl_texture_update(
+             locator(), ctx.gl_context(), tgt, tu, *this)}) {
+            _request_id = request.request_id();
+            _status = resource_load_status::loading;
+        }
+        return *this;
+    }
+
+    auto request_update(
+      url new_locator,
+      resource_loader& loader,
+      execution_context& ctx,
+      oglplus::texture_target tgt,
+      oglplus::texture_unit tu) -> auto& {
+        return request_update(
+          std::move(new_locator), loader, ctx.resource_context(), tgt, tu);
+    }
+
     /// @brief Cleans up this resource.
     void clean_up(resource_loader& loader, const oglplus::gl_api& glapi) {
         glapi.clean_up(std::move(resource()));

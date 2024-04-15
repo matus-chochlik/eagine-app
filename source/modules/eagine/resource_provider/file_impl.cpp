@@ -85,7 +85,7 @@ private:
 //------------------------------------------------------------------------------
 file_provider::file_provider(const provider_parameters& params)
   : main_ctx_object{"FilePrvdr", params.parent}
-  , _allow_symlinks{*this, "app.resource_provider.allow_symlinks", false}
+  , _allow_symlinks{*this, "application.resource_provider.allow_symlinks", false}
   , _search_paths{"FilSrchPth", as_parent()} {}
 //------------------------------------------------------------------------------
 auto file_provider::_has_resource(

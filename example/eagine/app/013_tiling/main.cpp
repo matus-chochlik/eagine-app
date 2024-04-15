@@ -210,7 +210,7 @@ void example_tiling::update() noexcept {
         _resources.load();
     }
 
-    _video.commit();
+    _video.commit(*this);
 }
 //------------------------------------------------------------------------------
 void example_tiling::clean_up() noexcept {

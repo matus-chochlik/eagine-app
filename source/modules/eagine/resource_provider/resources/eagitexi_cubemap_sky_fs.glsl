@@ -1,3 +1,8 @@
+/// Copyright Matus Chochlik.
+/// Distributed under the Boost Software License, Version 1.0.
+/// See accompanying file LICENSE_1_0.txt or copy at
+/// https://www.boost.org/LICENSE_1_0.txt
+///
 #version 140
 
 in vec2 vertCoord;
@@ -10,12 +15,12 @@ uniform float cloudAltitude;
 uniform float cloudThickness;
 uniform float cloudiness;
 uniform float aboveGround;
+uniform vec2 cloudOffset;
 uniform vec3 sunDirection;
 uniform float sunApparentAngle;
 uniform float tilingSide = 512;
 uniform sampler2D tilingTex;
 
-vec3 clearDirection = normalize(vec3(0.1, 0.2, 1.0));
 //------------------------------------------------------------------------------
 float to01(float x) {
 	return 0.5 + 0.5 * x;
@@ -134,12 +139,11 @@ vec2 cloudCoord(
 	vec2 offset,
 	float scale) {
 	location = location - planet.center;
-	scale = 10.0 / scale;
 	location = normalize(location);
-	offset = (scale * offset / tilingSide);
-	return vec2(
-		offset.x+scale * (atan(location.y, location.x)+3.14157),
-		offset.y+scale * (asin(location.z)));
+	vec2 sph = vec2(atan(location.y, location.x)+3.14157, asin(location.z));
+	vec2 sca = vec2(10.0 / scale);
+	offset = (sca * offset / tilingSide);
+	return cloudOffset / scale + offset + sca * sph;
 }
 //------------------------------------------------------------------------------
 float tilingSample(vec2 coord) {
@@ -173,7 +177,7 @@ float thinCloudDensity(vec3 location, Sphere planet) {
 		thinCloudSample(location, planet, om*fib2(11, 12), 0.31)*
 		thinCloudSample(location, planet, om*fib2(12, 13), 0.13)*
 		thinCloudSample(location, planet, om*fib2(12, 13), 0.07),
-		1.0 / 6.0);
+		1.0 / 3.0);
 }
 //------------------------------------------------------------------------------
 Segment cloudsIntersection(Ray ray, Sphere planet) {
@@ -233,8 +237,9 @@ float thickCloudDensity(vec3 location, Sphere planet) {
 		cloudAltitude-cloudThickness*0.5,
 		cloudAltitude+cloudThickness*0.5);
 
-	float s640000 = thickCloudSampleB(location, planet, fib2( 0, 0), 64.000);
-	float s160000 = thickCloudSampleB(location, planet, fib2( 2, 3), 16.000);
+	float s640000 = thickCloudSampleB(location, planet, fib2( 1, 2), 64.000);
+	float s320000 = thickCloudSampleB(location, planet, fib2( 2, 3), 32.000);
+	float s160000 = thickCloudSampleB(location, planet, fib2( 3, 4), 16.000);
 	float s080000 = thickCloudSampleB(location, planet, fib2( 4, 5),  8.000);
 	float s040000 = thickCloudSampleB(location, planet, fib2( 5, 6),  4.000);
 	float s020000 = thickCloudSampleB(location, planet, fib2( 6, 7),  2.000);
@@ -246,23 +251,30 @@ float thickCloudDensity(vec3 location, Sphere planet) {
 	float snoise  = thickCloudSampleN(location, planet, fib2(12,13), 0.0314, ca);
 
 	float v = 1.0;
-	v = max(v - max(sqrt(s640000)-0.31, 0.0), 0.0);
-	v = max(v - max(sqrt(s160000)-0.47, 0.0), 0.0);
-	v = max(v - max(sqrt(s080000)-0.53, 0.0), 0.0);
-	v = max(v - max(sqrt(s040000)-0.61, 0.0), 0.0);
-	v = max(v - max(sqrt(s020000)-0.67, 0.0), 0.0);
+	v = max(v - max(sqrt(s640000)-mix(0.17, 0.97, cloudiness), 0.0), 0.0);
+	v = max(v - max(sqrt(s320000)-mix(0.27, 0.87, cloudiness), 0.0), 0.0);
+	v = max(v - max(sqrt(s160000)-mix(0.31, 0.81, cloudiness), 0.0), 0.0);
+	v = max(v - max(sqrt(s080000)-mix(0.37, 0.79, cloudiness), 0.0), 0.0);
+	v = max(v - max(sqrt(s040000)-mix(0.41, 0.77, cloudiness), 0.0), 0.0);
+	v = max(v - max(sqrt(s020000)-mix(0.47, 0.71, cloudiness), 0.0), 0.0);
 	v = max(v - max(sqrt(s010000)-0.71, 0.0), 0.0);
 	v = max(v - max(sqrt(s005000)-0.73, 0.0), 0.0);
-	v = max(v - max(sqrt(s002500)-0.79, 0.0), 0.0);
+	v = max(v - max(sqrt(s002500)-0.74, 0.0), 0.0);
+	v = max(v - max(sqrt(s001250)-0.79, 0.0), 0.0);
 
 	float w = mix(
 		mix(s020000, s010000, 0.6),
 		mix(mix(s005000, s002500, 0.5), mix(s001250, s000625, 0.5), 0.5),
 		0.6);
 
-	return pow(ca.y, 1.0 / 3.0)*
-		max(sign(v*w - pow(ca.x, 2.0)), 0.0)*
-		mix(1.0, snoise, 0.55);
+	float b = mix(
+		snoise,
+		max(
+			mix(pow(s040000, 2.0), pow(s020000, 2.0), 0.4),
+			mix(pow(s010000, 2.0), pow(s005000, 2.0), 0.4)),
+		0.8);
+
+	return pow(snoise, 1.4) * sqrt(ca.y) * max(sign(v*w - abs(ca.x-b)), 0.0);
 }
 //------------------------------------------------------------------------------
 struct AtmosphereSample {
@@ -288,7 +300,7 @@ AtmosphereSample atmSample(
 	Ray lightRay = raySample(viewRay, rayDist, lightDirection);
 	float directLight = dot(viewRay.direction, lightRay.direction);
 	float atmDistance = max(hitNear(sphereHit(lightRay, atmosphere)), 0.0);
-	float sunDown = max(-lightDirection.y, 0.0);
+	float sunDown = pow(max(-lightDirection.y, 0.0), 0.25);
 	return AtmosphereSample(
 		viewRay,
 		lightRay,
@@ -305,49 +317,48 @@ AtmosphereSample atmSample(
 			lightRay.origin,
 			planet),
 		mix(
-			sign(max(hitNear(sphereHit(lightRay, planet)), 0.0))*sqrt(sunDown),
+			sign(max(hitNear(sphereHit(lightRay, planet)), 0.0)) * sunDown,
 			1.0,
 			sunDown));
 }
 //------------------------------------------------------------------------------
-vec2 cloudSampleIn(AtmosphereSample a, Sphere planet) {
-	float occlusion = 1.0;
+vec2 cloudSample(AtmosphereSample a, Sphere planet) {
+	float shadow = 1.0;
 	if(a.cloudsIntersection.is_valid) {
 		const int sampleCount = 150;
 		const float isc = 1.0 / float(sampleCount);
 		vec3 direction = a.cloudsIntersection.far - a.lightRay.origin;
 		float l = length(direction);
 		direction = direction / l;
-		l = min(l, 256.0 * cloudThickness * isc);
+		l = min(l, 128.0 * cloudThickness * isc);
 		for(int s = 1; s <= sampleCount; ++s) {
-			float density = min(0.5 * l * thickCloudDensity(
-				a.lightRay.origin + direction * l * float(s) * isc,
-				planet), 1.0);
-			occlusion = occlusion * mix(1.0, 0.96, density);
+			vec3 location = a.lightRay.origin + direction * l * float(s) * isc;
+			float density = min(
+				cloudiness * l * thickCloudDensity(location, planet),
+				1.0);
+			shadow = shadow * mix(1.0, 0.995, density);
 		}
 	}
 	return vec2(
-		occlusion,
+		shadow,
 		min(thickCloudDensity(a.lightRay.origin, planet), 1.0));
 }
 //------------------------------------------------------------------------------
-float cloudSampleOut(AtmosphereSample a, Sphere planet) {
+float cloudShadow(AtmosphereSample a, Sphere planet) {
 	float shadow = 1.0;
 	if(a.cloudsIntersection.is_valid) {
-		const int sampleCount = 25;
+		const int sampleCount = 50;
 		const float isc = 1.0 / float(sampleCount);
+		float l = distance(a.cloudsIntersection.far, a.cloudsIntersection.near);
+		float density = 0.0;
 		for(int s = 0; s <= sampleCount; ++s) {
 			vec3 location = mix(
 				a.cloudsIntersection.far,
 				a.cloudsIntersection.near,
 				float(s) * isc);
-			float density = min(16.0 * thickCloudDensity(location, planet), 1.0);
-			shadow = shadow * mix(1.0, 0.3, density);
+			density += min(l * thickCloudDensity(location, planet), 1.0);
 		}
-		shadow = mix(
-			1.0, shadow,
-			distance(a.cloudsIntersection.far, a.cloudsIntersection.near)/
-			distance(a.cloudsIntersection.far, a.viewRay.origin));
+		shadow = 1.0 - density * isc;
 	}
 	return shadow;
 }
@@ -356,44 +367,69 @@ vec4 sunlightColor(AtmosphereSample a) {
 	return mix(
 		mixColor012n(
 			vec4(1.5), vec4(1.4),
-			vec4(1.3, 0.9, 0.6, 1.0),
+			vec4(1.3, 1.1, 0.8, 1.0),
 			vec4(1.2, 0.6, 0.4, 0.9),
 			a.atmDistRatio, 0.5),
 		vec4(0.0),
 		a.planetShadow);
 }
 //------------------------------------------------------------------------------
-vec4 clearAirColor(AtmosphereSample a, float sampleLen) {
+vec4 clearAirColor(AtmosphereSample a, float sampleLen, float shadow) {
+	float directLight = pow(abs(a.directLight), 16.0);
+	float sunDown = sqrt(to01(a.viewRay.direction.y));
+
 	float vapor = min(
-		pow(abs(a.directLight), 16.0) +
+		directLight +
 		a.vaporDensity *
 		a.atmDensity *
 		sampleLen,
 		1.0);
 
-	return mix(
-		mix(
+	vec4 airColor = mix(
+		mixColor012n(
+			vec4(0.30, 0.45, 0.75, 1.0),
+			vec4(0.25, 0.40, 0.70, 1.0),
+			vec4(0.50, 0.40, 0.25, 0.9),
+			vec4(0.40, 0.10, 0.25, 0.8),
+			a.atmDistRatio, 1.0),
+		mixColor012n(
+			vec4(0.30, 0.45, 0.75, 1.0),
+			vec4(0.25, 0.40, 0.70, 1.0),
+			vec4(0.25, 0.40, 0.70, 0.9),
+			vec4(0.50, 0.40, 0.35, 0.8),
+			a.atmDistRatio * 0.7, 0.5),
+		sunDown);
+
+	airColor = vec4(airColor.rgb, mix(airColor.a, 1.00, a.hitLight));
+
+	vec4 vaporColor = mix(
+		mixColor012n(
 			mix(
-				mixColor012n(
-					vec4(0.30, 0.45, 0.75, 1.0),
-					vec4(0.25, 0.40, 0.70, 1.0),
-					vec4(0.50, 0.40, 0.25, 0.9),
-					vec4(0.40, 0.10, 0.25, 0.8),
-					a.atmDistRatio, 1.0),
-				mixColor012n(
-					vec4(0.30, 0.45, 0.75, 1.0),
-					vec4(0.25, 0.40, 0.70, 1.0),
-					vec4(0.25, 0.40, 0.70, 0.9),
-					vec4(0.50, 0.40, 0.35, 0.8),
-					a.atmDistRatio * 0.7, 0.5),
-				sqrt(to01(a.viewRay.direction.y))),
-			mixColor012n(
-				vec4(1.10, 1.10, 1.10, 0.4),
-				vec4(0.96, 0.95, 0.94, 0.4),
-				vec4(0.82, 0.80, 0.79, 0.3),
-				vec4(0.58, 0.43, 0.41, 0.2),
-				a.atmDistRatio, 0.5),
-			min(vapor, 1.0)),
+				vec4(0.95, 0.95, 0.96, 0.4),
+				vec4(1.05, 1.05, 1.06, 0.4),
+				directLight),
+			mix(
+				vec4(0.94, 0.94, 1.94, 0.4),
+				vec4(1.02, 1.02, 1.02, 0.4),
+				directLight),
+			vec4(0.90, 0.90, 0.90, 0.3),
+			vec4(0.55, 0.55, 0.54, 0.2),
+			a.atmDistRatio, 0.5),
+		mixColor012n(
+			mix(
+				vec4(0.95, 0.95, 0.96, 0.4),
+				vec4(1.05, 1.05, 1.04, 0.3),
+				directLight),
+			vec4(0.95, 0.95, 0.96, 0.3),
+			vec4(0.85, 0.85, 0.85, 0.2),
+			vec4(0.58, 0.43, 0.41, 0.1),
+			a.atmDistRatio, 0.5),
+		sunDown);
+
+	vaporColor = vec4(vaporColor.rgb, mix(vaporColor.a, 1.00, a.hitLight));
+
+	return mix(
+		mix(airColor, vaporColor, min(vapor, 1.0)),
 		mix(
 			vec4(0.0, 0.0, 0.0, 1.0),
 			vec4(0.0, 0.0, 0.0, 0.3),
@@ -413,7 +449,7 @@ vec4 skyColor(Ray viewRay, Sphere planet, Sphere atmosphere) {
 
 	vec4 color = vec4(0.0);
 
-	const float airDensityMult = 10.0;
+	const float airDensityMult = 5.0;
 	float sampleLen = 50.0;
 	float sampleRatio = sampleLen / atmThickness;
 
@@ -426,7 +462,7 @@ vec4 skyColor(Ray viewRay, Sphere planet, Sphere atmosphere) {
 			planet,
 			atmosphere);
 		vec4 sunLight = sunlightColor(a);
-		vec4 airLight = clearAirColor(a, sampleLen);
+		vec4 airLight = clearAirColor(a, sampleLen, 0.0);
 		color = mix(
 			mix(color, airLight, airDensityMult * sampleRatio),
 			sunLight,
@@ -448,9 +484,9 @@ vec4 skyColor(Ray viewRay, Sphere planet, Sphere atmosphere) {
 			planet,
 			atmosphere);
 
-		vec2 cloud = cloudSampleIn(a, planet);
+		vec2 cloud = cloudSample(a, planet);
 		vec4 sunLight = sunlightColor(a);
-		vec4 airLight = clearAirColor(a, sampleLen);
+		vec4 airLight = clearAirColor(a, sampleLen, cloud.y);
 		color = mix(
 			mix(
 				mix(color, airLight, airDensityMult * sampleRatio),
@@ -471,17 +507,16 @@ vec4 skyColor(Ray viewRay, Sphere planet, Sphere atmosphere) {
 			dist,
 			planet,
 			atmosphere);
-		float shadow = cloudSampleOut(a, planet);
-		vec4 sunLight = sunlightColor(a);
-		vec4 airLight = clearAirColor(a, sampleLen);
-		color = mix(color, airLight * shadow, airDensityMult * sampleRatio);
+		float shadow = cloudShadow(a, planet);
+		vec4 airLight = clearAirColor(a, sampleLen, shadow);
+		color = mix(color, airLight, airDensityMult * sampleRatio);
 	}
 
 	return color;
 }
 //------------------------------------------------------------------------------
 vec4 surfaceColor(Ray viewRay, float rayDist, Sphere planet) {
-	float f = exp(-rayDist/500.0);
+	float f = exp(-rayDist / 500.0);
 	return mix(vec4(0.23, 0.20, 0.17, 0.0), vec4(0.4, 0.3, 0.2, 0.0), f);
 }
 //------------------------------------------------------------------------------

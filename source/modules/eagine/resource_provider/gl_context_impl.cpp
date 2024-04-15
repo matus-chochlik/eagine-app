@@ -392,7 +392,7 @@ void eagitexi_cubemap_renderer::_render_tile() noexcept {
     _screen.draw(glapi);
 }
 //------------------------------------------------------------------------------
-void eagitexi_cubemap_renderer::_save_tile() noexcept {
+void eagitexi_cubemap_renderer::_save_cube_face() noexcept {
     const auto& [gl, GL]{gl_api()};
     _buffer.resize(span_size(_size * _size * 4));
 
@@ -406,6 +406,7 @@ void eagitexi_cubemap_renderer::_save_tile() noexcept {
       GL.rgba,
       GL.unsigned_byte_,
       cover(_buffer));
+    gl.finish();
 
     compress(view(_buffer));
 }
@@ -431,21 +432,30 @@ auto eagitexi_cubemap_renderer::render() noexcept
         return prep_result;
     }
     if(_face_index < 6) {
-        _render_tile();
-        if(++_tile_x >= _tiles_per_side) {
-            _tile_x = 0;
-            if(++_tile_y >= _tiles_per_side) {
-                _tile_y = 0;
-                _save_tile();
+        if(_finishing_face) {
+            if(gl_api().client_fence_passed(_finishing_face)) {
+                _save_cube_face();
                 ++_face_index;
+            }
+        } else {
+            _render_tile();
+            if(++_tile_x >= _tiles_per_side) {
+                _tile_x = 0;
+                if(++_tile_y >= _tiles_per_side) {
+                    _tile_y = 0;
+                    _finishing_face = gl_api().fence();
+                }
             }
         }
         if(_face_index < 6) {
             _prepare_progress.update_progress(_done_tiles());
+            return {
+              _done_tiles(),
+              _total_tiles(),
+              msgbus::blob_preparation_status::working};
         } else {
             _prepare_progress.finish();
         }
-        return {_done_tiles(), _total_tiles()};
     }
     return msgbus::blob_preparation_result::finished();
 }

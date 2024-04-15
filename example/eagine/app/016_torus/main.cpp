@@ -91,7 +91,7 @@ void example_torus::update() noexcept {
         prog.load_if_needed(context());
     }
 
-    _video.commit();
+    _video.commit(*this);
 }
 //------------------------------------------------------------------------------
 void example_torus::clean_up() noexcept {

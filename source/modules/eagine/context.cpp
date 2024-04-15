@@ -69,7 +69,7 @@ public:
     /// @brief Apply the rendering commands done since the last commit (swap buffers).
     /// @see begin
     /// @see end
-    void commit();
+    void commit(application&);
 
     /// @brief Tries to intialize the GL rendering API in this video context.
     /// @see has_gl_api
@@ -216,7 +216,7 @@ public:
     /// @brief Apply the rendering commands done since the last commit.
     /// @see begin
     /// @see end
-    void commit();
+    void commit(application&);
 
     /// @brief Tries to intialize the AL sound API in this video context.
     /// @see al_ref

@@ -173,7 +173,7 @@ void example_shape::update() noexcept {
     }
     oglplus::draw_using_instructions(glapi, view(_ops));
 
-    _video.commit();
+    _video.commit(*this);
 }
 //------------------------------------------------------------------------------
 void example_shape::clean_up() noexcept {

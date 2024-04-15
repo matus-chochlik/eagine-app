@@ -90,7 +90,7 @@ void example_cube::update() noexcept {
         _cube.draw(glapi);
     }
 
-    _video.commit();
+    _video.commit(*this);
 }
 //------------------------------------------------------------------------------
 void example_cube::clean_up() noexcept {
