@@ -334,7 +334,7 @@ vec2 cloudSample(AtmosphereSample a, Sphere planet) {
 		for(int s = 1; s <= sampleCount; ++s) {
 			vec3 location = a.lightRay.origin + direction * l * float(s) * isc;
 			float density = min(
-				2.0 * cloudiness * l * thickCloudDensity(location, planet),
+				2.5 * cloudiness * l * thickCloudDensity(location, planet),
 				1.0);
 			shadow = shadow * mix(1.0, 0.995, density);
 		}
@@ -421,8 +421,14 @@ vec4 clearAirColor(AtmosphereSample a, float sampleLen, float shadow) {
 				vec4(1.05, 1.05, 1.04, 0.3),
 				directLight),
 			vec4(0.95, 0.95, 0.96, 0.3),
-			vec4(0.85, 0.85, 0.85, 0.2),
-			vec4(0.58, 0.43, 0.41, 0.1),
+			mix(
+				vec4(0.85, 0.85, 0.85, 0.2),
+				vec4(0.83, 0.83, 0.85, 0.2),
+				shadow),
+			mix(
+				vec4(0.58, 0.43, 0.41, 0.1),
+				vec4(0.42, 0.45, 0.49, 0.1),
+				shadow),
 			a.atmDistRatio, 0.5),
 		sunDown);
 
@@ -431,8 +437,8 @@ vec4 clearAirColor(AtmosphereSample a, float sampleLen, float shadow) {
 	return mix(
 		mix(airColor, vaporColor, min(vapor, 1.0)),
 		mix(
-			vec4(0.0, 0.0, 0.0, 1.0),
-			vec4(0.0, 0.0, 0.0, 0.3),
+			vec4(0.0, 0.0, 0.01, 1.0),
+			vec4(0.0, 0.0, 0.05, 0.3),
 			min(vapor, 1.0)),
 		a.planetShadow);
 }
