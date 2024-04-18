@@ -73,20 +73,22 @@ struct Sphere {
 #define SphereHit vec2
 //------------------------------------------------------------------------------
 SphereHit sphereHit(Ray ray, Sphere sphere) {
-    float rad2 = pow(sphere.radius, 2.0);
-    vec3 dir = sphere.center - ray.origin;
-    float tca = dot(dir, ray.direction);
+	vec3 v = ray.direction;
+	vec3 d = ray.origin - sphere.center;
+	float e = dot(v, d);
+	float r2 = pow(sphere.radius, 2.0);
 
-    float d2 = dot(dir, dir) - pow(tca, 2.0);
-	float radd2 = rad2 - d2;
-	float sradd2 = sign(radd2);
-    float thc = sqrt(sradd2*radd2) * max(sradd2, 0.0);
-	vec2 t = vec2(tca) - vec2(thc,-thc);
-	vec2 p = max(sign(t), vec2(0.0));
+	const vec2 z = vec2(0.0);
 
-	return vec2(
-		mix(tca, mix(t.y, t.x, p.x), p.y),
-		mix(tca, t.y, p.y));
+	vec2 b = vec2(pow(e, 2.0) - dot(d, d) + r2);
+	vec2 m = max(sign(-b), z);
+
+	b = sqrt(max(b, 0.0)) * vec2(-1.0,1.0);
+
+	vec2 t = mix(b - vec2(e), vec2(-1.0), m);
+	m = max(sign(-t), z);
+
+	return vec2(mix(t.x, t.y, m.x), t.y);
 }
 //------------------------------------------------------------------------------
 float hitNear(SphereHit hit) {
