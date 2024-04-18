@@ -74,6 +74,17 @@ auto sky_viewer::_make_anim_url(long frame_no) noexcept -> url {
     return url{std::move(loc)};
 }
 //------------------------------------------------------------------------------
+auto sky_viewer::_make_anim_url() noexcept -> url {
+    if(_animation_mode) {
+        return _make_anim_url(0);
+    }
+    std::string loc;
+    loc.append("eagitex:///cube_map_sky");
+    loc.append("?size=");
+    loc.append(std::to_string(_resolution.value_or(256)));
+    return url{std::move(loc)};
+}
+//------------------------------------------------------------------------------
 void sky_viewer::_on_cube_map_loaded() noexcept {
     if(_animation_mode) {
         ++_anim_frame_no;
@@ -99,7 +110,7 @@ sky_viewer::sky_viewer(execution_context& ctx, video_context& video)
   : common_application{ctx}
   , _video{video}
   , _backgrounds{ctx, video}
-  , _cube_maps{ctx, video, _make_anim_url(0)} {
+  , _cube_maps{ctx, video, _make_anim_url()} {
     _backgrounds.selected.connect(_select_handler());
     _cube_maps.loaded.connect(_cube_map_load_handler());
     _cube_maps.selected.connect(_select_handler());

@@ -48,10 +48,9 @@ private:
     void _setting_window(const guiplus::imgui_api&) noexcept;
 
     auto _make_anim_url(long frame_no) noexcept -> url;
+    auto _make_anim_url() noexcept -> url;
 
     video_context& _video;
-    sky_viewer_backgrounds _backgrounds;
-    sky_viewer_cube_maps _cube_maps;
 
     orbiting_camera _camera;
     float _fov{70.F};
@@ -60,6 +59,9 @@ private:
     bool _animation_mode{_get_animation_mode()};
     bool _anim_frame_ready{false};
     bool _show_setting_window{false};
+
+    sky_viewer_backgrounds _backgrounds;
+    sky_viewer_cube_maps _cube_maps;
 };
 //------------------------------------------------------------------------------
 export auto establish(main_ctx&) -> unique_holder<launchpad>;
