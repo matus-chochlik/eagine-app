@@ -23,6 +23,9 @@ add_custom_command(
 	ARGS --build --root-owner-group ${PKG_NAME}
 	WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
 	DEPENDS 
+		eagine-app-tiling-viewer
+		eagine-app-model-viewer
+		eagine-app-sky-viewer
 		eagine-app-resource-provider
 		"${PKG_DIR}/DEBIAN/control"
 	COMMENT "Building ${PKG_NAME}.deb package")
