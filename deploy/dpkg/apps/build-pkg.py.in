@@ -65,7 +65,7 @@ Package: eagine-app-apps
 Version: %s
 Architecture: %s
 Installed-Size: %d
-Depends: eagine-core-tools
+Depends: libsystemd0,libc++1-17
 Maintainer: Matus Chochlik <matus.chochlik@proton.me>
 Description: Collection of EAGine applications.
 """ % (
