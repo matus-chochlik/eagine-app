@@ -65,11 +65,11 @@ auto sky_viewer::_make_anim_url(long frame_no) noexcept -> url {
     loc.append("&sun_azimuth_deg=");
     loc.append(std::to_string(0.25F * frame_no + 180.F));
     loc.append("&cloud_offset_x=");
-    loc.append(std::to_string(0.0005F * frame_no));
+    loc.append(std::to_string(-0.0005F * frame_no));
     loc.append("&cloud_offset_y=");
     loc.append(std::to_string(0.0001F * frame_no));
     loc.append("&cloudiness_ratio=");
-    loc.append(std::to_string(math::clamp(0.00125F * frame_no, 0.F, 1.F)));
+    loc.append(std::to_string(math::clamp(0.0015F * frame_no, 0.F, 1.F)));
 
     return url{std::move(loc)};
 }
