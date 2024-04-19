@@ -31,6 +31,7 @@ public:
     void clean_up() noexcept final;
 
 private:
+    auto _get_resolution() noexcept -> int;
     auto _get_animation_mode() noexcept -> bool;
 
     void _init_inputs();
@@ -54,7 +55,7 @@ private:
 
     orbiting_camera _camera;
     float _fov{70.F};
-    valid_if_power_of_two<int> _resolution{256};
+    valid_if_power_of_two<int> _resolution{_get_resolution()};
     long _anim_frame_no{0};
     bool _animation_mode{_get_animation_mode()};
     bool _anim_frame_ready{false};

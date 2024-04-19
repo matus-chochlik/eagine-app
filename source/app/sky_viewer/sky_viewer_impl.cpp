@@ -102,6 +102,12 @@ void sky_viewer::_on_selected() noexcept {
     }
 }
 //------------------------------------------------------------------------------
+auto sky_viewer::_get_resolution() noexcept -> int {
+    return from_string<valid_if_power_of_two<int>>(
+             context().main_context().args().find("--resolution").next())
+      .value_or(256);
+}
+//------------------------------------------------------------------------------
 auto sky_viewer::_get_animation_mode() noexcept -> bool {
     return context().main_context().args().find("--animation");
 }
