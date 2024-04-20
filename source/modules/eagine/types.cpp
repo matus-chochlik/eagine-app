@@ -12,7 +12,8 @@ import eagine.core.types;
 import eagine.core.reflection;
 import eagine.oglplus;
 
-namespace eagine::app {
+namespace eagine {
+namespace app {
 //------------------------------------------------------------------------------
 /// @brief 2d floating-point vector type.
 /// @ingroup application
@@ -46,15 +47,6 @@ export enum class video_context_kind : std::uint8_t {
     /// @brief OpenVG© context.
     openvg
 };
-
-export template <typename Selector>
-constexpr auto enumerator_mapping(
-  const std::type_identity<video_context_kind>,
-  const Selector) noexcept {
-    return enumerator_map_type<video_context_kind, 2>{
-      {{"opengl", video_context_kind::opengl},
-       {"openvg", video_context_kind::openvg}}};
-}
 //------------------------------------------------------------------------------
 /// @brief Audio / sound playback and recodring context kind.
 /// @ingroup application
@@ -62,14 +54,6 @@ export enum class audio_context_kind : std::uint8_t {
     /// @brief OpenAL© context.
     openal
 };
-
-export template <typename Selector>
-constexpr auto enumerator_mapping(
-  const std::type_identity<audio_context_kind>,
-  const Selector) noexcept {
-    return enumerator_map_type<audio_context_kind, 1>{
-      {{"openal", audio_context_kind::openal}}};
-}
 //------------------------------------------------------------------------------
 /// @brief Video rendering device kind.
 /// @ingroup application
@@ -81,16 +65,6 @@ export enum class video_device_kind : std::uint8_t {
     /// @brief Software rendering device.
     software
 };
-
-export template <typename Selector>
-constexpr auto enumerator_mapping(
-  const std::type_identity<video_device_kind>,
-  const Selector) noexcept {
-    return enumerator_map_type<video_device_kind, 3>{
-      {{"dont_care", video_device_kind::dont_care},
-       {"hardware", video_device_kind::hardware},
-       {"software", video_device_kind::software}}};
-}
 //------------------------------------------------------------------------------
 /// @brief Pixel data type used to store frame dump image data.
 /// @ingroup application
@@ -103,25 +77,6 @@ export enum class framedump_data_type : std::uint8_t {
     /// @brief Byte pixel data.
     byte_type
 };
-
-export template <typename Selector>
-constexpr auto enumerator_mapping(
-  const std::type_identity<framedump_data_type>,
-  const Selector) noexcept {
-    return enumerator_map_type<framedump_data_type, 3>{
-      {{"none", framedump_data_type::none},
-       {"float_type", framedump_data_type::float_type},
-       {"byte_type", framedump_data_type::byte_type}}};
-}
-
-export constexpr auto enumerator_mapping(
-  const std::type_identity<framedump_data_type>,
-  const from_config_t) noexcept {
-    return enumerator_map_type<framedump_data_type, 3>{
-      {{"none", framedump_data_type::none},
-       {"float", framedump_data_type::float_type},
-       {"byte", framedump_data_type::byte_type}}};
-}
 //------------------------------------------------------------------------------
 /// @brief Pixel data format of frame dump image data.
 /// @ingroup application
@@ -136,16 +91,54 @@ export enum class framedump_pixel_format : std::uint8_t {
     /// @brief Stencil buffer data.
     stencil
 };
-
-export template <typename Selector>
-constexpr auto enumerator_mapping(
-  const std::type_identity<framedump_pixel_format>,
-  const Selector) noexcept {
-    return enumerator_map_type<framedump_pixel_format, 4>{
-      {{"none", framedump_pixel_format::none},
-       {"rgba", framedump_pixel_format::rgba},
-       {"depth", framedump_pixel_format::depth},
-       {"stencil", framedump_pixel_format::stencil}}};
-}
+} // namespace app
 //------------------------------------------------------------------------------
-} // namespace eagine::app
+export template <>
+struct enumerator_traits<app::video_context_kind> {
+    static constexpr auto mapping() noexcept {
+        return enumerator_map_type<app::video_context_kind, 2>{
+          {{"opengl", app::video_context_kind::opengl},
+           {"openvg", app::video_context_kind::openvg}}};
+    }
+};
+
+export template <>
+struct enumerator_traits<app::audio_context_kind> {
+    static constexpr auto mapping() noexcept {
+        return enumerator_map_type<app::audio_context_kind, 1>{
+          {{"openal", app::audio_context_kind::openal}}};
+    }
+};
+
+export template <>
+struct enumerator_traits<app::video_device_kind> {
+    static constexpr auto mapping() noexcept {
+        return enumerator_map_type<app::video_device_kind, 3>{
+          {{"dont_care", app::video_device_kind::dont_care},
+           {"hardware", app::video_device_kind::hardware},
+           {"software", app::video_device_kind::software}}};
+    }
+};
+
+export template <>
+struct enumerator_traits<app::framedump_data_type> {
+    static constexpr auto mapping() noexcept {
+        return enumerator_map_type<app::framedump_data_type, 3>{
+          {{"none", app::framedump_data_type::none},
+           {"float", app::framedump_data_type::float_type},
+           {"byte", app::framedump_data_type::byte_type}}};
+    }
+};
+
+export template <>
+struct enumerator_traits<app::framedump_pixel_format> {
+    static constexpr auto mapping() noexcept {
+        return enumerator_map_type<app::framedump_pixel_format, 4>{
+          {{"none", app::framedump_pixel_format::none},
+           {"rgba", app::framedump_pixel_format::rgba},
+           {"depth", app::framedump_pixel_format::depth},
+           {"stencil", app::framedump_pixel_format::stencil}}};
+    }
+};
+//------------------------------------------------------------------------------
+} // namespace eagine

@@ -619,6 +619,7 @@ auto eagitex_cubemap_sky_io::make_header(const url& locator, int size)
     hdr << R"(,"tag":["sky","cubemap","generated"])";
     hdr << R"(,"images":[)";
     hdr << R"({"url":"eagitexi:///cube_map_sky)";
+
     auto add{[&, first{true}]<typename T>(std::string_view name) mutable {
         if(const auto opt{q.arg_value_as<T>(name)}) {
             if(first) {
@@ -643,7 +644,7 @@ auto eagitex_cubemap_sky_io::make_header(const url& locator, int size)
     add.operator()<float>("sun_azimuth_deg");
     add.operator()<float>("sun_elevation_deg");
     add.operator()<float>("sun_apparent_angle");
-    add.operator()<std::string>("params");
+    add.operator()<std::string_view>("params");
     hdr << R"("}]})";
 
     return hdr.str();

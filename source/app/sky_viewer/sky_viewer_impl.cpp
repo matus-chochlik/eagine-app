@@ -61,7 +61,7 @@ auto sky_viewer::_make_anim_url(long frame_no) noexcept -> url {
     loc.append("?size=");
     loc.append(std::to_string(_resolution.value_or(256)));
     loc.append("&sun_elevation_deg=");
-    loc.append(std::to_string(0.125F * frame_no - 5.F));
+    loc.append(std::to_string(0.125F * frame_no - 10.F));
     loc.append("&sun_azimuth_deg=");
     loc.append(std::to_string(0.25F * frame_no + 180.F));
     loc.append("&cloud_offset_x=");
@@ -82,6 +82,7 @@ auto sky_viewer::_make_anim_url() noexcept -> url {
     loc.append("eagitex:///cube_map_sky");
     loc.append("?size=");
     loc.append(std::to_string(_resolution.value_or(256)));
+    loc.append("&params=json%3A%2F%2F%2FSkyParams");
     return url{std::move(loc)};
 }
 //------------------------------------------------------------------------------
