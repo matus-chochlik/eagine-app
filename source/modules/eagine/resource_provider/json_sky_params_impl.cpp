@@ -27,12 +27,16 @@ public:
 
 private:
     static auto _default_template() noexcept -> string_view;
-    auto _frame_no() noexcept -> long;
+    auto _substitute(string_view) noexcept -> std::string;
     void _substitute() noexcept;
     auto _content() noexcept -> string_view;
 
-    const url _locator;
     shared_provider_objects& _shared;
+    const url _locator;
+    const long _frame_no{
+      _locator.query().arg_value_as<long>("frame").value_or(0L)};
+    const std::string _frame_no_str{std::to_string(_frame_no)};
+
     std::optional<string_list_resource> _template_resource;
     resource_load_status _template_load_status{resource_load_status::not_found};
     std::string _substituted;
@@ -41,8 +45,8 @@ private:
 sky_parameters_io::sky_parameters_io(
   shared_provider_objects& shared,
   url locator) noexcept
-  : _locator{locator}
-  , _shared{shared} {
+  : _shared{shared}
+  , _locator{locator} {
     if(auto tpl_url{_locator.query().arg_url("template")}) {
         _template_resource.emplace(std::move(tpl_url), _shared.loader);
     } else {
@@ -61,8 +65,17 @@ auto sky_parameters_io::_default_template() noexcept -> string_view {
     return {R"({"sun_elevation_deg":25.0,"tiling_url":"text:///TlngR4S512"})"};
 }
 //------------------------------------------------------------------------------
-auto sky_parameters_io::_frame_no() noexcept -> long {
-    return _locator.query().arg_value_as<long>("frame").value_or(0L);
+auto sky_parameters_io::_substitute(string_view str) noexcept -> std::string {
+    const auto arg_subst{[this](string_view arg) -> std::optional<string_view> {
+        if((arg == "frame") or (arg == "frame_no")) {
+            return {{_frame_no_str}};
+        }
+        return {};
+    }};
+    return std::to_string(
+      from_string<double>(
+        substitute_variables(str, {construct_from, arg_subst}))
+        .value_or(0.0));
 }
 //------------------------------------------------------------------------------
 void sky_parameters_io::_substitute() noexcept {
@@ -77,6 +90,17 @@ void sky_parameters_io::_substitute() noexcept {
     if(_substituted.empty()) {
         _substituted = "{}";
     } else {
+        const std::regex re{"\"\\(([^\"]+)\\)\""};
+        while(true) {
+            std::smatch mt{};
+            if(std::regex_search(_substituted, mt, re)) {
+                _substituted = mt.prefix().str();
+                _substituted.append(_substitute(mt[1].str()));
+                _substituted.append(mt.suffix().str());
+            } else {
+                break;
+            }
+        }
         // TODO: evaluate and substitute placeholders
     }
 }

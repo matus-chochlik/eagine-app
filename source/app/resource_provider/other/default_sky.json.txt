@@ -1,0 +1,9 @@
+{"sun_azimuth_deg":"(${frame} * 0.125 - 15.0)"
+,"sun_elevation_deg":"(${frame} * 0.25 + 170.0)"
+,"cloud_offset_x":"(${frame} * 0.0005)"
+,"cloud_offset_y":"(${frame} * 0.0001)"
+,"cloudiness_ratio":"(clamp(${frame} * 0.0015, 0.0, 1.0))"
+,"sun_apparent_angle":0.05
+,"vapor_thickness_ratio":0.05
+,"tiling_url":"text:///TlngR4S512"
+}
