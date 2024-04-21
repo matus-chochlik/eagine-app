@@ -434,9 +434,8 @@ class Framedump(object):
             "^(.*)"+
             "-([0-9]+)x([0-9]+)x([0-9]+)"+
             "-(rgba|depth|stencil)"+
-            "-(byte|float)_type"+
-            "-([0-9]+)((.zlib)?$)"
-        )
+            "-(byte|float)"+
+            "-([0-9]+)((.zlib)?)$")
 
         cmd_line = [
             options.application_path,
