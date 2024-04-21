@@ -14,6 +14,7 @@ uniform float vaporThickness;
 uniform float cloudAltitude;
 uniform float cloudThickness;
 uniform float cloudiness;
+uniform float glowStrength;
 uniform float aboveGround;
 uniform vec2 cloudOffset;
 uniform vec3 sunDirection;
@@ -386,19 +387,35 @@ vec4 clearAirColor(AtmosphereSample a, AtmosphereShadow s) {
 	float sunDown = sqrt(to01(a.viewRay.direction.y));
 
 	vec4 lightAirColor = mix(
-		mixColor012n(
-			vec4(0.30, 0.45, 0.75, 0.60),
-			vec4(0.25, 0.40, 0.70, 0.53),
-			vec4(0.50, 0.40, 0.25, 0.30),
-			vec4(0.40, 0.10, 0.25, 0.20),
-			a.atmDistRatio, 1.0),
-		mixColor012n(
-			vec4(0.30, 0.45, 0.75, 0.60),
-			vec4(0.25, 0.40, 0.70, 0.53),
-			vec4(0.25, 0.40, 0.70, 0.30),
-			vec4(0.50, 0.40, 0.35, 0.20),
-			a.atmDistRatio * 0.7, 0.5),
-		sunDown);
+		mix(
+			mixColor012n(
+				vec4(0.30, 0.45, 0.75, 0.60),
+				vec4(0.25, 0.40, 0.70, 0.53),
+				vec4(0.50, 0.40, 0.25, 0.30),
+				vec4(0.40, 0.10, 0.25, 0.20),
+				a.atmDistRatio, 1.0),
+			mixColor012n(
+				vec4(0.30, 0.45, 0.75, 0.60),
+				vec4(0.25, 0.40, 0.70, 0.53),
+				vec4(0.25, 0.40, 0.70, 0.30),
+				vec4(0.50, 0.40, 0.35, 0.20),
+				a.atmDistRatio * 0.7, 0.5),
+			sunDown),
+		mix(
+			mixColor012n(
+				vec4(0.32, 0.45, 0.73, 0.60),
+				vec4(0.30, 0.40, 0.60, 0.53),
+				vec4(0.45, 0.40, 0.30, 0.30),
+				vec4(0.38, 0.13, 0.28, 0.20),
+				a.atmDistRatio, 1.0),
+			mixColor012n(
+				vec4(0.34, 0.45, 0.71, 0.60),
+				vec4(0.30, 0.40, 0.66, 0.53),
+				vec4(0.30, 0.40, 0.60, 0.30),
+				vec4(0.45, 0.36, 0.32, 0.20),
+				a.atmDistRatio * 0.7, 0.5),
+			sunDown),
+		pow(cloudiness, 3.0));
 
 	lightAirColor = lightAirColor + directLight * mix(
 		mixColor012n(
@@ -577,7 +594,8 @@ vec4 skyColor(Ray viewRay, Sphere planet, Sphere atmosphere) {
 		airColor = mix(airColor, vaporColor(a, s), density);
 
 		color = mix(color, airColor, airMult);
-		color += mix(airColor, sunlightColor(a, s), 0.4) * airMult * shadow;
+		color += mix(airColor, sunlightColor(a, s), 0.5) *
+			airMult * glowStrength * shadow;
 	}
 
 	return color;
