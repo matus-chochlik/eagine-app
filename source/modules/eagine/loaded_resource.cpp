@@ -149,7 +149,7 @@ export template <typename Resource>
 class loaded_resource
   : public Resource
   , public loaded_resource_base {
-    static_assert(default_mapped_struct<Resource>);
+    static_assert(mapped_struct<Resource>);
 
     using Derived = loaded_resource<Resource>;
 
@@ -676,12 +676,12 @@ struct resource_load_info<valtree::compound> {
       , resource{parent} {}
 
     /// @brief Loads the data from the value tree resource into an object.
-    auto load(default_mapped_struct auto& object) const noexcept -> bool {
+    auto load(mapped_struct auto& object) const noexcept -> bool {
         return base.load(object);
     }
 
     /// @brief Loads the data from the value tree resource into an object.
-    auto load(default_mapped_struct auto& object, const basic_string_path& path)
+    auto load(mapped_struct auto& object, const basic_string_path& path)
       const noexcept -> bool {
         return base.load(object, path);
     }

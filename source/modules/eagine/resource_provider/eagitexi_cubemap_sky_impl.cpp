@@ -19,7 +19,8 @@ import eagine.oglplus;
 import eagine.app;
 import std;
 
-namespace eagine::app {
+namespace eagine {
+namespace app {
 //------------------------------------------------------------------------------
 // planet parameters
 //------------------------------------------------------------------------------
@@ -58,39 +59,42 @@ struct cubemap_scene {
     auto sun_xyz() const noexcept -> math::vector<float, 3, true>;
 };
 //------------------------------------------------------------------------------
-template <identifier_t Id>
-constexpr auto data_member_mapping(
-  const std::type_identity<cubemap_scene>,
-  const selector<Id>) noexcept {
-    return make_data_member_mapping<
-      cubemap_scene,
-      float,
-      float,
-      float,
-      float,
-      float,
-      float,
-      float,
-      float,
-      float,
-      float,
-      float,
-      float,
-      std::string>(
-      {"planet_radius_m", &cubemap_scene::planet_radius_m},
-      {"atmosphere_thickness_m", &cubemap_scene::atmosphere_thickness_m},
-      {"vapor_thickness_ratio", &cubemap_scene::vapor_thickness_ratio},
-      {"cloud_altitude_m", &cubemap_scene::cloud_altitude_m},
-      {"cloud_offset_x", &cubemap_scene::cloud_offset_x},
-      {"cloud_offset_y", &cubemap_scene::cloud_offset_y},
-      {"cloud_thickness_m", &cubemap_scene::cloud_thickness_m},
-      {"cloudiness_ratio", &cubemap_scene::cloudiness_ratio},
-      {"above_ground_m", &cubemap_scene::above_ground_m},
-      {"sun_azimuth_deg", &cubemap_scene::sun_azimuth_deg},
-      {"sun_elevation_deg", &cubemap_scene::sun_elevation_deg},
-      {"sun_apparent_angle", &cubemap_scene::sun_apparent_angle},
-      {"tiling_url", &cubemap_scene::tiling_url});
-}
+} // namespace app
+template <>
+struct data_member_traits<app::cubemap_scene> {
+    static constexpr auto mapping() noexcept {
+        using app::cubemap_scene;
+        return make_data_member_mapping<
+          cubemap_scene,
+          float,
+          float,
+          float,
+          float,
+          float,
+          float,
+          float,
+          float,
+          float,
+          float,
+          float,
+          float,
+          std::string>(
+          {"planet_radius_m", &cubemap_scene::planet_radius_m},
+          {"atmosphere_thickness_m", &cubemap_scene::atmosphere_thickness_m},
+          {"vapor_thickness_ratio", &cubemap_scene::vapor_thickness_ratio},
+          {"cloud_altitude_m", &cubemap_scene::cloud_altitude_m},
+          {"cloud_offset_x", &cubemap_scene::cloud_offset_x},
+          {"cloud_offset_y", &cubemap_scene::cloud_offset_y},
+          {"cloud_thickness_m", &cubemap_scene::cloud_thickness_m},
+          {"cloudiness_ratio", &cubemap_scene::cloudiness_ratio},
+          {"above_ground_m", &cubemap_scene::above_ground_m},
+          {"sun_azimuth_deg", &cubemap_scene::sun_azimuth_deg},
+          {"sun_elevation_deg", &cubemap_scene::sun_elevation_deg},
+          {"sun_apparent_angle", &cubemap_scene::sun_apparent_angle},
+          {"tiling_url", &cubemap_scene::tiling_url});
+    }
+};
+namespace app {
 //------------------------------------------------------------------------------
 cubemap_scene::cubemap_scene(const url& l) noexcept
   : planet_radius_m{query_arg<float>(l, "planet_radius_m", 6'370'000.F)}
@@ -708,5 +712,6 @@ auto provider_eagitex_cubemap_sky(const provider_parameters& params)
     return {hold<eagitex_cubemap_sky_provider>, params};
 }
 //------------------------------------------------------------------------------
-} // namespace eagine::app
+} // namespace app
+} // namespace eagine
 

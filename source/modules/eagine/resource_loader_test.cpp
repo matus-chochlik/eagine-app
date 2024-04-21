@@ -646,44 +646,46 @@ struct test_point {
     int x{}, y{}, z{};
 };
 
-template <identifier_t Id>
-constexpr auto data_member_mapping(
-  const std::type_identity<test_point>,
-  const selector<Id>) noexcept {
-    return make_data_member_mapping<test_point, int, int, int>(
-      {"x", &test_point::x}, {"y", &test_point::y}, {"z", &test_point::z});
-}
+template <>
+struct data_member_traits<test_point> {
+    static constexpr auto mapping() noexcept {
+        return make_data_member_mapping<test_point, int, int, int>(
+          {"x", &test_point::x}, {"y", &test_point::y}, {"z", &test_point::z});
+    }
+};
 //------------------------------------------------------------------------------
 struct test_triangle {
     test_point a{}, b{}, c{};
 };
-
-template <identifier_t Id>
-constexpr auto data_member_mapping(
-  const std::type_identity<test_triangle>,
-  const selector<Id>) noexcept {
-    return make_data_member_mapping<
-      test_triangle,
-      test_point,
-      test_point,
-      test_point>(
-      {"a", &test_triangle::a},
-      {"b", &test_triangle::b},
-      {"c", &test_triangle::c});
-}
+template <>
+struct data_member_traits<test_triangle> {
+    static constexpr auto mapping() noexcept {
+        return make_data_member_mapping<
+          test_triangle,
+          test_point,
+          test_point,
+          test_point>(
+          {"a", &test_triangle::a},
+          {"b", &test_triangle::b},
+          {"c", &test_triangle::c});
+    }
+};
 //------------------------------------------------------------------------------
 struct test_tetrahedron {
     test_triangle base{};
     test_point apex{};
 };
 
-template <identifier_t Id>
-constexpr auto data_member_mapping(
-  const std::type_identity<test_tetrahedron>,
-  const selector<Id>) noexcept {
-    return make_data_member_mapping<test_tetrahedron, test_triangle, test_point>(
-      {"base", &test_tetrahedron::base}, {"apex", &test_tetrahedron::apex});
-}
+template <>
+struct data_member_traits<test_tetrahedron> {
+    static constexpr auto mapping() noexcept {
+        return make_data_member_mapping<
+          test_tetrahedron,
+          test_triangle,
+          test_point>(
+          {"base", &test_tetrahedron::base}, {"apex", &test_tetrahedron::apex});
+    }
+};
 } // namespace eagine
 //------------------------------------------------------------------------------
 struct test_request_mapped_struct : eagitest::app_case {
