@@ -56,34 +56,37 @@ void sky_viewer::_init_camera() {
 }
 //------------------------------------------------------------------------------
 auto sky_viewer::_make_anim_url(long frame_no) noexcept -> url {
-    std::string loc;
-    loc.append("eagitex:///cube_map_sky");
-    loc.append("?size=");
-    loc.append(std::to_string(_resolution.value_or(256)));
-    loc.append("&sun_elevation_deg=");
-    loc.append(std::to_string(0.125F * frame_no - 10.F));
-    loc.append("&sun_azimuth_deg=");
-    loc.append(std::to_string(0.25F * frame_no + 180.F));
-    loc.append("&cloud_offset_x=");
-    loc.append(std::to_string(0.0005F * frame_no));
-    loc.append("&cloud_offset_y=");
-    loc.append(std::to_string(0.0001F * frame_no));
-    loc.append("&cloudiness_ratio=");
-    loc.append(std::to_string(math::clamp(0.0015F * frame_no, 0.F, 1.F)));
+    std::string tmplt;
+    tmplt.append("text:///SkyParamsT");
 
-    return url{std::move(loc)};
+    std::string params;
+    params.append("json:///sky_parameters");
+    params.append("?frame=");
+    params.append(std::to_string(frame_no));
+    params.append("&template=");
+    params.append(url::encode_component(tmplt));
+
+    std::string query;
+    query.append("eagitex:///cube_map_sky");
+    query.append("?size=");
+    query.append(std::to_string(_resolution.value_or(256)));
+    query.append("&params=");
+    query.append(url::encode_component(params));
+
+    return url{std::move(query)};
 }
 //------------------------------------------------------------------------------
 auto sky_viewer::_make_anim_url() noexcept -> url {
     if(_animation_mode) {
         return _make_anim_url(0);
     }
-    std::string loc;
-    loc.append("eagitex:///cube_map_sky");
-    loc.append("?size=");
-    loc.append(std::to_string(_resolution.value_or(256)));
-    loc.append("&params=json%3A%2F%2F%2FSkyParams");
-    return url{std::move(loc)};
+    std::string query;
+    query.append("eagitex:///cube_map_sky");
+    query.append("?size=");
+    query.append(std::to_string(_resolution.value_or(256)));
+    query.append("&params=");
+    query.append(url::encode_component("json:///SkyParams"));
+    return url{std::move(query)};
 }
 //------------------------------------------------------------------------------
 void sky_viewer::_on_cube_map_loaded() noexcept {
