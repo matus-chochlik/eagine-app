@@ -56,20 +56,18 @@ void sky_viewer::_init_camera() {
 }
 //------------------------------------------------------------------------------
 auto sky_viewer::_make_anim_url(long frame_no) noexcept -> url {
-    std::string tmplt;
-    tmplt.append("text:///SkyParamsT");
 
     std::string params;
     params.append("json:///sky_parameters");
     params.append("?frame=");
     params.append(std::to_string(frame_no));
     params.append("&template=");
-    params.append(url::encode_component(tmplt));
+    params.append(url::encode_component(_animation_template));
 
     std::string query;
     query.append("eagitex:///cube_map_sky");
     query.append("?size=");
-    query.append(std::to_string(_resolution.value_or(256)));
+    query.append(std::to_string(_resolution));
     query.append("&params=");
     query.append(url::encode_component(params));
 
@@ -83,7 +81,7 @@ auto sky_viewer::_make_anim_url() noexcept -> url {
     std::string query;
     query.append("eagitex:///cube_map_sky");
     query.append("?size=");
-    query.append(std::to_string(_resolution.value_or(256)));
+    query.append(std::to_string(_resolution));
     query.append("&params=");
     query.append(url::encode_component("json:///SkyParams"));
     return url{std::move(query)};
@@ -114,6 +112,14 @@ auto sky_viewer::_get_resolution() noexcept -> int {
 //------------------------------------------------------------------------------
 auto sky_viewer::_get_animation_mode() noexcept -> bool {
     return context().main_context().args().find("--animation");
+}
+//------------------------------------------------------------------------------
+auto sky_viewer::_get_animation_template() noexcept -> std::string {
+    if(url locator{
+         context().main_context().args().find("--animation").next()}) {
+        return locator.release_string();
+    }
+    return {"text:///SkyParamsT"};
 }
 //------------------------------------------------------------------------------
 sky_viewer::sky_viewer(execution_context& ctx, video_context& video)
