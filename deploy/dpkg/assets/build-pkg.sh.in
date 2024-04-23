@@ -63,6 +63,10 @@ zip -9 "${ast_prefix}/models_app.eagizip" \
 	monkey.json
 popd
 # ------------------------------------------------------------------------------
+pushd "${src_dir}/assets/other"
+zip -9 "${ast_prefix}/other_app.eagizip" *
+popd
+# ------------------------------------------------------------------------------
 mkdir -p "${pkg_dir}/DEBIAN"
 cat << CONTROL > "${pkg_dir}/DEBIAN/control"
 Package: eagine-app-assets
