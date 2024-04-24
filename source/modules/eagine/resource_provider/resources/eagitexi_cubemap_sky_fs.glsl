@@ -434,15 +434,15 @@ vec4 clearAirColor(AtmosphereSample a, AtmosphereShadow s) {
 
 	vec4 darkAirColor = mix(
 		mixColor012n(
-			vec4(0.28, 0.43, 0.72, 0.57),
-			vec4(0.22, 0.37, 0.66, 0.51),
+			vec4(0.43, 0.28, 0.72, 0.57),
+			vec4(0.37, 0.22, 0.66, 0.51),
 			vec4(0.45, 0.35, 0.20, 0.30),
 			vec4(0.30, 0.05, 0.20, 0.20),
 			a.atmDistRatio, 1.0),
 		mixColor012n(
-			vec4(0.30, 0.45, 0.75, 0.50),
-			vec4(0.25, 0.40, 0.70, 0.30),
-			vec4(0.20, 0.35, 0.60, 0.10),
+			vec4(0.45, 0.30, 0.75, 0.50),
+			vec4(0.40, 0.25, 0.70, 0.30),
+			vec4(0.35, 0.20, 0.40, 0.10),
 			vec4(0.02, 0.00, 0.03, 0.01),
 			a.atmDistRatio * 0.7, 0.5),
 		sunDown);
@@ -502,7 +502,7 @@ vec4 vaporColor(AtmosphereSample a, AtmosphereShadow s) {
 		mixColor012n(
 			vec4(0.30, 0.30, 0.32, alp),
 			vec4(0.23, 0.23, 0.27, alp),
-			vec4(0.15, 0.14, 0.19, alp),
+			vec4(0.20, 0.19, 0.23, alp),
 			vec4(0.10, 0.09, 0.13, alp),
 			a.atmDistRatio * 0.7, 0.5),
 		sunDown);
