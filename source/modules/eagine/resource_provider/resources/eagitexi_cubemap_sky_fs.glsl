@@ -229,7 +229,7 @@ float thickCloudSampleN(
 	return tilingSample(cloudCoord(
 		location,
 		planet,
-		offset*(1.0 + offset*fsteps(coordAlt.x, 31)/scale),
+		offset*(1.0 + offset*fsteps(coordAlt.x, 61)/scale),
 		scale));
 }
 //------------------------------------------------------------------------------
@@ -266,19 +266,16 @@ float thickCloudDensity(vec3 location, Sphere planet) {
 	v = max(v - max(sqrt(s001250)-0.79, 0.0), 0.0);
 
 	float w = mix(
-		mix(s020000, s010000, 0.6),
-		mix(mix(s005000, s002500, 0.5), mix(s001250, s000625, 0.5), 0.5),
-		0.6);
+		mix(s020000, s010000, 0.4),
+		mix(mix(s005000, s002500, 0.4), mix(s001250, s000625, 0.4), 0.4),
+		0.4);
 
 	float b = mix(
-		snoise,
-		mix(
-			mix(pow(s040000, 3.0), pow(s020000, 3.0), 0.4),
-			mix(pow(s010000, 3.0), pow(s005000, 3.0), 0.4),
-			0.4),
-		0.8);
+		mix(pow(s040000, 4.0), pow(s020000, 4.0), 0.4),
+		mix(pow(s010000, 4.0), pow(s005000, 4.0), 0.4),
+		0.4);
 
-	return pow(snoise, 1.4) * sqrt(ca.y) * max(sign(v*w - abs(ca.x-b)), 0.0);
+	return max(sqrt(ca.y) * sign(v*w - abs(ca.x-b)) - snoise * 0.2, 0.0);
 }
 //------------------------------------------------------------------------------
 struct AtmosphereSample {
@@ -347,7 +344,7 @@ AtmosphereShadow atmShadow1(AtmosphereSample a, Sphere planet, float backlight) 
 			float density = min(
 				2.5 * cloudiness * l * thickCloudDensity(location, planet),
 				1.0);
-			shadow = shadow * mix(1.0, 0.995, density);
+			shadow = shadow * mix(1.0, 0.994, density);
 		}
 	}
 	return AtmosphereShadow(mix(backlight, 1.0, shadow * a.planetShadow));
