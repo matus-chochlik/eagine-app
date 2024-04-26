@@ -305,26 +305,27 @@ AtmosphereSample atmSample(
 	float rayDist,
 	Sphere planet,
 	Sphere atmosphere) {
-	Ray lightRay = raySample(viewRay, rayDist, lightDirection);
-	float directLight = dot(viewRay.direction, lightRay.direction);
-	float atmDistance = max(hitNear(sphereHit(lightRay, atmosphere)), 0.0);
+	Ray lightRay0 = raySample(viewRay, rayDist, lightDirection);
+	Ray lightRayS = raySample(viewRay, rayDist * 3.0, lightDirection);
+	float directLight = dot(viewRay.direction, lightRay0.direction);
+	float atmDistance = max(hitNear(sphereHit(lightRay0, atmosphere)), 0.0);
 
-	float planetHit = sign(max(hitNear(sphereHit(lightRay, planet)), 0.0));
+	float planetHit = sign(max(hitNear(sphereHit(lightRayS, planet)), 0.0));
 	float planetShadow = 1.0 - planetHit;
 
 	return AtmosphereSample(
 		viewRay,
-		lightRay,
-		cloudsIntersection(lightRay, planet),
+		lightRay0,
+		cloudsIntersection(lightRay0, planet),
 		max(sign(lightAngle-acos(directLight)), 0.0),
 		directLight,
 		pow(clamp(
-			distance(lightRay.origin, planet.center) - planet.radius /
+			distance(lightRay0.origin, planet.center) - planet.radius /
 			atmosphere.radius - planet.radius,
 			0.0, 1.0), 1.21),
 		atmDistance,
 		atmDistance / atmThickness,
-		thinCloudDensity(lightRay.origin, planet),
+		thinCloudDensity(lightRay0.origin, planet),
 		planetShadow);
 }
 //------------------------------------------------------------------------------
@@ -568,7 +569,7 @@ vec4 skyColor(Ray viewRay, Sphere planet, Sphere atmosphere) {
 		vec4 vapColor = vaporColor(a, s);
 
 		float density = min(a.vaporDensity, 1.0);
-		airColor = mix(airColor, vapColor, density);
+		airColor = mix(airColor, vapColor * shadow, density);
 
 		density = min(5.0 * thickCloudDensity(a.lightRay.origin, planet), 1.0);
 		airColor = mix(airColor, sunlightColor(a, s), a.hitLight * shadow);
