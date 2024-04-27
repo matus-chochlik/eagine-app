@@ -495,20 +495,17 @@ vec4 vaporColor(AtmosphereSample a, AtmosphereShadow s) {
 		overcastVaporColor,
 		pow(cloudiness, 3.0));
 
-	vec4 darkVaporColor = mix(
-		lightVaporColor,
-		mixColor012n(
+	vec4 darkVaporColor = mixColor012n(
 			vec4(0.21, 0.20, 0.22, alp),
 			vec4(0.16, 0.15, 0.19, alp),
 			vec4(0.11, 0.10, 0.14, alp),
 			vec4(0.05, 0.04, 0.08, alp),
-			a.atmDistRatio * 0.7, 0.5),
-		a.sunDown);
+			a.atmDistRatio * 0.7, 0.5);
 
 	return s.cloudShadow * mix(
 		darkVaporColor,
 		lightVaporColor,
-		mix(s.planetShadow, mix(s.accumShadow, 1.0, 0.5), a.sunDown));
+		s.planetShadow * mix(s.accumShadow, 1.0, 0.5));
 }
 //------------------------------------------------------------------------------
 vec4 skyColor(Ray viewRay, Sphere planet, Sphere atmosphere) {
