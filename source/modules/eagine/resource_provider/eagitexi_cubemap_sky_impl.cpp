@@ -33,7 +33,7 @@ struct cubemap_scene {
     float cloud_altitude_m{5'500.F};
     float cloud_thickness_m{8'000.F};
     float cloudiness_ratio{0.5F};
-    float glow_strength{1.1F};
+    float glow_strength{1.0F};
     float above_ground_m{25.F};
     float sun_azimuth_deg{0.F};
     float sun_elevation_deg{45.F};
@@ -108,7 +108,7 @@ cubemap_scene::cubemap_scene(const url& l) noexcept
   , cloud_altitude_m{query_arg<float>(l, "cloud_altitude_m", 5'500.F)}
   , cloud_thickness_m{query_arg<float>(l, "cloud_thickness_m", 8'000.F)}
   , cloudiness_ratio{query_arg<float>(l, "cloudiness_ratio", 0.5F)}
-  , glow_strength{query_arg<float>(l, "glow_strength", 1.1F)}
+  , glow_strength{query_arg<float>(l, "glow_strength", 1.0F)}
   , above_ground_m{query_arg<float>(l, "above_ground_m", 100.F)}
   , sun_azimuth_deg{query_arg<float>(l, "sun_azimuth_deg", 0.0F)}
   , sun_elevation_deg{query_arg<float>(l, "sun_elevation_deg", 45.0F)}
