@@ -229,7 +229,7 @@ float thickCloudSampleN(
 	return tilingSample(cloudCoord(
 		location,
 		planet,
-		offset*(1.0 + offset*fsteps(coordAlt.x, 61)/scale),
+		offset*(1.0 + offset*fsteps(coordAlt.x, 61)),
 		scale));
 }
 //------------------------------------------------------------------------------
@@ -266,16 +266,16 @@ float thickCloudDensity(vec3 location, Sphere planet) {
 	v = max(v - max(sqrt(s001250)-0.79, 0.0), 0.0);
 
 	float w = mix(
-		mix(s020000, s010000, 0.4),
-		mix(mix(s005000, s002500, 0.4), mix(s001250, s000625, 0.4), 0.4),
-		0.4);
+		mix(s020000, s010000, 0.3),
+		mix(mix(s005000, s002500, 0.3), mix(s001250, s000625, 0.4), 0.3),
+		0.3);
 
 	float b = mix(
-		mix(pow(s040000, 3.0), pow(s020000, 3.0), 0.33),
-		mix(pow(s010000, 3.0), pow(s005000, 3.0), 0.33),
-		0.33);
+		mix(pow(s040000, 3.0), pow(s020000, 3.0), 0.25),
+		mix(pow(s010000, 3.0), pow(s005000, 3.0), 0.25),
+		0.25);
 
-	return max(sqrt(ca.y) * sign(v*w - abs(ca.x-b)) - snoise * 0.3, 0.0);
+	return max(sqrt(ca.y) * sign(v*w - abs(ca.x-b)) - snoise * 0.2, 0.0);
 }
 //------------------------------------------------------------------------------
 struct AtmosphereSample {
@@ -450,7 +450,7 @@ vec4 clearAirColor(AtmosphereSample a, AtmosphereShadow s) {
 			a.atmDistRatio * 0.7, 0.5),
 		a.sunUp);
 
-	float shadow = s.planetShadow * s.cloudShadow;
+	float shadow = s.planetShadow * s.accumShadow;
 	vec4 airColor = mix(darkAirColor, lightAirColor, shadow);
 	airColor = vec4(airColor.rgb, mix(airColor.a, 1.0, a.hitLight * shadow));
 
@@ -577,9 +577,7 @@ vec4 skyColor(Ray viewRay, Sphere planet, Sphere atmosphere) {
 		airColor = mix(airColor, vapColor, density);
 
 		density = min(5.0 * thickCloudDensity(a.lightRay.origin, planet), 1.0);
-		airColor = mix(
-			airColor, sunlightColor(a, s),
-			a.hitLight * s.accumShadow * (1.0 - density));
+		airColor = mix(airColor, sunlightColor(a, s), a.hitLight * s.accumShadow);
 
 		color = mix(color, airColor, airDensityMult * sampleRatio * airColor.a);
 		color = mix(color, vapColor, density);
