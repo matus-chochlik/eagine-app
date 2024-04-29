@@ -162,7 +162,7 @@ public:
     void add_valtree_stream_input(
       valtree::value_tree_stream_input input) noexcept;
 
-    template <default_mapped_struct T>
+    template <mapped_struct T>
     void handle_mapped_struct(
       const pending_resource_info& source,
       T& object) noexcept;
@@ -479,7 +479,7 @@ public:
 //------------------------------------------------------------------------------
 // valtree_mapped_struct_builder
 //------------------------------------------------------------------------------
-template <default_mapped_struct O>
+template <mapped_struct O>
 class valtree_mapped_struct_builder final
   : public valtree_builder_base<valtree_mapped_struct_builder<O>> {
     using base = valtree_builder_base<valtree_mapped_struct_builder<O>>;
@@ -504,7 +504,7 @@ private:
     valtree::object_builder_data_forwarder _forwarder;
 };
 //------------------------------------------------------------------------------
-template <default_mapped_struct O>
+template <mapped_struct O>
 auto valtree_mapped_struct_builder<O>::finish() noexcept -> bool {
     if(auto parent{this->_parent.lock()}) {
         parent->handle_mapped_struct(*parent, _object);
@@ -513,7 +513,7 @@ auto valtree_mapped_struct_builder<O>::finish() noexcept -> bool {
     return false;
 }
 //------------------------------------------------------------------------------
-export template <default_mapped_struct O>
+export template <mapped_struct O>
 auto make_mapped_struct_builder(
   const shared_holder<pending_resource_info>& parent,
   std::type_identity<O> = {}) noexcept
@@ -523,7 +523,7 @@ auto make_mapped_struct_builder(
 //------------------------------------------------------------------------------
 // valtree_mapped_struct_loader
 //------------------------------------------------------------------------------
-template <default_mapped_struct O>
+template <mapped_struct O>
 class valtree_mapped_struct_loader final
   : public valtree::object_builder_impl<valtree_mapped_struct_loader<O>> {
 
@@ -559,7 +559,7 @@ private:
     resource_load_status& _status;
 };
 //------------------------------------------------------------------------------
-export template <default_mapped_struct O>
+export template <mapped_struct O>
 auto make_mapped_struct_loader(O& object, resource_load_status& status) noexcept
   -> unique_holder<valtree::object_builder> {
     return {hold<valtree_mapped_struct_loader<O>>, object, status};
@@ -758,16 +758,15 @@ export struct resource_loader_signals {
         const valtree::compound& tree;
 
         /// @brief Loads the data from the value tree resource into an object.
-        auto load(default_mapped_struct auto& object) const noexcept -> bool {
+        auto load(mapped_struct auto& object) const noexcept -> bool {
             valtree_deserializer_backend backend{tree};
             const auto errors{deserialize(object, backend)};
             return not errors;
         }
 
         /// @brief Loads the data from the value tree resource into an object.
-        auto load(
-          default_mapped_struct auto& object,
-          const basic_string_path& path) const noexcept -> bool {
+        auto load(mapped_struct auto& object, const basic_string_path& path)
+          const noexcept -> bool {
             valtree_deserializer_backend backend{tree, tree.find(path)};
             const auto errors{deserialize(object, backend)};
             return not errors;
@@ -1160,7 +1159,7 @@ export struct resource_loader_signals {
     /// @brief Emitted when a mapped struct is successfully created and set-up.
     signal<void(const mapped_struct_load_info&) noexcept> mapped_struct_loaded;
 
-    template <default_mapped_struct O>
+    template <mapped_struct O>
     auto load_signal(std::type_identity<O>) noexcept -> auto& {
         return mapped_struct_loaded;
     }
@@ -1544,7 +1543,7 @@ public:
       oglplus::buffer_target buf_target) noexcept -> resource_request_result;
 
     /// @brief Requests a mapped structure
-    template <default_mapped_struct O>
+    template <mapped_struct O>
     auto request_mapped_struct(
       url locator,
       std::type_identity<O> tid = {}) noexcept -> resource_request_result {
@@ -1558,7 +1557,7 @@ public:
         return _cancelled_resource(locator, resource_kind::mapped_struct);
     }
 
-    template <default_mapped_struct O>
+    template <mapped_struct O>
     auto request(
       std::type_identity<O> tid,
       url locator,
@@ -1614,7 +1613,7 @@ private:
     flat_map<identifier_t, shared_holder<pending_resource_info>> _cancelled;
 };
 //------------------------------------------------------------------------------
-template <default_mapped_struct T>
+template <mapped_struct T>
 void pending_resource_info::handle_mapped_struct(
   const pending_resource_info&,
   T& object) noexcept {

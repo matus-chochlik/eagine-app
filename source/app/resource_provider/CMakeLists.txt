@@ -60,6 +60,7 @@ eagine_embed_target_resources(
 		TlngR4S256 "tilings/r4_s256.txt"
 		TlngR4S512 "tilings/r4_s512.txt"
 		SkyParams  "other/default_sky.json"
+		SkyParamsT "other/default_sky.json.txt"
 	PACKED
 	ENABLE_SEARCH)
 

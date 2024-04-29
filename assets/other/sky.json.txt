@@ -1,0 +1,15 @@
+{"planet_radius_m":6370000
+,"atm_thickness_m":100000
+,"vapor_thickness_ratio":"(0.07 + sin(${frame} * 0.0007) * 0.02)"
+,"cloud_offset_x":"(${frame} * 0.0005)"
+,"cloud_offset_y":"(${frame} * 0.0001)"
+,"cloud_altitude_m":"(6000 + sin(${frame} * 0.00015) * 1000)"
+,"cloud_thickness_m":"(8000 + sin(${frame} * 0.0002) * 1000)"
+,"cloudiness_ratio":"(clamp(sin(${frame} * 0.0003), 0.0, 1.0))"
+,"glow_strength":1.4
+,"above_ground_m":100.0
+,"sun_azimuth_deg":"(${frame} * 0.0001 * 360.0)"
+,"sun_elevation_deg":"(sin(${frame} * 0.0001) * 55.0)"
+,"sun_apparent_angle":0.05
+,"tiling_url":"text:///TlngR4S512"}
+

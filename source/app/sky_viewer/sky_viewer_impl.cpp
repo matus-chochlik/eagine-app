@@ -56,18 +56,35 @@ void sky_viewer::_init_camera() {
 }
 //------------------------------------------------------------------------------
 auto sky_viewer::_make_anim_url(long frame_no) noexcept -> url {
-    std::string loc;
-    loc.append("eagitex:///cube_map_sky");
-    loc.append("?size=");
-    loc.append(std::to_string(_resolution.value_or(256)));
-    loc.append("&sun_elevation_deg=");
-    loc.append(std::to_string(0.5F * frame_no));
-    loc.append("&sun_azimuth_deg=");
-    loc.append(std::to_string(0.5F * frame_no + 180.F));
-    loc.append("&cloud_offset_x=");
-    loc.append(std::to_string(0.00002F * frame_no));
 
-    return url{std::move(loc)};
+    std::string params;
+    params.append("json:///sky_parameters");
+    params.append("?frame=");
+    params.append(std::to_string(frame_no));
+    params.append("&template=");
+    params.append(url::encode_component(_animation_template));
+
+    std::string query;
+    query.append("eagitex:///cube_map_sky");
+    query.append("?size=");
+    query.append(std::to_string(_resolution));
+    query.append("&params=");
+    query.append(url::encode_component(params));
+
+    return url{std::move(query)};
+}
+//------------------------------------------------------------------------------
+auto sky_viewer::_make_anim_url() noexcept -> url {
+    if(_animation_mode) {
+        return _make_anim_url(0);
+    }
+    std::string query;
+    query.append("eagitex:///cube_map_sky");
+    query.append("?size=");
+    query.append(std::to_string(_resolution));
+    query.append("&params=");
+    query.append(url::encode_component("json:///SkyParams"));
+    return url{std::move(query)};
 }
 //------------------------------------------------------------------------------
 void sky_viewer::_on_cube_map_loaded() noexcept {
@@ -87,15 +104,29 @@ void sky_viewer::_on_selected() noexcept {
     }
 }
 //------------------------------------------------------------------------------
+auto sky_viewer::_get_resolution() noexcept -> int {
+    return from_string<valid_if_power_of_two<int>>(
+             context().main_context().args().find("--resolution").next())
+      .value_or(256);
+}
+//------------------------------------------------------------------------------
 auto sky_viewer::_get_animation_mode() noexcept -> bool {
     return context().main_context().args().find("--animation");
+}
+//------------------------------------------------------------------------------
+auto sky_viewer::_get_animation_template() noexcept -> std::string {
+    if(url locator{
+         context().main_context().args().find("--animation").next()}) {
+        return locator.release_string();
+    }
+    return {"text:///SkyParamsT"};
 }
 //------------------------------------------------------------------------------
 sky_viewer::sky_viewer(execution_context& ctx, video_context& video)
   : common_application{ctx}
   , _video{video}
   , _backgrounds{ctx, video}
-  , _cube_maps{ctx, video, _make_anim_url(0)} {
+  , _cube_maps{ctx, video, _make_anim_url()} {
     _backgrounds.selected.connect(_select_handler());
     _cube_maps.loaded.connect(_cube_map_load_handler());
     _cube_maps.selected.connect(_select_handler());

@@ -74,6 +74,7 @@ eagine_add_module(
 		eagitexi_sphere_volume
 		eagitexi_cubemap_sky
 		eagitexi_cubemap_blur
+		json_sky_params
 		text_tiling
 		text_lorem_ipsum
 		text_resource_list

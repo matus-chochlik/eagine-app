@@ -7,6 +7,7 @@
 ///
 export module eagine.app.sky_viewer;
 
+import std;
 import eagine.core;
 import eagine.guiplus;
 import eagine.oglplus;
@@ -31,7 +32,9 @@ public:
     void clean_up() noexcept final;
 
 private:
+    auto _get_resolution() noexcept -> int;
     auto _get_animation_mode() noexcept -> bool;
+    auto _get_animation_template() noexcept -> std::string;
 
     void _init_inputs();
     void _init_camera();
@@ -48,18 +51,22 @@ private:
     void _setting_window(const guiplus::imgui_api&) noexcept;
 
     auto _make_anim_url(long frame_no) noexcept -> url;
+    auto _make_anim_url() noexcept -> url;
 
     video_context& _video;
-    sky_viewer_backgrounds _backgrounds;
-    sky_viewer_cube_maps _cube_maps;
 
     orbiting_camera _camera;
+
     float _fov{70.F};
-    valid_if_power_of_two<int> _resolution{256};
     long _anim_frame_no{0};
-    bool _animation_mode{_get_animation_mode()};
+    const std::string _animation_template{_get_animation_template()};
+    const int _resolution{_get_resolution()};
+    const bool _animation_mode{_get_animation_mode()};
     bool _anim_frame_ready{false};
     bool _show_setting_window{false};
+
+    sky_viewer_backgrounds _backgrounds;
+    sky_viewer_cube_maps _cube_maps;
 };
 //------------------------------------------------------------------------------
 export auto establish(main_ctx&) -> unique_holder<launchpad>;

@@ -10,6 +10,7 @@ function _eagine_app_sky_viewer()
 
     local only_once_opts=" \
         -h --help \
+        --animation \
         --cube-map \
     "
 
@@ -39,6 +40,8 @@ function _eagine_app_sky_viewer()
     case "${prev}" in
         -h|--help)
             return 0;;
+        --animation)
+            COMPREPLY=( "text:///SkyParams" );;
         --cube-map)
             COMPREPLY=( "TextureId eagitex://domain/path" );;
         *)

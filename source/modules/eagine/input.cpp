@@ -16,7 +16,8 @@ import eagine.core.valid_if;
 import eagine.core.utility;
 import eagine.core.runtime;
 
-namespace eagine::app {
+namespace eagine {
+namespace app {
 //------------------------------------------------------------------------------
 /// @brief Enumeration of what triggers input feedback action.
 /// @ingroup application
@@ -37,20 +38,6 @@ export enum class input_feedback_trigger : std::uint8_t {
     /// @brief The triggering signal value is over the specified threshold.
     over_threshold = 5
 };
-
-export template <typename Selector>
-constexpr auto enumerator_mapping(
-  const std::type_identity<input_feedback_trigger>,
-  const Selector) noexcept {
-    return enumerator_map_type<input_feedback_trigger, 7>{
-      {{"zero", input_feedback_trigger::zero},
-       {"release", input_feedback_trigger::release},
-       {"one", input_feedback_trigger::one},
-       {"press", input_feedback_trigger::press},
-       {"change", input_feedback_trigger::change},
-       {"under_threshold", input_feedback_trigger::under_threshold},
-       {"over_threshold", input_feedback_trigger::over_threshold}}};
-}
 //------------------------------------------------------------------------------
 /// @brief Enumeration of how a input feedback trigger should be applied.
 /// @ingroup application
@@ -69,19 +56,6 @@ export enum class input_feedback_action : std::uint8_t {
     /// @brief Multiply the triggering signal by constant and add it to target input.
     multiply_add
 };
-
-export template <typename Selector>
-constexpr auto enumerator_mapping(
-  const std::type_identity<input_feedback_action>,
-  const Selector) noexcept {
-    return enumerator_map_type<input_feedback_action, 6>{
-      {{"copy", input_feedback_action::copy},
-       {"flip", input_feedback_action::flip},
-       {"set_zero", input_feedback_action::set_zero},
-       {"set_one", input_feedback_action::set_one},
-       {"add", input_feedback_action::add},
-       {"multiply_add", input_feedback_action::multiply_add}}};
-}
 //------------------------------------------------------------------------------
 /// @brief Application input value kind bits enumeration.
 /// @ingroup application
@@ -110,6 +84,37 @@ export inline auto all_input_value_kinds() noexcept -> input_value_kinds {
     return input_value_kind::relative | input_value_kind::absolute_norm |
            input_value_kind::absolute_free;
 }
+//------------------------------------------------------------------------------
+} // namespace app
+export template <>
+struct enumerator_traits<app::input_feedback_trigger> {
+    static constexpr auto mapping() noexcept {
+        using app::input_feedback_trigger;
+        return enumerator_map_type<input_feedback_trigger, 7>{
+          {{"zero", input_feedback_trigger::zero},
+           {"release", input_feedback_trigger::release},
+           {"one", input_feedback_trigger::one},
+           {"press", input_feedback_trigger::press},
+           {"change", input_feedback_trigger::change},
+           {"under_threshold", input_feedback_trigger::under_threshold},
+           {"over_threshold", input_feedback_trigger::over_threshold}}};
+    }
+};
+
+export template <>
+struct enumerator_traits<app::input_feedback_action> {
+    static constexpr auto mapping() noexcept {
+        using app::input_feedback_action;
+        return enumerator_map_type<input_feedback_action, 6>{
+          {{"copy", input_feedback_action::copy},
+           {"flip", input_feedback_action::flip},
+           {"set_zero", input_feedback_action::set_zero},
+           {"set_one", input_feedback_action::set_one},
+           {"add", input_feedback_action::add},
+           {"multiply_add", input_feedback_action::multiply_add}}};
+    }
+};
+namespace app {
 //------------------------------------------------------------------------------
 /// @brief Alias for input value with history.
 /// @ingroup application
@@ -317,5 +322,6 @@ private:
     bool _was_tapped{false};
 };
 //------------------------------------------------------------------------------
-} // namespace eagine::app
+} // namespace app
+} // namespace eagine
 
