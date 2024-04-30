@@ -270,10 +270,12 @@ float thickCloudDensity(vec3 location, Sphere planet) {
 		mix(mix(s005000, s002500, 0.3), mix(s001250, s000625, 0.4), 0.3),
 		0.3);
 
-	float b = mix(
-		mix(pow(s040000, 3.0), pow(s020000, 3.0), 0.25),
-		mix(pow(s010000, 3.0), pow(s005000, 3.0), 0.25),
-		0.25);
+	float b =
+		pow(s080000, 3.0) * 0.05+
+		pow(s040000, 3.0) * 0.35+
+		pow(s020000, 3.0) * 0.30+
+		pow(s010000, 3.0) * 0.20+
+		pow(s005000, 3.0) * 0.10;
 
 	return max(sqrt(ca.y) * sign(v*w - abs(ca.x-b)) - snoise * 0.2, 0.0);
 }
