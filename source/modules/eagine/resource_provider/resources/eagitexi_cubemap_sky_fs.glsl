@@ -414,8 +414,8 @@ vec4 clearAirColor(AtmosphereSample a, AtmosphereShadow s) {
 			mixColor012n(
 				vec4(0.34, 0.45, 0.71, 0.60),
 				vec4(0.30, 0.40, 0.66, 0.53),
-				vec4(0.30, 0.40, 0.60, 0.30),
-				vec4(0.45, 0.36, 0.32, 0.20),
+				vec4(0.35, 0.40, 0.55, 0.30),
+				vec4(0.37, 0.38, 0.39, 0.20),
 				a.atmDistRatio * 0.7, 0.5),
 			a.sunUp),
 		pow(cloudiness, 3.0));
@@ -436,19 +436,35 @@ vec4 clearAirColor(AtmosphereSample a, AtmosphereShadow s) {
 		a.sunUp);
 
 	vec4 darkAirColor = mix(
-		mixColor012n(
-			vec4(0.43, 0.28, 0.72, 0.57),
-			vec4(0.37, 0.22, 0.66, 0.51),
-			vec4(0.45, 0.35, 0.20, 0.30),
-			vec4(0.30, 0.05, 0.20, 0.20),
-			a.atmDistRatio, 1.0),
-		mixColor012n(
-			vec4(0.45, 0.30, 0.75, 0.50),
-			vec4(0.40, 0.25, 0.70, 0.30),
-			vec4(0.35, 0.20, 0.40, 0.10),
-			vec4(0.02, 0.00, 0.03, 0.01),
-			a.atmDistRatio * 0.7, 0.5),
-		a.sunUp);
+		mix(
+			mixColor012n(
+				vec4(0.50, 0.30, 0.70, 0.50),
+				vec4(0.45, 0.30, 0.66, 0.33),
+				vec4(0.35, 0.20, 0.45, 0.15),
+				vec4(0.23, 0.17, 0.26, 0.10),
+				a.atmDistRatio, 1.0),
+			mixColor012n(
+				vec4(0.45, 0.30, 0.75, 0.60),
+				vec4(0.40, 0.25, 0.70, 0.35),
+				vec4(0.30, 0.20, 0.45, 0.20),
+				vec4(0.21, 0.19, 0.27, 0.15),
+				a.atmDistRatio * 0.7, 0.5),
+			a.sunUp),
+		mix(
+			mixColor012n(
+				vec4(0.58, 0.58, 0.56, 0.57),
+				vec4(0.42, 0.42, 0.40, 0.42),
+				vec4(0.32, 0.31, 0.30, 0.30),
+				vec4(0.22, 0.19, 0.19, 0.20),
+				a.atmDistRatio, 1.0),
+			mixColor012n(
+				vec4(0.50, 0.50, 0.52, 0.50),
+				vec4(0.39, 0.39, 0.41, 0.39),
+				vec4(0.27, 0.27, 0.29, 0.27),
+				vec4(0.11, 0.11, 0.12, 0.11),
+				a.atmDistRatio * 0.7, 0.5),
+			a.sunUp),
+		pow(cloudiness, 3.0));
 
 	float shadow = s.planetShadow * s.accumShadow;
 	vec4 airColor = mix(darkAirColor, lightAirColor, shadow);
@@ -463,8 +479,8 @@ vec4 vaporColor(AtmosphereSample a, AtmosphereShadow s) {
 
 	vec4 clearVaporColor = mix(
 		mixColor012n(
-			vec4(0.95, 0.94, 0.95, alp),
-			vec4(0.91, 0.90, 0.92, alp),
+			vec4(0.95, 0.95, 0.95, alp),
+			vec4(0.91, 0.91, 0.92, alp),
 			vec4(0.86, 0.85, 0.87, alp),
 			vec4(0.83, 0.82, 0.84, alp),
 			a.atmDistRatio * 0.7, 0.5),
@@ -480,14 +496,14 @@ vec4 vaporColor(AtmosphereSample a, AtmosphereShadow s) {
 		mixColor012n(
 			vec4(0.95, 0.94, 0.97, alp),
 			vec4(0.90, 0.89, 0.92, alp),
-			vec4(0.85, 0.84, 0.87, alp),
-			vec4(0.75, 0.74, 0.76, alp),
+			vec4(0.85, 0.85, 0.86, alp),
+			vec4(0.75, 0.75, 0.75, alp),
 			a.atmDistRatio * 0.7, 0.5),
 		mixColor012n(
 			vec4(1.01, 1.01, 1.01, alp),
 			vec4(0.98, 0.98, 0.97, alp),
 			vec4(0.96, 0.95, 0.94, alp),
-			vec4(0.92, 0.87, 0.91, alp),
+			vec4(0.89, 0.89, 0.89, alp),
 			a.atmDistRatio, 1.0),
 		s.accumShadow);
 
@@ -497,10 +513,10 @@ vec4 vaporColor(AtmosphereSample a, AtmosphereShadow s) {
 		pow(cloudiness, 3.0));
 
 	vec4 darkVaporColor = mixColor012n(
-			vec4(0.21, 0.20, 0.22, alp),
-			vec4(0.16, 0.15, 0.19, alp),
-			vec4(0.11, 0.10, 0.14, alp),
-			vec4(0.05, 0.04, 0.08, alp),
+			vec4(0.21, 0.21, 0.22, alp),
+			vec4(0.16, 0.16, 0.16, alp),
+			vec4(0.12, 0.12, 0.12, alp),
+			vec4(0.05, 0.05, 0.05, alp),
 			a.atmDistRatio * 0.7, 0.5);
 
 	return s.cloudShadow * mix(
@@ -613,7 +629,10 @@ vec4 skyColor(Ray viewRay, Sphere planet, Sphere atmosphere) {
 //------------------------------------------------------------------------------
 vec4 surfaceColor(Ray viewRay, float rayDist, Sphere planet) {
 	float f = exp(-rayDist / 500.0);
-	return mix(vec4(0.23, 0.20, 0.17, 0.0), vec4(0.4, 0.3, 0.2, 0.0), f);
+	return mix(
+		mix(vec4(0.23, 0.20, 0.17, 0.0), vec4(0.40, 0.30, 0.20, 0.0), f),
+		mix(vec4(0.13, 0.11, 0.08, 0.0), vec4(0.30, 0.25, 0.20, 0.0), f),
+		cloudiness);
 }
 //------------------------------------------------------------------------------
 vec3 planetCenter() {
