@@ -470,7 +470,9 @@ vec4 clearAirColor(AtmosphereSample a, AtmosphereShadow s) {
 
 	float shadow = s.planetShadow * s.accumShadow;
 	vec4 airColor = mix(darkAirColor, lightAirColor, shadow);
-	airColor = vec4(airColor.rgb, mix(airColor.a, 1.0, a.hitLight * shadow));
+	airColor = vec4(
+		airColor.rgb,
+		mix(airColor.a * shadow, 1.0, a.hitLight * shadow));
 
 	return airColor;
 }
