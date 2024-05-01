@@ -353,7 +353,7 @@ AtmosphereShadow atmShadow1(AtmosphereSample a, Sphere planet, float backlight) 
 				float density = min(
 					2.5 * cloudiness * thickCloudDensity(location, planet),
 					1.0);
-				shadow = shadow * mix(1.0, 0.985, density);
+				shadow = shadow * mix(1.0, 0.991, density);
 			}
 		}
 	}
