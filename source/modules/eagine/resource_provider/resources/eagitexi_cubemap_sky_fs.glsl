@@ -251,7 +251,8 @@ float thickCloudDensity(vec3 location, Sphere planet) {
 	float s002500 = thickCloudSampleB(location, planet, fib2( 9,10), 0.2500);
 	float s001250 = thickCloudSampleB(location, planet, fib2(10,11), 0.1250);
 	float s000625 = thickCloudSampleB(location, planet, fib2(11,12), 0.0625);
-	float snoise  = thickCloudSampleN(location, planet, fib2(12,13), 0.0314, ca);
+	float snoise1 = thickCloudSampleN(location, planet, fib2(12,13), 0.0314, ca);
+	float snoise2 = thickCloudSampleN(location, planet, fib2(13,14), 0.01618,ca);
 
 	float v = 1.0;
 	v = max(v - max(sqrt(s640000)-mix(0.17, 0.97, cloudiness), 0.0), 0.0);
@@ -277,7 +278,10 @@ float thickCloudDensity(vec3 location, Sphere planet) {
 		pow(s010000, 3.0) * 0.20+
 		pow(s005000, 3.0) * 0.10;
 
-	return max(sqrt(ca.y) * sign(v*w - abs(ca.x-b)) - snoise * 0.2, 0.0);
+	return max(
+		sqrt(ca.y) * sign(v*w - abs(ca.x-b)) -
+		snoise1 * 0.2 - snoise2 * 0.2,
+		0.0);
 }
 //------------------------------------------------------------------------------
 struct AtmosphereSample {
@@ -339,18 +343,18 @@ AtmosphereShadow atmShadow0(AtmosphereSample a, Sphere planet, float backlight) 
 AtmosphereShadow atmShadow1(AtmosphereSample a, Sphere planet, float backlight) {
 	float shadow = 1.0;
 	if(a.cloudsIntersection.is_valid) {
-		const int sampleCount = 150;
-		const float isc = 1.0 / float(sampleCount);
 		vec3 direction = a.cloudsIntersection.far - a.lightRay.origin;
 		float l = length(direction);
-		direction = direction / l;
-		l = min(l, 128.0 * cloudThickness * isc);
-		for(int s = 1; s <= sampleCount; ++s) {
-			vec3 location = a.lightRay.origin + direction * l * float(s) * isc;
-			float density = min(
-				2.5 * cloudiness * l * thickCloudDensity(location, planet),
-				1.0);
-			shadow = shadow * mix(1.0, 0.991, density);
+		int sampleCount = min(int(l * 4.0), 192);
+		if(sampleCount > 0) {
+			float isc = 1.0 / float(sampleCount);
+			for(int s = 1; s <= sampleCount; ++s) {
+				vec3 location = a.lightRay.origin + direction * float(s) * isc;
+				float density = min(
+					2.5 * cloudiness * thickCloudDensity(location, planet),
+					1.0);
+				shadow = shadow * mix(1.0, 0.985, density);
+			}
 		}
 	}
 	return AtmosphereShadow(
