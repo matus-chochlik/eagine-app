@@ -146,7 +146,7 @@ vec2 cloudCoord(
 	vec2 sph = vec2(atan(location.y, location.x)+3.14157, asin(location.z));
 	vec2 sca = vec2(10.0 / scale);
 	offset = (sca * offset / tilingSide);
-	return cloudOffset / scale + offset + sca * sph;
+	return (cloudOffset * sqrt(offset.x)) / scale + offset + sca * sph;
 }
 //------------------------------------------------------------------------------
 float tilingSample(vec2 coord) {
