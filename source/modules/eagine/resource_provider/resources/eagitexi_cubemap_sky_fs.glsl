@@ -345,6 +345,7 @@ AtmosphereShadow atmShadow1(AtmosphereSample a, Sphere planet, float backlight) 
 	if(a.cloudsIntersection.is_valid) {
 		vec3 direction = a.cloudsIntersection.far - a.lightRay.origin;
 		float l = length(direction);
+		float sf = mix(0.978, 0.996, a.sunUp);
 		int sampleCount = min(int(l * 4.0), 192);
 		if(sampleCount > 0) {
 			float isc = 1.0 / float(sampleCount);
@@ -353,7 +354,7 @@ AtmosphereShadow atmShadow1(AtmosphereSample a, Sphere planet, float backlight) 
 				float density = min(
 					2.5 * cloudiness * thickCloudDensity(location, planet),
 					1.0);
-				shadow = shadow * mix(1.0, 0.991, density);
+				shadow = shadow * mix(1.0, sf, density);
 			}
 		}
 	}
