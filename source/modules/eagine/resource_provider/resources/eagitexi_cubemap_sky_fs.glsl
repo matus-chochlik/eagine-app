@@ -272,11 +272,13 @@ float thickCloudDensity(vec3 location, Sphere planet) {
 		0.3);
 
 	float b =
-		pow(s080000, 3.0) * 0.05+
-		pow(s040000, 3.0) * 0.35+
-		pow(s020000, 3.0) * 0.30+
-		pow(s010000, 3.0) * 0.20+
-		pow(s005000, 3.0) * 0.10;
+		pow(s080000, 3.0) * 0.30+
+		pow(s040000, 3.0) * 0.24+
+		pow(s020000, 3.0) * 0.17+
+		pow(s010000, 3.0) * 0.13+
+		pow(s005000, 3.0) * 0.08+
+		pow(s002500, 3.0) * 0.05+
+		pow(s001250, 3.0) * 0.03;
 
 	return max(
 		sqrt(ca.y) * sign(v*w - abs(ca.x-b)) -
@@ -348,7 +350,7 @@ AtmosphereShadow atmShadow1(AtmosphereSample a, Sphere planet, float backlight) 
 	if(a.cloudsIntersection.is_valid) {
 		vec3 direction = a.cloudsIntersection.far - a.lightRay.origin;
 		float l = length(direction);
-		float sf = mix(0.965, 0.994, a.sunUp);
+		float sf = mix(0.950, 0.997, a.sunUp);
 		int sampleCount = min(int(l * 4.0), 192);
 		if(sampleCount > 0) {
 			float isc = 1.0 / float(sampleCount);
