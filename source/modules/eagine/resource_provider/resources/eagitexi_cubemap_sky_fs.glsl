@@ -411,8 +411,8 @@ vec4 clearAirColor(AtmosphereSample a, AtmosphereShadow s) {
 				a.atmDistRatio, 1.0),
 			mixColor012n(
 				vec4(0.30, 0.45, 0.75, 0.60),
-				vec4(0.25, 0.40, 0.70, 0.53),
-				vec4(0.25, 0.40, 0.70, 0.30),
+				vec4(0.30, 0.40, 0.65, 0.53),
+				vec4(0.35, 0.40, 0.60, 0.30),
 				vec4(0.50, 0.40, 0.35, 0.20),
 				a.atmDistRatio * 0.7, 0.5),
 			a.sunUp),
