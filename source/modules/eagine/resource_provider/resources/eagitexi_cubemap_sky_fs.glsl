@@ -146,7 +146,7 @@ vec2 cloudCoord(
 	vec2 sph = vec2(atan(location.y, location.x)+3.14157, asin(location.z));
 	vec2 sca = vec2(10.0 / scale);
 	offset = (sca * offset / tilingSide);
-	return (cloudOffset * pow(offset.x, 0.125)) / scale + offset + sca * sph;
+	return (cloudOffset * pow(offset.x, 0.0625)) / scale + offset + sca * sph;
 }
 //------------------------------------------------------------------------------
 float tilingSample(vec2 coord) {
@@ -350,7 +350,7 @@ AtmosphereShadow atmShadow1(AtmosphereSample a, Sphere planet, float backlight) 
 	if(a.cloudsIntersection.is_valid) {
 		vec3 direction = a.cloudsIntersection.far - a.lightRay.origin;
 		float l = length(direction);
-		float sf = mix(0.950, 0.997, a.sunUp);
+		float sf = mix(0.840, 0.998, a.sunUp);
 		int sampleCount = min(int(l * 4.0), 192);
 		if(sampleCount > 0) {
 			float isc = 1.0 / float(sampleCount);
