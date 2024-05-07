@@ -229,7 +229,7 @@ float thickCloudSampleN(
 	return tilingSample(cloudCoord(
 		location,
 		planet,
-		offset*(1.0 + offset*fsteps(coordAlt.x, 61)),
+		offset*(1.0 + offset*fsteps(coordAlt.x, 23)),
 		scale));
 }
 //------------------------------------------------------------------------------
@@ -251,7 +251,7 @@ float thickCloudDensity(vec3 location, Sphere planet) {
 	float s002500 = thickCloudSampleB(location, planet, fib2( 9,10), 0.2500);
 	float s001250 = thickCloudSampleB(location, planet, fib2(10,11), 0.1250);
 	float s000625 = thickCloudSampleB(location, planet, fib2(11,12), 0.0625);
-	float snoise1 = thickCloudSampleN(location, planet, fib2(12,13), 0.0314, ca);
+	float snoise1 = thickCloudSampleN(location, planet, fib2(12,13), 0.03141,ca);
 	float snoise2 = thickCloudSampleN(location, planet, fib2(13,14), 0.01618,ca);
 
 	float v = 1.0;
@@ -272,16 +272,16 @@ float thickCloudDensity(vec3 location, Sphere planet) {
 		0.3);
 
 	float b =
-		pow(s080000, 3.0) * 0.30+
-		pow(s040000, 3.0) * 0.24+
+		pow(s080000, 3.0) * 0.37+
+		pow(s040000, 3.0) * 0.26+
 		pow(s020000, 3.0) * 0.17+
-		pow(s010000, 3.0) * 0.13+
-		pow(s005000, 3.0) * 0.08+
-		pow(s002500, 3.0) * 0.05+
-		pow(s001250, 3.0) * 0.03;
+		pow(s010000, 3.0) * 0.11+
+		pow(s005000, 3.0) * 0.05+
+		pow(s002500, 3.0) * 0.03+
+		pow(s001250, 3.0) * 0.01;
 
 	return max(
-		sqrt(ca.y) * sign(v*w - abs(ca.x-b)) -
+		sqrt(ca.y) * sign(v*w - abs(ca.x-b*0.2)) -
 		snoise1 * 0.2 - snoise2 * 0.2,
 		0.0);
 }
@@ -350,7 +350,7 @@ AtmosphereShadow atmShadow1(AtmosphereSample a, Sphere planet, float backlight) 
 	if(a.cloudsIntersection.is_valid) {
 		vec3 direction = a.cloudsIntersection.far - a.lightRay.origin;
 		float l = length(direction);
-		float sf = mix(0.840, 0.998, a.sunUp);
+		float sf = mix(0.905, 0.998, a.sunUp);
 		int sampleCount = min(int(l * 4.0), 192);
 		if(sampleCount > 0) {
 			float isc = 1.0 / float(sampleCount);
@@ -515,7 +515,7 @@ vec4 vaporColor(AtmosphereSample a, AtmosphereShadow s) {
 			vec4(0.95, 0.94, 0.97, alp),
 			vec4(0.90, 0.89, 0.92, alp),
 			vec4(0.85, 0.85, 0.86, alp),
-			vec4(0.75, 0.75, 0.75, alp),
+			vec4(0.74, 0.74, 0.75, alp),
 			a.atmDistRatio * 0.7, 0.5),
 		mixColor012n(
 			vec4(1.01, 1.01, 1.01, alp),
