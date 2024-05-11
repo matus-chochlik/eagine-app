@@ -29,7 +29,7 @@ float to01(float x) {
 }
 
 float fib(int n) {
-	vec2 f = vec2(0.0, 1.0);
+	vec2 f = vec2(1.0, 1.0);
 	for(int i=0; i<n; ++i) {
 		f = vec2(f.y, f.x+f.y);
 	}
@@ -163,7 +163,7 @@ vec3 cloudCoord(vec3 location, Sphere planet, vec2 offset, float scale) {
 		planet,
 		offset,
 		scale,
-		11.3,
+		13.1,
 		cloudAltitude - cloudThickness * 0.5,
 		cloudAltitude + cloudThickness * 0.5);
 }
@@ -261,15 +261,25 @@ float thickCloudDensity(vec3 location, Sphere planet) {
 	float s0000625 = thickCloudSample(location, planet, fib2(12,13),  0.0627);
 	float snoise1  = thickCloudSample(location, planet, fib2(13,14), 0.01*pi);
 
-	float e = pow(
+	float e = sqrt(
+		s0040000*
 		s0020000*
 		s0010000*
 		s0005000*
 		s0002500*
 		s0001250*
 		s0000625*
-		snoise1,
-		1.0 / 7.0);
+		snoise1);
+
+	float f =
+		s0040000/2.0+
+		s0020000/4.0+
+		s0010000/8.0+
+		s0005000/16.0+
+		s0002500/32.0+
+		s0001250/64.0+
+		s0000625/128.0+
+		snoise1/256.0;
 
 	float d = 1.5;
 	d -= cloudCutout(sqrt(s1280000), 0.11, 0.63);
@@ -278,7 +288,7 @@ float thickCloudDensity(vec3 location, Sphere planet) {
 	d -= cloudCutout(sqrt(s0160000), 0.37, 0.53);
 	d -= cloudCutout(sqrt(s0080000), 0.41, 0.51);
 	d -= cloudCutout(sqrt(s0040000), 0.43, 0.49);
-	d += e;
+	d += mix(e, f, 0.5);
 
 	return clamp(d, 0.0, 1.0);
 }
@@ -354,7 +364,7 @@ AtmosphereShadow atmShadow1(
 	if(a.cloudsIntersection.is_valid) {
 		vec3 direction = a.cloudsIntersection.far - a.lightRay.origin;
 		float l = length(direction);
-		float sf = mix(0.850, 0.987, accum.planetShadow);
+		float sf = mix(0.850, 0.991, accum.planetShadow);
 		int sampleCount = min(int(l * 4.0), 192);
 		if(sampleCount > 0) {
 			float isc = 1.0 / float(sampleCount);
