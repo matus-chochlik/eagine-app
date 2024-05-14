@@ -240,13 +240,12 @@ float thickCloudSample(vec3 location, Sphere planet, vec2 offset, float scale) {
 	return tilingSample(location, planet, offset, scale * 0.5);
 }
 //------------------------------------------------------------------------------
-float cloudCutout(float s, float lo, float hi) {
-	return (s - mix(hi, lo, cloudiness)) *
-		mix(1.0/(1.0 - hi), 1.0/(1.0 - lo), cloudiness);
+float cloudCutout(float sam, float lo, float hi) {
+	float sc = sqrt(cloudiness);
+	return (sam - mix(hi, lo, sc)) * mix(1.0/(1.0 - hi), 1.0/(1.0 - lo), sc);
 }
 //------------------------------------------------------------------------------
 float thickCloudDensity(vec3 location, Sphere planet) {
-	float c = cloudiness;
 	float s1280000 = thickCloudSample(location, planet, fib2( 1, 2),128.0017);
 	float s0640000 = thickCloudSample(location, planet, fib2( 2, 3), 64.0013);
 	float s0320000 = thickCloudSample(location, planet, fib2( 3, 4), 32.0011);
@@ -262,6 +261,7 @@ float thickCloudDensity(vec3 location, Sphere planet) {
 	float snoise1  = thickCloudSample(location, planet, fib2(13,14), 0.01*pi);
 	float snoise2  = thickCloudSample(location, planet, fib2(14,15), 0.01617);
 
+	float sc = sqrt(cloudiness);
 	float d1 =
 		cloudCutout(sqrt(s1280000), 0.07, 0.23)*
 		cloudCutout(sqrt(s0640000), 0.13, 0.31)*
@@ -269,7 +269,7 @@ float thickCloudDensity(vec3 location, Sphere planet) {
 		cloudCutout(sqrt(s0160000), 0.13, 0.41)*
 		cloudCutout(sqrt(s0080000), 0.07, 0.47)*
 		cloudCutout(sqrt(s0040000), 0.13, 0.53);
-	d1 = mix(4.0, 8.0, cloudiness) * (d1 - mix(1.0/4.0, 1.0/8.0, cloudiness));
+	d1 = mix(4.0, 8.0, sc) * (d1 - mix(1.0/4.0, 1.0/8.0, sc));
 	float m0 = 1.0 - sign(max(d1 - 0.11, 0.0));
 	float m1 = 1.0 - sign(max(d1 - 0.23, 0.0));
 	float m2 = 1.0 - sign(max(d1 - 0.17, 0.0));
