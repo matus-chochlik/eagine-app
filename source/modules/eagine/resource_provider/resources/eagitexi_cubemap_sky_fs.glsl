@@ -367,12 +367,12 @@ AtmosphereShadow atmShadow1(
 				vec3 location = a.lightRay.origin + direction * st;
 				float alt = distance(location, planet.center) - planet.radius;
 				alt = (alt - cloudsBtm) * cloudThckInv;
+				float density = max(sign(alt), 0.0)*
+					sign(thickCloudDensity(location, planet));
 				float sf = mix(0.975, 0.995, accum.planetShadow * sqrt(alt));
-				float density = sign(thickCloudDensity(location, planet));
-				density *= max(sign(alt), 0.0);
 				shadow = clamp(shadow * mix(lf, sf, density), 0.01, 1.0);
 				st += sl;
-				sl *= 1.001;
+				sl *= 1.1;
 			}
 		}
 	}
