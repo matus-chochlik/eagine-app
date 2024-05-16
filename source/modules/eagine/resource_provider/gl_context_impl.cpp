@@ -458,7 +458,7 @@ auto eagitexi_cubemap_renderer::render() noexcept
         }
     }
     log_info("cube-map render finished in ${interval}")
-      .tag("CMTxRdrTim")
+      .tag("cmTxRdrTim")
       .arg("interval", std::chrono::steady_clock::now() - _start);
     return msgbus::blob_preparation_result::finished();
 }

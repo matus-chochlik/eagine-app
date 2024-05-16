@@ -168,7 +168,7 @@ private:
 
     main_ctx_buffer _buffer;
 
-    std::chrono::steady_clock::time_point _start{
+    const std::chrono::steady_clock::time_point _start{
       std::chrono::steady_clock::now()};
     const oglplus::geometry_and_bindings _screen;
     oglplus::program_object _prog;
