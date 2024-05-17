@@ -421,7 +421,7 @@ vec4 clearAirColor(AtmosphereSample a, AtmosphereShadow s) {
 				vec4(0.30, 0.45, 0.75, 0.60),
 				vec4(0.25, 0.40, 0.70, 0.53),
 				vec4(0.50, 0.40, 0.25, 0.30),
-				vec4(0.40, 0.10, 0.25, 0.20),
+				vec4(0.40, 0.20, 0.15, 0.20),
 				a.atmDistRatio, 1.0),
 			mixColor012n(
 				vec4(0.30, 0.45, 0.75, 0.60),
@@ -448,17 +448,17 @@ vec4 clearAirColor(AtmosphereSample a, AtmosphereShadow s) {
 
 	lightAirColor = lightAirColor + directLight * mix(
 		mixColor012n(
+			vec4(0.47, 0.46, 0.40, 0.45),
+			vec4(0.47, 0.42, 0.40, 0.43),
+			vec4(0.45, 0.38, 0.35, 0.40),
+			vec4(0.35, 0.28, 0.25, 0.30),
+			a.atmDistRatio * 0.7, 0.5),
+		mixColor012n(
 			vec4(0.50, 0.50, 0.49, 0.50),
 			vec4(0.44, 0.42, 0.41, 0.38),
 			vec4(0.39, 0.35, 0.32, 0.34),
 			vec4(0.38, 0.32, 0.30, 0.30),
 			a.atmDistRatio, 1.0),
-		mixColor012n(
-			vec4(0.67, 0.60, 0.55, 0.60),
-			vec4(0.54, 0.47, 0.43, 0.52),
-			vec4(0.52, 0.53, 0.50, 0.51),
-			vec4(0.53, 0.58, 0.55, 0.50),
-			a.atmDistRatio * 0.7, 0.5),
 		a.sunUp);
 
 	vec4 darkAirColor = mix(
@@ -665,7 +665,7 @@ vec4 skyColor(Ray viewRay, Sphere planet, Sphere atmosphere) {
 		accumShadow.planetShadow += mix(a.planetShadow, s.planetShadow, 0.5);
 		accumShadow.cloudShadow *= s.cloudShadow;
 		accumShadow.cloudShadow = clamp(
-			accumShadow.cloudShadow * mix(0.95, 1.01, s.cloudShadow),
+			accumShadow.cloudShadow * mix(0.95, 1.001, s.cloudShadow),
 			0.0, 1.0);
 		shadowNum += 1.0;
 

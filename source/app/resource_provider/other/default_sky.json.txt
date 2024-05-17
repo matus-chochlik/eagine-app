@@ -1,10 +1,10 @@
 {"sun_azimuth_deg":"(${frame} * 0.25 + 200.0)"
 ,"sun_elevation_deg":"(lerp(70.0, -70.0, cos01(0.13 + ${frame} * 0.0004)))"
-,"cloud_offset_x":"(${frame} * 0.00020)"
-,"cloud_offset_y":"(${frame} * 0.00004)"
-,"cloudiness_ratio":"(lerp(0.15, 0.75, cos01(0.3 + ${frame} * 0.0008)))"
-,"cloud_altitude_m": 5000.0
-,"cloud_thickness_m": 6000.0
+,"cloud_offset_x":"(${frame} * 0.00010)"
+,"cloud_offset_y":"(${frame} * 0.00002)"
+,"cloudiness_ratio":"(lerp(0.25, 0.65, cos01(0.3 + ${frame} * 0.0005)))"
+,"cloud_altitude_m": 10000.0
+,"cloud_thickness_m": 12000.0
 ,"sun_apparent_angle":0.05
 ,"vapor_thickness_ratio":0.05
 ,"tiling_url":"text:///TlngR4S512"
