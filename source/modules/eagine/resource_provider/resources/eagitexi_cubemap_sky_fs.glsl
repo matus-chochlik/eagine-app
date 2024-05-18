@@ -241,7 +241,7 @@ float thickCloudDensity(vec3 location, Sphere planet) {
 	float s0080000 = thickCloudSample(location, planet, fib2( 5, 6),   8.0019);
 	float s0040000 = thickCloudSample(location, planet, fib2( 6, 7),   4.0003);
 	float s0020000 = thickCloudSample(location, planet, fib2( 7, 8),   2.1817);
-	float s0010000 = thickCloudSample(location, planet, fib2( 8, 8),   1.1313);
+	float s0010000 = thickCloudSample(location, planet, fib2( 8, 9),   1.1313);
 	float s0005000 = thickCloudSample(location, planet, fib2( 9,10),   0.5111);
 	float s0002500 = thickCloudSample(location, planet, fib2(10,11),   0.2531);
 	float s0001250 = thickCloudSample(location, planet, fib2(11,12),   0.1253);
@@ -257,8 +257,8 @@ float thickCloudDensity(vec3 location, Sphere planet) {
 	float cc008 = cloudCutout(sqrt(s0080000), 0.07, 0.57);
 	float cc004 = cloudCutout(sqrt(s0040000), 0.13, 0.61);
 	float d0 = cc128 * cc064 * cc032 * cc016 * cc008 * cc004;
-	float m2 = 1.0 - max(d0 - mix(0.01, 0.11, cc016), 0.0);
-	float m1 = 1.0 - max(d0 - mix(0.05, 0.13, cc008), 0.0);
+	float m2 = 1.0 - max(d0 - mix(0.05, 0.11, cc016), 0.0);
+	float m1 = 1.0 - max(d0 - mix(0.01, 0.11, cc008), 0.0);
 	float m0 = 1.0 - sign(max(d0 - mix(0.03, 0.01, cc004), 0.0));
 	float d1 = mix(4.0, 8.0, sc) * (d0 - mix(1.0/4.0, 1.0/8.0, sc));
 	d1 = mix(min(d1, 1.4), sign(d1), 0.75);
@@ -655,9 +655,6 @@ vec4 skyColor(Ray viewRay, Sphere planet, Sphere atmosphere) {
 		AtmosphereShadow s = atmShadow2(a, planet, as);
 		accumShadow.planetShadow += mix(a.planetShadow, s.planetShadow, 0.5);
 		accumShadow.cloudShadow *= s.cloudShadow;
-		accumShadow.cloudShadow = clamp(
-			accumShadow.cloudShadow * mix(0.95, 1.001, s.cloudShadow),
-			0.0, 1.0);
 		shadowNum += 1.0;
 
 		vec4 airColor = clearAirColor(a, as);
