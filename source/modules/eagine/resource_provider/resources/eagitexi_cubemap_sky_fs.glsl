@@ -179,17 +179,17 @@ float thinCloudSample(vec3 location, Sphere planet, vec2 offset, float scale) {
 		131.1,
 		-atmThickness*vaporThickness,
 		+atmThickness*vaporThickness);
-	return 0.2 * max(tilingSample(coord.xy) - 0.23, 0.0) * (1.0 - coord.z);
+	return 0.2 * sqrt(max(tilingSample(coord.xy) - 0.23, 0.0)) * (1.0 - coord.z);
 }
 //------------------------------------------------------------------------------
 float thinCloudDensity(vec3 location, Sphere planet) {
 	return
-		thinCloudSample(location, planet, fib2( 2, 3), 11.73*phi)*
-		thinCloudSample(location, planet, fib2( 4, 5), 2.3711*pi)*
-		thinCloudSample(location, planet, fib2( 6, 7), 0.101*phi)*
-		thinCloudSample(location, planet, fib2( 8, 9), 0.0231*pi)*
-		thinCloudSample(location, planet, fib2(10,11), 0.013*phi)*
-		thinCloudSample(location, planet, fib2(12,13), 0.0073*phi);
+		thinCloudSample(location, planet, fib2( 1, 2), 11.73*phi)*
+		thinCloudSample(location, planet, fib2( 3, 4), 2.3711*pi)*
+		thinCloudSample(location, planet, fib2( 5, 6), 0.033*phi)*
+		thinCloudSample(location, planet, fib2( 7, 8), 0.0113*pi)*
+		thinCloudSample(location, planet, fib2( 9,10), 0.013*phi)*
+		thinCloudSample(location, planet, fib2(11,12), 0.0073*phi);
 }
 //------------------------------------------------------------------------------
 Segment cloudsIntersection(Ray ray, Sphere planet) {
