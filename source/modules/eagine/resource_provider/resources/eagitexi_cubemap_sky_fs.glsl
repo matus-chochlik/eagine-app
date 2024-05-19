@@ -179,17 +179,22 @@ float thinCloudSample(vec3 location, Sphere planet, vec2 offset, float scale) {
 		131.1,
 		-atmThickness*vaporThickness,
 		+atmThickness*vaporThickness);
-	return 0.2 * sqrt(max(tilingSample(coord.xy) - 0.23, 0.0)) * (1.0 - coord.z);
+	if(coord.z > 1.0) {
+		return 0.0;
+	}
+	return 1.15 * sqrt(max(tilingSample(coord.xy) - 0.13, 0.0));
 }
 //------------------------------------------------------------------------------
 float thinCloudDensity(vec3 location, Sphere planet) {
-	return
-		thinCloudSample(location, planet, fib2( 1, 2), 11.73*phi)*
-		thinCloudSample(location, planet, fib2( 3, 4), 2.3711*pi)*
-		thinCloudSample(location, planet, fib2( 5, 6), 0.033*phi)*
-		thinCloudSample(location, planet, fib2( 7, 8), 0.0113*pi)*
-		thinCloudSample(location, planet, fib2( 9,10), 0.013*phi)*
-		thinCloudSample(location, planet, fib2(11,12), 0.0073*phi);
+	return pow(
+		thinCloudSample(location, planet, fib2( 1, 2),32.103*phi)*
+		thinCloudSample(location, planet, fib2( 3, 4), 8.111*phi)*
+		thinCloudSample(location, planet, fib2( 5, 6), 2.131*phi)*
+		thinCloudSample(location, planet, fib2( 7, 8), 0.531*phi)*
+		thinCloudSample(location, planet, fib2( 9,10), 0.127*phi)*
+		thinCloudSample(location, planet, fib2(10,11), 0.063*phi)*
+		thinCloudSample(location, planet, fib2(11,12), 0.038*phi),
+		1.0 / 6.0);
 }
 //------------------------------------------------------------------------------
 Segment cloudsIntersection(Ray ray, Sphere planet) {
@@ -257,9 +262,9 @@ float thickCloudDensity(vec3 location, Sphere planet) {
 	float cc008 = cloudCutout(sqrt(s0080000), 0.07, 0.57);
 	float cc004 = cloudCutout(sqrt(s0040000), 0.13, 0.61);
 	float d0 = cc128 * cc064 * cc032 * cc016 * cc008 * cc004;
-	float m2 = 1.0 - max(d0 - mix(0.05, 0.11, cc016), 0.0);
-	float m1 = 1.0 - max(d0 - mix(0.01, 0.11, cc008), 0.0);
-	float m0 = 1.0 - sign(max(d0 - mix(0.03, 0.01, cc004), 0.0));
+	float m2 = 1.0 - max(d0 - mix(0.05, mix(0.09, 0.13, cloudiness), cc016), 0.0);
+	float m1 = 1.0 - max(d0 - mix(0.01, mix(0.05, 0.11, cloudiness), cc008), 0.0);
+	float m0 = 1.0 - sign(max(d0 - mix(0.04, 0.01, cc004), 0.0));
 	float d1 = mix(4.0, 8.0, sc) * (d0 - mix(1.0/4.0, 1.0/8.0, sc));
 	d1 = mix(min(d1, 1.4), sign(d1), 0.75);
 
