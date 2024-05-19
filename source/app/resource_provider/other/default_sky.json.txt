@@ -1,4 +1,4 @@
-{"sun_azimuth_deg":"(${frame} * 0.25 + 200.0)"
+{"sun_azimuth_deg":"(${frame} * 0.25 + 185.0)"
 ,"sun_elevation_deg":"(lerp(70.0, -70.0, cos01(0.13 + ${frame} * 0.0004)))"
 ,"cloud_offset_x":"(${frame} * 0.00010)"
 ,"cloud_offset_y":"(${frame} * 0.00002)"
