@@ -597,7 +597,7 @@ vec4 skyColor(Ray viewRay, Sphere planet, Sphere atmosphere) {
 		shadowNum += 1.0;
 
 		vec4 airColor = clearAirColor(a, as);
-		float density = min(a.vaporDensity, 1.0);
+		float density = a.vaporDensity;
 		airColor = mix(airColor, vaporColor(a, as), density);
 		airColor = mix(airColor, sunlightColor(a, as), a.hitLight);
 
@@ -631,13 +631,12 @@ vec4 skyColor(Ray viewRay, Sphere planet, Sphere atmosphere) {
 		vec4 airColor = clearAirColor(a, as);
 		vec4 vapColor = vaporColor(a, as);
 
-		float density = min(a.vaporDensity, 1.0);
+		float density = a.vaporDensity;
 		airColor = mix(airColor, vapColor, density);
+		airColor = mix(airColor, sunlightColor(a, as), a.hitLight * as.cloudShadow);
+		color = mix(color, airColor, airDensityMult * sampleRatio * airColor.a);
 
 		density = min(thickCloudDensity(a.lightRay.origin, planet), 1.0);
-		airColor = mix(airColor, sunlightColor(a, as), a.hitLight * as.cloudShadow);
-
-		color = mix(color, airColor, airDensityMult * sampleRatio * airColor.a);
 		color = mix(color, vapColor, density);
 	}
 
@@ -663,7 +662,7 @@ vec4 skyColor(Ray viewRay, Sphere planet, Sphere atmosphere) {
 		shadowNum += 1.0;
 
 		vec4 airColor = clearAirColor(a, as);
-		float density = min(a.vaporDensity, 1.0);
+		float density = a.vaporDensity;
 		float airMult = airDensityMult * sampleRatio * airColor.a;
 		airColor = mix(airColor, vaporColor(a, as), density);
 
