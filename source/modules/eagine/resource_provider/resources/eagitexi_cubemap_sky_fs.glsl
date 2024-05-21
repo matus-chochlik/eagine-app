@@ -176,7 +176,7 @@ float thinCloudSample(vec3 location, Sphere planet, vec2 offset, float scale) {
 		planet,
 		offset,
 		scale,
-		13.1,
+		31.1,
 		0.0,
 		atmThickness*vaporThickness).xy);
 }
@@ -188,9 +188,9 @@ float thinCloudDensity(vec3 location, Sphere planet) {
 		return 0.0;
 	}
 	float gnd = clamp(1.0 - alt, 0.0, 1.0);
-	float s32000 = thinCloudSample(location, planet, fib2( 1, 2),32.103*phi);
+	float s64000 = thinCloudSample(location, planet, fib2( 1, 2),63.903*phi);
 	float s16000 = thinCloudSample(location, planet, fib2( 2, 3),16.111*phi);
-	float s02000 = thinCloudSample(location, planet, fib2( 3, 4), 2.531*phi);
+	float s04000 = thinCloudSample(location, planet, fib2( 3, 4), 4.531*phi);
 	float s01000 = thinCloudSample(location, planet, fib2( 4, 5), 1.313*phi);
 	float s00500 = thinCloudSample(location, planet, fib2( 5, 6), 0.523*phi);
 	float s00125 = thinCloudSample(location, planet, fib2( 6, 7), 0.131*phi);
@@ -198,14 +198,14 @@ float thinCloudDensity(vec3 location, Sphere planet) {
 	float s00032 = thinCloudSample(location, planet, fib2( 8, 9), 0.033*phi);
 	float s00016 = thinCloudSample(location, planet, fib2( 9,10), 0.017*phi);
 
-	float d = mix(s32000 * s16000 * s02000 * s01000, 1.0, 0.35);
+	float d = mix(s64000 * s16000 * s04000 * s01000, 1.0, 0.35);
 	d -= s00500 * 0.20;
 	d -= s00125 * 0.16;
 	d -= s00065 * 0.12;
 	d -= s00032 * 0.08;
 	d -= s00016 * 0.04;
 
-	return max(d * gnd * atmThickness, 0.0);
+	return max(d, 0.0) * pow(gnd, 2.0) * atmThickness;
 }
 //------------------------------------------------------------------------------
 Segment cloudsIntersection(Ray ray, Sphere planet) {
