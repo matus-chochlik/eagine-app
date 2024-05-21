@@ -198,7 +198,7 @@ float thinCloudDensity(vec3 location, Sphere planet) {
 	float s00032 = thinCloudSample(location, planet, fib2( 8, 9), 0.033*phi);
 	float s00016 = thinCloudSample(location, planet, fib2( 9,10), 0.017*phi);
 
-	float d = mix(s32000 * s16000 * s02000 * s01000, 1.0, 0.2);
+	float d = mix(s32000 * s16000 * s02000 * s01000, 1.0, 0.35);
 	d -= s00500 * 0.20;
 	d -= s00125 * 0.16;
 	d -= s00065 * 0.12;
@@ -615,7 +615,7 @@ vec4 skyColor(Ray viewRay, Sphere planet, Sphere atmosphere) {
 		color = mix(color, airColor, airDensityMult * sampleRatio * airColor.a);
 	}
 
-	sampleLen = 5.0;
+	sampleLen = 12.5;
 	sampleRatio = sampleLen / atmThickness;
 
 	for(float dist = cloudHitFar; dist > cloudHitNear; dist -= sampleLen) {
@@ -644,7 +644,7 @@ vec4 skyColor(Ray viewRay, Sphere planet, Sphere atmosphere) {
 		airColor = mix(airColor, sunlightColor(a, as), a.hitLight * as.cloudShadow);
 		color = mix(color, airColor, airDensityMult * sampleRatio * airColor.a);
 
-		density = thickCloudDensity(a.lightRay.origin, planet) * 0.05;
+		density = thickCloudDensity(a.lightRay.origin, planet) * 0.08;
 		color = mix(color, vapColor, density);
 	}
 

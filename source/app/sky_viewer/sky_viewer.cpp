@@ -57,7 +57,7 @@ private:
 
     orbiting_camera _camera;
 
-    float _fov{70.F};
+    float _fov{100.F};
     long _anim_frame_no{0};
     const std::string _animation_template{_get_animation_template()};
     const int _resolution{_get_resolution()};
