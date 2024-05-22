@@ -156,7 +156,7 @@ vec3 cloudCoord(vec3 location, Sphere planet, vec2 offset, float scale) {
 		planet,
 		offset,
 		scale,
-		9.1,
+		7.1,
 		cloudAltitude - cloudThickness * 0.5,
 		cloudAltitude + cloudThickness * 0.5);
 }
@@ -188,17 +188,17 @@ float thinCloudDensity(vec3 location, Sphere planet) {
 		return 0.0;
 	}
 	float gnd = clamp(1.0 - alt, 0.0, 1.0);
-	float s64000 = thinCloudSample(location, planet, fib2( 1, 2),63.903*phi);
-	float s16000 = thinCloudSample(location, planet, fib2( 2, 3),16.111*phi);
-	float s04000 = thinCloudSample(location, planet, fib2( 3, 4), 4.531*phi);
-	float s01000 = thinCloudSample(location, planet, fib2( 4, 5), 1.313*phi);
-	float s00500 = thinCloudSample(location, planet, fib2( 5, 6), 0.523*phi);
-	float s00125 = thinCloudSample(location, planet, fib2( 6, 7), 0.131*phi);
-	float s00065 = thinCloudSample(location, planet, fib2( 7, 8), 0.061*phi);
-	float s00032 = thinCloudSample(location, planet, fib2( 8, 9), 0.033*phi);
-	float s00016 = thinCloudSample(location, planet, fib2( 9,10), 0.017*phi);
+	float s64000 = thinCloudSample(location, planet, fib2( 2, 3),63.903*phi);
+	float s16000 = thinCloudSample(location, planet, fib2( 3, 4),16.111*phi);
+	float s04000 = thinCloudSample(location, planet, fib2( 4, 5), 4.531*phi);
+	float s01000 = thinCloudSample(location, planet, fib2( 5, 6), 1.313*phi);
+	float s00500 = thinCloudSample(location, planet, fib2( 6, 7), 0.523*phi);
+	float s00125 = thinCloudSample(location, planet, fib2( 7, 8), 0.131*phi);
+	float s00065 = thinCloudSample(location, planet, fib2( 8, 9), 0.061*phi);
+	float s00032 = thinCloudSample(location, planet, fib2( 9,10), 0.033*phi);
+	float s00016 = thinCloudSample(location, planet, fib2(10,11), 0.017*phi);
 
-	float d = mix(s64000 * s16000 * s04000 * s01000, 1.0, 0.35);
+	float d = mix(s64000 * s16000 * s04000 * s01000, 1.0, 0.15);
 	d -= s00500 * 0.20;
 	d -= s00125 * 0.16;
 	d -= s00065 * 0.12;
@@ -518,8 +518,8 @@ vec4 vaporColor(AtmosphereSample a, AtmosphereShadow s) {
 
 	vec4 clearVaporColor = mix(
 		mixColor012n(
-			vec4(0.93, 0.94, 0.95, alp),
-			vec4(0.90, 0.90, 0.92, alp),
+			vec4(0.94, 0.93, 0.95, alp),
+			vec4(0.91, 0.90, 0.92, alp),
 			vec4(0.86, 0.85, 0.87, alp),
 			vec4(0.83, 0.82, 0.84, alp),
 			a.atmDistRatio * 0.7, 0.5),
@@ -535,8 +535,8 @@ vec4 vaporColor(AtmosphereSample a, AtmosphereShadow s) {
 		mixColor012n(
 			vec4(0.83, 0.82, 0.85, alp),
 			vec4(0.75, 0.74, 0.77, alp),
-			vec4(0.66, 0.66, 0.67, alp),
-			vec4(0.53, 0.53, 0.55, alp),
+			vec4(0.66, 0.65, 0.67, alp),
+			vec4(0.54, 0.53, 0.55, alp),
 			a.atmDistRatio * 0.7, 0.5),
 		mixColor012n(
 			vec4(0.99, 0.99, 1.00, alp),
