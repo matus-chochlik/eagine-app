@@ -563,7 +563,7 @@ vec4 vaporColor(AtmosphereSample a, AtmosphereShadow s) {
 		mix(mix(0.04, 0.08, dl), mix(0.24, 0.36, dl), s.cloudShadow),
 		mix(mix(0.19, 0.37, dl), mix(0.55, 0.75, dl), s.cloudShadow),
 		pow(a.sunUp, 2.0));
-	float cs = mix(s.cloudShadow, 1.0, 0.9);
+	float cs = mix(s.cloudShadow, 1.0, 0.87);
 	return cs * mix(
 		darkVaporColor,
 		lightVaporColor,
