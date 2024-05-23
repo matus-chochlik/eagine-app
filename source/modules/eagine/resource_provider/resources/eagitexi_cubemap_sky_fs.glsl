@@ -61,7 +61,7 @@ struct Ray {
 struct Segment {
 	vec3 near;
 	vec3 far;
-	bool is_valid;
+	bool isValid;
 };
 
 struct Sphere {
@@ -198,7 +198,7 @@ float thinCloudDensity(vec3 location, Sphere planet) {
 	float s00032 = thinCloudSample(location, planet, fib2(12,13), 0.033*phi);
 	float s00016 = thinCloudSample(location, planet, fib2(14,15), 0.017*phi);
 
-	float d = mix(s64000 * s16000 * s04000 * s01000, 1.0, 0.25);
+	float d = mix(s64000 * s16000 * s04000 * s01000, 1.0, 0.27);
 	d -= s00500 * 0.20;
 	d -= s00125 * 0.16;
 	d -= s00065 * 0.12;
@@ -275,7 +275,7 @@ float thickCloudDensity(vec3 location, Sphere planet) {
 	float d0 = cc128 * cc064 * cc032 * cc016 * cc008 * cc004;
 	float m2 = 1.0 - max(d0 - mix(0.05, mix(0.09, 0.13, cloudiness), cc016), 0.0);
 	float m1 = 1.0 - max(d0 - mix(0.01, mix(0.05, 0.11, cloudiness), cc008), 0.0);
-	float m0 = 1.0 - sign(max(d0 - mix(0.04, 0.01, cc004), 0.0));
+	float m0 = 1.0 - sign(max(d0 - mix(0.01, 0.05, cc004), 0.0));
 	float d1 = mix(4.0, 16.0, sc) * (d0 - mix(1.0/4.0, 1.0/16.0, sc));
 	d1 = mix(min(d1, 1.4), sign(d1), 0.75);
 
@@ -359,14 +359,14 @@ AtmosphereShadow atmShadow1(
 	Sphere planet,
 	AtmosphereShadow accum) {
 	float shadow = 1.0;
-	if(a.cloudsIntersection.is_valid) {
+	if(a.cloudsIntersection.isValid) {
 		vec3 direction = a.cloudsIntersection.far - a.lightRay.origin;
 		float l = length(direction);
 		if(l > 1.0) {
 			float cloudsBtm = cloudAltitude - cloudThickness*0.5;
 			float cloudThckInv = 1.0 / cloudThickness;
 			float lf = mix(1.000, 1.0003, accum.planetShadow);
-			float sl = max((cloudThickness + 1.0) / 512.0, 1.0);
+			float sl = 30.0;
 			float st = 0.0;
 			direction /= l;
 			while(st < l) {
@@ -392,7 +392,7 @@ AtmosphereShadow atmShadow2(
 	Sphere planet,
 	AtmosphereShadow accum) {
 	float shadow = 1.0;
-	if(a.cloudsIntersection.is_valid) {
+	if(a.cloudsIntersection.isValid) {
 		const int sampleCount = 50;
 		const float isc = 1.0 / float(sampleCount);
 		float density = 0.0;
@@ -644,7 +644,10 @@ vec4 skyColor(Ray viewRay, Sphere planet, Sphere atmosphere) {
 		airColor = mix(airColor, sunlightColor(a, as), a.hitLight * as.cloudShadow);
 		color = mix(color, airColor, airDensityMult * sampleRatio * airColor.a);
 
-		density = thickCloudDensity(a.lightRay.origin, planet) * 0.07;
+		float densityMult =
+			thickCloudSample(a.lightRay.origin, planet, vec2(1, 1), 41.1817);
+		density = thickCloudDensity(a.lightRay.origin, planet) *
+			mix(0.001, 0.09, densityMult);
 		color = mix(color, vapColor, density);
 	}
 
