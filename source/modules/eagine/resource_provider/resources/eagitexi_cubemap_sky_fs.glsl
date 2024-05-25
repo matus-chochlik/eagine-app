@@ -273,9 +273,9 @@ float thickCloudDensity(vec3 location, Sphere planet) {
 	float cc008 = cloudCutout(sqrt(s0080000), 0.07, 0.57);
 	float cc004 = cloudCutout(sqrt(s0040000), 0.13, 0.61);
 	float d0 = cc128 * cc064 * cc032 * cc016 * cc008 * cc004;
-	float m2 = 1.0 - max(d0 - mix(0.05, mix(0.09, 0.17, cloudiness), cc016), 0.0);
+	float m2 = 1.0 - max(d0 - mix(0.05, mix(0.09, 0.13, cloudiness), cc016), 0.0);
 	float m1 = 1.0 - max(d0 - mix(0.01, mix(0.05, 0.13, cloudiness), cc008), 0.0);
-	float m0 = 1.0 - sign(max(d0 - mix(0.01, 0.11, cc004), 0.0));
+	float m0 = 1.0 - sign(max(d0 - mix(0.01, 0.07, cc004), 0.0));
 	float d1 = mix(4.0, 32.0, sc) * (d0 - mix(1.0/4.0, 1.0/32.0, sc));
 	d1 = mix(min(d1, 1.4), sign(d1), 0.75);
 
@@ -383,7 +383,7 @@ AtmosphereShadow atmShadow1(
 			while(st < l) {
 				vec3 location = a.lightRay.origin + direction * st;
 				float alt = distance(location, planet.center) - planet.radius;
-				alt = sqrt((alt - cloudsBtm) * cloudThckInv);
+				alt = (alt - cloudsBtm) * cloudThckInv;
 				float density = thickCloudDensity(location, planet);
 				density = mix(1.0 - alt, density, alt);
 				float sf = mix(0.91, 0.95, accum.planetShadow * alt);
@@ -395,7 +395,7 @@ AtmosphereShadow atmShadow1(
 	}
 	return AtmosphereShadow(
 		mix(pow(accum.planetShadow, 2.0), 1.0, a.planetShadow),
-		mix(shadow1, shadow2, 0.20));
+		mix(shadow1, shadow2, 0.18));
 }
 //------------------------------------------------------------------------------
 AtmosphereShadow atmShadow2(
@@ -536,9 +536,9 @@ vec4 vaporColor(AtmosphereSample a, AtmosphereShadow s) {
 			a.atmDistRatio * 0.7, 0.5),
 		mixColor012n(
 			vec4(1.01, 1.01, 1.01, alp),
-			vec4(0.98, 0.97, 0.96, alp),
-			vec4(0.96, 0.95, 0.94, alp),
-			vec4(0.92, 0.91, 0.90, alp),
+			vec4(0.97, 0.97, 0.98, alp),
+			vec4(0.95, 0.95, 0.95, alp),
+			vec4(0.93, 0.91, 0.89, alp),
 			a.atmDistRatio, 1.0),
 		shadow);
 
@@ -551,9 +551,9 @@ vec4 vaporColor(AtmosphereSample a, AtmosphereShadow s) {
 			a.atmDistRatio * 0.7, 0.5),
 		mixColor012n(
 			vec4(0.99, 0.99, 1.00, alp),
-			vec4(0.95, 0.94, 0.96, alp),
-			vec4(0.92, 0.91, 0.90, alp),
-			vec4(0.86, 0.86, 0.86, alp),
+			vec4(0.95, 0.95, 0.96, alp),
+			vec4(0.91, 0.91, 0.91, alp),
+			vec4(0.87, 0.86, 0.85, alp),
 			a.atmDistRatio, 1.0),
 		shadow);
 
@@ -574,7 +574,7 @@ vec4 vaporColor(AtmosphereSample a, AtmosphereShadow s) {
 		mix(mix(0.04, 0.08, dl), mix(0.24, 0.36, dl), s.cloudShadow),
 		mix(mix(0.19, 0.37, dl), mix(0.55, 0.75, dl), s.cloudShadow),
 		pow(a.sunUp, 2.0));
-	float cs = mix(s.cloudShadow, 1.0, mix(0.89, 0.83, cloudiness));
+	float cs = mix(s.cloudShadow, 1.0, mix(0.89, 0.81, cloudiness));
 	return cs * mix(
 		darkVaporColor,
 		lightVaporColor,
@@ -658,7 +658,7 @@ vec4 skyColor(Ray viewRay, Sphere planet, Sphere atmosphere) {
 		float densityMult =
 			thickCloudSample(a.lightRay.origin, planet, vec2(1, 1), 23.1817);
 		density = thickCloudDensity(a.lightRay.origin, planet) *
-			mix(0.001, 0.06, densityMult);
+			mix(0.003, 0.09, densityMult);
 		color = mix(color, vapColor, density);
 	}
 
