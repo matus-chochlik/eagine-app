@@ -145,7 +145,7 @@ vec3 cloudCoord(
 	return vec3(
 		sph * sca +
 		vec2(ceil(alt * steps / pow(scale, 1.0 / 3.0)) * phi * sca) +
-		(cloudOffset * pow(offset.x, 0.02 * pi)) / scale +
+		(cloudOffset * pow(offset.x, 0.0125 * pi)) / scale +
 		offset,
 		alt);
 }
@@ -156,7 +156,7 @@ vec3 cloudCoord(vec3 location, Sphere planet, vec2 offset, float scale) {
 		planet,
 		offset,
 		scale,
-		5.7,
+		7.1,
 		cloudAltitude - cloudThickness * 0.5,
 		cloudAltitude + cloudThickness * 0.5);
 }
@@ -189,7 +189,7 @@ float thinCloudDensity(vec3 location, Sphere planet) {
 	}
 	float gnd = clamp(alt, 0.0, 1.0);
 	float s256000 = thinCloudSample(location, planet, fib2( 1, 2),257.131*phi);
-	float s064000 = thinCloudSample(location, planet, fib2( 2, 3), 63.903*phi);
+	float s128000 = thinCloudSample(location, planet, fib2( 2, 3),127.903*phi);
 	float s016000 = thinCloudSample(location, planet, fib2( 3, 4), 16.111*phi);
 	float s004000 = thinCloudSample(location, planet, fib2( 4, 5),  4.531*phi);
 	float s000500 = thinCloudSample(location, planet, fib2( 6, 7),  0.523*phi);
@@ -198,12 +198,12 @@ float thinCloudDensity(vec3 location, Sphere planet) {
 	float s000032 = thinCloudSample(location, planet, fib2( 9,10),  0.033*phi);
 	float s000016 = thinCloudSample(location, planet, fib2(10,11),  0.017*phi);
 
-	float d = mix(sqrt(s256000*s064000*s016000*s004000), 1.0, 0.25);
-	d -= s000500 * 0.30;
-	d -= s000125 * 0.24;
-	d -= s000065 * 0.18;
-	d -= s000032 * 0.12;
-	d -= s000016 * 0.06;
+	float d = mix(sqrt(s256000*s128000*s016000*s004000), 1.0, 0.25);
+	d -= s000500 * 0.19;
+	d -= s000125 * 0.18;
+	d -= s000065 * 0.17;
+	d -= s000032 * 0.16;
+	d -= s000016 * 0.15;
 
 	return max(d, 0.0) * pow(gnd, 2.0) * atmThickness;
 }
@@ -424,8 +424,8 @@ AtmosphereShadow atmShadow2(
 vec4 sunlightColor(AtmosphereSample a, AtmosphereShadow s) {
 	return mixColor012n(
 		vec4(1.5), vec4(1.4),
-		vec4(1.3, 1.15, 1.0, 1.1),
-		vec4(1.3, 0.7, 0.5, 0.9),
+		vec4(1.3, 1.2, 1.0, 1.1),
+		vec4(1.3, 0.8, 0.5, 0.9),
 		a.atmDistRatio, 0.5);
 }
 //------------------------------------------------------------------------------
