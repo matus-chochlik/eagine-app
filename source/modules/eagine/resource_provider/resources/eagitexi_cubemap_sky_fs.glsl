@@ -192,11 +192,11 @@ float thinCloudDensity(vec3 location, Sphere planet) {
 	float s128000 = thinCloudSample(location, planet, fib2( 2, 3),127.903*phi);
 	float s016000 = thinCloudSample(location, planet, fib2( 3, 4), 16.111*phi);
 	float s004000 = thinCloudSample(location, planet, fib2( 4, 5),  4.531*phi);
-	float s000500 = thinCloudSample(location, planet, fib2( 6, 7),  0.523*phi);
-	float s000125 = thinCloudSample(location, planet, fib2( 7, 8),  0.131*phi);
-	float s000065 = thinCloudSample(location, planet, fib2( 8, 9),  0.061*phi);
-	float s000032 = thinCloudSample(location, planet, fib2( 9,10),  0.033*phi);
-	float s000016 = thinCloudSample(location, planet, fib2(10,11),  0.017*phi);
+	float s000500 = thinCloudSample(location, planet, fib2( 5, 7),  0.523*phi);
+	float s000125 = thinCloudSample(location, planet, fib2( 6, 8),  0.131*phi);
+	float s000065 = thinCloudSample(location, planet, fib2( 7, 9),  0.061*phi);
+	float s000032 = thinCloudSample(location, planet, fib2( 8,10),  0.033*phi);
+	float s000016 = thinCloudSample(location, planet, fib2( 9,11),  0.017*phi);
 
 	float d = mix(sqrt(s256000*s128000*s016000*s004000), 1.0, 0.25);
 	d -= s000500 * 0.19;
@@ -399,17 +399,24 @@ AtmosphereShadow atmShadow2(
 	AtmosphereShadow accum) {
 	float shadow = 1.0;
 	if(a.cloudsIntersection.isValid) {
-		const int sampleCount = 50;
-		const float isc = 1.0 / float(sampleCount);
+		vec3 direction = a.cloudsIntersection.far - a.cloudsIntersection.near;
+		float l = length(direction);
 		float density = 0.0;
-		for(int s = 0; s <= sampleCount; ++s) {
-			vec3 location = mix(
-				a.cloudsIntersection.far,
-				a.cloudsIntersection.near,
-				float(s) * isc);
-			density += sign(thickCloudDensity(location, planet));
+		float sampleCount = 1.0;
+		if(l > 1.0) {
+			direction /= l;
+
+			float sl = 100.0;
+			float st = 0.0;
+			while(st < l) {
+				vec3 location = a.cloudsIntersection.near + direction * st;
+				density += sign(thickCloudDensity(location, planet));
+				sampleCount += 1.0;
+				st += sl;
+				sl *= 1.1;
+			}
 		}
-		shadow = 1.0 - density * isc;
+		shadow = 1.0 - density / sampleCount;
 	}
 	return AtmosphereShadow(
 		mix(pow(accum.planetShadow, 2.0), 1.0, a.planetShadow),
