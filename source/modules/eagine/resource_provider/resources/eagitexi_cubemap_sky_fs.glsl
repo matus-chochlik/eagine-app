@@ -358,8 +358,7 @@ AtmosphereShadow atmShadow1(
 	AtmosphereSample a,
 	Sphere planet,
 	AtmosphereShadow accum) {
-	float shadow1 = 1.0;
-	float shadow2 = 1.0;
+	float shadow = 1.0;
 	if(a.cloudsIntersection.isValid) {
 		vec3 direction = a.cloudsIntersection.far - a.lightRay.origin;
 		float l = length(direction);
@@ -367,27 +366,23 @@ AtmosphereShadow atmShadow1(
 			direction /= l;
 			float cloudsBtm = cloudAltitude - cloudThickness*0.5;
 			float cloudThckInv = 1.0 / cloudThickness;
-			float lf = mix(1.00, 1.01, accum.planetShadow);
-			float sl = 50.0;
+
+			vec3 location = a.lightRay.origin;
+			float alt = distance(location, planet.center) - planet.radius;
+			alt = sqrt(clamp((alt - cloudsBtm) / cloudThickness, 0.0, 1.0));
+			alt = 1.0 - pow(5.0 * alt * exp(-5.0 * alt * alt), 3.0);
+
+			float lf = mix(0.0, mix(0.0001, 0.001, alt), accum.planetShadow);
+			float sl = 30.0;
 			float st = 0.0;
 			while(st < l) {
-				vec3 location = a.lightRay.origin + direction * st;
+				location = a.lightRay.origin + direction * st;
 				float density = thickCloudDensity(location, planet);
-				float sf = mix(0.975, 0.997, accum.planetShadow);
-				shadow1 = clamp(shadow1 * mix(lf, sf, density), 0.01, 1.0);
-				st += sl;
-				sl *= 1.1;
-			}
-			sl = 200.0;
-			st = 0.0;
-			while(st < l) {
-				vec3 location = a.lightRay.origin + direction * st;
-				float alt = distance(location, planet.center) - planet.radius;
-				alt = (alt - cloudsBtm) * cloudThckInv;
-				float density = thickCloudDensity(location, planet);
-				density = mix(1.0 - alt, density, alt);
-				float sf = mix(0.91, 0.95, accum.planetShadow * alt);
-				shadow2 = clamp(shadow2 * mix(lf, sf, density), 0.01, 1.0);
+				float sf = -mix(
+					mix(0.025, 0.019, alt),
+					mix(0.016, 0.012, alt),
+					accum.planetShadow) * pow(shadow, 3.0);
+				shadow = clamp(shadow + mix(lf, sf, density), 0.01, 1.0);
 				st += sl;
 				sl *= 1.1;
 			}
@@ -395,7 +390,7 @@ AtmosphereShadow atmShadow1(
 	}
 	return AtmosphereShadow(
 		mix(sqrt(accum.planetShadow), 1.0, a.planetShadow),
-		mix(shadow1, shadow2, 0.18));
+		shadow);
 }
 //------------------------------------------------------------------------------
 AtmosphereShadow atmShadow2(
