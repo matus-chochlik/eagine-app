@@ -145,7 +145,7 @@ vec3 cloudCoord(
 	return vec3(
 		sph * sca +
 		vec2(ceil(alt * steps / pow(scale, 1.0 / 3.0)) * phi * sca) +
-		(cloudOffset * pow(offset.x, 0.0125 * pi)) / scale +
+		(cloudOffset * pow(offset.x, 0.015 * pi)) / scale +
 		offset,
 		alt);
 }
@@ -275,7 +275,7 @@ float thickCloudDensity(vec3 location, Sphere planet) {
 	float d0 = cc256 * cc064 * cc032 * cc016 * cc008 * cc004;
 	float m2 = 1.0 - max(d0 - mix(0.005, mix(0.03, 0.17, cloudiness), cc016), 0.0);
 	float m1 = 1.0 - max(d0 - mix(0.003, mix(0.01, 0.13, cloudiness), cc008), 0.0);
-	float m0 = 1.0 - sign(max(d0 - mix(0.002, 0.03, s0005000), 0.0));
+	float m0 = 1.0 - sign(max(d0 - mix(0.0001, 0.03, s0005000), 0.0));
 	float d1 = mix(4.0, 32.0, sc) * (d0 - mix(1.0/4.0, 1.0/32.0, sc));
 	d1 = mix(min(d1, 1.4), sign(d1), 0.75);
 
@@ -403,7 +403,7 @@ AtmosphereShadow atmShadow2(
 		float l = length(direction);
 		if(l > 1.0) {
 			direction /= l;
-			l = min(l, cloudThickness * 2.0);
+			l = min(l, cloudThickness * 3.0);
 			float invl = 1.0 / l;
 
 			float sl = 100.0;
@@ -437,7 +437,7 @@ vec4 ambientColor(AtmosphereSample a, AtmosphereShadow s) {
 		vec4(1.3), vec4(1.2),
 		vec4(0.97, 0.95, 0.93, 0.9),
 		vec4(0.81, 0.80, 0.83, 0.8),
-		a.atmDistRatio, 0.5) * s.planetShadow;
+		a.atmDistRatio, 0.5) * s.cloudShadow;
 }
 //------------------------------------------------------------------------------
 vec4 clearAirColor(AtmosphereSample a, AtmosphereShadow s) {
@@ -581,7 +581,7 @@ vec4 vaporColor(AtmosphereSample a, AtmosphereShadow s) {
 		mix(mix(0.29, 0.37, dl), mix(0.75, 0.95, dl), s.cloudShadow),
 		pow(a.sunUp, 2.0));
 
-	float cs = mix(s.cloudShadow, 1.0, mix(0.97, 0.75, cloudiness));
+	float cs = mix(s.cloudShadow, 1.0, mix(0.97, 0.85, cloudiness));
 
 	vec4 lightVaporColor = mix(
 		mix(clearVaporColor, overcastVaporColor, pow(cloudiness, 3.0)),
@@ -672,7 +672,7 @@ vec4 skyColor(Ray viewRay, Sphere planet, Sphere atmosphere) {
 		float densityMult =
 			thickCloudSample(a.lightRay.origin, planet, vec2(1, 1), 23.1817);
 		density = thickCloudDensity(a.lightRay.origin, planet) *
-			mix(0.003, 0.1, densityMult);
+			mix(0.001, 0.1, densityMult);
 		color = mix(color, vapColor, density);
 	}
 
