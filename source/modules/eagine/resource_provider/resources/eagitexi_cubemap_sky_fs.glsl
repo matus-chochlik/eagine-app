@@ -147,7 +147,7 @@ vec3 cloudCoord(
 	offset = (sca * offset / tilingSide);
 	return vec3(
 		sph * sca +
-		vec2(ceil(alt * steps / pow(scale, 1.0 / 3.0)) * phi * sca) +
+		vec2(ceil(alt * steps / pow(scale, 1.0 / 4.0)) * phi * sca) +
 		(cloudOffset * pow(offset.x, 0.02 * pi)) / scale +
 		offset,
 		alt);
@@ -159,7 +159,7 @@ vec3 cloudCoord(vec3 location, Sphere planet, vec2 offset, float scale) {
 		planet,
 		offset,
 		scale,
-		7.1,
+		4.3,
 		cloudAltitude - cloudThickness * 0.5,
 		cloudAltitude + cloudThickness * 0.5);
 }
@@ -398,7 +398,7 @@ AtmosphereShadow atmShadow1(
 			float sl = 25.0;
 			float st = l;
 
-			float af = mix(0.9999, 0.9985, cloudiness * aden);
+			float af = mix(1.000, 0.997, aden);
 			float lf = mix(1.005, 1.001, cloudiness);
 			float sf = mix(0.999, 0.998, cloudiness);
 
