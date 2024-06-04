@@ -199,7 +199,7 @@ vec2 thinCloudDensity(
 	alt = clamp(alt, 0.0, 1.0);
 	float aden = pow(5.0 * sqrt(1.0 - alt) * exp(-5.0 * (1.0 - alt)), 2.0);
 	float aexp = exp(-alt * mix(1.0, 10.0, abs(viewDir.y)));
-	float dmax = mix(1.41, 2.41, clamp(directLight+0.1, 0.0, 1.0));
+	float dmax = mix(1.41, 2.1, clamp(directLight+0.1, 0.0, 1.0));
 
 	float s256000 = thinCloudSample(location, planet, fib2( 1, 2),257.131*phi);
 	float s128000 = thinCloudSample(location, planet, fib2( 2, 3),119.903*phi);
@@ -261,7 +261,7 @@ float cloudCutout(float sam) {
 	return sqrt(max(0.0, cloudinessSqrt - sam));
 }
 //------------------------------------------------------------------------------
-float thickCloudDensity(vec3 location, Sphere planet, float sampleLengthlen) {
+float thickCloudDensity(vec3 location, Sphere planet, float sampleLength) {
 	float s2560000 = thickCloudSample(location, planet, fib2( 1, 2), 253.0017);
 	float s0640000 = thickCloudSample(location, planet, fib2( 2, 3),  64.0013);
 	float s0320000 = thickCloudSample(location, planet, fib2( 3, 4),  32.0011);
@@ -297,7 +297,7 @@ float thickCloudDensity(vec3 location, Sphere planet, float sampleLengthlen) {
 	densi -= pow(s0000625, 3.0) * mask1;
 	densi -= pow(snoise1 , 3.0) * mask1;
 
-	return clamp(densi*sampleLengthlen * mix(0.2, 0.00625, cloudiness),0.0,1.0);
+	return clamp(densi*sampleLength * mix(0.2, 0.00625, cloudiness), 0.0, 1.0);
 }
 //------------------------------------------------------------------------------
 struct AtmosphereSample {
@@ -393,14 +393,16 @@ AtmosphereShadow atmShadow1(
 			alt = (alt - cloudsBtm) / cloudThickness;
 			alt = clamp(alt, 0.0, 1.0);
 			alt = alt + (a.vaporNoise - 0.5) * (0.5-abs(alt-0.5));
-			float aden = pow(5.0 * alt * exp(-5.0 * alt * alt), 3.0);
+
+			float af = mix(
+				mix(0.9999, 1.0, cloudiness),
+				mix(0.997, 0.999, cloudiness),
+				pow(5.0 * alt * exp(-5.0 * alt * alt), 3.0));
+			float lf = mix(1.005, 1.001, cloudiness);
+			float sf = mix(0.999, 0.998, cloudiness);
 
 			float sl = 25.0;
 			float st = l;
-
-			float af = mix(1.000, 0.997, aden);
-			float lf = mix(1.005, 1.001, cloudiness);
-			float sf = mix(0.999, 0.998, cloudiness);
 
 			while(st >= 0.0) {
 				location = a.lightRay.origin + direction * st;
