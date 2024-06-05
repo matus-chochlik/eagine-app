@@ -329,32 +329,32 @@ AtmosphereSample atmSample(
 	Sphere planet,
 	Sphere atmosphere,
 	float sampleLength) {
-	Ray lightRay0 = raySample(viewRay, rayDist, lightDirection);
-	Ray lightRayS = raySample(viewRay, rayDist * 3.0, lightDirection);
-	float directLight = dot(viewRay.direction, lightRay0.direction);
-	float atmDistance = max(hitNear(sphereHit(lightRay0, atmosphere)), 0.0);
+	Ray lightRay = raySample(viewRay, rayDist, lightDirection);
+	float directLight = dot(viewRay.direction, lightRay.direction);
+	float atmDistance = max(hitNear(sphereHit(lightRay, atmosphere)), 0.0);
 
-	float planetHit = sign(max(hitNear(sphereHit(lightRayS, planet)), 0.0));
-	float planetShadow = 1.0 - planetHit;
-	float altitude = distance(lightRay0.origin, planet.center) - planet.radius;
+	SphereHit planetHit = sphereHit(lightRay, planet);
+	float hitDiff = hitFar(planetHit) - hitNear(planetHit);
+	float planetShadow = exp(-hitDiff * 2.0 / planet.radius);
+	float altitude = distance(lightRay.origin, planet.center) - planet.radius;
 
 	vec2 vapDensity = thinCloudDensity(
 		viewRay.direction,
-		lightRay0.origin,
+		lightRay.origin,
 		planet,
 		directLight,
 		sampleLength);
 
 	return AtmosphereSample(
 		viewRay,
-		lightRay0,
-		cloudsIntersection(lightRay0, planet),
+		lightRay,
+		cloudsIntersection(lightRay, planet),
 		max(sign(lightAngle-acos(directLight)), 0.0),
 		directLight,
 		sqrt(to01(lightDirection.y)),
 		clamp(altitude / planetRadius, 0.0, 1.0),
 		pow(clamp(
-			distance(lightRay0.origin, planet.center) - planet.radius /
+			distance(lightRay.origin, planet.center) - planet.radius /
 			atmosphere.radius - planet.radius,
 			0.0, 1.0), 1.21),
 		atmDistance,
