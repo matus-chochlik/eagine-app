@@ -148,7 +148,7 @@ vec3 cloudCoord(
 	return vec3(
 		sph * sca +
 		vec2(ceil(alt * steps / pow(scale, 1.0 / 4.0)) * phi * sca) +
-		(cloudOffset * pow(offset.x, 0.02 * pi)) / scale +
+		(cloudOffset * pow(offset.x, 0.025 * pi)) / scale +
 		offset,
 		alt);
 }
@@ -199,7 +199,7 @@ vec2 thinCloudDensity(
 	alt = clamp(alt, 0.0, 1.0);
 	float aden = pow(5.0 * sqrt(1.0 - alt) * exp(-5.0 * (1.0 - alt)), 2.0);
 	float aexp = exp(-alt * mix(1.0, 10.0, abs(viewDir.y)));
-	float dmax = mix(1.41, 2.1, clamp(directLight+0.1, 0.0, 1.0));
+	float dmax = mix(1.41, 2.41, clamp(directLight+0.1, 0.0, 1.0));
 
 	float s256000 = thinCloudSample(location, planet, fib2( 1, 2),257.131*phi);
 	float s128000 = thinCloudSample(location, planet, fib2( 2, 3),119.903*phi);
@@ -216,7 +216,7 @@ vec2 thinCloudDensity(
 	dens2 = clamp(dens2, 0.0, 1.0);
 
 	return vec2(min(max(
-		aexp * sampleLength * mix(dens1, 1.0, 0.25),
+		aexp * sampleLength * mix(dens1, 1.0, 0.33),
 		aden * sampleLength * dens2), dmax),
 		sqrt(dens1 * s000500 * s000125));
 }
@@ -335,7 +335,7 @@ AtmosphereSample atmSample(
 
 	SphereHit planetHit = sphereHit(lightRay, planet);
 	float hitDiff = hitFar(planetHit) - hitNear(planetHit);
-	float planetShadow = exp(-hitDiff * 2.0 / planet.radius);
+	float planetShadow = exp(-hitDiff / planet.radius);
 	float altitude = distance(lightRay.origin, planet.center) - planet.radius;
 
 	vec2 vapDensity = thinCloudDensity(
@@ -393,11 +393,12 @@ AtmosphereShadow atmShadow1(
 			alt = (alt - cloudsBtm) / cloudThickness;
 			alt = clamp(alt, 0.0, 1.0);
 			alt = alt + (a.vaporNoise - 0.5) * (0.5-abs(alt-0.5));
+			float aden = pow(5.0 * alt * exp(-5.0 * alt * alt), 3.0);
 
 			float af = mix(
 				mix(0.9999, 1.0, cloudiness),
 				mix(0.997, 0.999, cloudiness),
-				pow(5.0 * alt * exp(-5.0 * alt * alt), 3.0));
+				aden);
 			float lf = mix(1.005, 1.001, cloudiness);
 			float sf = mix(0.999, 0.998, cloudiness);
 
@@ -415,10 +416,12 @@ AtmosphereShadow atmShadow1(
 				shadow = clamp(shadow, 0.01, 1.0);
 				st -= sl;
 			}
+			shadow = shadow + mix(0.1,-0.1, shadow) * a.vaporNoise;
+			shadow = clamp(shadow, 0.0, 1.0);
 		}
 	}
 	return AtmosphereShadow(
-		mix(sqrt(accum.planetShadow), 1.0, a.planetShadow),
+		mix(accum.planetShadow, 1.0, a.planetShadow),
 		shadow);
 }
 //------------------------------------------------------------------------------
@@ -615,7 +618,7 @@ vec4 vaporColor(AtmosphereSample a, AtmosphereShadow s) {
 
 	vec4 lightVaporColor = mix(
 		mix(clearVaporColor, overcastVaporColor, pow(cloudiness, 3.0)),
-		mix(ambientColor(a, s), sunlightColor(a, s), shadow*exp(-cloudiness)),
+		mix(ambientColor(a, s), sunlightColor(a, s), s.cloudShadow),
 		s.cloudShadow);
 
 	return mix(
