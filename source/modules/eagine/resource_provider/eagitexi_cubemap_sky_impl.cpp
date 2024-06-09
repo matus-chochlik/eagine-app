@@ -33,6 +33,7 @@ struct cubemap_scene {
     float cloud_altitude_m{5'500.F};
     float cloud_thickness_m{8'000.F};
     float cloudiness_ratio{0.5F};
+    float haziness_ratio{0.5F};
     float glow_strength{1.0F};
     float above_ground_m{25.F};
     float sun_azimuth_deg{0.F};
@@ -80,6 +81,7 @@ struct data_member_traits<app::cubemap_scene> {
           float,
           float,
           float,
+          float,
           std::string>(
           {"planet_radius_m", &cubemap_scene::planet_radius_m},
           {"atmosphere_thickness_m", &cubemap_scene::atmosphere_thickness_m},
@@ -89,6 +91,7 @@ struct data_member_traits<app::cubemap_scene> {
           {"cloud_offset_y", &cubemap_scene::cloud_offset_y},
           {"cloud_thickness_m", &cubemap_scene::cloud_thickness_m},
           {"cloudiness_ratio", &cubemap_scene::cloudiness_ratio},
+          {"haziness_ratio", &cubemap_scene::haziness_ratio},
           {"glow_strength", &cubemap_scene::glow_strength},
           {"above_ground_m", &cubemap_scene::above_ground_m},
           {"sun_azimuth_deg", &cubemap_scene::sun_azimuth_deg},
@@ -108,6 +111,7 @@ cubemap_scene::cubemap_scene(const url& l) noexcept
   , cloud_altitude_m{query_arg<float>(l, "cloud_altitude_m", 5'500.F)}
   , cloud_thickness_m{query_arg<float>(l, "cloud_thickness_m", 8'000.F)}
   , cloudiness_ratio{query_arg<float>(l, "cloudiness_ratio", 0.5F)}
+  , haziness_ratio{query_arg<float>(l, "haziness_ratio", 0.5F)}
   , glow_strength{query_arg<float>(l, "glow_strength", 1.0F)}
   , above_ground_m{query_arg<float>(l, "above_ground_m", 100.F)}
   , sun_azimuth_deg{query_arg<float>(l, "sun_azimuth_deg", 0.0F)}
@@ -283,6 +287,7 @@ auto eagitexi_cubemap_sky_renderer::_build_program(
     glapi.try_set_uniform(prog, "cloudAltitude", scene.cloud_altitude_m);
     glapi.try_set_uniform(prog, "cloudThickness", scene.cloud_thickness_m);
     glapi.try_set_uniform(prog, "cloudiness", scene.cloudiness_ratio);
+    glapi.try_set_uniform(prog, "haziness", scene.haziness_ratio);
     glapi.try_set_uniform(prog, "glowStrength", scene.glow_strength);
     glapi.try_set_uniform(prog, "aboveGround", scene.above_ground_m);
     glapi.try_set_uniform(prog, "sunApparentAngle", scene.sun_apparent_angle);
