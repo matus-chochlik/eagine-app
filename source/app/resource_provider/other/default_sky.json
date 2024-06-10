@@ -5,5 +5,6 @@
 ,"cloud_altitude_m": 12000.0
 ,"cloud_thickness_m": 16000.0
 ,"cloudiness_ratio":0.55
+,"haziness_ratio":0.50
 ,"tiling_url":"text:///TlngR4S512"
 }

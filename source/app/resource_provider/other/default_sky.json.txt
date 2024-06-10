@@ -3,6 +3,7 @@
 ,"cloud_offset_x":"(${frame} * 0.00020)"
 ,"cloud_offset_y":"(${frame} * 0.00004)"
 ,"cloudiness_ratio":"(lerp(0.40, 0.90, cos01(0.3 + ${frame} * 0.0005)))"
+,"haziness_ratio":0.50
 ,"cloud_altitude_m": 12000.0
 ,"cloud_thickness_m": 16000.0
 ,"sun_apparent_angle":0.05
