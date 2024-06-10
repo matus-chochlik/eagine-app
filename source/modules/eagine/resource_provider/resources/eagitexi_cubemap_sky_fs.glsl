@@ -23,8 +23,8 @@ uniform float sunApparentAngle;
 uniform float tilingSide = 512;
 uniform sampler2D tilingTex;
 
-float vaporTop = atmThickness * vaporThickness;
-float vaporBtm = 0.0;
+float vaporTop = atmThickness * vaporThickness * 1.0;
+float vaporBtm = atmThickness * vaporThickness * 0.6;
 float cloudTop = cloudAltitude + cloudThickness * 0.5;
 float cloudBtm = cloudAltitude - cloudThickness * 0.5;
 float cloudinessSqrt = mix(0.19, 1.0, sqrt(cloudiness));
@@ -231,7 +231,7 @@ vec4 sunlightColor(SampleInfo s) {
 //------------------------------------------------------------------------------
 vec4 clearAirColor(SampleInfo s, float cloudShadow) {
 	vec4 lightColor = sunlightColor(s);
-	float shadow = s.planetShadow * s.accumulated.vaporShadow * cloudShadow;
+	float shadow = s.planetShadow * cloudShadow;
 	float groundHaze = pow(
 		1.0 - exp(-s.atmViewDistRatio * mix(0.5, 1.0, haziness)), 8.0);
 	float lightHaze = pow(s.toLight, 8.0);
@@ -279,7 +279,7 @@ vec4 clearAirColor(SampleInfo s, float cloudShadow) {
 	airColor = mix(airColor, hazeColor, groundHaze * haziness);
 	airColor = mix(airColor, hazeColor, lightHaze  * haziness);
 	
-	return mix(airColor, lightColor, s.hitLight * cloudShadow);
+	return mix(airColor, lightColor, s.hitLight * s.accumulated.vaporShadow);
 }
 //------------------------------------------------------------------------------
 vec4 vaporColor(SampleInfo s, vec4 airColor, float cloudShadow) {
@@ -309,6 +309,7 @@ struct CloudLayerInfo {
 	float thickness;
 	float altitudeRatio;
 	float steps;
+	bool isInside;
 };
 //------------------------------------------------------------------------------
 CloudLayerInfo getCloudLayer(
@@ -319,17 +320,18 @@ CloudLayerInfo getCloudLayer(
 	float altitudeRatio =
 		distance(sample.lightRay.origin, sample.trace.planet.center) -
 		sample.trace.planet.radius;
-	altitudeRatio = (altitudeRatio - bottom) / (top - bottom);
+	bool isIn = (altitudeRatio <= top) || (altitudeRatio >= bottom);
+	altitudeRatio = clamp((altitudeRatio - bottom) / (top - bottom), 0.0, 1.0);
 
-	return CloudLayerInfo(top, bottom, top - bottom, altitudeRatio, steps);
+	return CloudLayerInfo(top, bottom, top - bottom, altitudeRatio, steps, isIn);
 }
 //------------------------------------------------------------------------------
 CloudLayerInfo thinCloudLayer(SampleInfo sample) {
-	return getCloudLayer(sample, 23.1, vaporTop, vaporBtm);
+	return getCloudLayer(sample, 63.1, vaporTop, vaporBtm);
 }
 //------------------------------------------------------------------------------
 CloudLayerInfo thickCloudLayer(SampleInfo sample) {
-	return getCloudLayer(sample, 4.3, cloudTop, cloudBtm);
+	return getCloudLayer(sample, 65.7, cloudTop, cloudBtm);
 }
 //------------------------------------------------------------------------------
 struct Segment {
@@ -372,7 +374,7 @@ vec2 cloudCoord(
 	offset = (sca * offset / tilingSide);
 	return vec2(
 		sph * sca +
-		vec2(ceil(layer.altitudeRatio * layer.steps / scale) * phi * sca) +
+		vec2(ceil(layer.altitudeRatio * layer.steps / scale) * phi * scale) +
 		(cloudOffset * pow(offset.x, 0.025 * pi)) / scale +
 		offset);
 }
@@ -397,33 +399,33 @@ float thinCloudSample(
 	CloudLayerInfo layer,
 	vec2 offset,
 	float scale) {
-	return max(
-		tilingSample(location, sample.trace.planet, layer, offset, scale) -
-		0.07,
-		0.0);
+	return tilingSample(location, sample.trace.planet, layer, offset, scale);
 }
 //------------------------------------------------------------------------------
 float thinCloudDensity(
 	SampleInfo sam,
 	CloudLayerInfo layer) {
+	if(!layer.isInside) {
+		return 0.0;
+	}
 	vec3 loc = sam.lightRay.origin;
-	float alt = layer.altitudeRatio;
-	float aden = pow(5.0 * sqrt(1.0 - alt) * exp(-5.0 * (1.0 - alt)), 2.0);
 
 	float s256000 = thinCloudSample(loc, sam, layer, fib2( 1, 2),257.131*phi);
 	float s128000 = thinCloudSample(loc, sam, layer, fib2( 2, 3),119.903*phi);
 	float s016000 = thinCloudSample(loc, sam, layer, fib2( 3, 4), 23.111*phi);
 	float s004000 = thinCloudSample(loc, sam, layer, fib2( 4, 5),  4.531*phi);
+	float s002000 = thinCloudSample(loc, sam, layer, fib2( 5, 7),  2.313*phi);
 	float s000500 = thinCloudSample(loc, sam, layer, fib2( 5, 7),  0.523*phi);
 	float s000125 = thinCloudSample(loc, sam, layer, fib2( 6, 8),  0.131*phi);
 
-	float dens = sqrt(3.0 * s256000 * s128000 * s016000 * s004000);
-	dens -= s000500 * 0.51;
-	dens -= s000125 * 0.33;
-	dens *= mix(0.5, 4.0, haziness);
-	dens *= aden;
+	float dfac = mix(0.5, 4.0, haziness);
+	float dens = sqrt(4.0 * s256000 * s128000 * s016000 * s004000);
+	dens -= pow(s002000, 2.0) * 0.41;
+	dens -= pow(s000500, 2.0) * 0.37;
+	dens -= pow(s000125, 2.0) * 0.31;
+	dens *= dfac;
 
-	return min(pow(max(dens, 0.0), 8.0), 2.0) * sam.sampleAtmRatio;
+	return min(pow(max(dens, 0.0), 8.0), 2.0) * sam.sampleAtmRatio * dfac;
 }
 //------------------------------------------------------------------------------
 float thickCloudSample(
@@ -613,8 +615,7 @@ vec4 skyColor(TraceInfo trace) {
 		color = mix(color, airColor, airDensity * airColor.a);
 
 		accumulated = sample.accumulated;
-		accumulated.vaporShadow =
-			max(accumulated.vaporShadow - 0.001*sampleLen, 0.01);
+		accumulated.vaporShadow = max(accumulated.vaporShadow - sampleLen, 0.0);
 		rayDist -= sampleLen;
 	}
 
