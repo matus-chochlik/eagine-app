@@ -225,7 +225,7 @@ vec4 sunlightColor(SampleInfo s) {
 	return mixColor012n(
 		vec4(1.5), vec4(1.4),
 		vec4(1.3, 1.3, 0.9, 1.1),
-		vec4(1.3, 0.6, 0.5, 0.9),
+		vec4(1.3, 0.5, 0.5, 0.9),
 		s.atmLightDistRatio * 0.7, 0.5);
 }
 //------------------------------------------------------------------------------
@@ -331,7 +331,7 @@ CloudLayerInfo thinCloudLayer(SampleInfo sample) {
 }
 //------------------------------------------------------------------------------
 CloudLayerInfo thickCloudLayer(SampleInfo sample) {
-	return getCloudLayer(sample, 65.7, cloudTop, cloudBtm);
+	return getCloudLayer(sample, 33.7, cloudTop, cloudBtm);
 }
 //------------------------------------------------------------------------------
 struct Segment {
@@ -375,7 +375,7 @@ vec2 cloudCoord(
 	return vec2(
 		sph * sca +
 		vec2(ceil(layer.altitudeRatio * layer.steps / scale) * phi * scale) +
-		(cloudOffset * pow(offset.x, 0.025 * pi)) / scale +
+		(cloudOffset * pow(offset.x, 0.025 * pi) * 1.5 * phi) / scale +
 		offset);
 }
 //------------------------------------------------------------------------------
@@ -464,9 +464,9 @@ float thickCloudDensity(vec3 loc, SampleInfo sam, CloudLayerInfo layer) {
 	float cc004 = cloudCutout(s0040000);
 	float densi = sqrt(4.0 * cc256 * cc064 * cc032 * cc016 * cc008 * cc004);
 
-	float mask0 = (1.0 - sqrt(max(densi - mix(0.0, 0.0003, s0160000), 0.0)));
-	mask0 *= 0.25;
-	float mask1 = (1.0 - sqrt(max(densi - mix(0.0, 0.0001, s0080000), 0.0)));
+	float mask0 = (1.0 - sqrt(max(densi - mix(0.0, 0.0111, s0160000), 0.0)));
+	mask0 *= 0.33;
+	float mask1 = (1.0 - sqrt(max(densi - mix(0.0, 0.0003, s0080000), 0.0)));
 	mask1 *= 0.15;
 
 	densi -= pow(s0020000, 3.0) * mask0;
@@ -477,7 +477,7 @@ float thickCloudDensity(vec3 loc, SampleInfo sam, CloudLayerInfo layer) {
 	densi -= pow(s0000625, 3.0) * mask1;
 	densi -= pow(snoise1 , 3.0) * mask1;
 
-	return clamp(densi * 4.0, 0.0, 1.0) * sam.sampleAtmRatio * 50.0;
+	return clamp(densi * 8.0, 0.0, 2.0) * sam.sampleAtmRatio * 15.0;
 }
 //------------------------------------------------------------------------------
 float thickCloudDensity(SampleInfo sam, CloudLayerInfo layer) {
@@ -594,7 +594,7 @@ vec4 skyColor(TraceInfo trace) {
 	}
 
 	// Thick cloud layer
-	sampleLen = 20.0;
+	sampleLen = 25.0;
 
 	while(rayDist > layer3Top) {
 		sample = getSampleSun(trace, accumulated, rayDist, atmDist, sampleLen);
