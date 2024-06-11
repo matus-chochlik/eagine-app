@@ -441,7 +441,11 @@ float cloudCutout(float sam) {
 	return sqrt(max(0.0, cloudinessSqrt - sam));
 }
 //------------------------------------------------------------------------------
-float thickCloudDensity(vec3 loc, SampleInfo sam, CloudLayerInfo layer) {
+float thickCloudDensity(
+	vec3 loc,
+	SampleInfo sam,
+	CloudLayerInfo layer,
+	float sampleAtmRatio) {
 	float s2560000 = thickCloudSample(loc, sam, layer, fib2( 1, 2), 253.0017);
 	float s0640000 = thickCloudSample(loc, sam, layer, fib2( 2, 3),  64.0013);
 	float s0320000 = thickCloudSample(loc, sam, layer, fib2( 3, 4),  32.0011);
@@ -464,20 +468,27 @@ float thickCloudDensity(vec3 loc, SampleInfo sam, CloudLayerInfo layer) {
 	float cc004 = cloudCutout(s0040000);
 	float densi = sqrt(4.0 * cc256 * cc064 * cc032 * cc016 * cc008 * cc004);
 
-	float mask0 = (1.0 - sqrt(max(densi - mix(0.0, 0.0111, s0160000), 0.0)));
-	mask0 *= 0.33;
-	float mask1 = (1.0 - sqrt(max(densi - mix(0.0, 0.0003, s0080000), 0.0)));
-	mask1 *= 0.15;
+	float mask0 = (1.0 - sqrt(max(densi - mix(0.0, 0.011, s0160000),0.0)))*0.37;
+	float mask1 = (1.0 - sqrt(max(densi - mix(0.0, 0.005, s0080000),0.0)))*3.00;
 
 	densi -= pow(s0020000, 3.0) * mask0;
 	densi -= pow(s0010000, 3.0) * mask0;
 	densi -= pow(s0005000, 3.0) * mask0;
 	densi -= pow(s0002500, 3.0) * mask0;
+
+	densi = clamp(densi * 16.0, 0.0, 4.0);
+
 	densi -= pow(s0001250, 3.0) * mask1;
 	densi -= pow(s0000625, 3.0) * mask1;
 	densi -= pow(snoise1 , 3.0) * mask1;
 
-	return clamp(densi * 8.0, 0.0, 2.0) * sam.sampleAtmRatio * 15.0;
+	densi = clamp(densi, 0.0, 3.0);
+
+	return densi * sampleAtmRatio * 30.0;
+}
+//------------------------------------------------------------------------------
+float thickCloudDensity(vec3 loc, SampleInfo sam, CloudLayerInfo layer) {
+	return thickCloudDensity(loc, sam, layer, sam.sampleAtmRatio);
 }
 //------------------------------------------------------------------------------
 float thickCloudDensity(SampleInfo sam, CloudLayerInfo layer) {
@@ -492,23 +503,25 @@ float cloudShadowIn(SampleInfo sample, CloudLayerInfo layer) {
 	if(l >= 1.0) {
 		l = min(l, layer.thickness);
 		float il = 1.0 / l;
-		float sl = 50.0;
 		float st = l;
+		float sl = 50.0;
+		float sar = sl / atmThickness;
+		float dmc = mix(3.0, 3.5, cloudiness);
 		while(st > 0.0) {
 			vec3 location = raySample(sample.lightRay, st).origin;
 			float altitude =
 				distance(location, sample.trace.planet.center) -
 				sample.trace.planet.radius;
 			if(altitude >= layer.bottomAlt) {
-				float density = thickCloudDensity(location, sample, layer);
+				float density = thickCloudDensity(location, sample, layer, sar);
 				density = mix(density, 0.0, st * il);
-				shadow = max(shadow - density * mix(0.0, 4.0, shadow), 0.0);
+				shadow = max(shadow - density * mix(0.0, dmc, shadow), 0.0);
 			}
 			st -= sl;
 		}
 	}
 
-	return mix(shadow, 1.0, 0.5);
+	return shadow;
 }
 //------------------------------------------------------------------------------
 float cloudShadowOut(SampleInfo sample, CloudLayerInfo layer) {
@@ -519,15 +532,16 @@ float cloudShadowOut(SampleInfo sample, CloudLayerInfo layer) {
 	if(l >= 1.0) {
 		l = min(l, layer.thickness);
 		float il = 1.0 / l;
-		float sl = 100.0;
 		float st = l;
+		float sl = 150.0;
+		float sar = sl / atmThickness;
 		while(st > 0.0) {
 			vec3 location = raySample(sample.lightRay, section.near+st).origin;
 			float altitude =
 				distance(location, sample.trace.planet.center) -
 				sample.trace.planet.radius;
 			if(altitude >= layer.bottomAlt) {
-				float density = thickCloudDensity(location, sample, layer);
+				float density = thickCloudDensity(location, sample, layer, sar);
 				density = mix(density, 0.0, st * il);
 				shadow = max(shadow - density, 0.0);
 			}
