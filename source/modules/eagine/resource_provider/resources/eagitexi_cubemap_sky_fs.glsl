@@ -504,9 +504,9 @@ float cloudShadowIn(SampleInfo sample, CloudLayerInfo layer) {
 		l = min(l, layer.thickness);
 		float il = 1.0 / l;
 		float st = l;
-		float sl = 50.0;
+		float sl = 60.0;
 		float sar = sl / atmThickness;
-		float dmc = mix(3.0, 3.5, cloudiness);
+		float dmc = mix(2.5, 3.0, cloudiness);
 		while(st > 0.0) {
 			vec3 location = raySample(sample.lightRay, st).origin;
 			float altitude =
