@@ -146,4 +146,5 @@ set_target_properties(
 
 install(
 	TARGETS eagine-app-model-viewer
-	DESTINATION bin)
+	COMPONENT app-model-viewer
+	RUNTIME DESTINATION bin)

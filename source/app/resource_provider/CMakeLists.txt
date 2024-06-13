@@ -82,4 +82,5 @@ set_target_properties(
 
 install(
 	TARGETS eagine-app-resource-provider
-	DESTINATION bin)
+	COMPONENT app-resource-provider
+	RUNTIME DESTINATION bin)

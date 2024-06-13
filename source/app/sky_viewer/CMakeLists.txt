@@ -88,4 +88,5 @@ set_target_properties(
 
 install(
 	TARGETS eagine-app-sky-viewer
-	DESTINATION bin)
+	COMPONENT app-sky-viewer
+	RUNTIME DESTINATION bin)

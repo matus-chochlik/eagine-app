@@ -123,4 +123,5 @@ set_target_properties(
 
 install(
 	TARGETS eagine-app-tiling-viewer
-	DESTINATION bin)
+	COMPONENT app-tiling-viewer
+	RUNTIME DESTINATION bin)
