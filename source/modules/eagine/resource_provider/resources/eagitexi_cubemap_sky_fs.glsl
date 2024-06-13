@@ -291,10 +291,10 @@ vec4 vaporColor(SampleInfo s, vec4 airColor, float cloudShadow) {
 	return mix(
 		mix(vaporColor, airColor, s.accumulated.planetShadow * 0.5),
 		mixColor012n(
-			mix(vaporColor, lightColor, 0.1),
-			mix(vaporColor, lightColor, 0.3),
-			mix(vaporColor, lightColor, 0.5),
-			mix(vaporColor, lightColor, 0.7),
+			mix(vaporColor, lightColor, 0.2),
+			mix(vaporColor, lightColor, 0.4),
+			mix(vaporColor, lightColor, 0.6),
+			mix(vaporColor, lightColor, 0.8),
 			s.atmLightDistRatio * 0.7, 0.5),
 		shadow);
 }
@@ -327,7 +327,7 @@ CloudLayerInfo getCloudLayer(
 }
 //------------------------------------------------------------------------------
 CloudLayerInfo thinCloudLayer(SampleInfo sample) {
-	return getCloudLayer(sample, 63.1, vaporTop, vaporBtm);
+	return getCloudLayer(sample, 257.1, vaporTop, vaporBtm);
 }
 //------------------------------------------------------------------------------
 CloudLayerInfo thickCloudLayer(SampleInfo sample) {
@@ -506,7 +506,6 @@ float cloudShadowIn(SampleInfo sample, CloudLayerInfo layer) {
 		float st = l;
 		float sl = 60.0;
 		float sar = sl / atmThickness;
-		float dmc = mix(2.5, 3.0, cloudiness);
 		while(st > 0.0) {
 			vec3 location = raySample(sample.lightRay, st).origin;
 			float altitude =
@@ -515,13 +514,16 @@ float cloudShadowIn(SampleInfo sample, CloudLayerInfo layer) {
 			if(altitude >= layer.bottomAlt) {
 				float density = thickCloudDensity(location, sample, layer, sar);
 				density = mix(density, 0.0, st * il);
-				shadow = max(shadow - density * mix(0.0, dmc, shadow), 0.0);
+				shadow = max(shadow - density * mix(0.0, 3.0, shadow), 0.0);
 			}
 			st -= sl;
 		}
 	}
 
-	return shadow;
+	return mix(
+		mix(shadow, 1.0, mix(0.25, 0.05, cloudiness)),
+		mix(shadow, 1.0, mix(0.75, 0.25, cloudiness)),
+		sample.accumulated.planetShadow);
 }
 //------------------------------------------------------------------------------
 float cloudShadowOut(SampleInfo sample, CloudLayerInfo layer) {
