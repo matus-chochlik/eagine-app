@@ -28,11 +28,13 @@ enable_testing()
 add_subdirectory(submodules)
 
 include(EAGineCoreCommon)
+include(EAGinePackageAll)
 find_package(EAGineGLFW3)
 find_package(EAGineLibZip)
 
 add_subdirectory(assets)
 add_subdirectory(include)
 add_subdirectory(source)
+add_subdirectory(tools)
 add_subdirectory(example)
 add_subdirectory(deploy)

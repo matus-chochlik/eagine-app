@@ -10,43 +10,43 @@ add_subdirectory(resource_provider)
 
 install(
 	PROGRAMS make-voronoi-svg.py
+	COMPONENT app-tools
 	RENAME eagine-make-voronoi-svg
-	DESTINATION bin
-)
+	DESTINATION bin)
 
 install(
 	PROGRAMS obj-to-eagimesh.py
+	COMPONENT app-tools
 	RENAME eagine-obj-to-eagimesh
-	DESTINATION bin
-)
+	DESTINATION bin)
 
 install(
 	PROGRAMS blender-bake-light.py
+	COMPONENT app-tools
 	RENAME eagine-blender-bake-light
-	DESTINATION bin
-)
+	DESTINATION bin)
 
 install(
 	PROGRAMS blender-bake-to-vertex.py
+	COMPONENT app-tools
 	RENAME eagine-blender-bake-to-vertex
-	DESTINATION bin
-)
+	DESTINATION bin)
 
 install(
 	PROGRAMS blender-export-mesh.py
+	COMPONENT app-tools
 	RENAME eagine-blender-export-mesh
-	DESTINATION bin
-)
+	DESTINATION bin)
 
 install(
 	PROGRAMS blender-render-cubemap.py
+	COMPONENT app-tools
 	RENAME eagine-blender-render-cubemap
-	DESTINATION bin
-)
+	DESTINATION bin)
 
 install(
 	PROGRAMS blender-make-vertex-pivots.py
+	COMPONENT app-tools
 	RENAME eagine-blender-make-vertex-pivots
-	DESTINATION bin
-)
+	DESTINATION bin)
 
