@@ -469,7 +469,7 @@ float thickCloudDensity(
 	float densi = sqrt(4.0 * cc256 * cc064 * cc032 * cc016 * cc008 * cc004);
 
 	float mask0 = (1.0 - sqrt(max(densi - mix(0.0, 0.011, s0160000),0.0)))*0.37;
-	float mask1 = (1.0 - sqrt(max(densi - mix(0.0, 0.005, s0080000),0.0)))*3.00;
+	float mask1 = (1.0 - sqrt(max(densi - mix(0.0, 0.009, s0080000),0.0)))*3.00;
 
 	densi -= pow(s0020000, 3.0) * mask0;
 	densi -= pow(s0010000, 3.0) * mask0;
