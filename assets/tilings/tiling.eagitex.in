@@ -1,0 +1,14 @@
+{"levels":1
+,"width":${TILING_SIDE}
+,"height":${TILING_SIDE}
+,"channels":1
+,"data_type":"unsigned_byte"
+,"min_filter":"nearest"
+,"mag_filter":"nearest"
+,"wrap_s":"repeat"
+,"wrap_t":"repeat"
+,"format":"red_integer"
+,"iformat":"r8ui"
+,"images":[{"url":"eagitexi:///tiling_transition?source=eagires%3A%2F%2F%2Fapp-tilings.eagizip%2F${TILING_NAME}.txt"}]
+}
+

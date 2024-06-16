@@ -5,7 +5,7 @@
 # https://www.boost.org/LICENSE_1_0.txt
 tileset=${1:-$(basename $(realpath .))}
 rank=4
-toolname="png_to_eagitexi.py"
+toolname="png-to-eagitexi.py"
 tooldir="$(realpath $(dirname ${0})/../../../../submodules/eagine-oglplus/source/app)"
 if [[ -f "${tooldir}/${toolname}" ]]
 then convtool="${tooldir}/${toolname}"

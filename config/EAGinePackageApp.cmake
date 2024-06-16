@@ -13,6 +13,7 @@ set(CPACK_DEBIAN_APP-MODEL-VIEWER_PACKAGE_DEPENDS "${CXX_RUNTIME_PKGS},libsystem
 set(CPACK_DEBIAN_APP-SKY-VIEWER_PACKAGE_DEPENDS "${CXX_RUNTIME_PKGS},libsystemd0,zlib1g,libssl3,libzip4,libglfw3,libglew2.2,libopenal1,libalut0")
 set(CPACK_DEBIAN_APP-TILING-VIEWER_PACKAGE_DEPENDS "${CXX_RUNTIME_PKGS},libsystemd0,zlib1g,libssl3,libzip4,libglfw3,libglew2.2,libopenal1,libalut0")
 set(CPACK_DEBIAN_APP-RESOURCE-PROVIDER_PACKAGE_DEPENDS "${CXX_RUNTIME_PKGS},libsystemd0,zlib1g,libssl3,libzip4,libglfw3,libglew2.2,libopenal1,libalut0")
+set(CPACK_DEBIAN_APP-ASSETS_PACKAGE_DEPENDS "")
 #   Descriptions
 set(CPACK_DEBIAN_APP-TOOLS_DESCRIPTION "Collection of command-line utilities useful with EAGine applications.")
 set(CPACK_DEBIAN_APP-TOOLS_DESCRIPTION "EAGine App examples.")
@@ -20,3 +21,4 @@ set(CPACK_DEBIAN_APP-SKY-VIEWER_DESCRIPTION "Application for viewing sky-box tex
 set(CPACK_DEBIAN_APP-MODEL-VIEWER_DESCRIPTION "Application for viewing 3D models.")
 set(CPACK_DEBIAN_APP-TILING-VIEWER_DESCRIPTION "Application for viewing tiling and tileset textures.")
 set(CPACK_DEBIAN_APP-RESOURCE-PROVIDER_DESCRIPTION "Resource provider message bus server.")
+set(CPACK_DEBIAN_APP-ASSETS_DESCRIPTION "Collection of assets usable with the EAGine applications.")
