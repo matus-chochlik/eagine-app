@@ -40,5 +40,5 @@ set_target_properties(
 
 install(
 	TARGETS app-035_brick_torus
-	DESTINATION share/eagine/example/app
-)
+	COMPONENT app-examples
+	DESTINATION share/eagine/example/app)

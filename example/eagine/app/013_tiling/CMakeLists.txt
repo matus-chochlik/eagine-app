@@ -45,5 +45,5 @@ set_target_properties(
 
 install(
 	TARGETS app-013_tiling
-	DESTINATION share/eagine/example/app
-)
+	COMPONENT app-examples
+	DESTINATION share/eagine/example/app)

@@ -33,5 +33,5 @@ set_target_properties(
 
 install(
 	TARGETS app-019_scaled_cubes
-	DESTINATION share/eagine/example/app
-)
+	COMPONENT app-examples
+	DESTINATION share/eagine/example/app)

@@ -36,5 +36,5 @@ set_target_properties(
 
 install(
 	TARGETS app-024_overdraw
-	DESTINATION share/eagine/example/app
-)
+	COMPONENT app-examples
+	DESTINATION share/eagine/example/app)

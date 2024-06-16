@@ -34,5 +34,5 @@ set_target_properties(
 
 install(
 	TARGETS app-022_single_pass_edges
-	DESTINATION share/eagine/example/app
-)
+	COMPONENT app-examples
+	DESTINATION share/eagine/example/app)

@@ -44,5 +44,5 @@ set_target_properties(
 
 install(
 	TARGETS app-029_furry_torus
-	DESTINATION share/eagine/example/app
-)
+	COMPONENT app-examples
+	DESTINATION share/eagine/example/app)

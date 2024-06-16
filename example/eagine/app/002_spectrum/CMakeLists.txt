@@ -24,10 +24,10 @@ set_target_properties(
 
 install(
 	TARGETS app-002_spectrum
-	DESTINATION share/eagine/example/app
-)
+	COMPONENT app-examples
+	DESTINATION share/eagine/example/app)
 
 install(
 	FILES app-002_spectrum.yaml
-	DESTINATION etc/eagine
-)
+	COMPONENT app-examples
+	DESTINATION /etc/eagine)

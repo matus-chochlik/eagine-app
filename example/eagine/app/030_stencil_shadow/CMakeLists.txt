@@ -44,5 +44,5 @@ set_target_properties(
 
 install(
 	TARGETS app-030_stencil_shadow
-	DESTINATION share/eagine/example/app
-)
+	COMPONENT app-examples
+	DESTINATION share/eagine/example/app)

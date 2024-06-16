@@ -25,5 +25,5 @@ set_target_properties(
 
 install(
 	TARGETS app-004_triangle
-	DESTINATION share/eagine/example/app
-)
+	COMPONENT app-examples
+	DESTINATION share/eagine/example/app)
