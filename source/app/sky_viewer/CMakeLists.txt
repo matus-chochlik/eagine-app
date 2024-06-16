@@ -4,7 +4,9 @@
 # https://www.boost.org/LICENSE_1_0.txt
 #
 eagine_add_module(
-	eagine.app.sky_viewer PARTITION resource
+	eagine.app.sky_viewer
+	COMPONENT app-dev
+	PARTITION resource
 	IMPORTS
 		std
 		eagine.core
@@ -12,7 +14,9 @@ eagine_add_module(
 		eagine.app)
 
 eagine_add_module(
-	eagine.app.sky_viewer PARTITION background
+	eagine.app.sky_viewer
+	COMPONENT app-dev
+	PARTITION background
 	IMPORTS
 		std resource
 		eagine.core
@@ -20,7 +24,9 @@ eagine_add_module(
 		eagine.app)
 
 eagine_add_module(
-	eagine.app.sky_viewer PARTITION backgrounds
+	eagine.app.sky_viewer
+	COMPONENT app-dev
+	PARTITION backgrounds
 	IMPORTS
 		std background
 		eagine.core
@@ -28,7 +34,9 @@ eagine_add_module(
 		eagine.app)
 
 eagine_add_module(
-	eagine.app.sky_viewer PARTITION texture
+	eagine.app.sky_viewer
+	COMPONENT app-dev
+	PARTITION texture
 	IMPORTS
 		std resource
 		eagine.core
@@ -36,7 +44,9 @@ eagine_add_module(
 		eagine.app)
 
 eagine_add_module(
-	eagine.app.sky_viewer PARTITION textures
+	eagine.app.sky_viewer
+	COMPONENT app-dev
+	PARTITION textures
 	IMPORTS
 		std texture
 		eagine.core
@@ -45,6 +55,7 @@ eagine_add_module(
 
 eagine_add_module(
 	eagine.app.sky_viewer
+	COMPONENT app-dev
 	SOURCES
 		resource
 		background

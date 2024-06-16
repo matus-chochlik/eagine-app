@@ -4,7 +4,9 @@
 # https://www.boost.org/LICENSE_1_0.txt
 #
 eagine_add_module(
-	eagine.app.tiling_viewer PARTITION resource
+	eagine.app.tiling_viewer
+	COMPONENT app-dev
+	PARTITION resource
 	IMPORTS
 		std
 		eagine.core
@@ -12,7 +14,9 @@ eagine_add_module(
 		eagine.app)
 
 eagine_add_module(
-	eagine.app.tiling_viewer PARTITION geometry
+	eagine.app.tiling_viewer
+	COMPONENT app-dev
+	PARTITION geometry
 	IMPORTS
 		std resource
 		eagine.core
@@ -21,7 +25,9 @@ eagine_add_module(
 		eagine.app)
 
 eagine_add_module(
-	eagine.app.tiling_viewer PARTITION models
+	eagine.app.tiling_viewer
+	COMPONENT app-dev
+	PARTITION models
 	IMPORTS
 		std geometry
 		eagine.core
@@ -29,7 +35,9 @@ eagine_add_module(
 		eagine.app)
 
 eagine_add_module(
-	eagine.app.tiling_viewer PARTITION program
+	eagine.app.tiling_viewer
+	COMPONENT app-dev
+	PARTITION program
 	IMPORTS
 		std resource
 		eagine.core
@@ -37,7 +45,9 @@ eagine_add_module(
 		eagine.app)
 
 eagine_add_module(
-	eagine.app.tiling_viewer PARTITION programs
+	eagine.app.tiling_viewer
+	COMPONENT app-dev
+	PARTITION programs
 	IMPORTS
 		std program
 		eagine.core
@@ -45,7 +55,9 @@ eagine_add_module(
 		eagine.app)
 
 eagine_add_module(
-	eagine.app.tiling_viewer PARTITION texture
+	eagine.app.tiling_viewer
+	COMPONENT app-dev
+	PARTITION texture
 	IMPORTS
 		std resource
 		eagine.core
@@ -53,7 +65,9 @@ eagine_add_module(
 		eagine.app)
 
 eagine_add_module(
-	eagine.app.tiling_viewer PARTITION textures
+	eagine.app.tiling_viewer
+	COMPONENT app-dev
+	PARTITION textures
 	IMPORTS
 		std texture
 		eagine.core
@@ -62,6 +76,7 @@ eagine_add_module(
 
 eagine_add_module(
 	eagine.app.tiling_viewer
+	COMPONENT app-dev
 	SOURCES
 		resource
 		geometry
