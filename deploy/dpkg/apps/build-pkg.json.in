@@ -1,5 +1,0 @@
-{"resource-provider":"$<TARGET_FILE:eagine-app-resource-provider>"
-,"tiling-viewer":"$<TARGET_FILE:eagine-app-tiling-viewer>"
-,"model-viewer":"$<TARGET_FILE:eagine-app-model-viewer>"
-,"sky-viewer":"$<TARGET_FILE:eagine-app-sky-viewer>"
-}

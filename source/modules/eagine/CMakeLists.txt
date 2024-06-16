@@ -3,7 +3,9 @@
 # See accompanying file LICENSE_1_0.txt or copy at
 # https://www.boost.org/LICENSE_1_0.txt
 eagine_add_module(
-	eagine.app PARTITION types
+	eagine.app
+	COMPONENT app-dev
+	PARTITION types
 	IMPORTS
 		std
 		eagine.core.types
@@ -12,7 +14,9 @@ eagine_add_module(
 )
 
 eagine_add_module(
-	eagine.app PARTITION options
+	eagine.app
+	COMPONENT app-dev
+	PARTITION options
 	IMPORTS
 		std types
 		eagine.core.types
@@ -25,7 +29,9 @@ eagine_add_module(
 )
 
 eagine_add_module(
-	eagine.app PARTITION input
+	eagine.app
+	COMPONENT app-dev
+	PARTITION input
 	IMPORTS
 		std
 		eagine.core.types
@@ -38,7 +44,9 @@ eagine_add_module(
 )
 
 eagine_add_module(
-	eagine.app PARTITION state
+	eagine.app
+	COMPONENT app-dev
+	PARTITION state
 	IMPORTS
 		std
 		eagine.core.types
@@ -51,7 +59,9 @@ eagine_add_module(
 )
 
 eagine_add_module(
-	eagine.app PARTITION interface
+	eagine.app
+	COMPONENT app-dev
+	PARTITION interface
 	IMPORTS
 		std types options input
 		eagine.core.types
@@ -64,7 +74,9 @@ eagine_add_module(
 )
 
 eagine_add_module(
-	eagine.app PARTITION implementation
+	eagine.app
+	COMPONENT app-dev
+	PARTITION implementation
 	IMPORTS
 		std interface
 		eagine.core.types
@@ -72,7 +84,9 @@ eagine_add_module(
 )
 
 eagine_add_module(
-	eagine.app PARTITION framedump_raw
+	eagine.app
+	COMPONENT app-dev
+	PARTITION framedump_raw
 	IMPORTS
 		std interface
 		eagine.core.types
@@ -83,7 +97,9 @@ eagine_add_module(
 )
 
 eagine_add_module(
-	eagine.app PARTITION resource_loader
+	eagine.app
+	COMPONENT app-dev
+	PARTITION resource_loader
 	IMPORTS
 		std
 		eagine.core.types
@@ -106,7 +122,9 @@ eagine_add_module(
 )
 
 eagine_add_module(
-	eagine.app PARTITION context
+	eagine.app
+	COMPONENT app-dev
+	PARTITION context
 	IMPORTS
 		std interface options
 		types state input
@@ -124,7 +142,9 @@ eagine_add_module(
 )
 
 eagine_add_module(
-	eagine.app PARTITION main
+	eagine.app
+	COMPONENT app-dev
+	PARTITION main
 	IMPORTS
 		std interface context
 		eagine.core.types
@@ -132,7 +152,9 @@ eagine_add_module(
 )
 
 eagine_add_module(
-	eagine.app PARTITION framebuffer
+	eagine.app
+	COMPONENT app-dev
+	PARTITION framebuffer
 	IMPORTS
 		std context
 		eagine.core.types
@@ -141,7 +163,9 @@ eagine_add_module(
 )
 
 eagine_add_module(
-	eagine.app PARTITION geometry
+	eagine.app
+	COMPONENT app-dev
+	PARTITION geometry
 	IMPORTS
 		std context
 		eagine.core.types
@@ -151,7 +175,9 @@ eagine_add_module(
 )
 
 eagine_add_module(
-	eagine.app PARTITION camera
+	eagine.app
+	COMPONENT app-dev
+	PARTITION camera
 	IMPORTS
 		std state input context types
 		eagine.core.types
@@ -165,7 +191,9 @@ eagine_add_module(
 )
 
 eagine_add_module(
-	eagine.app PARTITION background
+	eagine.app
+	COMPONENT app-dev
+	PARTITION background
 	IMPORTS
 		std camera context types
 		eagine.core.types
@@ -176,7 +204,9 @@ eagine_add_module(
 )
 
 eagine_add_module(
-	eagine.app PARTITION loaded_resource
+	eagine.app
+	COMPONENT app-dev
+	PARTITION loaded_resource
 	IMPORTS
 		std context geometry
 		resource_loader
@@ -193,7 +223,9 @@ eagine_add_module(
 )
 
 eagine_add_module(
-	eagine.app PARTITION resource_manager
+	eagine.app
+	COMPONENT app-dev
+	PARTITION resource_manager
 	IMPORTS
 		std loaded_resource geometry
 		context resource_loader
@@ -208,6 +240,7 @@ eagine_add_module(
 
 eagine_add_module(
 	eagine.app
+	COMPONENT app-dev
 	SOURCES
 		options
 		state

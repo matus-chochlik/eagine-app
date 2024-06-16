@@ -3,7 +3,9 @@
 # See accompanying file LICENSE_1_0.txt or copy at
 # https://www.boost.org/LICENSE_1_0.txt
 eagine_add_module(
-	eagine.app.resource_provider PARTITION external_apis
+	eagine.app.resource_provider
+	COMPONENT app-dev
+	PARTITION external_apis
 	IMPORTS
 		std
 		eagine.core
@@ -11,7 +13,9 @@ eagine_add_module(
 		eagine.oglplus)
 
 eagine_add_module(
-	eagine.app.resource_provider PARTITION driver
+	eagine.app.resource_provider
+	COMPONENT app-dev
+	PARTITION driver
 	IMPORTS
 		std
 		eagine.core
@@ -19,7 +23,9 @@ eagine_add_module(
 		eagine.app)
 
 eagine_add_module(
-	eagine.app.resource_provider PARTITION gl_context
+	eagine.app.resource_provider
+	COMPONENT app-dev
+	PARTITION gl_context
 	IMPORTS
 		driver std
 		eagine.core
@@ -29,14 +35,18 @@ eagine_add_module(
 		eagine.app)
 
 eagine_add_module(
-	eagine.app.resource_provider PARTITION providers
+	eagine.app.resource_provider
+	COMPONENT app-dev
+	PARTITION providers
 	IMPORTS
 		driver std
 		eagine.core
 		eagine.app)
 
 eagine_add_module(
-	eagine.app.resource_provider PARTITION common
+	eagine.app.resource_provider
+	COMPONENT app-dev
+	PARTITION common
 	IMPORTS
 		driver std
 		gl_context
@@ -47,7 +57,9 @@ eagine_add_module(
 		eagine.app)
 
 eagine_add_module(
-	eagine.app.resource_provider PARTITION eagitexi_provider
+	eagine.app.resource_provider
+	COMPONENT app-dev
+	PARTITION eagitexi_provider
 	IMPORTS
 		driver providers std
 		eagine.core
@@ -55,6 +67,7 @@ eagine_add_module(
 
 eagine_add_module(
 	eagine.app.resource_provider
+	COMPONENT app-dev
 	SOURCES
 		external_apis
 		gl_context

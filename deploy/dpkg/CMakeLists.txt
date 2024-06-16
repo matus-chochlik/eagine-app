@@ -22,11 +22,6 @@ add_custom_target(eagine-app-deb)
 
 add_subdirectory(assets)
 
-if(TARGET eagine.app)
-	add_subdirectory(apps)
-	add_subdirectory(dev)
-endif()
-
 if(NOT TARGET eagine-deb)
 	add_custom_target(eagine-deb)
 endif()

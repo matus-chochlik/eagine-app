@@ -8,45 +8,34 @@ add_subdirectory(tiling_viewer)
 add_subdirectory(sky_viewer)
 add_subdirectory(resource_provider)
 
-install(
-	PROGRAMS make-voronoi-svg.py
-	COMPONENT app-tools
-	RENAME eagine-make-voronoi-svg
-	DESTINATION bin)
+foreach(APP
+		make-voronoi-svg
+		ogj-to-eagimesh
+		blender-bake-light
+		blender-bake-to-vertex
+		blender-export-mesh
+		blender-render-cubemap
+		blender-make-vertex-pivots)
+	add_custom_command(
+		OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/eagine-${APP}.bco"
+		COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/${APP}.py"
+					--print-bash-completion
+					"${CMAKE_CURRENT_BINARY_DIR}/eagine-${APP}.bco"
+		DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/${APP}.py")
 
-install(
-	PROGRAMS obj-to-eagimesh.py
-	COMPONENT app-tools
-	RENAME eagine-obj-to-eagimesh
-	DESTINATION bin)
+	add_custom_target("eagine-${APP}-bco"
+		ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/eagine-${APP}.bco")
 
-install(
-	PROGRAMS blender-bake-light.py
-	COMPONENT app-tools
-	RENAME eagine-blender-bake-light
-	DESTINATION bin)
+	install(
+		FILES "${CMAKE_CURRENT_BINARY_DIR}/eagine-${APP}.bco"
+		COMPONENT oglplus-apps
+		RENAME eagine-${APP}
+		PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ
+		DESTINATION share/bash-completion/completions)
 
-install(
-	PROGRAMS blender-bake-to-vertex.py
-	COMPONENT app-tools
-	RENAME eagine-blender-bake-to-vertex
-	DESTINATION bin)
-
-install(
-	PROGRAMS blender-export-mesh.py
-	COMPONENT app-tools
-	RENAME eagine-blender-export-mesh
-	DESTINATION bin)
-
-install(
-	PROGRAMS blender-render-cubemap.py
-	COMPONENT app-tools
-	RENAME eagine-blender-render-cubemap
-	DESTINATION bin)
-
-install(
-	PROGRAMS blender-make-vertex-pivots.py
-	COMPONENT app-tools
-	RENAME eagine-blender-make-vertex-pivots
-	DESTINATION bin)
-
+	install(
+		PROGRAMS ${APP}.py
+		COMPONENT oglplus-apps
+		RENAME eagine-${APP}
+		DESTINATION bin)
+endforeach()

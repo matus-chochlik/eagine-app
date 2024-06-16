@@ -148,3 +148,8 @@ install(
 	TARGETS eagine-app-model-viewer
 	COMPONENT app-model-viewer
 	RUNTIME DESTINATION bin)
+
+install(
+	DIRECTORY etc
+	COMPONENT app-model-viewer
+	DESTINATION /)

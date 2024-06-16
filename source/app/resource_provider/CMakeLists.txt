@@ -84,3 +84,9 @@ install(
 	TARGETS eagine-app-resource-provider
 	COMPONENT app-resource-provider
 	RUNTIME DESTINATION bin)
+
+install(
+	DIRECTORY etc
+	COMPONENT app-resource-provider
+	DESTINATION /)
+

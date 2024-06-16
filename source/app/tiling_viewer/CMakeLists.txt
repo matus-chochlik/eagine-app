@@ -125,3 +125,8 @@ install(
 	TARGETS eagine-app-tiling-viewer
 	COMPONENT app-tiling-viewer
 	RUNTIME DESTINATION bin)
+
+install(
+	DIRECTORY etc
+	COMPONENT app-tiling-viewer
+	DESTINATION /)

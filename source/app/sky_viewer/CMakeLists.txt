@@ -90,3 +90,8 @@ install(
 	TARGETS eagine-app-sky-viewer
 	COMPONENT app-sky-viewer
 	RUNTIME DESTINATION bin)
+
+install(
+	DIRECTORY etc
+	COMPONENT app-sky-viewer
+	DESTINATION /)
