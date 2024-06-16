@@ -8,17 +8,12 @@ add_subdirectory(tiling_viewer)
 add_subdirectory(sky_viewer)
 add_subdirectory(resource_provider)
 
-foreach(APP
-		make-voronoi-svg
-		ogj-to-eagimesh
-		blender-bake-light
-		blender-bake-to-vertex
-		blender-export-mesh
-		blender-render-cubemap
-		blender-make-vertex-pivots)
+find_program(PYTHON3_COMMAND python3)
+
+foreach(APP make-voronoi-svg)
 	add_custom_command(
 		OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/eagine-${APP}.bco"
-		COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/${APP}.py"
+		COMMAND ${PYTHON3_COMMAND} "${CMAKE_CURRENT_SOURCE_DIR}/${APP}.py"
 					--print-bash-completion
 					"${CMAKE_CURRENT_BINARY_DIR}/eagine-${APP}.bco"
 		DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/${APP}.py")
@@ -36,6 +31,21 @@ foreach(APP
 	install(
 		PROGRAMS ${APP}.py
 		COMPONENT oglplus-apps
+		RENAME eagine-${APP}
+		DESTINATION bin)
+endforeach()
+
+foreach(APP
+		obj-to-eagimesh
+		blender-bake-light
+		blender-bake-to-vertex
+		blender-export-mesh
+		blender-render-cubemap
+		blender-make-vertex-pivots)
+
+	install(
+		PROGRAMS ${APP}.py
+		COMPONENT app-apps
 		RENAME eagine-${APP}
 		DESTINATION bin)
 endforeach()
