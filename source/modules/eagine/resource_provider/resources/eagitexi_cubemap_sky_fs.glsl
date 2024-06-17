@@ -286,7 +286,7 @@ vec4 vaporColor(SampleInfo s, vec4 airColor, float cloudShadow) {
 	float shadow = mix(s.planetShadow, s.accumulated.planetShadow, 0.25) *
 		cloudShadow;
 	vec4 vaporColor = vec4(1.0, 1.0, 1.0, 0.95) * shadow;
-	vec4 lightColor = sunlightColor(s) * cloudShadow;
+	vec4 lightColor = sunlightColor(s) * mix(0.1*s.planetShadow, 1.1, cloudShadow);
 
 	return mix(
 		mix(vaporColor, airColor, s.accumulated.planetShadow * 0.5),
