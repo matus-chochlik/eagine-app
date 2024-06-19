@@ -26,7 +26,6 @@ file(STRINGS "${EAGINE_CORE_ROOT}/VERSION" EAGINE_VERSION)
 
 enable_testing()
 
-include(EAGinePackageApp)
 add_subdirectory(submodules)
 include(EAGineCoreCommon)
 find_package(EAGineGLFW3)

@@ -9,3 +9,16 @@ add_subdirectory(tilings)
 add_subdirectory(tilesets)
 add_subdirectory(textures)
 add_subdirectory(other)
+
+eagine_add_package_property(
+	app-assets
+	GENERATOR DEBIAN
+	VARIABLE PACKAGE_DEPENDS
+	VALUE "")
+
+eagine_add_package_property(
+	app-assets
+	GENERATOR DEBIAN
+	VARIABLE DESCRIPTION
+	VALUE "EAGine application assets package.")
+

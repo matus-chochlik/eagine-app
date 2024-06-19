@@ -11,7 +11,6 @@ set_target_properties(
 	PROPERTIES FOLDER "Example/App"
 )
 
-
 add_subdirectory(001_basic_info)
 add_subdirectory(001_clear)
 add_subdirectory(002_clear_gui)
@@ -52,3 +51,16 @@ add_subdirectory(034_shape_tessellation)
 add_subdirectory(035_brick_torus)
 add_subdirectory(037_lantern)
 add_subdirectory(040_metaballs)
+
+eagine_add_package_property(
+	app-examples
+	GENERATOR DEBIAN
+	VARIABLE PACKAGE_DEPENDS
+	VALUE "\${CXX_RUNTIME_PKGS},\${EAGINE_CORE_RUNTIME_PKGS},\${EAGINE_SSLPLUS_RUNTIME_PKGS},\${EAGINE_EGLPLUS_RUNTIME_PKGS},\${EAGINE_OGLPLUS_RUNTIME_PKGS},\${EAGINE_OALPLUS_RUNTIME_PKGS}")
+
+eagine_add_package_property(
+	app-examples
+	GENERATOR DEBIAN
+	VARIABLE DESCRIPTION
+	VALUE "EAGine application examples.")
+

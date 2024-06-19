@@ -23,7 +23,7 @@ foreach(APP make-voronoi-svg)
 
 	install(
 		FILES "${CMAKE_CURRENT_BINARY_DIR}/eagine-${APP}.bco"
-		COMPONENT oglplus-apps
+		COMPONENT app-apps
 		RENAME eagine-${APP}
 		PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ
 		DESTINATION share/bash-completion/completions)
@@ -49,3 +49,17 @@ foreach(APP
 		RENAME eagine-${APP}
 		DESTINATION bin)
 endforeach()
+
+
+eagine_add_package_property(
+	app-apps
+	GENERATOR DEBIAN
+	VARIABLE PACKAGE_DEPENDS
+	VALUE "\${CXX_RUNTIME_PKGS},\${EAGINE_CORE_RUNTIME_PKGS},\${EAGINE_SSLPLUS_RUNTIME_PKGS},\${EAGINE_EGLPLUS_RUNTIME_PKGS},\${EAGINE_OGLPLUS_RUNTIME_PKGS},\${EAGINE_OALPLUS_RUNTIME_PKGS}")
+
+eagine_add_package_property(
+	app-apps
+	GENERATOR DEBIAN
+	VARIABLE DESCRIPTION
+	VALUE "Collection of EAGine utility applications.")
+

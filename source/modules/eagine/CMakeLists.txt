@@ -322,3 +322,16 @@ eagine_embed_target_resources(
 set_tests_properties(execute-test.eagine.app.resource_manager PROPERTIES COST 10)
 
 add_subdirectory(resource_provider)
+
+eagine_add_package_property(
+	app-dev
+	GENERATOR DEBIAN
+	VARIABLE PACKAGE_DEPENDS
+	VALUE "eagine-core-dev (>= @EAGINE_VERSION@),eagine-sslplus-dev (>= @EAGINE_VERSION@),eagine-msgbus-dev (>= @EAGINE_VERSION@),eagine-shapes-dev (>= @EAGINE_VERSION@),eagine-guiplus-dev (>= @EAGINE_VERSION@),eagine-eglplus-dev (>= @EAGINE_VERSION@),eagine-oglplus-dev (>= @EAGINE_VERSION@),eagine-oalplus-dev (>= @EAGINE_VERSION@)")
+
+eagine_add_package_property(
+	app-dev
+	GENERATOR DEBIAN
+	VARIABLE DESCRIPTION
+	VALUE "High-level C++ utilities for implementing multimedia applications.")
+

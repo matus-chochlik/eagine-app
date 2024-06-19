@@ -29,3 +29,15 @@ foreach(APP app-framedump)
 endforeach()
 
 
+eagine_add_package_property(
+	app-tools
+	GENERATOR DEBIAN
+	VARIABLE PACKAGE_DEPENDS
+	VALUE "python3,python3-pip")
+
+eagine_add_package_property(
+	app-tools
+	GENERATOR DEBIAN
+	VARIABLE DESCRIPTION
+	VALUE "Collection of command-line utilities useful with EAGine applications.")
+

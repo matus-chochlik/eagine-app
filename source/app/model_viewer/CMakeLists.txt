@@ -172,3 +172,16 @@ install(
 	DIRECTORY etc
 	COMPONENT app-model-viewer
 	DESTINATION /)
+
+eagine_add_package_property(
+	app-model-viewer
+	GENERATOR DEBIAN
+	VARIABLE PACKAGE_DEPENDS
+	VALUE "\${CXX_RUNTIME_PKGS},\${EAGINE_CORE_RUNTIME_PKGS},\${EAGINE_SSLPLUS_RUNTIME_PKGS},\${EAGINE_EGLPLUS_RUNTIME_PKGS},\${EAGINE_OGLPLUS_RUNTIME_PKGS},\${EAGINE_OALPLUS_RUNTIME_PKGS}")
+
+eagine_add_package_property(
+	app-model-viewer
+	GENERATOR DEBIAN
+	VARIABLE DESCRIPTION
+	VALUE "Application for viewing 3D models.")
+
