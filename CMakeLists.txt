@@ -28,6 +28,7 @@ enable_testing()
 
 add_subdirectory(submodules)
 include(EAGineCoreCommon)
+include(EAGinePackageApp)
 find_package(EAGineGLFW3)
 find_package(EAGineLibZip)
 
