@@ -52,6 +52,9 @@ add_subdirectory(035_brick_torus)
 add_subdirectory(037_lantern)
 add_subdirectory(040_metaballs)
 
+eagine_add_license(app-examples)
+eagine_add_debian_changelog(app-examples)
+
 eagine_add_package_property(
 	app-examples
 	GENERATOR DEBIAN
