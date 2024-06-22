@@ -283,10 +283,12 @@ vec4 clearAirColor(SampleInfo s, float cloudShadow) {
 }
 //------------------------------------------------------------------------------
 vec4 vaporColor(SampleInfo s, vec4 airColor, float cloudShadow) {
-	float shadow = mix(s.planetShadow, s.accumulated.planetShadow, 0.25) *
-		cloudShadow;
-	vec4 vaporColor = vec4(1.0, 1.0, 1.0, 0.95) * shadow;
-	vec4 lightColor = sunlightColor(s) * mix(0.1*s.planetShadow, 1.1, cloudShadow);
+	float pshadow = mix(s.planetShadow, s.accumulated.planetShadow, 0.25);
+	float cshadow = mix(0.9, 1.0, s.accumulated.vaporShadow) * cloudShadow;
+
+	vec4 vaporColor = vec4(1.0, 1.0, 1.0, 0.95) * pshadow * cshadow;
+	vec4 lightColor = sunlightColor(s) *
+		mix(0.1 * s.planetShadow, 1.1, cloudShadow);
 
 	return mix(
 		mix(vaporColor, airColor, s.accumulated.planetShadow * 0.5),
@@ -296,7 +298,7 @@ vec4 vaporColor(SampleInfo s, vec4 airColor, float cloudShadow) {
 			mix(vaporColor, lightColor, 0.6),
 			mix(vaporColor, lightColor, 0.8),
 			s.atmLightDistRatio * 0.7, 0.5),
-		shadow);
+		pshadow * cshadow);
 }
 //------------------------------------------------------------------------------
 float clearAirDensity(SampleInfo sample) {
@@ -606,11 +608,16 @@ vec4 skyColor(TraceInfo trace) {
 		color = mix(color, airColor, airDensity * airColor.a);
 
 		accumulated = sample.accumulated;
+		accumulated.vaporShadow = max(
+			accumulated.vaporShadow -
+			sample.sampleAtmRatio * vaporDensity * 4.0,
+			0.0);
 		rayDist -= sampleLen;
 	}
 
 	// Thick cloud layer
 	sampleLen = 25.0;
+	float sct = sampleLen / cloudThickness;
 
 	while(rayDist > layer3Top) {
 		sample = getSampleSun(trace, accumulated, rayDist, atmDist, sampleLen);
@@ -631,7 +638,9 @@ vec4 skyColor(TraceInfo trace) {
 		color = mix(color, airColor, airDensity * airColor.a);
 
 		accumulated = sample.accumulated;
-		accumulated.vaporShadow = max(accumulated.vaporShadow - sampleLen, 0.0);
+		accumulated.vaporShadow = max(
+			accumulated.vaporShadow - sct * cloudDensity * 256.0,
+			0.0);
 		rayDist -= sampleLen;
 	}
 
