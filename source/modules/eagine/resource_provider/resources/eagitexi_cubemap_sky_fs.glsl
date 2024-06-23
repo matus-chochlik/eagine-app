@@ -284,7 +284,7 @@ vec4 clearAirColor(SampleInfo s, float cloudShadow) {
 //------------------------------------------------------------------------------
 vec4 vaporColor(SampleInfo s, vec4 airColor, float cloudShadow) {
 	float pshadow = mix(s.planetShadow, s.accumulated.planetShadow, 0.25);
-	float cshadow = mix(0.9, 1.0, s.accumulated.vaporShadow) * cloudShadow;
+	float cshadow = mix(0.8, 1.0, s.accumulated.vaporShadow) * cloudShadow;
 
 	vec4 vaporColor = vec4(1.0, 1.0, 1.0, 0.95) * pshadow * cshadow;
 	vec4 lightColor = sunlightColor(s) *
@@ -373,12 +373,12 @@ vec2 cloudCoord(
 	vec3 loc = normalize(location - planet.center);
 	vec2 sph = vec2(atan(loc.y, loc.x) + pi, asin(loc.z));
 	vec2 sca = vec2(8.0 / scale);
+	float alt = pow(layer.altitudeRatio, mix(0.5, 2.0, to01(sin(sph.x*3.1))));
+	float layerofs = ceil(alt * layer.steps / scale);
 	offset = (sca * offset / tilingSide);
 	return vec2(
-		sph * sca +
-		vec2(ceil(layer.altitudeRatio * layer.steps / scale) * phi * scale) +
-		(cloudOffset * pow(offset.x, 0.025 * pi) * 1.5 * phi) / scale +
-		offset);
+		offset + sph * sca + vec2(phi * scale * layerofs) +
+		(cloudOffset * pow(offset.x, 0.025 * pi) * 1.5 * phi) / scale);
 }
 //------------------------------------------------------------------------------
 float tilingSample(vec2 coord) {
@@ -471,7 +471,7 @@ float thickCloudDensity(
 	float densi = sqrt(4.0 * cc256 * cc064 * cc032 * cc016 * cc008 * cc004);
 
 	float mask0 = (1.0 - sqrt(max(densi - mix(0.0, 0.011, s0160000),0.0)))*0.37;
-	float mask1 = (1.0 - sqrt(max(densi - mix(0.0, 0.009, s0080000),0.0)))*3.00;
+	float mask1 = (1.0 - sqrt(max(densi - mix(0.0, 0.005, s0080000),0.0)))*3.00;
 
 	densi -= pow(s0020000, 3.0) * mask0;
 	densi -= pow(s0010000, 3.0) * mask0;
