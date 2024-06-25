@@ -22,3 +22,9 @@ eagine_add_package_property(
 	VARIABLE DESCRIPTION
 	VALUE "EAGine application assets package.")
 
+eagine_add_package_property(
+	app-assets
+	GENERATOR DEBIAN
+	VARIABLE PACKAGE_ARCHITECTURE
+	VALUE "all")
+
