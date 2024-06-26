@@ -593,6 +593,7 @@ vec4 skyColor(TraceInfo trace) {
 
 	// Thin cloud layer
 	sampleLen = 50.0;
+	float svt = sampleLen / vaporThickness;
 
 	while(rayDist > layer2Top) {
 		sample = getSampleSun(trace, accumulated, rayDist, atmDist, sampleLen);
@@ -609,8 +610,7 @@ vec4 skyColor(TraceInfo trace) {
 
 		accumulated = sample.accumulated;
 		accumulated.vaporShadow = max(
-			accumulated.vaporShadow -
-			sample.sampleAtmRatio * vaporDensity * 4.0,
+			accumulated.vaporShadow - svt * vaporDensity * 8.0,
 			0.0);
 		rayDist -= sampleLen;
 	}
