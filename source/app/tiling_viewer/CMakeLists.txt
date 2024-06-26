@@ -149,6 +149,8 @@ install(
 	COMPONENT app-tiling-viewer
 	DESTINATION /)
 
+eagine_add_bash_completion(app-tiling-viewer "other/eagine-app-tiling-viewer.bco")
+
 eagine_add_package_property(
 	app-tiling-viewer
 	GENERATOR DEBIAN

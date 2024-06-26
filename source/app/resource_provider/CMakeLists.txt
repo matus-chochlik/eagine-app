@@ -82,6 +82,8 @@ set_target_properties(
 
 eagine_add_license(app-resource-provider)
 eagine_add_debian_changelog(app-resource-provider)
+eagine_add_manual(app-resource-provider "other/eagine-app-resource-provider.man")
+eagine_add_bash_completion(app-resource-provider "other/eagine-app-resource-provider.bco")
 
 install(
 	TARGETS eagine-app-resource-provider

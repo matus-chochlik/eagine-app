@@ -176,6 +176,8 @@ install(
 	COMPONENT app-model-viewer
 	DESTINATION /)
 
+eagine_add_bash_completion(app-model-viewer "other/eagine-app-model-viewer.bco")
+
 eagine_add_package_property(
 	app-model-viewer
 	GENERATOR DEBIAN
