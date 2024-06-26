@@ -50,6 +50,8 @@ foreach(APP
 		DESTINATION bin)
 endforeach()
 
+eagine_add_license(app-apps)
+eagine_add_debian_changelog(app-apps)
 
 eagine_add_package_property(
 	app-apps

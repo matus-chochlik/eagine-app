@@ -10,6 +10,9 @@ add_subdirectory(tilesets)
 add_subdirectory(textures)
 add_subdirectory(other)
 
+eagine_add_license(app-assets)
+eagine_add_debian_changelog(app-assets)
+
 eagine_add_package_property(
 	app-assets
 	GENERATOR DEBIAN

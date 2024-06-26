@@ -80,6 +80,9 @@ set_target_properties(
 	eagine-app-resource-provider
 	PROPERTIES FOLDER "App")
 
+eagine_add_license(app-resource-provider)
+eagine_add_debian_changelog(app-resource-provider)
+
 install(
 	TARGETS eagine-app-resource-provider
 	COMPONENT app-resource-provider

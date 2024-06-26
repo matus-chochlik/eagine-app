@@ -323,6 +323,9 @@ set_tests_properties(execute-test.eagine.app.resource_manager PROPERTIES COST 10
 
 add_subdirectory(resource_provider)
 
+eagine_add_license(app-dev)
+eagine_add_debian_changelog(app-dev)
+
 eagine_add_package_property(
 	app-dev
 	GENERATOR DEBIAN

@@ -163,6 +163,9 @@ set_target_properties(
 	eagine-app-model-viewer
 	PROPERTIES FOLDER "App")
 
+eagine_add_license(app-model-viewer)
+eagine_add_debian_changelog(app-model-viewer)
+
 install(
 	TARGETS eagine-app-model-viewer
 	COMPONENT app-model-viewer

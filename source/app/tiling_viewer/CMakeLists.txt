@@ -136,6 +136,9 @@ set_target_properties(
 	eagine-app-tiling-viewer
 	PROPERTIES FOLDER "App")
 
+eagine_add_license(app-tiling-viewer)
+eagine_add_debian_changelog(app-tiling-viewer)
+
 install(
 	TARGETS eagine-app-tiling-viewer
 	COMPONENT app-tiling-viewer

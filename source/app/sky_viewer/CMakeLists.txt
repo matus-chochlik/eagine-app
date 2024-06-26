@@ -97,6 +97,9 @@ set_target_properties(
 	eagine-app-sky-viewer
 	PROPERTIES FOLDER "App")
 
+eagine_add_license(app-sky-viewer)
+eagine_add_debian_changelog(app-sky-viewer)
+
 install(
 	TARGETS eagine-app-sky-viewer
 	COMPONENT app-sky-viewer
