@@ -285,7 +285,7 @@ vec4 clearAirColor(SampleInfo s, float cloudShadow) {
 vec4 vaporColor(SampleInfo s, vec4 airColor, float cloudShadow) {
 	float pshadow = mix(s.planetShadow, s.accumulated.planetShadow, 0.25);
 	float cshadow = mix(0.8, 1.0, s.accumulated.vaporShadow) * cloudShadow;
-	float ltmult = mix(0.9, 1.4, s.accumulated.vaporShadow);
+	float ltmult = mix(0.9, 1.3, s.accumulated.vaporShadow);
 
 	vec4 vaporColor = vec4(1.0, 1.0, 1.0, 0.95) * pshadow * cshadow;
 	vec4 lightColor = sunlightColor(s) *
@@ -474,22 +474,22 @@ float thickCloudDensity(
 	float mask0 = (1.0 - sqrt(max(densi - mix(0.0, 0.011, s0160000),0.0)));
 	mask0 *= 0.37;
 	float mask1 = (1.0 - sqrt(max(densi - mix(0.0, 0.004, s0080000),0.0)));
-	mask1 *= mix(1.0, 3.0, s0080000 * s0040000 * s0020000);
+	mask1 *= mix(1.0, 2.5, s0080000 * s0040000 * s0020000);
 
 	densi -= pow(s0020000, 3.0) * mask0;
 	densi -= pow(s0010000, 3.0) * mask0;
 	densi -= pow(s0005000, 3.0) * mask0;
 	densi -= pow(s0002500, 3.0) * mask0;
-	densi -= pow(s0001250, 3.0) * mask0;
 
-	densi = clamp(densi * 16.0, 0.0, 4.0);
+	densi = clamp(densi * 32.0, 0.0, 8.0);
 
+	densi -= pow(s0001250, 3.0) * mask1;
 	densi -= pow(s0000625, 3.0) * mask1;
 	densi -= pow(snoise1 , 3.0) * mask1;
 
 	densi = clamp(densi, 0.0, 3.0);
 
-	return densi * sampleAtmRatio * 30.0;
+	return densi * sampleAtmRatio * 24.0;
 }
 //------------------------------------------------------------------------------
 float thickCloudDensity(vec3 loc, SampleInfo sam, CloudLayerInfo layer) {
