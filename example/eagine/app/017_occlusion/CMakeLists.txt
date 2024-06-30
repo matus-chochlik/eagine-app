@@ -30,5 +30,5 @@ set_target_properties(
 
 install(
 	TARGETS app-017_occlusion
-	DESTINATION share/eagine/example/app
-)
+	COMPONENT app-examples
+	DESTINATION share/eagine/example/app)

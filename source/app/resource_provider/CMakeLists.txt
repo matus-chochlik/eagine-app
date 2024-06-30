@@ -80,6 +80,30 @@ set_target_properties(
 	eagine-app-resource-provider
 	PROPERTIES FOLDER "App")
 
+eagine_add_license(app-resource-provider)
+eagine_add_debian_changelog(app-resource-provider)
+eagine_add_manual(app-resource-provider "other/eagine-app-resource-provider.man")
+eagine_add_bash_completion(app-resource-provider "other/eagine-app-resource-provider.bco")
+
 install(
 	TARGETS eagine-app-resource-provider
-	DESTINATION bin)
+	COMPONENT app-resource-provider
+	RUNTIME DESTINATION bin)
+
+install(
+	DIRECTORY etc
+	COMPONENT app-resource-provider
+	DESTINATION /)
+
+eagine_add_package_property(
+	app-resource-provider
+	GENERATOR DEBIAN
+	VARIABLE PACKAGE_DEPENDS
+	VALUE "\${CXX_RUNTIME_PKGS},\${EAGINE_CORE_RUNTIME_PKGS},\${EAGINE_SSLPLUS_RUNTIME_PKGS},\${EAGINE_EGLPLUS_RUNTIME_PKGS},\${EAGINE_OGLPLUS_RUNTIME_PKGS},\${EAGINE_OALPLUS_RUNTIME_PKGS},\${EAGINE_APP_RUNTIME_PKGS}")
+
+eagine_add_package_property(
+	app-resource-provider
+	GENERATOR DEBIAN
+	VARIABLE DESCRIPTION
+	VALUE "Resource provider message bus server.")
+

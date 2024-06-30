@@ -39,5 +39,5 @@ set_target_properties(
 
 install(
 	TARGETS app-032_translucent_arrow
-	DESTINATION share/eagine/example/app
-)
+	COMPONENT app-examples
+	DESTINATION share/eagine/example/app)

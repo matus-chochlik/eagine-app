@@ -25,5 +25,5 @@ set_target_properties(
 
 install(
 	TARGETS app-011_mandelbrot
-	DESTINATION share/eagine/example/app
-)
+	COMPONENT app-examples
+	DESTINATION share/eagine/example/app)

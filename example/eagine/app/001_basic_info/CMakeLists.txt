@@ -25,5 +25,5 @@ set_target_properties(
 
 install(
 	TARGETS app-001_basic_info
-	DESTINATION share/eagine/example/app
-)
+	COMPONENT app-examples
+	DESTINATION share/eagine/example/app)

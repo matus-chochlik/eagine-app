@@ -8,45 +8,60 @@ add_subdirectory(tiling_viewer)
 add_subdirectory(sky_viewer)
 add_subdirectory(resource_provider)
 
-install(
-	PROGRAMS make-voronoi-svg.py
-	RENAME eagine-make-voronoi-svg
-	DESTINATION bin
-)
+find_program(PYTHON3_COMMAND python3)
 
-install(
-	PROGRAMS obj-to-eagimesh.py
-	RENAME eagine-obj-to-eagimesh
-	DESTINATION bin
-)
+foreach(APP make-voronoi-svg)
+	add_custom_command(
+		OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/eagine-${APP}.bco"
+		COMMAND ${PYTHON3_COMMAND} "${CMAKE_CURRENT_SOURCE_DIR}/${APP}.py"
+					--print-bash-completion
+					"${CMAKE_CURRENT_BINARY_DIR}/eagine-${APP}.bco"
+		DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/${APP}.py")
 
-install(
-	PROGRAMS blender-bake-light.py
-	RENAME eagine-blender-bake-light
-	DESTINATION bin
-)
+	add_custom_target("eagine-${APP}-bco"
+		ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/eagine-${APP}.bco")
 
-install(
-	PROGRAMS blender-bake-to-vertex.py
-	RENAME eagine-blender-bake-to-vertex
-	DESTINATION bin
-)
+	install(
+		FILES "${CMAKE_CURRENT_BINARY_DIR}/eagine-${APP}.bco"
+		COMPONENT app-apps
+		RENAME eagine-${APP}
+		PERMISSIONS OWNER_WRITE OWNER_READ GROUP_READ WORLD_READ
+		DESTINATION share/bash-completion/completions)
 
-install(
-	PROGRAMS blender-export-mesh.py
-	RENAME eagine-blender-export-mesh
-	DESTINATION bin
-)
+	install(
+		PROGRAMS ${APP}.py
+		COMPONENT oglplus-apps
+		RENAME eagine-${APP}
+		DESTINATION bin)
+endforeach()
 
-install(
-	PROGRAMS blender-render-cubemap.py
-	RENAME eagine-blender-render-cubemap
-	DESTINATION bin
-)
+foreach(APP
+		obj-to-eagimesh
+		blender-bake-light
+		blender-bake-to-vertex
+		blender-export-mesh
+		blender-render-cubemap
+		blender-make-vertex-pivots)
 
-install(
-	PROGRAMS blender-make-vertex-pivots.py
-	RENAME eagine-blender-make-vertex-pivots
-	DESTINATION bin
-)
+	install(
+		PROGRAMS ${APP}.py
+		COMPONENT app-apps
+		RENAME eagine-${APP}
+		DESTINATION bin)
+endforeach()
+
+eagine_add_license(app-apps)
+eagine_add_debian_changelog(app-apps)
+
+eagine_add_package_property(
+	app-apps
+	GENERATOR DEBIAN
+	VARIABLE PACKAGE_DEPENDS
+	VALUE "\${CXX_RUNTIME_PKGS},\${EAGINE_CORE_RUNTIME_PKGS},\${EAGINE_SSLPLUS_RUNTIME_PKGS},\${EAGINE_EGLPLUS_RUNTIME_PKGS},\${EAGINE_OGLPLUS_RUNTIME_PKGS},\${EAGINE_OALPLUS_RUNTIME_PKGS},\${EAGINE_APP_RUNTIME_PKGS}")
+
+eagine_add_package_property(
+	app-apps
+	GENERATOR DEBIAN
+	VARIABLE DESCRIPTION
+	VALUE "Collection of EAGine utility applications.")
 

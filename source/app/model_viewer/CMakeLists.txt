@@ -4,7 +4,9 @@
 # https://www.boost.org/LICENSE_1_0.txt
 #
 eagine_add_module(
-	eagine.app.model_viewer PARTITION resource
+	eagine.app.model_viewer
+	COMPONENT app-dev
+	PARTITION resource
 	IMPORTS
 		std
 		eagine.core
@@ -12,7 +14,9 @@ eagine_add_module(
 		eagine.app)
 
 eagine_add_module(
-	eagine.app.model_viewer PARTITION background
+	eagine.app.model_viewer
+	COMPONENT app-dev
+	PARTITION background
 	IMPORTS
 		std resource
 		eagine.core
@@ -20,7 +24,9 @@ eagine_add_module(
 		eagine.app)
 
 eagine_add_module(
-	eagine.app.model_viewer PARTITION backgrounds
+	eagine.app.model_viewer
+	COMPONENT app-dev
+	PARTITION backgrounds
 	IMPORTS
 		std background
 		eagine.core
@@ -28,7 +34,9 @@ eagine_add_module(
 		eagine.app)
 
 eagine_add_module(
-	eagine.app.model_viewer PARTITION geometry
+	eagine.app.model_viewer
+	COMPONENT app-dev
+	PARTITION geometry
 	IMPORTS
 		std resource
 		eagine.core
@@ -37,7 +45,9 @@ eagine_add_module(
 		eagine.app)
 
 eagine_add_module(
-	eagine.app.model_viewer PARTITION models
+	eagine.app.model_viewer
+	COMPONENT app-dev
+	PARTITION models
 	IMPORTS
 		std geometry
 		eagine.core
@@ -45,7 +55,9 @@ eagine_add_module(
 		eagine.app)
 
 eagine_add_module(
-	eagine.app.model_viewer PARTITION program
+	eagine.app.model_viewer
+	COMPONENT app-dev
+	PARTITION program
 	IMPORTS
 		std resource
 		eagine.core
@@ -53,7 +65,9 @@ eagine_add_module(
 		eagine.app)
 
 eagine_add_module(
-	eagine.app.model_viewer PARTITION programs
+	eagine.app.model_viewer
+	COMPONENT app-dev
+	PARTITION programs
 	IMPORTS
 		std program
 		eagine.core
@@ -61,7 +75,9 @@ eagine_add_module(
 		eagine.app)
 
 eagine_add_module(
-	eagine.app.model_viewer PARTITION texture
+	eagine.app.model_viewer
+	COMPONENT app-dev
+	PARTITION texture
 	IMPORTS
 		std resource
 		eagine.core
@@ -69,7 +85,9 @@ eagine_add_module(
 		eagine.app)
 
 eagine_add_module(
-	eagine.app.model_viewer PARTITION textures
+	eagine.app.model_viewer
+	COMPONENT app-dev
+	PARTITION textures
 	IMPORTS
 		std texture
 		eagine.core
@@ -78,6 +96,7 @@ eagine_add_module(
 
 eagine_add_module(
 	eagine.app.model_viewer
+	COMPONENT app-dev
 	SOURCES
 		resource
 		background
@@ -144,6 +163,30 @@ set_target_properties(
 	eagine-app-model-viewer
 	PROPERTIES FOLDER "App")
 
+eagine_add_license(app-model-viewer)
+eagine_add_debian_changelog(app-model-viewer)
+
 install(
 	TARGETS eagine-app-model-viewer
-	DESTINATION bin)
+	COMPONENT app-model-viewer
+	RUNTIME DESTINATION bin)
+
+install(
+	DIRECTORY etc
+	COMPONENT app-model-viewer
+	DESTINATION /)
+
+eagine_add_bash_completion(app-model-viewer "other/eagine-app-model-viewer.bco")
+
+eagine_add_package_property(
+	app-model-viewer
+	GENERATOR DEBIAN
+	VARIABLE PACKAGE_DEPENDS
+	VALUE "\${CXX_RUNTIME_PKGS},\${EAGINE_CORE_RUNTIME_PKGS},\${EAGINE_SSLPLUS_RUNTIME_PKGS},\${EAGINE_EGLPLUS_RUNTIME_PKGS},\${EAGINE_OGLPLUS_RUNTIME_PKGS},\${EAGINE_OALPLUS_RUNTIME_PKGS},\${EAGINE_APP_RUNTIME_PKGS}")
+
+eagine_add_package_property(
+	app-model-viewer
+	GENERATOR DEBIAN
+	VARIABLE DESCRIPTION
+	VALUE "Application for viewing 3D models.")
+

@@ -25,11 +25,11 @@ set_target_properties(
 
 install(
 	TARGETS app-003_checker
-	DESTINATION share/eagine/example/app
-)
+	COMPONENT app-examples
+	DESTINATION share/eagine/example/app)
 
 install(
 	FILES app-003_checker.yaml
-	DESTINATION etc/eagine
-)
+	COMPONENT app-examples
+	DESTINATION /etc/eagine)
 

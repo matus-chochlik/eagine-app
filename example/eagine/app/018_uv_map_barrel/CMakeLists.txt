@@ -40,5 +40,5 @@ set_target_properties(
 
 install(
 	TARGETS app-018_uv_map_barrel
-	DESTINATION share/eagine/example/app
-)
+	COMPONENT app-examples
+	DESTINATION share/eagine/example/app)

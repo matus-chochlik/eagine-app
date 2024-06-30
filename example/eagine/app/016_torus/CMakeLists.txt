@@ -33,5 +33,5 @@ set_target_properties(
 
 install(
 	TARGETS app-016_torus
-	DESTINATION share/eagine/example/app
-)
+	COMPONENT app-examples
+	DESTINATION share/eagine/example/app)
