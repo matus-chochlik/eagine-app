@@ -119,7 +119,9 @@ public:
                     if(auto parent{_parent.lock()}) {
                         auto& loader = parent->loader();
                         if(auto src_request{loader.request_gl_shader(
-                             _shdr_locator, _gl_context, _shdr_type)}) {
+                             {.locator = _shdr_locator},
+                             _gl_context,
+                             _shdr_type)}) {
                             src_request.set_continuation(parent);
                             if(not parent->add_gl_program_shader_request(
                                  src_request.request_id())) [[unlikely]] {
@@ -675,7 +677,7 @@ public:
                 for(auto& [loc, tgt, para] : _image_requests) {
                     const auto img_request{
                       parent->loader().request_gl_texture_image(
-                        std::move(loc), tgt, para)};
+                        {.locator = std::move(loc)}, tgt, para)};
                     img_request.set_continuation(parent);
                     parent->add_gl_texture_image_request(
                       img_request.request_id());
@@ -1109,10 +1111,10 @@ void pending_resource_info::_handle_gl_texture_image(
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request_gl_texture_image(
-  url locator,
+  const resource_request_params& params,
   oglplus::texture_target target) noexcept -> resource_request_result {
     return request_gl_texture_image(
-      std::move(locator), target, resource_gl_texture_image_params{});
+      params, target, resource_gl_texture_image_params{});
 }
 //------------------------------------------------------------------------------
 // valtree_gl_buffer_builder

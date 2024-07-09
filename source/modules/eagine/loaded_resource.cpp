@@ -411,7 +411,10 @@ public:
       -> work_done {
         if(not is_loaded() and not is_loading()) {
             if(const auto request{ctx.loader().request(
-                 std::type_identity<Resource>{}, locator(), ctx, params...)}) {
+                 std::type_identity<Resource>{},
+                 {.locator = locator()},
+                 ctx,
+                 params...)}) {
                 _request_id = request.request_id();
             }
         }
@@ -1004,7 +1007,7 @@ public:
       oglplus::texture_unit tu) -> auto& {
         _locator_str = new_locator.release_string();
         if(const auto request{loader.request_gl_texture_update(
-             locator(), ctx.gl_context(), tgt, tu, *this)}) {
+             {.locator = locator()}, ctx.gl_context(), tgt, tu, *this)}) {
             _request_id = request.request_id();
             _status = resource_load_status::loading;
         }

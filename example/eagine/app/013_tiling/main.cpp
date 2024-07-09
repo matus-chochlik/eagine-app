@@ -98,9 +98,10 @@ example_tiling::example_tiling(execution_context& ec, video_context& vc)
       _video.gl_api().texture_2d_array,
       _video.gl_api().texture0+4}
   , _other{ec} {
+    _other.add(ec.loader().request_camera_parameters(
+      {.locator = url{"json:///Camera"}}, _camera));
     _other.add(
-      ec.loader().request_camera_parameters(url{"json:///Camera"}, _camera));
-    _other.add(ec.loader().request_input_setup(url{"json:///Inputs"}, ec));
+      ec.loader().request_input_setup({.locator = url{"json:///Inputs"}}, ec));
 
     _prog.connect_to<&example_tiling::_on_loaded>(this);
     _cube.connect_to<&example_tiling::_on_loaded>(this);
