@@ -41,8 +41,15 @@ public:
     signal<void(const loaded_resource_base&) noexcept> load_event;
 
     /// @brief Returns this resource's URL.
+    /// @see parameters
     auto locator() const noexcept -> url {
         return {_locator_str};
+    }
+
+    /// @brief Returns the resource request parameters.
+    /// @see locator
+    auto request_parameters() const noexcept -> resource_request_params {
+        return {.locator = locator()};
     }
 
     /// @brief Indicates if this resource is currently loading.
@@ -412,7 +419,7 @@ public:
         if(not is_loaded() and not is_loading()) {
             if(const auto request{ctx.loader().request(
                  std::type_identity<Resource>{},
-                 {.locator = locator()},
+                 request_parameters(),
                  ctx,
                  params...)}) {
                 _request_id = request.request_id();
@@ -1007,7 +1014,7 @@ public:
       oglplus::texture_unit tu) -> auto& {
         _locator_str = new_locator.release_string();
         if(const auto request{loader.request_gl_texture_update(
-             {.locator = locator()}, ctx.gl_context(), tgt, tu, *this)}) {
+             request_parameters(), ctx.gl_context(), tgt, tu, *this)}) {
             _request_id = request.request_id();
             _status = resource_load_status::loading;
         }
