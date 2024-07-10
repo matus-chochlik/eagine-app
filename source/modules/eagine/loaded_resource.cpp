@@ -18,6 +18,7 @@ import eagine.core.reflection;
 import eagine.core.value_tree;
 import eagine.shapes;
 import eagine.oglplus;
+import eagine.msgbus;
 import :context;
 import :geometry;
 import :resource_loader;
@@ -30,6 +31,11 @@ export class loaded_resource_base {
 public:
     loaded_resource_base(url locator) noexcept
       : _locator_str{locator.release_string()} {}
+
+    loaded_resource_base(const resource_request_params& params) noexcept
+      : _locator_str{params.locator.get_string()}
+      , _max_time{params.max_time}
+      , _priority{params.priority} {}
 
     loaded_resource_base(loaded_resource_base&&) = delete;
     loaded_resource_base(const loaded_resource_base&) = delete;
@@ -49,7 +55,8 @@ public:
     /// @brief Returns the resource request parameters.
     /// @see locator
     auto request_parameters() const noexcept -> resource_request_params {
-        return {.locator = locator()};
+        return {
+          .locator = locator(), .max_time = _max_time, .priority = _priority};
     }
 
     /// @brief Indicates if this resource is currently loading.
@@ -109,6 +116,8 @@ public:
 protected:
     std::string _locator_str;
     identifier_t _request_id{0};
+    std::optional<std::chrono::seconds> _max_time{};
+    std::optional<msgbus::message_priority> _priority{};
     resource_load_status _status{resource_load_status::loading};
 };
 //------------------------------------------------------------------------------
@@ -198,6 +207,10 @@ public:
     loaded_resource(url locator) noexcept
       : loaded_resource_base{std::move(locator)} {}
 
+    /// @brief Constructor specifying the resource resource parameters.
+    loaded_resource(const resource_request_params& params) noexcept
+      : loaded_resource_base{params} {}
+
     /// @brief Delay-initializes the resource.
     void init(resource_loader& loader) noexcept {
         _connect(loader);
@@ -228,6 +241,30 @@ public:
     /// @brief Constructor specifying the locator and initializing the resource.
     loaded_resource(url locator, execution_context& ctx)
       : loaded_resource_base{std::move(locator)} {
+        init(ctx);
+    }
+
+    /// @brief Constructor specifying the parameters and initializing the resource.
+    loaded_resource(
+      const resource_request_params& params,
+      resource_loader& loader)
+      : loaded_resource_base{params} {
+        init(loader);
+    }
+
+    /// @brief Constructor specifying the parameters and initializing the resource.
+    loaded_resource(
+      const resource_request_params& params,
+      loaded_resource_context& ctx)
+      : loaded_resource_base{params} {
+        init(ctx);
+    }
+
+    /// @brief Constructor specifying the parameters and initializing the resource.
+    loaded_resource(
+      const resource_request_params& params,
+      execution_context& ctx)
+      : loaded_resource_base{params} {
         init(ctx);
     }
 

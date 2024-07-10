@@ -114,9 +114,17 @@ export enum class resource_kind {
     finished
 };
 //------------------------------------------------------------------------------
+/// @brief Structure containing parameters for a resource request.
+/// @see resource_loader
+/// @see resource_request_result
 struct resource_request_params {
+    /// @brief The locator of the requested resource.
     url locator;
+
+    /// @brief Maximum time (timeout) for the resource request.
     std::optional<std::chrono::seconds> max_time{};
+
+    /// @brief The priority of the resource request.
     std::optional<msgbus::message_priority> priority{};
 };
 //------------------------------------------------------------------------------
@@ -610,6 +618,7 @@ auto make_valtree_gl_buffer_builder(
 //------------------------------------------------------------------------------
 /// @brief Result of resource request operation.
 /// @see resource_kind
+/// @see resource_request_params
 export class resource_request_result {
 public:
     resource_request_result(
