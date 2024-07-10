@@ -409,6 +409,30 @@ public:
         derived().init(ctx);
     }
 
+    /// @brief Constructor specifying the resource request parameters.
+    loaded_resource_common(
+      const resource_request_params& params,
+      resource_loader& loader) noexcept
+      : loaded_resource_base{params} {
+        derived().init(loader);
+    }
+
+    /// @brief Constructor specifying the resource request parameters.
+    loaded_resource_common(
+      const resource_request_params& params,
+      loaded_resource_context& ctx) noexcept
+      : loaded_resource_base{params} {
+        derived().init(ctx);
+    }
+
+    /// @brief Constructor specifying the resource request parameters.
+    loaded_resource_common(
+      const resource_request_params& params,
+      execution_context& ctx) noexcept
+      : loaded_resource_base{params} {
+        derived().init(ctx);
+    }
+
     /// @brief Delay-initializes the resource.
     void init(resource_loader& loader) noexcept {
         _connect(loader);

@@ -117,7 +117,7 @@ export enum class resource_kind {
 /// @brief Structure containing parameters for a resource request.
 /// @see resource_loader
 /// @see resource_request_result
-struct resource_request_params {
+export struct resource_request_params {
     /// @brief The locator of the requested resource.
     url locator;
 

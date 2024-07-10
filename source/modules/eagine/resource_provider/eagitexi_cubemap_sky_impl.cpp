@@ -486,7 +486,7 @@ eagitexi_cubemap_sky_io::eagitexi_cubemap_sky_io(
   , _size{size} {
     if(const auto params_url{_locator.query().arg_url("params")}) {
         _scene_request.emplace(shared.loader.request_value_tree_traversal(
-          {.locator = params_url},
+          {.locator = params_url, .max_time = std::chrono::hours{12}},
           make_mapped_struct_loader(_scene, _scene_load_status)));
     } else {
         _scene_load_status = resource_load_status::loaded;

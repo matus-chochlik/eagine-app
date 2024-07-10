@@ -14,6 +14,7 @@ module eagine.app.sky_viewer;
 import eagine.core;
 import eagine.oglplus;
 import eagine.app;
+import eagine.app;
 import std;
 
 namespace eagine::app {
@@ -33,7 +34,7 @@ class sky_viewer_texture_resource
   , public gl_texture_resource {
 public:
     sky_viewer_texture_resource(
-      url locator,
+      const resource_request_params& params,
       execution_context&,
       video_context&,
       oglplus::texture_target,
@@ -53,12 +54,12 @@ private:
 };
 //------------------------------------------------------------------------------
 sky_viewer_texture_resource::sky_viewer_texture_resource(
-  url locator,
+  const resource_request_params& params,
   execution_context& ctx,
   video_context&,
   oglplus::texture_target tex_target,
   oglplus::texture_unit tex_unit)
-  : gl_texture_resource{std::move(locator), ctx}
+  : gl_texture_resource{params, ctx}
   , _tex_target{tex_target}
   , _tex_unit{tex_unit} {
     gl_texture_resource::loaded.connect(
@@ -120,7 +121,8 @@ auto make_viewer_resource(
   oglplus::texture_unit tex_unit) -> sky_viewer_texture_holder {
     return {
       hold<sky_viewer_texture_resource>,
-      std::move(locator),
+      resource_request_params{
+        .locator = std::move(locator), .max_time = std::chrono::hours{12}},
       ctx,
       video,
       tex_target,
