@@ -297,7 +297,7 @@ public:
     auto load_if_needed(loaded_resource_context& ctx) -> work_done {
         if(not is_loaded() and not is_loading()) {
             if(const auto request{ctx.loader().request(
-                 std::type_identity<Resource>{}, locator(), ctx)}) {
+                 std::type_identity<Resource>{}, request_parameters(), ctx)}) {
                 _request_id = request.request_id();
             }
         }

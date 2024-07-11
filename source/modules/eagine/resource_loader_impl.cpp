@@ -46,9 +46,9 @@ pending_resource_info::pending_resource_info(
   resource_kind k) noexcept
   : _parent{loader}
   , _request_id{req_id}
-  , _locator{params.locator}
-  , _preparation{_activity(_parent), _progress_label(_locator), 1000}
-  , _streaming{_activity(_parent), _progress_label(_locator), 1000}
+  , _params{params}
+  , _preparation{_activity(_parent), _progress_label(_params.locator), 1000}
+  , _streaming{_activity(_parent), _progress_label(_params.locator), 1000}
   , _kind{k} {}
 //------------------------------------------------------------------------------
 void pending_resource_info::_preparation_progressed(float progress) noexcept {
@@ -79,9 +79,9 @@ void pending_resource_info::mark_loaded() noexcept {
         pgbs->loaded = true;
         _finish_gl_buffer(*pgbs);
     } else if(_kind == resource_kind::camera_parameters) {
-        _parent.resource_loaded(_request_id, _kind, _locator);
+        _parent.resource_loaded(_request_id, _kind, _params.locator);
     } else if(_kind == resource_kind::input_setup) {
-        _parent.resource_loaded(_request_id, _kind, _locator);
+        _parent.resource_loaded(_request_id, _kind, _params.locator);
     }
     _streaming.finish();
 }
@@ -246,9 +246,9 @@ auto pending_resource_info::update() noexcept -> work_done {
               }
               _parent.shape_generator_loaded(
                 {.request_id = _request_id,
-                 .locator = _locator,
+                 .locator = _params.locator,
                  .generator = shape_gen});
-              _parent.resource_loaded(_request_id, _kind, _locator);
+              _parent.resource_loaded(_request_id, _kind, _params.locator);
               something_done();
           }
           _state = std::monostate{};
@@ -279,7 +279,7 @@ void pending_resource_info::_handle_plain_text(
     _parent.log_debug("loaded plain-text data")
       .arg("requestId", _request_id)
       .arg("offset", offset)
-      .arg("locator", _locator.str());
+      .arg("locator", _params.locator.str());
 
     std::string text;
     span_size_t total_size{0};
@@ -294,10 +294,10 @@ void pending_resource_info::_handle_plain_text(
     if(is(resource_kind::plain_text)) {
         _parent.plain_text_loaded(
           {.request_id = _request_id,
-           .locator = _locator,
+           .locator = _params.locator,
            .text = std::move(text)});
     }
-    _parent.resource_loaded(_request_id, _kind, _locator);
+    _parent.resource_loaded(_request_id, _kind, _params.locator);
     mark_finished();
 }
 //------------------------------------------------------------------------------
@@ -309,7 +309,7 @@ void pending_resource_info::_handle_json_text(
     _parent.log_debug("loaded JSON data")
       .arg("requestId", _request_id)
       .arg("offset", offset)
-      .arg("locator", _locator.str());
+      .arg("locator", _params.locator.str());
 
     if(is(resource_kind::value_tree)) {
         auto tree{valtree::from_json_data(data, _parent.main_context().log())};
@@ -317,8 +317,8 @@ void pending_resource_info::_handle_json_text(
             cont->_handle_value_tree(*this, tree);
         }
         _parent.value_tree_loaded(
-          {.request_id = _request_id, .locator = _locator, .tree = tree});
-        _parent.resource_loaded(_request_id, _kind, _locator);
+          {.request_id = _request_id, .locator = _params.locator, .tree = tree});
+        _parent.resource_loaded(_request_id, _kind, _params.locator);
     } else if(is(resource_kind::value_tree_traversal)) {
         if(const auto pvts{get_if<_pending_valtree_traversal_state>(_state)}) {
             bool should_continue{true};
@@ -344,7 +344,7 @@ void pending_resource_info::_handle_yaml_text(
   const memory::span<const memory::const_block>) noexcept {
     _parent.log_debug("loaded YAML text")
       .arg("requestId", _request_id)
-      .arg("locator", _locator.str());
+      .arg("locator", _params.locator.str());
 
     if(is(resource_kind::value_tree)) {
         // TODO
@@ -357,7 +357,7 @@ void pending_resource_info::_handle_value_tree(
   const valtree::compound& tree) noexcept {
     _parent.log_info("loaded value tree")
       .arg("requestId", _request_id)
-      .arg("locator", _locator.str());
+      .arg("locator", _params.locator.str());
 
     if(is(resource_kind::shape_generator)) {
         if(auto gen{shapes::from_value_tree(tree, _parent)}) {
@@ -374,12 +374,12 @@ void pending_resource_info::_handle_string_list(
     _parent.log_debug("loaded string list data")
       .arg("requestId", _request_id)
       .arg("offset", offset)
-      .arg("locator", _locator.str());
+      .arg("locator", _params.locator.str());
 
     std::vector<std::string> strings;
     resource_loader_signals::string_list_load_info load_info{
       .request_id = _request_id,
-      .locator = _locator,
+      .locator = _params.locator,
       .strings = strings,
       .values = strings};
 
@@ -425,7 +425,7 @@ void pending_resource_info::_handle_string_list(
 
     if(is(resource_kind::string_list)) {
         _parent.string_list_loaded(load_info);
-        _parent.resource_loaded(_request_id, _kind, _locator);
+        _parent.resource_loaded(_request_id, _kind, _params.locator);
     }
     mark_finished();
 }
@@ -436,12 +436,14 @@ void pending_resource_info::_handle_url_list(
     _parent.log_info("loaded URL list")
       .arg("requestId", _request_id)
       .arg("size", urls.size())
-      .arg("locator", _locator.str());
+      .arg("locator", _params.locator.str());
 
     if(is(resource_kind::url_list)) {
         _parent.url_list_loaded(
-          {.request_id = _request_id, .locator = _locator, .values = urls});
-        _parent.resource_loaded(_request_id, _kind, _locator);
+          {.request_id = _request_id,
+           .locator = _params.locator,
+           .values = urls});
+        _parent.resource_loaded(_request_id, _kind, _params.locator);
     }
     mark_finished();
 }
@@ -452,12 +454,14 @@ void pending_resource_info::handle_float_vector(
     _parent.log_info("loaded float values")
       .arg("requestId", _request_id)
       .arg("size", values.size())
-      .arg("locator", _locator.str());
+      .arg("locator", _params.locator.str());
 
     if(is(resource_kind::float_vector)) {
         _parent.float_vector_loaded(
-          {.request_id = _request_id, .locator = _locator, .values = values});
-        _parent.resource_loaded(_request_id, _kind, _locator);
+          {.request_id = _request_id,
+           .locator = _params.locator,
+           .values = values});
+        _parent.resource_loaded(_request_id, _kind, _params.locator);
     }
     mark_finished();
 }
@@ -468,7 +472,7 @@ void pending_resource_info::handle_vec3_vector(
     _parent.log_info("loaded vec3 values")
       .arg("requestId", _request_id)
       .arg("size", values.size())
-      .arg("locator", _locator.str());
+      .arg("locator", _params.locator.str());
 
     if(const auto cont{continuation()}) {
         cont->_handle_vec3_vector(*this, values);
@@ -476,8 +480,10 @@ void pending_resource_info::handle_vec3_vector(
 
     if(is(resource_kind::vec3_vector)) {
         _parent.vec3_vector_loaded(
-          {.request_id = _request_id, .locator = _locator, .values = values});
-        _parent.resource_loaded(_request_id, _kind, _locator);
+          {.request_id = _request_id,
+           .locator = _params.locator,
+           .values = values});
+        _parent.resource_loaded(_request_id, _kind, _params.locator);
     }
     mark_finished();
 }
@@ -490,8 +496,10 @@ void pending_resource_info::_handle_vec3_vector(
         math::cubic_bezier_loop<math::vector<float, 3, true>, float> curve{
           view(values)};
         _parent.smooth_vec3_curve_loaded(
-          {.request_id = _request_id, .locator = _locator, .curve = curve});
-        _parent.resource_loaded(_request_id, _kind, _locator);
+          {.request_id = _request_id,
+           .locator = _params.locator,
+           .curve = curve});
+        _parent.resource_loaded(_request_id, _kind, _params.locator);
     }
     mark_finished();
 }
@@ -502,7 +510,7 @@ void pending_resource_info::handle_mat4_vector(
     _parent.log_info("loaded mat4 values")
       .arg("requestId", _request_id)
       .arg("size", values.size())
-      .arg("locator", _locator.str());
+      .arg("locator", _params.locator.str());
 
     if(const auto cont{continuation()}) {
         cont->_handle_mat4_vector(*this, values);
@@ -510,8 +518,10 @@ void pending_resource_info::handle_mat4_vector(
 
     if(is(resource_kind::mat4_vector)) {
         _parent.mat4_vector_loaded(
-          {.request_id = _request_id, .locator = _locator, .values = values});
-        _parent.resource_loaded(_request_id, _kind, _locator);
+          {.request_id = _request_id,
+           .locator = _params.locator,
+           .values = values});
+        _parent.resource_loaded(_request_id, _kind, _params.locator);
     }
     mark_finished();
 }
@@ -525,10 +535,10 @@ void pending_resource_info::_handle_mat4_vector(
 auto pending_resource_info::_apply_shape_modifiers(
   shared_holder<shapes::generator> gen) noexcept
   -> shared_holder<shapes::generator> {
-    if(_locator.query().arg_has_value("to_patches", true)) {
+    if(_params.locator.query().arg_has_value("to_patches", true)) {
         _parent.log_info("applying 'to_patches' shape modifier")
           .arg("requestId", _request_id)
-          .arg("locator", _locator.str());
+          .arg("locator", _params.locator.str());
         gen = shapes::to_patches(std::move(gen));
     }
     return gen;
@@ -539,7 +549,7 @@ void pending_resource_info::_handle_shape_generator(
   const shared_holder<shapes::generator>& gen) noexcept {
     _parent.log_info("loaded shape geometry generator")
       .arg("requestId", _request_id)
-      .arg("locator", _locator.str());
+      .arg("locator", _params.locator.str());
 
     if(is(resource_kind::gl_shape)) {
         if(const auto pgss{get_if<_pending_gl_shape_state>(_state)}) {
@@ -549,8 +559,10 @@ void pending_resource_info::_handle_shape_generator(
                 cont->_handle_gl_shape(*this, shape);
             }
             _parent.gl_shape_loaded(
-              {.request_id = _request_id, .locator = _locator, .shape = shape});
-            _parent.resource_loaded(_request_id, _kind, _locator);
+              {.request_id = _request_id,
+               .locator = _params.locator,
+               .shape = shape});
+            _parent.resource_loaded(_request_id, _kind, _params.locator);
         }
     }
     mark_finished();
@@ -561,7 +573,7 @@ void pending_resource_info::_handle_gl_shape(
   const oglplus::shape_generator& shape) noexcept {
     _parent.log_info("loaded shape generator wrapper")
       .arg("requestId", _request_id)
-      .arg("locator", _locator.str());
+      .arg("locator", _params.locator.str());
 
     if(is(resource_kind::gl_geometry_and_bindings)) {
         if(const auto pggbs{
@@ -580,10 +592,10 @@ void pending_resource_info::_handle_gl_shape(
               temp};
             _parent.gl_geometry_and_bindings_loaded(
               {.request_id = _request_id,
-               .locator = _locator,
+               .locator = _params.locator,
                .shape = shape,
                .ref = geom});
-            _parent.resource_loaded(_request_id, _kind, _locator);
+            _parent.resource_loaded(_request_id, _kind, _params.locator);
             if(geom) {
                 geom.clean_up(pggbs->gl_context.gl_api());
             }
@@ -599,7 +611,7 @@ void pending_resource_info::_handle_glsl_strings(
   const memory::span<const memory::const_block> data) noexcept {
     _parent.log_info("loaded GLSL string collection")
       .arg("requestId", _request_id)
-      .arg("locator", _locator.str());
+      .arg("locator", _params.locator.str());
 
     if(is(resource_kind::glsl_source)) {
         std::vector<const oglplus::gl_types::char_type*> gl_strs;
@@ -620,8 +632,10 @@ void pending_resource_info::_handle_glsl_strings(
             cont->_handle_glsl_source(*this, glsl_src);
         }
         _parent.glsl_source_loaded(
-          {.request_id = _request_id, .locator = _locator, .source = glsl_src});
-        _parent.resource_loaded(_request_id, _kind, _locator);
+          {.request_id = _request_id,
+           .locator = _params.locator,
+           .source = glsl_src});
+        _parent.resource_loaded(_request_id, _kind, _params.locator);
     }
     mark_finished();
 }
@@ -631,7 +645,7 @@ void pending_resource_info::_handle_glsl_source(
   const oglplus::glsl_source_ref& glsl_src) noexcept {
     _parent.log_info("loaded GLSL source object")
       .arg("requestId", _request_id)
-      .arg("locator", _locator.str());
+      .arg("locator", _params.locator.str());
 
     if(is(resource_kind::gl_shader)) {
         if(const auto pgss{get_if<_pending_gl_shader_state>(_state)}) {
@@ -645,19 +659,19 @@ void pending_resource_info::_handle_glsl_source(
                 _parent
                   .log_info("loaded and compiled GL shader object (${locator})")
                   .arg("requestId", _request_id)
-                  .arg("locator", "string", _locator.str());
+                  .arg("locator", "string", _params.locator.str());
 
                 if(const auto cont{continuation()}) {
                     cont->_handle_gl_shader(*this, shdr);
                 }
                 _parent.gl_shader_loaded(
                   {.request_id = _request_id,
-                   .locator = _locator,
+                   .locator = _params.locator,
                    .gl_context = pgss->gl_context,
                    .type = pgss->shdr_type,
                    .name = shdr,
                    .ref = shdr});
-                _parent.resource_loaded(_request_id, _kind, _locator);
+                _parent.resource_loaded(_request_id, _kind, _params.locator);
             } else {
                 const std::string message{
                   glapi.shader_info_log(shdr).value_or("N/A")};
@@ -665,7 +679,7 @@ void pending_resource_info::_handle_glsl_source(
                   .log_error("failed to load and link GL shader (${locator})")
                   .arg("requestId", _request_id)
                   .arg("message", "string", message)
-                  .arg("locator", "string", _locator.str());
+                  .arg("locator", "string", _params.locator.str());
             }
 
             if(shdr) {
@@ -687,25 +701,25 @@ auto pending_resource_info::_finish_gl_program(
             _parent.log_info("loaded and linked GL program object (${locator})")
               .arg("requestId", _request_id)
               .arg("bindgCount", pgps.input_bindings.count())
-              .arg("locator", "string", _locator.str());
+              .arg("locator", "string", _params.locator.str());
 
             gl.use_program(pgps.prog);
 
             _parent.gl_program_loaded(
               {.request_id = _request_id,
-               .locator = _locator,
+               .locator = _params.locator,
                .gl_context = pgps.gl_context,
                .name = pgps.prog,
                .ref = pgps.prog,
                .input_bindings = pgps.input_bindings});
-            _parent.resource_loaded(_request_id, _kind, _locator);
+            _parent.resource_loaded(_request_id, _kind, _params.locator);
         } else {
             const std::string message{
               glapi.program_info_log(pgps.prog).value_or("N/A")};
             _parent.log_error("failed to load and link GL program (${locator})")
               .arg("requestId", _request_id)
               .arg("message", "string", message)
-              .arg("locator", "string", _locator.str());
+              .arg("locator", "string", _params.locator.str());
         }
 
         if(pgps.prog) {
@@ -767,22 +781,22 @@ auto pending_resource_info::_finish_gl_texture(
               .arg("requestId", _request_id)
               .arg("levels", pgts.levels)
               .arg("images", pgts.level_images_done.count())
-              .arg("locator", _locator.str());
+              .arg("locator", _params.locator.str());
 
             // TODO: call this earlier (before all images are loaded)?
             _parent.gl_texture_loaded(
               {.request_id = _request_id,
-               .locator = _locator,
+               .locator = _params.locator,
                .gl_context = pgts.gl_context,
                .target = pgts.tex_target,
                .name = pgts.tex,
                .ref = pgts.tex});
             _parent.gl_texture_images_loaded(
               {.request_id = _request_id,
-               .locator = _locator,
+               .locator = _params.locator,
                .gl_context = pgts.gl_context,
                .name = pgts.tex});
-            _parent.resource_loaded(_request_id, _kind, _locator);
+            _parent.resource_loaded(_request_id, _kind, _params.locator);
 
             if(pgts.tex) {
                 gl.delete_textures(std::move(pgts.tex));
@@ -825,7 +839,7 @@ void pending_resource_info::handle_source_finished(
 //------------------------------------------------------------------------------
 void pending_resource_info::handle_source_cancelled(
   const pending_resource_info&) noexcept {
-    _parent.resource_cancelled(_request_id, _kind, _locator);
+    _parent.resource_cancelled(_request_id, _kind, _params.locator);
     mark_finished();
 }
 //------------------------------------------------------------------------------
@@ -905,7 +919,7 @@ void resource_loader::_handle_stream_cancelled(
             if(const auto continuation{rinfo.continuation()}) {
                 continuation->handle_source_cancelled(rinfo);
             }
-            resource_cancelled(request_id, rinfo._kind, rinfo._locator);
+            resource_cancelled(request_id, rinfo._kind, rinfo._params.locator);
             rinfo.mark_finished();
         }
     }
@@ -1479,7 +1493,7 @@ auto resource_loader::update_and_process_all() noexcept -> work_done {
     for(auto& [request_id, pinfo] : _cancelled) {
         assert(pinfo);
         auto& info{*pinfo};
-        resource_cancelled(request_id, info._kind, info._locator);
+        resource_cancelled(request_id, info._kind, info._params.locator);
         something_done();
     }
     _cancelled.clear();

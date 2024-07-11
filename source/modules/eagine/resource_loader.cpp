@@ -141,8 +141,8 @@ public:
         return _request_id;
     }
 
-    auto locator() const noexcept -> const url& {
-        return _locator;
+    auto parameters() const noexcept -> const resource_request_params& {
+        return _params;
     }
 
     auto is(resource_kind kind) const noexcept -> bool {
@@ -430,7 +430,7 @@ private:
 
     resource_loader& _parent;
     const identifier_t _request_id;
-    const url _locator;
+    const resource_request_params _params;
     span_size_t _received_size{0};
     activity_progress _preparation;
     activity_progress _streaming;
@@ -653,9 +653,14 @@ public:
         return info().request_id();
     }
 
+    /// @brief Returns the request parameters.
+    auto parameters() const noexcept -> const resource_request_params& {
+        return info()._params;
+    }
+
     /// @brief Returns the locator of the requested resource.
     auto locator() const noexcept -> const url& {
-        return info()._locator;
+        return parameters().locator;
     }
 
     /// @brief Sets the reference to the continuation request of this request.
@@ -1648,9 +1653,9 @@ void pending_resource_info::handle_mapped_struct(
   T& object) noexcept {
     if(is(resource_kind::mapped_struct)) {
         resource_loader_signals::mapped_struct_load_info info{
-          _request_id, _locator, object};
+          _request_id, _params.locator, object};
         _parent.mapped_struct_loaded(info);
-        _parent.resource_loaded(_request_id, _kind, _locator);
+        _parent.resource_loaded(_request_id, _kind, _params.locator);
     }
     mark_finished();
 }
