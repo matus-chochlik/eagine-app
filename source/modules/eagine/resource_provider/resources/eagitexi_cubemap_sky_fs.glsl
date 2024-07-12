@@ -287,7 +287,7 @@ vec4 vaporColor(SampleInfo s, vec4 airColor, float cloudShadow) {
 	float cshadow = mix(0.8, 1.0, s.accumulated.vaporShadow) * cloudShadow;
 
 	vec4 vaporColor = vec4(1.0, 1.0, 1.0, 0.95) * pshadow * cshadow;
-	vec4 lightColor = sunlightColor(s) * mix(0.1 * s.planetShadow, 3.0, cloudShadow);
+	vec4 lightColor = sunlightColor(s) * mix(0.1 * s.planetShadow, 4.0, cloudShadow);
 
 	return mix(
 		mix(vaporColor, airColor, s.accumulated.planetShadow * 0.5),
@@ -512,7 +512,7 @@ float cloudShadowIn(SampleInfo sample, CloudLayerInfo layer) {
 			if(altitude >= layer.bottomAlt) {
 				float density = thickCloudDensity(location, sample, layer, sar);
 				density = mix(density, 0.0, st * il);
-				shadow = max(shadow - density * mix(0.0, 3.0, shadow), 0.0);
+				shadow = max(shadow - density * shadow, 0.0);
 			}
 			st -= sl;
 		}
