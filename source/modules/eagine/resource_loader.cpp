@@ -117,16 +117,7 @@ export enum class resource_kind {
 /// @brief Structure containing parameters for a resource request.
 /// @see resource_loader
 /// @see resource_request_result
-export struct resource_request_params {
-    /// @brief The locator of the requested resource.
-    url locator;
-
-    /// @brief Maximum time (timeout) for the resource request.
-    std::optional<std::chrono::seconds> max_time{};
-
-    /// @brief The priority of the resource request.
-    std::optional<msgbus::message_priority> priority{};
-};
+export using msgbus::resource_request_params;
 //------------------------------------------------------------------------------
 class pending_resource_info
   : public std::enable_shared_from_this<pending_resource_info> {

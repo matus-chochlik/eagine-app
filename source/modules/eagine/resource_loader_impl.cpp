@@ -964,12 +964,7 @@ auto resource_loader::request_plain_text(
       params.locator.has_path_suffix(".txt") or
       params.locator.has_scheme("txt") or params.locator.has_scheme("text")) {
         if(const auto src_request{_new_resource(
-             fetch_resource_chunks(
-               params.locator,
-               1024,
-               params.priority.value_or(msgbus::message_priority::normal),
-               params.max_time.value_or(std::chrono::seconds{15})),
-             resource_kind::plain_text)}) {
+             fetch_resource_chunks(params, 1024), resource_kind::plain_text)}) {
             auto new_request{_new_resource(params, resource_kind::plain_text)};
             src_request.set_continuation(new_request);
             return new_request;
@@ -992,11 +987,7 @@ auto resource_loader::request_string_list(
       params.locator.has_path_suffix(".txt") or
       params.locator.has_path_suffix(".text")) {
         if(const auto src_request{_new_resource(
-             fetch_resource_chunks(
-               params.locator,
-               1024,
-               params.priority.value_or(msgbus::message_priority::normal),
-               params.max_time.value_or(std::chrono::seconds{15})),
+             fetch_resource_chunks(params, 1024),
              resource_kind::string_list)}) {
             auto new_request{_new_resource(params, resource_kind::string_list)};
             src_request.set_continuation(new_request);
@@ -1112,11 +1103,7 @@ auto resource_loader::request_value_tree(
   const resource_request_params& params) noexcept -> resource_request_result {
     if(_is_json_resource(params.locator)) {
         if(const auto src_request{_new_resource(
-             fetch_resource_chunks(
-               params.locator,
-               16 * 1024,
-               params.priority.value_or(msgbus::message_priority::normal),
-               params.max_time.value_or(std::chrono::seconds{15})),
+             fetch_resource_chunks(params, 16 * 1024),
              resource_kind::json_text)}) {
             auto new_request{_new_resource(params, resource_kind::value_tree)};
             src_request.set_continuation(new_request);
@@ -1139,12 +1126,8 @@ auto resource_loader::request_json_traversal(
   const resource_request_params& params,
   shared_holder<valtree::value_tree_visitor> visitor,
   span_size_t max_token_size) noexcept -> resource_request_result {
-    if(const auto src_request{_new_resource(
-         stream_resource(
-           params.locator,
-           params.priority.value_or(msgbus::message_priority::normal),
-           params.max_time.value_or(std::chrono::hours{1})),
-         resource_kind::json_text)}) {
+    if(const auto src_request{
+         _new_resource(stream_resource(params), resource_kind::json_text)}) {
 
         auto new_request{
           _new_resource(params, resource_kind::value_tree_traversal)};
@@ -1306,11 +1289,7 @@ auto resource_loader::request_glsl_source(
       params.locator.has_path_suffix(".glsl") or
       params.locator.has_scheme("glsl")) {
         if(const auto src_request{_new_resource(
-             fetch_resource_chunks(
-               params.locator,
-               16 * 1024,
-               params.priority.value_or(msgbus::message_priority::normal),
-               params.max_time.value_or(std::chrono::seconds{15})),
+             fetch_resource_chunks(params, 16 * 1024),
              resource_kind::glsl_text)}) {
             auto new_request{_new_resource(params, resource_kind::glsl_source)};
             src_request.set_continuation(new_request);
