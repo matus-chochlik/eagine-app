@@ -285,20 +285,13 @@ vec4 clearAirColor(SampleInfo s, float cloudShadow) {
 vec4 vaporColor(SampleInfo s, vec4 airColor, float cloudShadow) {
 	float pshadow = mix(s.planetShadow, s.accumulated.planetShadow, 0.25);
 	float cshadow = mix(0.8, 1.0, s.accumulated.vaporShadow) * cloudShadow;
-	float ltmult = mix(0.9, 1.3, s.accumulated.vaporShadow);
 
 	vec4 vaporColor = vec4(1.0, 1.0, 1.0, 0.95) * pshadow * cshadow;
-	vec4 lightColor = sunlightColor(s) *
-		mix(0.1 * s.planetShadow, ltmult, cloudShadow);
+	vec4 lightColor = sunlightColor(s) * mix(0.1 * s.planetShadow, 4.0, cloudShadow);
 
 	return mix(
 		mix(vaporColor, airColor, s.accumulated.planetShadow * 0.5),
-		mixColor012n(
-			mix(vaporColor, lightColor, 0.2),
-			mix(vaporColor, lightColor, 0.4),
-			mix(vaporColor, lightColor, 0.6),
-			mix(vaporColor, lightColor, 0.8),
-			s.atmLightDistRatio * 0.7, 0.5),
+		mix(vaporColor, lightColor, s.accumulated.vaporShadow),
 		pshadow * cshadow);
 }
 //------------------------------------------------------------------------------
@@ -519,7 +512,7 @@ float cloudShadowIn(SampleInfo sample, CloudLayerInfo layer) {
 			if(altitude >= layer.bottomAlt) {
 				float density = thickCloudDensity(location, sample, layer, sar);
 				density = mix(density, 0.0, st * il);
-				shadow = max(shadow - density * mix(0.0, 3.0, shadow), 0.0);
+				shadow = max(shadow - density * shadow, 0.0);
 			}
 			st -= sl;
 		}

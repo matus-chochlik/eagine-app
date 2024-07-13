@@ -42,13 +42,13 @@ static auto _progress_label(const url& locator) noexcept {
 pending_resource_info::pending_resource_info(
   resource_loader& loader,
   identifier_t req_id,
-  url loc,
+  const resource_request_params& params,
   resource_kind k) noexcept
   : _parent{loader}
   , _request_id{req_id}
-  , _locator{std::move(loc)}
-  , _preparation{_activity(_parent), _progress_label(_locator), 1000}
-  , _streaming{_activity(_parent), _progress_label(_locator), 1000}
+  , _params{params}
+  , _preparation{_activity(_parent), _progress_label(_params.locator), 1000}
+  , _streaming{_activity(_parent), _progress_label(_params.locator), 1000}
   , _kind{k} {}
 //------------------------------------------------------------------------------
 void pending_resource_info::_preparation_progressed(float progress) noexcept {
@@ -79,9 +79,9 @@ void pending_resource_info::mark_loaded() noexcept {
         pgbs->loaded = true;
         _finish_gl_buffer(*pgbs);
     } else if(_kind == resource_kind::camera_parameters) {
-        _parent.resource_loaded(_request_id, _kind, _locator);
+        _parent.resource_loaded(_request_id, _kind, _params.locator);
     } else if(_kind == resource_kind::input_setup) {
-        _parent.resource_loaded(_request_id, _kind, _locator);
+        _parent.resource_loaded(_request_id, _kind, _params.locator);
     }
     _streaming.finish();
 }
@@ -246,9 +246,9 @@ auto pending_resource_info::update() noexcept -> work_done {
               }
               _parent.shape_generator_loaded(
                 {.request_id = _request_id,
-                 .locator = _locator,
+                 .locator = _params.locator,
                  .generator = shape_gen});
-              _parent.resource_loaded(_request_id, _kind, _locator);
+              _parent.resource_loaded(_request_id, _kind, _params.locator);
               something_done();
           }
           _state = std::monostate{};
@@ -279,7 +279,7 @@ void pending_resource_info::_handle_plain_text(
     _parent.log_debug("loaded plain-text data")
       .arg("requestId", _request_id)
       .arg("offset", offset)
-      .arg("locator", _locator.str());
+      .arg("locator", _params.locator.str());
 
     std::string text;
     span_size_t total_size{0};
@@ -294,10 +294,10 @@ void pending_resource_info::_handle_plain_text(
     if(is(resource_kind::plain_text)) {
         _parent.plain_text_loaded(
           {.request_id = _request_id,
-           .locator = _locator,
+           .locator = _params.locator,
            .text = std::move(text)});
     }
-    _parent.resource_loaded(_request_id, _kind, _locator);
+    _parent.resource_loaded(_request_id, _kind, _params.locator);
     mark_finished();
 }
 //------------------------------------------------------------------------------
@@ -309,7 +309,7 @@ void pending_resource_info::_handle_json_text(
     _parent.log_debug("loaded JSON data")
       .arg("requestId", _request_id)
       .arg("offset", offset)
-      .arg("locator", _locator.str());
+      .arg("locator", _params.locator.str());
 
     if(is(resource_kind::value_tree)) {
         auto tree{valtree::from_json_data(data, _parent.main_context().log())};
@@ -317,8 +317,8 @@ void pending_resource_info::_handle_json_text(
             cont->_handle_value_tree(*this, tree);
         }
         _parent.value_tree_loaded(
-          {.request_id = _request_id, .locator = _locator, .tree = tree});
-        _parent.resource_loaded(_request_id, _kind, _locator);
+          {.request_id = _request_id, .locator = _params.locator, .tree = tree});
+        _parent.resource_loaded(_request_id, _kind, _params.locator);
     } else if(is(resource_kind::value_tree_traversal)) {
         if(const auto pvts{get_if<_pending_valtree_traversal_state>(_state)}) {
             bool should_continue{true};
@@ -344,7 +344,7 @@ void pending_resource_info::_handle_yaml_text(
   const memory::span<const memory::const_block>) noexcept {
     _parent.log_debug("loaded YAML text")
       .arg("requestId", _request_id)
-      .arg("locator", _locator.str());
+      .arg("locator", _params.locator.str());
 
     if(is(resource_kind::value_tree)) {
         // TODO
@@ -357,7 +357,7 @@ void pending_resource_info::_handle_value_tree(
   const valtree::compound& tree) noexcept {
     _parent.log_info("loaded value tree")
       .arg("requestId", _request_id)
-      .arg("locator", _locator.str());
+      .arg("locator", _params.locator.str());
 
     if(is(resource_kind::shape_generator)) {
         if(auto gen{shapes::from_value_tree(tree, _parent)}) {
@@ -374,12 +374,12 @@ void pending_resource_info::_handle_string_list(
     _parent.log_debug("loaded string list data")
       .arg("requestId", _request_id)
       .arg("offset", offset)
-      .arg("locator", _locator.str());
+      .arg("locator", _params.locator.str());
 
     std::vector<std::string> strings;
     resource_loader_signals::string_list_load_info load_info{
       .request_id = _request_id,
-      .locator = _locator,
+      .locator = _params.locator,
       .strings = strings,
       .values = strings};
 
@@ -425,7 +425,7 @@ void pending_resource_info::_handle_string_list(
 
     if(is(resource_kind::string_list)) {
         _parent.string_list_loaded(load_info);
-        _parent.resource_loaded(_request_id, _kind, _locator);
+        _parent.resource_loaded(_request_id, _kind, _params.locator);
     }
     mark_finished();
 }
@@ -436,12 +436,14 @@ void pending_resource_info::_handle_url_list(
     _parent.log_info("loaded URL list")
       .arg("requestId", _request_id)
       .arg("size", urls.size())
-      .arg("locator", _locator.str());
+      .arg("locator", _params.locator.str());
 
     if(is(resource_kind::url_list)) {
         _parent.url_list_loaded(
-          {.request_id = _request_id, .locator = _locator, .values = urls});
-        _parent.resource_loaded(_request_id, _kind, _locator);
+          {.request_id = _request_id,
+           .locator = _params.locator,
+           .values = urls});
+        _parent.resource_loaded(_request_id, _kind, _params.locator);
     }
     mark_finished();
 }
@@ -452,12 +454,14 @@ void pending_resource_info::handle_float_vector(
     _parent.log_info("loaded float values")
       .arg("requestId", _request_id)
       .arg("size", values.size())
-      .arg("locator", _locator.str());
+      .arg("locator", _params.locator.str());
 
     if(is(resource_kind::float_vector)) {
         _parent.float_vector_loaded(
-          {.request_id = _request_id, .locator = _locator, .values = values});
-        _parent.resource_loaded(_request_id, _kind, _locator);
+          {.request_id = _request_id,
+           .locator = _params.locator,
+           .values = values});
+        _parent.resource_loaded(_request_id, _kind, _params.locator);
     }
     mark_finished();
 }
@@ -468,7 +472,7 @@ void pending_resource_info::handle_vec3_vector(
     _parent.log_info("loaded vec3 values")
       .arg("requestId", _request_id)
       .arg("size", values.size())
-      .arg("locator", _locator.str());
+      .arg("locator", _params.locator.str());
 
     if(const auto cont{continuation()}) {
         cont->_handle_vec3_vector(*this, values);
@@ -476,8 +480,10 @@ void pending_resource_info::handle_vec3_vector(
 
     if(is(resource_kind::vec3_vector)) {
         _parent.vec3_vector_loaded(
-          {.request_id = _request_id, .locator = _locator, .values = values});
-        _parent.resource_loaded(_request_id, _kind, _locator);
+          {.request_id = _request_id,
+           .locator = _params.locator,
+           .values = values});
+        _parent.resource_loaded(_request_id, _kind, _params.locator);
     }
     mark_finished();
 }
@@ -490,8 +496,10 @@ void pending_resource_info::_handle_vec3_vector(
         math::cubic_bezier_loop<math::vector<float, 3, true>, float> curve{
           view(values)};
         _parent.smooth_vec3_curve_loaded(
-          {.request_id = _request_id, .locator = _locator, .curve = curve});
-        _parent.resource_loaded(_request_id, _kind, _locator);
+          {.request_id = _request_id,
+           .locator = _params.locator,
+           .curve = curve});
+        _parent.resource_loaded(_request_id, _kind, _params.locator);
     }
     mark_finished();
 }
@@ -502,7 +510,7 @@ void pending_resource_info::handle_mat4_vector(
     _parent.log_info("loaded mat4 values")
       .arg("requestId", _request_id)
       .arg("size", values.size())
-      .arg("locator", _locator.str());
+      .arg("locator", _params.locator.str());
 
     if(const auto cont{continuation()}) {
         cont->_handle_mat4_vector(*this, values);
@@ -510,8 +518,10 @@ void pending_resource_info::handle_mat4_vector(
 
     if(is(resource_kind::mat4_vector)) {
         _parent.mat4_vector_loaded(
-          {.request_id = _request_id, .locator = _locator, .values = values});
-        _parent.resource_loaded(_request_id, _kind, _locator);
+          {.request_id = _request_id,
+           .locator = _params.locator,
+           .values = values});
+        _parent.resource_loaded(_request_id, _kind, _params.locator);
     }
     mark_finished();
 }
@@ -525,10 +535,10 @@ void pending_resource_info::_handle_mat4_vector(
 auto pending_resource_info::_apply_shape_modifiers(
   shared_holder<shapes::generator> gen) noexcept
   -> shared_holder<shapes::generator> {
-    if(_locator.query().arg_has_value("to_patches", true)) {
+    if(_params.locator.query().arg_has_value("to_patches", true)) {
         _parent.log_info("applying 'to_patches' shape modifier")
           .arg("requestId", _request_id)
-          .arg("locator", _locator.str());
+          .arg("locator", _params.locator.str());
         gen = shapes::to_patches(std::move(gen));
     }
     return gen;
@@ -539,7 +549,7 @@ void pending_resource_info::_handle_shape_generator(
   const shared_holder<shapes::generator>& gen) noexcept {
     _parent.log_info("loaded shape geometry generator")
       .arg("requestId", _request_id)
-      .arg("locator", _locator.str());
+      .arg("locator", _params.locator.str());
 
     if(is(resource_kind::gl_shape)) {
         if(const auto pgss{get_if<_pending_gl_shape_state>(_state)}) {
@@ -549,8 +559,10 @@ void pending_resource_info::_handle_shape_generator(
                 cont->_handle_gl_shape(*this, shape);
             }
             _parent.gl_shape_loaded(
-              {.request_id = _request_id, .locator = _locator, .shape = shape});
-            _parent.resource_loaded(_request_id, _kind, _locator);
+              {.request_id = _request_id,
+               .locator = _params.locator,
+               .shape = shape});
+            _parent.resource_loaded(_request_id, _kind, _params.locator);
         }
     }
     mark_finished();
@@ -561,7 +573,7 @@ void pending_resource_info::_handle_gl_shape(
   const oglplus::shape_generator& shape) noexcept {
     _parent.log_info("loaded shape generator wrapper")
       .arg("requestId", _request_id)
-      .arg("locator", _locator.str());
+      .arg("locator", _params.locator.str());
 
     if(is(resource_kind::gl_geometry_and_bindings)) {
         if(const auto pggbs{
@@ -580,10 +592,10 @@ void pending_resource_info::_handle_gl_shape(
               temp};
             _parent.gl_geometry_and_bindings_loaded(
               {.request_id = _request_id,
-               .locator = _locator,
+               .locator = _params.locator,
                .shape = shape,
                .ref = geom});
-            _parent.resource_loaded(_request_id, _kind, _locator);
+            _parent.resource_loaded(_request_id, _kind, _params.locator);
             if(geom) {
                 geom.clean_up(pggbs->gl_context.gl_api());
             }
@@ -599,7 +611,7 @@ void pending_resource_info::_handle_glsl_strings(
   const memory::span<const memory::const_block> data) noexcept {
     _parent.log_info("loaded GLSL string collection")
       .arg("requestId", _request_id)
-      .arg("locator", _locator.str());
+      .arg("locator", _params.locator.str());
 
     if(is(resource_kind::glsl_source)) {
         std::vector<const oglplus::gl_types::char_type*> gl_strs;
@@ -620,8 +632,10 @@ void pending_resource_info::_handle_glsl_strings(
             cont->_handle_glsl_source(*this, glsl_src);
         }
         _parent.glsl_source_loaded(
-          {.request_id = _request_id, .locator = _locator, .source = glsl_src});
-        _parent.resource_loaded(_request_id, _kind, _locator);
+          {.request_id = _request_id,
+           .locator = _params.locator,
+           .source = glsl_src});
+        _parent.resource_loaded(_request_id, _kind, _params.locator);
     }
     mark_finished();
 }
@@ -631,7 +645,7 @@ void pending_resource_info::_handle_glsl_source(
   const oglplus::glsl_source_ref& glsl_src) noexcept {
     _parent.log_info("loaded GLSL source object")
       .arg("requestId", _request_id)
-      .arg("locator", _locator.str());
+      .arg("locator", _params.locator.str());
 
     if(is(resource_kind::gl_shader)) {
         if(const auto pgss{get_if<_pending_gl_shader_state>(_state)}) {
@@ -645,19 +659,19 @@ void pending_resource_info::_handle_glsl_source(
                 _parent
                   .log_info("loaded and compiled GL shader object (${locator})")
                   .arg("requestId", _request_id)
-                  .arg("locator", "string", _locator.str());
+                  .arg("locator", "string", _params.locator.str());
 
                 if(const auto cont{continuation()}) {
                     cont->_handle_gl_shader(*this, shdr);
                 }
                 _parent.gl_shader_loaded(
                   {.request_id = _request_id,
-                   .locator = _locator,
+                   .locator = _params.locator,
                    .gl_context = pgss->gl_context,
                    .type = pgss->shdr_type,
                    .name = shdr,
                    .ref = shdr});
-                _parent.resource_loaded(_request_id, _kind, _locator);
+                _parent.resource_loaded(_request_id, _kind, _params.locator);
             } else {
                 const std::string message{
                   glapi.shader_info_log(shdr).value_or("N/A")};
@@ -665,7 +679,7 @@ void pending_resource_info::_handle_glsl_source(
                   .log_error("failed to load and link GL shader (${locator})")
                   .arg("requestId", _request_id)
                   .arg("message", "string", message)
-                  .arg("locator", "string", _locator.str());
+                  .arg("locator", "string", _params.locator.str());
             }
 
             if(shdr) {
@@ -687,25 +701,25 @@ auto pending_resource_info::_finish_gl_program(
             _parent.log_info("loaded and linked GL program object (${locator})")
               .arg("requestId", _request_id)
               .arg("bindgCount", pgps.input_bindings.count())
-              .arg("locator", "string", _locator.str());
+              .arg("locator", "string", _params.locator.str());
 
             gl.use_program(pgps.prog);
 
             _parent.gl_program_loaded(
               {.request_id = _request_id,
-               .locator = _locator,
+               .locator = _params.locator,
                .gl_context = pgps.gl_context,
                .name = pgps.prog,
                .ref = pgps.prog,
                .input_bindings = pgps.input_bindings});
-            _parent.resource_loaded(_request_id, _kind, _locator);
+            _parent.resource_loaded(_request_id, _kind, _params.locator);
         } else {
             const std::string message{
               glapi.program_info_log(pgps.prog).value_or("N/A")};
             _parent.log_error("failed to load and link GL program (${locator})")
               .arg("requestId", _request_id)
               .arg("message", "string", message)
-              .arg("locator", "string", _locator.str());
+              .arg("locator", "string", _params.locator.str());
         }
 
         if(pgps.prog) {
@@ -767,22 +781,22 @@ auto pending_resource_info::_finish_gl_texture(
               .arg("requestId", _request_id)
               .arg("levels", pgts.levels)
               .arg("images", pgts.level_images_done.count())
-              .arg("locator", _locator.str());
+              .arg("locator", _params.locator.str());
 
             // TODO: call this earlier (before all images are loaded)?
             _parent.gl_texture_loaded(
               {.request_id = _request_id,
-               .locator = _locator,
+               .locator = _params.locator,
                .gl_context = pgts.gl_context,
                .target = pgts.tex_target,
                .name = pgts.tex,
                .ref = pgts.tex});
             _parent.gl_texture_images_loaded(
               {.request_id = _request_id,
-               .locator = _locator,
+               .locator = _params.locator,
                .gl_context = pgts.gl_context,
                .name = pgts.tex});
-            _parent.resource_loaded(_request_id, _kind, _locator);
+            _parent.resource_loaded(_request_id, _kind, _params.locator);
 
             if(pgts.tex) {
                 gl.delete_textures(std::move(pgts.tex));
@@ -825,7 +839,7 @@ void pending_resource_info::handle_source_finished(
 //------------------------------------------------------------------------------
 void pending_resource_info::handle_source_cancelled(
   const pending_resource_info&) noexcept {
-    _parent.resource_cancelled(_request_id, _kind, _locator);
+    _parent.resource_cancelled(_request_id, _kind, _params.locator);
     mark_finished();
 }
 //------------------------------------------------------------------------------
@@ -905,7 +919,7 @@ void resource_loader::_handle_stream_cancelled(
             if(const auto continuation{rinfo.continuation()}) {
                 continuation->handle_source_cancelled(rinfo);
             }
-            resource_cancelled(request_id, rinfo._kind, rinfo._locator);
+            resource_cancelled(request_id, rinfo._kind, rinfo._params.locator);
             rinfo.mark_finished();
         }
     }
@@ -913,23 +927,23 @@ void resource_loader::_handle_stream_cancelled(
 //------------------------------------------------------------------------------
 auto resource_loader::_cancelled_resource(
   const identifier_t request_id,
-  url& locator,
+  const resource_request_params& params,
   const resource_kind kind) noexcept -> resource_request_result {
     auto result{_cancelled.emplace(
       request_id,
       std::make_shared<pending_resource_info>(
-        *this, request_id, std::move(locator), kind))};
+        *this, request_id, params, kind))};
     return {*std::get<0>(result), true};
 }
 //------------------------------------------------------------------------------
 auto resource_loader::_new_resource(
   const identifier_t request_id,
-  url locator,
+  const resource_request_params& params,
   resource_kind kind) noexcept -> resource_request_result {
     const auto result{_pending.emplace(
       request_id,
       std::make_shared<pending_resource_info>(
-        *this, request_id, std::move(locator), kind))};
+        *this, request_id, params, kind))};
     return {*std::get<0>(result), false};
 }
 //------------------------------------------------------------------------------
@@ -944,403 +958,377 @@ void resource_loader::_init() noexcept {
       this, blob_stream_cancelled);
 }
 //------------------------------------------------------------------------------
-auto resource_loader::request_plain_text(url locator) noexcept
-  -> resource_request_result {
+auto resource_loader::request_plain_text(
+  const resource_request_params& params) noexcept -> resource_request_result {
     if(
-      locator.has_path_suffix(".txt") or locator.has_scheme("txt") or
-      locator.has_scheme("text")) {
+      params.locator.has_path_suffix(".txt") or
+      params.locator.has_scheme("txt") or params.locator.has_scheme("text")) {
         if(const auto src_request{_new_resource(
-             fetch_resource_chunks(
-               locator,
-               1024,
-               msgbus::message_priority::normal,
-               std::chrono::seconds{15}),
-             resource_kind::plain_text)}) {
-            auto new_request{
-              _new_resource(std::move(locator), resource_kind::plain_text)};
+             fetch_resource_chunks(params, 1024), resource_kind::plain_text)}) {
+            auto new_request{_new_resource(params, resource_kind::plain_text)};
             src_request.set_continuation(new_request);
             return new_request;
         }
     }
-    return _cancelled_resource(locator, resource_kind::plain_text);
+    return _cancelled_resource(params, resource_kind::plain_text);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request(
   std::type_identity<std::string>,
-  url locator,
+  const resource_request_params& params,
   loaded_resource_context&) noexcept -> resource_request_result {
-    return request_plain_text(std::move(locator));
+    return request_plain_text(params);
 }
 //------------------------------------------------------------------------------
-auto resource_loader::request_string_list(url locator) noexcept
-  -> resource_request_result {
+auto resource_loader::request_string_list(
+  const resource_request_params& params) noexcept -> resource_request_result {
     if(
-      locator.has_scheme("txt") or locator.has_scheme("text") or
-      locator.has_path_suffix(".txt") or locator.has_path_suffix(".text")) {
+      params.locator.has_scheme("txt") or params.locator.has_scheme("text") or
+      params.locator.has_path_suffix(".txt") or
+      params.locator.has_path_suffix(".text")) {
         if(const auto src_request{_new_resource(
-             fetch_resource_chunks(
-               locator,
-               1024,
-               msgbus::message_priority::normal,
-               std::chrono::seconds{15}),
+             fetch_resource_chunks(params, 1024),
              resource_kind::string_list)}) {
-            auto new_request{
-              _new_resource(std::move(locator), resource_kind::string_list)};
+            auto new_request{_new_resource(params, resource_kind::string_list)};
             src_request.set_continuation(new_request);
             return new_request;
         }
     }
-    return _cancelled_resource(locator, resource_kind::string_list);
+    return _cancelled_resource(params, resource_kind::string_list);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request(
   std::type_identity<std::vector<std::string>>,
-  url locator,
+  const resource_request_params& params,
   loaded_resource_context&) noexcept -> resource_request_result {
-    return request_string_list(std::move(locator));
+    return request_string_list(params);
 }
 //------------------------------------------------------------------------------
-auto resource_loader::request_url_list(url locator) noexcept
-  -> resource_request_result {
-    if(const auto src_request{request_string_list(locator)}) {
-        auto new_request{
-          _new_resource(std::move(locator), resource_kind::url_list)};
+auto resource_loader::request_url_list(
+  const resource_request_params& params) noexcept -> resource_request_result {
+    if(const auto src_request{request_string_list(params)}) {
+        auto new_request{_new_resource(params, resource_kind::url_list)};
         src_request.set_continuation(new_request);
 
         return new_request;
     }
-    return _cancelled_resource(locator, resource_kind::url_list);
+    return _cancelled_resource(params, resource_kind::url_list);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request(
   std::type_identity<std::vector<url>>,
-  url locator,
+  const resource_request_params& params,
   loaded_resource_context&) noexcept -> resource_request_result {
-    return request_url_list(std::move(locator));
+    return request_url_list(params);
 }
 //------------------------------------------------------------------------------
-auto resource_loader::request_float_vector(url locator) noexcept
-  -> resource_request_result {
-    auto new_request{_new_resource(locator, resource_kind::float_vector)};
+auto resource_loader::request_float_vector(
+  const resource_request_params& params) noexcept -> resource_request_result {
+    auto new_request{_new_resource(params, resource_kind::float_vector)};
 
     if(const auto src_request{request_value_tree_traversal(
-         locator, make_valtree_float_vector_builder(new_request))}) {
+         params, make_valtree_float_vector_builder(new_request))}) {
         return new_request;
     }
     new_request.info().mark_finished();
-    return _cancelled_resource(locator, resource_kind::float_vector);
+    return _cancelled_resource(params, resource_kind::float_vector);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request(
   std::type_identity<std::vector<float>>,
-  url locator,
+  const resource_request_params& params,
   loaded_resource_context&) noexcept -> resource_request_result {
-    return request_float_vector(std::move(locator));
+    return request_float_vector(params);
 }
 //------------------------------------------------------------------------------
-auto resource_loader::request_vec3_vector(url locator) noexcept
-  -> resource_request_result {
-    auto new_request{_new_resource(locator, resource_kind::vec3_vector)};
+auto resource_loader::request_vec3_vector(
+  const resource_request_params& params) noexcept -> resource_request_result {
+    auto new_request{_new_resource(params, resource_kind::vec3_vector)};
 
     if(const auto src_request{request_value_tree_traversal(
-         locator, make_valtree_vec3_vector_builder(new_request))}) {
+         params, make_valtree_vec3_vector_builder(new_request))}) {
         return new_request;
     }
     new_request.info().mark_finished();
-    return _cancelled_resource(locator, resource_kind::vec3_vector);
+    return _cancelled_resource(params, resource_kind::vec3_vector);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request(
   std::type_identity<std::vector<math::vector<float, 3, true>>>,
-  url locator,
+  const resource_request_params& params,
   loaded_resource_context&) noexcept -> resource_request_result {
-    return request_vec3_vector(std::move(locator));
+    return request_vec3_vector(params);
 }
 //------------------------------------------------------------------------------
-auto resource_loader::request_smooth_vec3_curve(url locator) noexcept
-  -> resource_request_result {
-    if(const auto src_request{request_vec3_vector(locator)}) {
+auto resource_loader::request_smooth_vec3_curve(
+  const resource_request_params& params) noexcept -> resource_request_result {
+    if(const auto src_request{request_vec3_vector(params)}) {
         auto new_request{
-          _new_resource(std::move(locator), resource_kind::smooth_vec3_curve)};
+          _new_resource(params, resource_kind::smooth_vec3_curve)};
         src_request.set_continuation(new_request);
 
         return new_request;
     }
-    return _cancelled_resource(locator, resource_kind::smooth_vec3_curve);
+    return _cancelled_resource(params, resource_kind::smooth_vec3_curve);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request(
   std::type_identity<
     math::cubic_bezier_curves<math::vector<float, 3, true>, float>>,
-  url locator,
+  const resource_request_params& params,
   loaded_resource_context&) noexcept -> resource_request_result {
-    return request_smooth_vec3_curve(std::move(locator));
+    return request_smooth_vec3_curve(params);
 }
 //------------------------------------------------------------------------------
-auto resource_loader::request_mat4_vector(url locator) noexcept
-  -> resource_request_result {
-    auto new_request{_new_resource(locator, resource_kind::mat4_vector)};
+auto resource_loader::request_mat4_vector(
+  const resource_request_params& params) noexcept -> resource_request_result {
+    auto new_request{_new_resource(params, resource_kind::mat4_vector)};
 
     if(const auto src_request{request_value_tree_traversal(
-         locator, make_valtree_mat4_vector_builder(new_request))}) {
+         params, make_valtree_mat4_vector_builder(new_request))}) {
         return new_request;
     }
     new_request.info().mark_finished();
-    return _cancelled_resource(locator, resource_kind::mat4_vector);
+    return _cancelled_resource(params, resource_kind::mat4_vector);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request(
   std::type_identity<std::vector<math::matrix<float, 4, 4, true, true>>>,
-  url locator,
+  const resource_request_params& params,
   loaded_resource_context&) noexcept -> resource_request_result {
-    return request_mat4_vector(std::move(locator));
+    return request_mat4_vector(params);
 }
 //------------------------------------------------------------------------------
-auto resource_loader::request_value_tree(url locator) noexcept
-  -> resource_request_result {
-    if(_is_json_resource(locator)) {
+auto resource_loader::request_value_tree(
+  const resource_request_params& params) noexcept -> resource_request_result {
+    if(_is_json_resource(params.locator)) {
         if(const auto src_request{_new_resource(
-             fetch_resource_chunks(
-               locator,
-               16 * 1024,
-               msgbus::message_priority::normal,
-               std::chrono::seconds{15}),
+             fetch_resource_chunks(params, 16 * 1024),
              resource_kind::json_text)}) {
-            auto new_request{
-              _new_resource(std::move(locator), resource_kind::value_tree)};
+            auto new_request{_new_resource(params, resource_kind::value_tree)};
             src_request.set_continuation(new_request);
 
             return new_request;
         }
     }
 
-    return _cancelled_resource(locator, resource_kind::value_tree);
+    return _cancelled_resource(params, resource_kind::value_tree);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request(
   std::type_identity<valtree::compound>,
-  url locator,
+  const resource_request_params& params,
   loaded_resource_context&) noexcept -> resource_request_result {
-    return request_value_tree(std::move(locator));
+    return request_value_tree(params);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request_json_traversal(
-  url locator,
+  const resource_request_params& params,
   shared_holder<valtree::value_tree_visitor> visitor,
   span_size_t max_token_size) noexcept -> resource_request_result {
-    if(const auto src_request{_new_resource(
-         stream_resource(
-           locator, msgbus::message_priority::normal, std::chrono::hours{1}),
-         resource_kind::json_text)}) {
+    if(const auto src_request{
+         _new_resource(stream_resource(params), resource_kind::json_text)}) {
 
-        auto new_request{_new_resource(
-          std::move(locator), resource_kind::value_tree_traversal)};
+        auto new_request{
+          _new_resource(params, resource_kind::value_tree_traversal)};
         new_request.info().add_valtree_stream_input(traverse_json_stream(
           std::move(visitor), max_token_size, buffers(), main_context().log()));
         src_request.set_continuation(new_request);
         return new_request;
     }
-    return _cancelled_resource(locator);
+    return _cancelled_resource(params);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request_json_traversal(
-  url locator,
+  const resource_request_params& params,
   shared_holder<valtree::object_builder> builder) noexcept
   -> resource_request_result {
     const auto max_token_size{builder->max_token_size()};
     return request_json_traversal(
-      std::move(locator),
+      params,
       valtree::make_building_value_tree_visitor(std::move(builder)),
       max_token_size);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request_value_tree_traversal(
-  url locator,
+  const resource_request_params& params,
   shared_holder<valtree::value_tree_visitor> visitor,
   span_size_t max_token_size) noexcept -> resource_request_result {
-    if(_is_json_resource(locator)) {
+    if(_is_json_resource(params.locator)) {
         return request_json_traversal(
-          std::move(locator), std::move(visitor), max_token_size);
+          params, std::move(visitor), max_token_size);
     }
-    return _cancelled_resource(locator);
+    return _cancelled_resource(params);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request_value_tree_traversal(
-  url locator,
+  const resource_request_params& params,
   shared_holder<valtree::object_builder> builder) noexcept
   -> resource_request_result {
     const auto max_token_size{builder->max_token_size()};
     return request_value_tree_traversal(
-      std::move(locator),
+      params,
       valtree::make_building_value_tree_visitor(std::move(builder)),
       max_token_size);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request_camera_parameters(
-  url locator,
+  const resource_request_params& params,
   orbiting_camera& camera) noexcept -> resource_request_result {
-    auto new_request{_new_resource(locator, resource_kind::camera_parameters)};
+    auto new_request{_new_resource(params, resource_kind::camera_parameters)};
 
     if(const auto src_request{request_value_tree_traversal(
-         locator,
+         params,
          make_valtree_camera_parameters_builder(new_request, camera))}) {
         return new_request;
     }
     new_request.info().mark_finished();
-    return _cancelled_resource(locator, resource_kind::camera_parameters);
+    return _cancelled_resource(params, resource_kind::camera_parameters);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request_input_setup(
-  url locator,
+  const resource_request_params& params,
   execution_context& ctx) noexcept -> resource_request_result {
-    auto new_request{_new_resource(locator, resource_kind::input_setup)};
+    auto new_request{_new_resource(params, resource_kind::input_setup)};
 
     if(const auto src_request{request_value_tree_traversal(
-         locator, make_valtree_input_setup_builder(new_request, ctx))}) {
+         params, make_valtree_input_setup_builder(new_request, ctx))}) {
         return new_request;
     }
     new_request.info().mark_finished();
-    return _cancelled_resource(locator, resource_kind::input_setup);
+    return _cancelled_resource(params, resource_kind::input_setup);
 }
 //------------------------------------------------------------------------------
-auto resource_loader::request_shape_generator(url locator) noexcept
-  -> resource_request_result {
-    if(auto gen{shapes::shape_from(locator, main_context())}) {
-        auto new_request{
-          _new_resource(std::move(locator), resource_kind::shape_generator)};
+auto resource_loader::request_shape_generator(
+  const resource_request_params& params) noexcept -> resource_request_result {
+    if(auto gen{shapes::shape_from(params.locator, main_context())}) {
+        auto new_request{_new_resource(params, resource_kind::shape_generator)};
         new_request.info().add_shape_generator(std::move(gen));
         return new_request;
-    } else if(const auto src_request{request_value_tree(locator)}) {
-        auto new_request{
-          _new_resource(std::move(locator), resource_kind::shape_generator)};
+    } else if(const auto src_request{request_value_tree(params)}) {
+        auto new_request{_new_resource(params, resource_kind::shape_generator)};
         src_request.set_continuation(new_request);
         return new_request;
     }
-    return _cancelled_resource(locator, resource_kind::shape_generator);
+    return _cancelled_resource(params, resource_kind::shape_generator);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request(
   std::type_identity<shared_holder<shapes::generator>>,
-  url locator,
+  const resource_request_params& params,
   loaded_resource_context&) noexcept -> resource_request_result {
-    return request_shape_generator(std::move(locator));
+    return request_shape_generator(params);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request_gl_shape(
-  url locator,
+  const resource_request_params& params,
   const oglplus::shared_gl_api_context& gl_context) noexcept
   -> resource_request_result {
-    if(const auto src_request{request_shape_generator(locator)}) {
-        auto new_request{
-          _new_resource(std::move(locator), resource_kind::gl_shape)};
+    if(const auto src_request{request_shape_generator(params)}) {
+        auto new_request{_new_resource(params, resource_kind::gl_shape)};
         new_request.info().add_gl_shape_context(gl_context);
         src_request.set_continuation(new_request);
         return new_request;
     }
-    return _cancelled_resource(locator, resource_kind::gl_shape);
+    return _cancelled_resource(params, resource_kind::gl_shape);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request(
   std::type_identity<oglplus::shape_generator>,
-  url locator,
+  const resource_request_params& params,
   loaded_resource_context& ctx) noexcept -> resource_request_result {
-    return request_gl_shape(std::move(locator), ctx.gl_context());
+    return request_gl_shape(params, ctx.gl_context());
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request_gl_geometry_and_bindings(
-  url locator,
+  const resource_request_params& params,
   const oglplus::shared_gl_api_context& gl_context,
   oglplus::vertex_attrib_bindings bindings,
   span_size_t draw_var_idx) noexcept -> resource_request_result {
-    if(const auto src_request{request_gl_shape(locator, gl_context)}) {
-        auto new_request{_new_resource(
-          std::move(locator), resource_kind::gl_geometry_and_bindings)};
+    if(const auto src_request{request_gl_shape(params, gl_context)}) {
+        auto new_request{
+          _new_resource(params, resource_kind::gl_geometry_and_bindings)};
         new_request.info().add_gl_geometry_and_bindings_context(
           gl_context, std::move(bindings), draw_var_idx);
         src_request.set_continuation(new_request);
         return new_request;
     }
-    return _cancelled_resource(
-      locator, resource_kind::gl_geometry_and_bindings);
+    return _cancelled_resource(params, resource_kind::gl_geometry_and_bindings);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request(
   std::type_identity<gl_geometry_and_bindings>,
-  url locator,
+  const resource_request_params& params,
   loaded_resource_context& ctx,
   oglplus::vertex_attrib_bindings bindings,
   span_size_t draw_var_idx) noexcept -> resource_request_result {
     return request_gl_geometry_and_bindings(
-      std::move(locator), ctx.gl_context(), bindings, draw_var_idx);
+      params, ctx.gl_context(), bindings, draw_var_idx);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request_gl_geometry_and_bindings(
-  url locator,
+  const resource_request_params& params,
   const oglplus::shared_gl_api_context& gl_context,
   span_size_t draw_var_idx) noexcept -> resource_request_result {
     return request_gl_geometry_and_bindings(
-      std::move(locator), gl_context, {}, draw_var_idx);
+      params, gl_context, {}, draw_var_idx);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request(
   std::type_identity<gl_geometry_and_bindings>,
-  url locator,
+  const resource_request_params& params,
   loaded_resource_context& ctx,
   span_size_t draw_var_idx) noexcept -> resource_request_result {
     return request_gl_geometry_and_bindings(
-      std::move(locator), ctx.gl_context(), draw_var_idx);
+      params, ctx.gl_context(), draw_var_idx);
 }
 //------------------------------------------------------------------------------
-auto resource_loader::request_glsl_source(url locator) noexcept
-  -> resource_request_result {
-    if(locator.has_path_suffix(".glsl") or locator.has_scheme("glsl")) {
+auto resource_loader::request_glsl_source(
+  const resource_request_params& params) noexcept -> resource_request_result {
+    if(
+      params.locator.has_path_suffix(".glsl") or
+      params.locator.has_scheme("glsl")) {
         if(const auto src_request{_new_resource(
-             fetch_resource_chunks(
-               locator,
-               16 * 1024,
-               msgbus::message_priority::normal,
-               std::chrono::seconds{15}),
+             fetch_resource_chunks(params, 16 * 1024),
              resource_kind::glsl_text)}) {
-            auto new_request{
-              _new_resource(std::move(locator), resource_kind::glsl_source)};
+            auto new_request{_new_resource(params, resource_kind::glsl_source)};
             src_request.set_continuation(new_request);
             return new_request;
         }
     }
 
-    return _cancelled_resource(locator);
+    return _cancelled_resource(params);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request_gl_shader(
-  url locator,
+  const resource_request_params& params,
   const oglplus::shared_gl_api_context& gl_context,
   oglplus::shader_type shdr_type) noexcept -> resource_request_result {
-    if(const auto src_request{request_glsl_source(locator)}) {
-        auto new_request{
-          _new_resource(std::move(locator), resource_kind::gl_shader)};
+    if(const auto src_request{request_glsl_source(params)}) {
+        auto new_request{_new_resource(params, resource_kind::gl_shader)};
         new_request.info().add_gl_shader_context(gl_context, shdr_type);
         src_request.set_continuation(new_request);
         return new_request;
     }
-    return _cancelled_resource(locator, resource_kind::gl_shader);
+    return _cancelled_resource(params, resource_kind::gl_shader);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request(
   std::type_identity<oglplus::owned_shader_name>,
-  url locator,
+  const resource_request_params& params,
   loaded_resource_context& ctx,
   oglplus::shader_type shdr_type) noexcept -> resource_request_result {
-    return request_gl_shader(std::move(locator), ctx.gl_context(), shdr_type);
+    return request_gl_shader(params, ctx.gl_context(), shdr_type);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request_gl_shader(
-  url locator,
+  const resource_request_params& params,
   const oglplus::shared_gl_api_context& gl_context) noexcept
   -> resource_request_result {
-    if(const auto type_arg{locator.argument("shader_type")}) {
+    if(const auto type_arg{params.locator.argument("shader_type")}) {
         const auto& GL = gl_context.gl_api().constants();
-        const auto delegate{[&GL, &locator, &gl_context, this](auto shdr_type) {
-            return request_gl_shader(std::move(locator), gl_context, shdr_type);
+        const auto delegate{[&GL, &params, &gl_context, this](auto shdr_type) {
+            return request_gl_shader(params, gl_context, shdr_type);
         }};
         if(type_arg == string_view{"fragment"}) {
             return delegate(GL.fragment_shader);
@@ -1361,121 +1349,121 @@ auto resource_loader::request_gl_shader(
             return delegate(GL.tess_control_shader);
         }
     }
-    return _cancelled_resource(locator, resource_kind::gl_shader);
+    return _cancelled_resource(params, resource_kind::gl_shader);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request(
   std::type_identity<oglplus::owned_shader_name>,
-  url locator,
+  const resource_request_params& params,
   loaded_resource_context& ctx) noexcept -> resource_request_result {
-    return request_gl_shader(std::move(locator), ctx.gl_context());
+    return request_gl_shader(params, ctx.gl_context());
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request_gl_program(
-  url locator,
+  const resource_request_params& params,
   const oglplus::shared_gl_api_context& gl_context) noexcept
   -> resource_request_result {
-    auto new_request{_new_resource(locator, resource_kind::gl_program)};
+    auto new_request{_new_resource(params, resource_kind::gl_program)};
     new_request.info().add_gl_program_context(gl_context);
 
     if(const auto src_request{request_value_tree_traversal(
-         locator, make_valtree_gl_program_builder(new_request, gl_context))}) {
+         params, make_valtree_gl_program_builder(new_request, gl_context))}) {
         return new_request;
     }
     new_request.info().mark_finished();
-    return _cancelled_resource(locator, resource_kind::gl_program);
+    return _cancelled_resource(params, resource_kind::gl_program);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request(
   std::type_identity<oglplus::owned_program_name>,
-  url locator,
+  const resource_request_params& params,
   loaded_resource_context& ctx) noexcept -> resource_request_result {
-    return request_gl_program(std::move(locator), ctx.gl_context());
+    return request_gl_program(params, ctx.gl_context());
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request_gl_texture_image(
-  url locator,
+  const resource_request_params& params,
   oglplus::texture_target target,
-  const resource_gl_texture_image_params& params) noexcept
+  const resource_gl_texture_image_params& img_params) noexcept
   -> resource_request_result {
-    auto new_request{_new_resource(locator, resource_kind::gl_texture_image)};
+    auto new_request{_new_resource(params, resource_kind::gl_texture_image)};
 
     if(const auto src_request{request_json_traversal(
-         locator,
-         make_valtree_gl_texture_image_loader(new_request, target, params))}) {
+         params,
+         make_valtree_gl_texture_image_loader(
+           new_request, target, img_params))}) {
         return new_request;
     }
     new_request.info().mark_finished();
-    return _cancelled_resource(locator, resource_kind::gl_texture_image);
+    return _cancelled_resource(params, resource_kind::gl_texture_image);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request_gl_texture_update(
-  url locator,
+  const resource_request_params& params,
   const oglplus::shared_gl_api_context& gl_context,
   oglplus::texture_target target,
   oglplus::texture_unit unit,
   oglplus::texture_name tex) noexcept -> resource_request_result {
-    if(const auto src_request{request_gl_texture_image(locator, target)}) {
+    if(const auto src_request{request_gl_texture_image(params, target)}) {
         auto new_request{
-          _new_resource(locator, resource_kind::gl_texture_update)};
+          _new_resource(params, resource_kind::gl_texture_update)};
         new_request.info().add_gl_texture_update_context(
           gl_context, target, unit, tex);
         src_request.set_continuation(new_request);
         return new_request;
     }
-    return _cancelled_resource(locator, resource_kind::gl_texture_update);
+    return _cancelled_resource(params, resource_kind::gl_texture_update);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request_gl_texture(
-  url locator,
+  const resource_request_params& params,
   const oglplus::shared_gl_api_context& gl_context,
   oglplus::texture_target target,
   oglplus::texture_unit unit) noexcept -> resource_request_result {
-    auto new_request{_new_resource(locator, resource_kind::gl_texture)};
+    auto new_request{_new_resource(params, resource_kind::gl_texture)};
     new_request.info().add_gl_texture_context(gl_context, target, unit);
 
     if(const auto src_request{request_json_traversal(
-         locator,
+         params,
          make_valtree_gl_texture_builder(
            new_request, gl_context, target, unit))}) {
         return new_request;
     }
     new_request.info().mark_finished();
-    return _cancelled_resource(locator, resource_kind::gl_texture);
+    return _cancelled_resource(params, resource_kind::gl_texture);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request(
   std::type_identity<oglplus::owned_texture_name>,
-  url locator,
+  const resource_request_params& params,
   loaded_resource_context& ctx,
   oglplus::texture_target tex_target,
   oglplus::texture_unit tex_unit) noexcept -> resource_request_result {
-    return request_gl_texture(
-      std::move(locator), ctx.gl_context(), tex_target, tex_unit);
+    return request_gl_texture(params, ctx.gl_context(), tex_target, tex_unit);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request_gl_buffer(
-  url locator,
+  const resource_request_params& params,
   const oglplus::shared_gl_api_context& gl_context,
   oglplus::buffer_target target) noexcept -> resource_request_result {
-    auto new_request{_new_resource(locator, resource_kind::gl_buffer)};
+    auto new_request{_new_resource(params, resource_kind::gl_buffer)};
     new_request.info().add_gl_buffer_context(gl_context, target);
 
     if(const auto src_request{request_value_tree_traversal(
-         locator,
+         params,
          make_valtree_gl_buffer_builder(new_request, gl_context, target))}) {
         return new_request;
     }
     new_request.info().mark_finished();
-    return _cancelled_resource(locator, resource_kind::gl_buffer);
+    return _cancelled_resource(params, resource_kind::gl_buffer);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request(
   std::type_identity<oglplus::owned_buffer_name>,
-  url locator,
+  const resource_request_params& params,
   loaded_resource_context& ctx,
   oglplus::buffer_target buf_target) noexcept -> resource_request_result {
-    return request_gl_buffer(std::move(locator), ctx.gl_context(), buf_target);
+    return request_gl_buffer(params, ctx.gl_context(), buf_target);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::update_and_process_all() noexcept -> work_done {
@@ -1484,7 +1472,7 @@ auto resource_loader::update_and_process_all() noexcept -> work_done {
     for(auto& [request_id, pinfo] : _cancelled) {
         assert(pinfo);
         auto& info{*pinfo};
-        resource_cancelled(request_id, info._kind, info._locator);
+        resource_cancelled(request_id, info._kind, info._params.locator);
         something_done();
     }
     _cancelled.clear();

@@ -220,6 +220,7 @@ eagine_add_module(
 		eagine.core.value_tree
 		eagine.shapes
 		eagine.oglplus
+		eagine.msgbus
 )
 
 eagine_add_module(

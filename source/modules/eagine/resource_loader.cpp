@@ -114,21 +114,26 @@ export enum class resource_kind {
     finished
 };
 //------------------------------------------------------------------------------
+/// @brief Structure containing parameters for a resource request.
+/// @see resource_loader
+/// @see resource_request_result
+export using msgbus::resource_request_params;
+//------------------------------------------------------------------------------
 class pending_resource_info
   : public std::enable_shared_from_this<pending_resource_info> {
 public:
     pending_resource_info(
       resource_loader& loader,
       identifier_t req_id,
-      url loc,
+      const resource_request_params&,
       resource_kind k) noexcept;
 
     auto request_id() const noexcept -> identifier_t {
         return _request_id;
     }
 
-    auto locator() const noexcept -> const url& {
-        return _locator;
+    auto parameters() const noexcept -> const resource_request_params& {
+        return _params;
     }
 
     auto is(resource_kind kind) const noexcept -> bool {
@@ -416,7 +421,7 @@ private:
 
     resource_loader& _parent;
     const identifier_t _request_id;
-    const url _locator;
+    const resource_request_params _params;
     span_size_t _received_size{0};
     activity_progress _preparation;
     activity_progress _streaming;
@@ -604,6 +609,7 @@ auto make_valtree_gl_buffer_builder(
 //------------------------------------------------------------------------------
 /// @brief Result of resource request operation.
 /// @see resource_kind
+/// @see resource_request_params
 export class resource_request_result {
 public:
     resource_request_result(
@@ -638,9 +644,14 @@ public:
         return info().request_id();
     }
 
+    /// @brief Returns the request parameters.
+    auto parameters() const noexcept -> const resource_request_params& {
+        return info()._params;
+    }
+
     /// @brief Returns the locator of the requested resource.
     auto locator() const noexcept -> const url& {
-        return info()._locator;
+        return parameters().locator;
     }
 
     /// @brief Sets the reference to the continuation request of this request.
@@ -1321,196 +1332,207 @@ public:
     auto update_and_process_all() noexcept -> work_done final;
 
     /// @brief Requests plain text resource.
-    auto request_plain_text(url locator) noexcept -> resource_request_result;
+    auto request_plain_text(const resource_request_params&) noexcept
+      -> resource_request_result;
 
     auto request(
       std::type_identity<std::string>,
-      url locator,
+      const resource_request_params&,
       loaded_resource_context&) noexcept -> resource_request_result;
 
     /// @brief Requests string-list resource.
-    auto request_string_list(url locator) noexcept -> resource_request_result;
+    auto request_string_list(const resource_request_params&) noexcept
+      -> resource_request_result;
 
     auto request(
       std::type_identity<std::vector<std::string>>,
-      url locator,
+      const resource_request_params&,
       loaded_resource_context&) noexcept -> resource_request_result;
 
     /// @brief Requests URL-list resource.
-    auto request_url_list(url locator) noexcept -> resource_request_result;
+    auto request_url_list(const resource_request_params&) noexcept
+      -> resource_request_result;
 
     auto request(
       std::type_identity<std::vector<url>>,
-      url locator,
+      const resource_request_params&,
       loaded_resource_context&) noexcept -> resource_request_result;
 
     /// @brief Requests a float vector resource.
-    auto request_float_vector(url locator) noexcept -> resource_request_result;
+    auto request_float_vector(const resource_request_params&) noexcept
+      -> resource_request_result;
 
     auto request(
       std::type_identity<std::vector<float>>,
-      url locator,
+      const resource_request_params&,
       loaded_resource_context&) noexcept -> resource_request_result;
 
     /// @brief Requests a float vector resource.
-    auto request_vec3_vector(url locator) noexcept -> resource_request_result;
+    auto request_vec3_vector(const resource_request_params&) noexcept
+      -> resource_request_result;
 
     auto request(
       std::type_identity<std::vector<math::vector<float, 3, true>>>,
-      url locator,
+      const resource_request_params&,
       loaded_resource_context&) noexcept -> resource_request_result;
 
     /// @brief Requests a smooth vec3 curve resource.
-    auto request_smooth_vec3_curve(url locator) noexcept
+    auto request_smooth_vec3_curve(const resource_request_params&) noexcept
       -> resource_request_result;
 
     auto request(
       std::type_identity<
         math::cubic_bezier_curves<math::vector<float, 3, true>, float>>,
-      url locator,
+      const resource_request_params&,
       loaded_resource_context&) noexcept -> resource_request_result;
 
     /// @brief Requests a 4x4 matrix resource.
-    auto request_mat4_vector(url locator) noexcept -> resource_request_result;
+    auto request_mat4_vector(const resource_request_params&) noexcept
+      -> resource_request_result;
 
     auto request(
       std::type_identity<std::vector<math::matrix<float, 4, 4, true, true>>>,
-      url locator,
+      const resource_request_params&,
       loaded_resource_context&) noexcept -> resource_request_result;
 
     /// @brief Requests a value tree object resource.
-    auto request_value_tree(url locator) noexcept -> resource_request_result;
+    auto request_value_tree(const resource_request_params&) noexcept
+      -> resource_request_result;
 
     auto request(
       std::type_identity<valtree::compound>,
-      url locator,
+      const resource_request_params&,
       loaded_resource_context&) noexcept -> resource_request_result;
 
     auto request_json_traversal(
-      url locator,
+      const resource_request_params&,
       shared_holder<valtree::value_tree_visitor>,
       span_size_t max_token_size) noexcept -> resource_request_result;
 
     auto request_json_traversal(
-      url locator,
+      const resource_request_params&,
       shared_holder<valtree::object_builder>) noexcept
       -> resource_request_result;
 
     /// @brief Requests a value tree object traversal by the specified visitor.
     auto request_value_tree_traversal(
-      url locator,
+      const resource_request_params&,
       shared_holder<valtree::value_tree_visitor>,
       span_size_t max_token_size) noexcept -> resource_request_result;
 
     /// @brief Requests a value tree object traversal by the specified builder.
     auto request_value_tree_traversal(
-      url locator,
+      const resource_request_params&,
       shared_holder<valtree::object_builder>) noexcept
       -> resource_request_result;
 
     /// @brief Requests camera parameters.
-    auto request_camera_parameters(url locator, orbiting_camera&) noexcept
-      -> resource_request_result;
+    auto request_camera_parameters(
+      const resource_request_params&,
+      orbiting_camera&) noexcept -> resource_request_result;
 
     /// @brief Requests user input setup.
-    auto request_input_setup(url locator, execution_context&) noexcept
-      -> resource_request_result;
+    auto request_input_setup(
+      const resource_request_params&,
+      execution_context&) noexcept -> resource_request_result;
 
     /// @brief Requests a shape geometry generator / loader object.
-    auto request_shape_generator(url locator) noexcept
+    auto request_shape_generator(const resource_request_params&) noexcept
       -> resource_request_result;
 
     auto request(
       std::type_identity<shared_holder<shapes::generator>>,
-      url locator,
+      const resource_request_params&,
       loaded_resource_context&) noexcept -> resource_request_result;
 
     /// @brief Requests a oglplus shape generator wrapper object.
     auto request_gl_shape(
-      url locator,
+      const resource_request_params&,
       const oglplus::shared_gl_api_context&) noexcept
       -> resource_request_result;
 
     auto request(
       std::type_identity<oglplus::shape_generator>,
-      url locator,
+      const resource_request_params&,
       loaded_resource_context& ctx) noexcept -> resource_request_result;
 
     /// @brief Requests a shape geometry and attrib bindings object.
     auto request_gl_geometry_and_bindings(
-      url locator,
+      const resource_request_params&,
       const oglplus::shared_gl_api_context&,
       oglplus::vertex_attrib_bindings,
       span_size_t draw_var_idx = 0) noexcept -> resource_request_result;
 
     auto request(
       std::type_identity<gl_geometry_and_bindings>,
-      url locator,
+      const resource_request_params&,
       loaded_resource_context& ctx,
       oglplus::vertex_attrib_bindings bindings,
       span_size_t draw_var_idx = 0) noexcept -> resource_request_result;
 
     /// @brief Requests a shape geometry and attrib bindings object.
     auto request_gl_geometry_and_bindings(
-      url locator,
+      const resource_request_params&,
       const oglplus::shared_gl_api_context&,
       span_size_t draw_var_idx = 0) noexcept -> resource_request_result;
 
     auto request(
       std::type_identity<gl_geometry_and_bindings>,
-      url locator,
+      const resource_request_params&,
       loaded_resource_context& ctx,
       span_size_t draw_var_idx = 0) noexcept -> resource_request_result;
 
     /// @brief Requests GLSL shader source code resource.
-    auto request_glsl_source(url locator) noexcept -> resource_request_result;
+    auto request_glsl_source(const resource_request_params&) noexcept
+      -> resource_request_result;
 
     /// @brief Requests a compiled GL shader object of a specified type.
     auto request_gl_shader(
-      url locator,
+      const resource_request_params&,
       const oglplus::shared_gl_api_context&,
       oglplus::shader_type) noexcept -> resource_request_result;
 
     auto request(
       std::type_identity<oglplus::owned_shader_name>,
-      url locator,
+      const resource_request_params&,
       loaded_resource_context& ctx,
       oglplus::shader_type shdr_type) noexcept -> resource_request_result;
 
     /// @brief Requests a compiled GL shader object of a type specified in URL.
     auto request_gl_shader(
-      url locator,
+      const resource_request_params&,
       const oglplus::shared_gl_api_context&) noexcept
       -> resource_request_result;
 
     auto request(
       std::type_identity<oglplus::owned_shader_name>,
-      url locator,
+      const resource_request_params&,
       loaded_resource_context& ctx) noexcept -> resource_request_result;
 
     /// @brief Requests a linked GL program object.
     auto request_gl_program(
-      url locator,
+      const resource_request_params&,
       const oglplus::shared_gl_api_context&) noexcept
       -> resource_request_result;
 
     auto request(
       std::type_identity<oglplus::owned_program_name>,
-      url locator,
+      const resource_request_params&,
       loaded_resource_context& ctx) noexcept -> resource_request_result;
 
     auto request_gl_texture_image(
-      url locator,
+      const resource_request_params&,
       oglplus::texture_target,
       const resource_gl_texture_image_params&) noexcept
       -> resource_request_result;
 
-    auto request_gl_texture_image(url locator, oglplus::texture_target) noexcept
-      -> resource_request_result;
+    auto request_gl_texture_image(
+      const resource_request_params&,
+      oglplus::texture_target) noexcept -> resource_request_result;
 
     /// @brief Requests image data update for a GL texture.
     auto request_gl_texture_update(
-      url locator,
+      const resource_request_params&,
       const oglplus::shared_gl_api_context&,
       oglplus::texture_target,
       oglplus::texture_unit,
@@ -1518,51 +1540,51 @@ public:
 
     /// @brief Requests a set-up GL texture object.
     auto request_gl_texture(
-      url locator,
+      const resource_request_params&,
       const oglplus::shared_gl_api_context&,
       oglplus::texture_target,
       oglplus::texture_unit) noexcept -> resource_request_result;
 
     auto request(
       std::type_identity<oglplus::owned_texture_name>,
-      url locator,
+      const resource_request_params&,
       loaded_resource_context& ctx,
       oglplus::texture_target tex_target,
       oglplus::texture_unit tex_unit) noexcept -> resource_request_result;
 
     /// @brief Requests a set-up GL buffer object.
     auto request_gl_buffer(
-      url locator,
+      const resource_request_params&,
       const oglplus::shared_gl_api_context&,
       oglplus::buffer_target) noexcept -> resource_request_result;
 
     auto request(
       std::type_identity<oglplus::owned_buffer_name>,
-      url locator,
+      const resource_request_params&,
       loaded_resource_context& ctx,
       oglplus::buffer_target buf_target) noexcept -> resource_request_result;
 
     /// @brief Requests a mapped structure
     template <mapped_struct O>
     auto request_mapped_struct(
-      url locator,
+      const resource_request_params& params,
       std::type_identity<O> tid = {}) noexcept -> resource_request_result {
-        auto new_request{_new_resource(locator, resource_kind::mapped_struct)};
+        auto new_request{_new_resource(params, resource_kind::mapped_struct)};
 
         if(const auto src_request{request_value_tree_traversal(
-             locator, make_mapped_struct_builder(new_request, tid))}) {
+             params, make_mapped_struct_builder(new_request, tid))}) {
             return new_request;
         }
         new_request.info().mark_finished();
-        return _cancelled_resource(locator, resource_kind::mapped_struct);
+        return _cancelled_resource(params, resource_kind::mapped_struct);
     }
 
     template <mapped_struct O>
     auto request(
       std::type_identity<O> tid,
-      url locator,
+      const resource_request_params& params,
       loaded_resource_context&) noexcept {
-        return request_mapped_struct(std::move(locator), tid);
+        return request_mapped_struct(params, tid);
     }
 
 private:
@@ -1579,33 +1601,36 @@ private:
 
     auto _cancelled_resource(
       const identifier_t blob_id,
-      url& locator,
+      const resource_request_params&,
       const resource_kind) noexcept -> resource_request_result;
 
-    auto _cancelled_resource(url& locator, const resource_kind kind) noexcept
-      -> resource_request_result {
-        return _cancelled_resource(get_request_id(), locator, kind);
+    auto _cancelled_resource(
+      const resource_request_params& params,
+      const resource_kind kind) noexcept -> resource_request_result {
+        return _cancelled_resource(get_request_id(), params, kind);
     }
 
-    auto _cancelled_resource(url& locator) noexcept -> resource_request_result {
-        return _cancelled_resource(locator, resource_kind::unknown);
+    auto _cancelled_resource(const resource_request_params& params) noexcept
+      -> resource_request_result {
+        return _cancelled_resource(params, resource_kind::unknown);
     }
 
     auto _new_resource(
       const identifier_t blob_id,
-      url locator,
+      const resource_request_params&,
       resource_kind) noexcept -> resource_request_result;
 
     auto _new_resource(
       const std::pair<identifier_t, const url&>& id_and_loc,
       resource_kind kind) noexcept -> resource_request_result {
         return _new_resource(
-          std::get<0>(id_and_loc), std::get<1>(id_and_loc), kind);
+          std::get<0>(id_and_loc), {.locator = std::get<1>(id_and_loc)}, kind);
     }
 
-    auto _new_resource(url locator, resource_kind kind) noexcept
-      -> resource_request_result {
-        return _new_resource(get_request_id(), std::move(locator), kind);
+    auto _new_resource(
+      const resource_request_params& params,
+      resource_kind kind) noexcept -> resource_request_result {
+        return _new_resource(get_request_id(), params, kind);
     }
 
     flat_map<identifier_t, shared_holder<pending_resource_info>> _pending;
@@ -1619,9 +1644,9 @@ void pending_resource_info::handle_mapped_struct(
   T& object) noexcept {
     if(is(resource_kind::mapped_struct)) {
         resource_loader_signals::mapped_struct_load_info info{
-          _request_id, _locator, object};
+          _request_id, _params.locator, object};
         _parent.mapped_struct_loaded(info);
-        _parent.resource_loaded(_request_id, _kind, _locator);
+        _parent.resource_loaded(_request_id, _kind, _params.locator);
     }
     mark_finished();
 }

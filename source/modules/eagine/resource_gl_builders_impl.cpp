@@ -119,7 +119,9 @@ public:
                     if(auto parent{_parent.lock()}) {
                         auto& loader = parent->loader();
                         if(auto src_request{loader.request_gl_shader(
-                             _shdr_locator, _gl_context, _shdr_type)}) {
+                             {.locator = _shdr_locator},
+                             _gl_context,
+                             _shdr_type)}) {
                             src_request.set_continuation(parent);
                             if(not parent->add_gl_program_shader_request(
                                  src_request.request_id())) [[unlikely]] {
@@ -673,9 +675,14 @@ public:
             }
             if(_success) {
                 for(auto& [loc, tgt, para] : _image_requests) {
+                    const auto& rqparam{parent->parameters()};
                     const auto img_request{
                       parent->loader().request_gl_texture_image(
-                        std::move(loc), tgt, para)};
+                        {.locator = std::move(loc),
+                         .max_time = rqparam.max_time,
+                         .priority = rqparam.priority},
+                        tgt,
+                        para)};
                     img_request.set_continuation(parent);
                     parent->add_gl_texture_image_request(
                       img_request.request_id());
@@ -931,7 +938,7 @@ void pending_resource_info::handle_gl_texture_i_param(
   const oglplus::gl_types::int_type value) noexcept {
     _parent.log_info("setting GL texture parameter")
       .arg("requestId", _request_id)
-      .arg("locator", locator().str());
+      .arg("locator", parameters().locator.str());
 
     if(is(resource_kind::gl_texture)) {
         if(const auto pgts{get_if<_pending_gl_texture_state>(_state)}) {
@@ -950,7 +957,7 @@ void pending_resource_info::handle_gl_texture_i_param(
 void pending_resource_info::handle_gl_texture_generate_mipmap() noexcept {
     _parent.log_info("requesting GL texture mipmap generation")
       .arg("requestId", _request_id)
-      .arg("locator", locator().str());
+      .arg("locator", parameters().locator.str());
 
     if(is(resource_kind::gl_texture)) {
         if(const auto pgts{get_if<_pending_gl_texture_state>(_state)}) {
@@ -968,7 +975,7 @@ void pending_resource_info::_clear_gl_texture_image(
       .arg("requestId", _request_id)
       .arg("level", level)
       .arg("dataSize", data.size())
-      .arg("locator", locator().str());
+      .arg("locator", parameters().locator.str());
 
     const auto& gl{pgts.gl_context.gl_api().operations()};
     if(gl.clear_tex_image) {
@@ -999,7 +1006,7 @@ void pending_resource_info::_handle_gl_texture_image(
       .arg("dimensions", tex_params.dimensions)
       .arg("channels", tex_params.channels)
       .arg("dataSize", data.size())
-      .arg("locator", source.locator().str());
+      .arg("locator", source.parameters().locator.str());
 
     auto add_image_data{[&](auto& glapi, auto& pgts, auto& params) {
         if(params.dimensions == 3) {
@@ -1109,10 +1116,10 @@ void pending_resource_info::_handle_gl_texture_image(
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request_gl_texture_image(
-  url locator,
+  const resource_request_params& params,
   oglplus::texture_target target) noexcept -> resource_request_result {
     return request_gl_texture_image(
-      std::move(locator), target, resource_gl_texture_image_params{});
+      params, target, resource_gl_texture_image_params{});
 }
 //------------------------------------------------------------------------------
 // valtree_gl_buffer_builder
@@ -1193,7 +1200,7 @@ auto pending_resource_info::_finish_gl_buffer(
 
         _parent.log_info("loaded and set-up GL buffer object")
           .arg("requestId", _request_id)
-          .arg("locator", _locator.str());
+          .arg("locator", _params.locator.str());
         // TODO
         return true;
     }
@@ -1208,7 +1215,7 @@ void pending_resource_info::_handle_gl_buffer_data(
     _parent.log_info("loaded GL buffer sub-image")
       .arg("requestId", _request_id)
       .arg("dataSize", data.size())
-      .arg("locator", source.locator().str());
+      .arg("locator", source.parameters().locator.str());
     // TODO
 }
 //------------------------------------------------------------------------------

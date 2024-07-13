@@ -18,6 +18,7 @@ import eagine.core.reflection;
 import eagine.core.value_tree;
 import eagine.shapes;
 import eagine.oglplus;
+import eagine.msgbus;
 import :context;
 import :geometry;
 import :resource_loader;
@@ -31,6 +32,11 @@ public:
     loaded_resource_base(url locator) noexcept
       : _locator_str{locator.release_string()} {}
 
+    loaded_resource_base(const resource_request_params& params) noexcept
+      : _locator_str{params.locator.get_string()}
+      , _max_time{params.max_time}
+      , _priority{params.priority} {}
+
     loaded_resource_base(loaded_resource_base&&) = delete;
     loaded_resource_base(const loaded_resource_base&) = delete;
     auto operator=(loaded_resource_base&&) = delete;
@@ -41,8 +47,16 @@ public:
     signal<void(const loaded_resource_base&) noexcept> load_event;
 
     /// @brief Returns this resource's URL.
+    /// @see parameters
     auto locator() const noexcept -> url {
         return {_locator_str};
+    }
+
+    /// @brief Returns the resource request parameters.
+    /// @see locator
+    auto request_parameters() const noexcept -> resource_request_params {
+        return {
+          .locator = locator(), .max_time = _max_time, .priority = _priority};
     }
 
     /// @brief Indicates if this resource is currently loading.
@@ -102,6 +116,8 @@ public:
 protected:
     std::string _locator_str;
     identifier_t _request_id{0};
+    std::optional<std::chrono::seconds> _max_time{};
+    std::optional<msgbus::message_priority> _priority{};
     resource_load_status _status{resource_load_status::loading};
 };
 //------------------------------------------------------------------------------
@@ -191,6 +207,10 @@ public:
     loaded_resource(url locator) noexcept
       : loaded_resource_base{std::move(locator)} {}
 
+    /// @brief Constructor specifying the resource resource parameters.
+    loaded_resource(const resource_request_params& params) noexcept
+      : loaded_resource_base{params} {}
+
     /// @brief Delay-initializes the resource.
     void init(resource_loader& loader) noexcept {
         _connect(loader);
@@ -224,6 +244,30 @@ public:
         init(ctx);
     }
 
+    /// @brief Constructor specifying the parameters and initializing the resource.
+    loaded_resource(
+      const resource_request_params& params,
+      resource_loader& loader)
+      : loaded_resource_base{params} {
+        init(loader);
+    }
+
+    /// @brief Constructor specifying the parameters and initializing the resource.
+    loaded_resource(
+      const resource_request_params& params,
+      loaded_resource_context& ctx)
+      : loaded_resource_base{params} {
+        init(ctx);
+    }
+
+    /// @brief Constructor specifying the parameters and initializing the resource.
+    loaded_resource(
+      const resource_request_params& params,
+      execution_context& ctx)
+      : loaded_resource_base{params} {
+        init(ctx);
+    }
+
     /// @brief Cleans up this resource.
     void clean_up(resource_loader& loader) {
         _disconnect(loader);
@@ -253,7 +297,7 @@ public:
     auto load_if_needed(loaded_resource_context& ctx) -> work_done {
         if(not is_loaded() and not is_loading()) {
             if(const auto request{ctx.loader().request(
-                 std::type_identity<Resource>{}, locator(), ctx)}) {
+                 std::type_identity<Resource>{}, request_parameters(), ctx)}) {
                 _request_id = request.request_id();
             }
         }
@@ -365,6 +409,30 @@ public:
         derived().init(ctx);
     }
 
+    /// @brief Constructor specifying the resource request parameters.
+    loaded_resource_common(
+      const resource_request_params& params,
+      resource_loader& loader) noexcept
+      : loaded_resource_base{params} {
+        derived().init(loader);
+    }
+
+    /// @brief Constructor specifying the resource request parameters.
+    loaded_resource_common(
+      const resource_request_params& params,
+      loaded_resource_context& ctx) noexcept
+      : loaded_resource_base{params} {
+        derived().init(ctx);
+    }
+
+    /// @brief Constructor specifying the resource request parameters.
+    loaded_resource_common(
+      const resource_request_params& params,
+      execution_context& ctx) noexcept
+      : loaded_resource_base{params} {
+        derived().init(ctx);
+    }
+
     /// @brief Delay-initializes the resource.
     void init(resource_loader& loader) noexcept {
         _connect(loader);
@@ -411,7 +479,10 @@ public:
       -> work_done {
         if(not is_loaded() and not is_loading()) {
             if(const auto request{ctx.loader().request(
-                 std::type_identity<Resource>{}, locator(), ctx, params...)}) {
+                 std::type_identity<Resource>{},
+                 request_parameters(),
+                 ctx,
+                 params...)}) {
                 _request_id = request.request_id();
             }
         }
@@ -1004,7 +1075,7 @@ public:
       oglplus::texture_unit tu) -> auto& {
         _locator_str = new_locator.release_string();
         if(const auto request{loader.request_gl_texture_update(
-             locator(), ctx.gl_context(), tgt, tu, *this)}) {
+             request_parameters(), ctx.gl_context(), tgt, tu, *this)}) {
             _request_id = request.request_id();
             _status = resource_load_status::loading;
         }
