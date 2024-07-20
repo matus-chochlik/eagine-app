@@ -10,6 +10,22 @@ function _eagine_app_tiling_viewer()
 
     local only_once_opts=" \
         -h --help \
+        --version \
+        --version-at-least \
+        --min-log-severity \
+        --use-asio-log \
+        --use-asio-nw-log \
+        --use-cerr-log \
+        --use-null-log \
+        --use-syslog \
+        --log-format-json \
+        --log-use-spinlock \
+        --log-use-no-lock \
+        --msgbus-posix-mqueue \
+        --msgbus-asio-local-stream \
+        --msgbus-asio-tcp-ipv4 \
+        --msgbus-asio-udp-ipv4 \
+        --msgbus-paho-mqtt \
         --tiling \
         --transition \
         --tileset \
@@ -65,6 +81,8 @@ function _eagine_app_tiling_viewer()
                         COMPREPLY=($(compgen -W "${opts}" -- "${curr}"));;
                     --msgbus-asio-tcp-ipv4|--msgbus-asio-udp-ipv4)
                         COMPREPLY=( "localhost:34912" );;
+                    --msgbus-paho-mqtt)
+                        COMPREPLY=( "tcp://node${RANDOM:-123}@localhost:1883" );;
                     *);;
                 esac
             done;;
