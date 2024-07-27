@@ -22,6 +22,10 @@ void sky_viewer_resource_intf::signal_loaded() {
     sky_viewer_resource_signals::loaded();
 }
 //------------------------------------------------------------------------------
+void sky_viewer_resource_intf::signal_failed() {
+    sky_viewer_resource_signals::failed();
+}
+//------------------------------------------------------------------------------
 auto sky_viewer_resources_base::_settings_height(
   optional_reference<sky_viewer_resource_intf> impl) noexcept -> float {
     return 45.F +
@@ -93,6 +97,10 @@ void sky_viewer_resources_base::_add_name(std::string name) {
 void sky_viewer_resources_base::_on_loaded() noexcept {
     loaded();
     selected();
+}
+//------------------------------------------------------------------------------
+void sky_viewer_resources_base::_on_failed() noexcept {
+    failed();
 }
 //------------------------------------------------------------------------------
 void sky_viewer_resources_base::_on_selected() noexcept {

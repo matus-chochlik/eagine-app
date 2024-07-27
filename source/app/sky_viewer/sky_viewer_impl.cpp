@@ -22,6 +22,10 @@ auto sky_viewer::_cube_map_load_handler() noexcept {
     return make_callable_ref<&sky_viewer::_on_cube_map_loaded>(this);
 }
 //------------------------------------------------------------------------------
+auto sky_viewer::_cube_map_fail_handler() noexcept {
+    return make_callable_ref<&sky_viewer::_on_cube_map_failed>(this);
+}
+//------------------------------------------------------------------------------
 auto sky_viewer::_select_handler() noexcept {
     return make_callable_ref<&sky_viewer::_on_selected>(this);
 }
@@ -96,6 +100,13 @@ void sky_viewer::_on_cube_map_loaded() noexcept {
     }
 }
 //------------------------------------------------------------------------------
+void sky_viewer::_on_cube_map_failed() noexcept {
+    if(_animation_mode) {
+        _cube_maps.update_default(
+          context(), _video, _make_anim_url(_anim_frame_no));
+    }
+}
+//------------------------------------------------------------------------------
 void sky_viewer::_on_selected() noexcept {
     if(_backgrounds and _cube_maps) {
         _init_camera();
@@ -129,6 +140,7 @@ sky_viewer::sky_viewer(execution_context& ctx, video_context& video)
   , _cube_maps{ctx, video, _make_anim_url()} {
     _backgrounds.selected.connect(_select_handler());
     _cube_maps.loaded.connect(_cube_map_load_handler());
+    _cube_maps.failed.connect(_cube_map_fail_handler());
     _cube_maps.selected.connect(_select_handler());
 
     _init_camera();

@@ -47,7 +47,7 @@ public:
     void clean_up(execution_context&, video_context&) final;
 
 private:
-    void _on_loaded(const gl_texture_resource::load_info&) noexcept;
+    void _on_loaded(const loaded_resource_base&) noexcept;
     oglplus::texture_target _tex_target;
     oglplus::texture_unit _tex_unit{0};
     bool _was_loaded{false};
@@ -62,14 +62,18 @@ sky_viewer_texture_resource::sky_viewer_texture_resource(
   : gl_texture_resource{params, ctx}
   , _tex_target{tex_target}
   , _tex_unit{tex_unit} {
-    gl_texture_resource::loaded.connect(
+    gl_texture_resource::load_event.connect(
       make_callable_ref<&sky_viewer_texture_resource::_on_loaded>(this));
 }
 //------------------------------------------------------------------------------
 void sky_viewer_texture_resource::_on_loaded(
-  const gl_texture_resource::load_info&) noexcept {
-    _was_loaded = gl_texture_resource::is_loaded();
-    signal_loaded();
+  const loaded_resource_base& info) noexcept {
+    _was_loaded = info.is_loaded();
+    if(_was_loaded) {
+        signal_loaded();
+    } else {
+        signal_failed();
+    }
 }
 //------------------------------------------------------------------------------
 auto sky_viewer_texture_resource::is_loaded() noexcept -> bool {

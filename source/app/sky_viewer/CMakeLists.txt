@@ -110,6 +110,8 @@ install(
 	COMPONENT app-sky-viewer
 	DESTINATION /)
 
+eagine_add_package_conffiles(app-sky-viewer etc)
+
 eagine_add_bash_completion(app-sky-viewer "other/eagine-app-sky-viewer.bco")
 
 eagine_add_package_property(

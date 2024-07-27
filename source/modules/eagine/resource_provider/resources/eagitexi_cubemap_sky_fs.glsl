@@ -224,8 +224,8 @@ SampleInfo getSampleSun(
 vec4 sunlightColor(SampleInfo s) {
 	return mixColor012n(
 		vec4(1.5), vec4(1.4),
-		vec4(1.3, 1.3, 0.9, 1.1),
-		vec4(1.3, 0.5, 0.5, 0.9),
+		vec4(1.3, 1.3, 0.9, 1.2),
+		vec4(1.3, 0.5, 0.5, 1.0),
 		s.atmLightDistRatio * 0.7, 0.5);
 }
 //------------------------------------------------------------------------------

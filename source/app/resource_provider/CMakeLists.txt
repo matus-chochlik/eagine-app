@@ -95,6 +95,8 @@ install(
 	COMPONENT app-resource-provider
 	DESTINATION /)
 
+eagine_add_package_conffiles(app-resource-provider etc)
+
 eagine_add_package_property(
 	app-resource-provider
 	GENERATOR DEBIAN

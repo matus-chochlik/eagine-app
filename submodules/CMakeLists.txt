@@ -4,13 +4,13 @@
 #  http://www.boost.org/LICENSE_1_0.txt
 #
 foreach(SUBMODULE
+		core
+		shapes
+		msgbus
+		eglplus
 		oglplus
 		oalplus
-		eglplus
-		guiplus
-		msgbus
-		shapes
-		core)
+		guiplus)
 	if(NOT TARGET eagine.${SUBMODULE})
 		if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/eagine-${SUBMODULE}/CMakeLists.txt")
 			unset(SUBMODULE_INIT_ARG)
@@ -19,8 +19,7 @@ foreach(SUBMODULE
 		endif()
 		execute_process(
 			COMMAND git submodule update ${SUBMODULE_INIT_ARG}
-			WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/eagine-${SUBMODULE}"
-		)
+			WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/eagine-${SUBMODULE}")
 		add_subdirectory(eagine-${SUBMODULE})
 	endif()
 endforeach()

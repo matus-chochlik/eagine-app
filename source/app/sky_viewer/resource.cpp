@@ -21,6 +21,7 @@ namespace eagine::app {
 struct sky_viewer_resource_intf;
 struct sky_viewer_resource_signals {
     signal<void() noexcept> loaded;
+    signal<void() noexcept> failed;
     signal<void() noexcept> selected;
 };
 //------------------------------------------------------------------------------
@@ -43,6 +44,7 @@ struct sky_viewer_resource_intf
 
 protected:
     void signal_loaded();
+    void signal_failed();
 };
 //------------------------------------------------------------------------------
 template <typename Intf>
@@ -107,6 +109,7 @@ protected:
 class sky_viewer_resources_base {
 public:
     signal<void() noexcept> loaded;
+    signal<void() noexcept> failed;
     signal<void() noexcept> selected;
 
     void update() noexcept;
@@ -123,6 +126,9 @@ protected:
 
     auto _load_handler() noexcept {
         return make_callable_ref<&sky_viewer_resources_base::_on_loaded>(this);
+    }
+    auto _fail_handler() noexcept {
+        return make_callable_ref<&sky_viewer_resources_base::_on_failed>(this);
     }
     auto _select_handler() noexcept {
         return make_callable_ref<&sky_viewer_resources_base::_on_selected>(
@@ -146,6 +152,7 @@ protected:
 
 private:
     void _on_loaded() noexcept;
+    void _on_failed() noexcept;
     void _on_selected() noexcept;
 
     std::size_t _next_index{0U};
@@ -202,6 +209,7 @@ public:
           video,
           std::forward<Args>(args)...));
         _loaded.back().signals().loaded.connect(this->_load_handler());
+        _loaded.back().signals().failed.connect(this->_fail_handler());
         _loaded.back().signals().selected.connect(this->_select_handler());
         return *this;
     }

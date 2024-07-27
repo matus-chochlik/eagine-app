@@ -40,7 +40,9 @@ private:
     void _init_camera();
 
     void _on_cube_map_loaded() noexcept;
+    void _on_cube_map_failed() noexcept;
     auto _cube_map_load_handler() noexcept;
+    auto _cube_map_fail_handler() noexcept;
     void _on_selected() noexcept;
     auto _select_handler() noexcept;
     void _update_camera() noexcept;
