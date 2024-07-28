@@ -1,4 +1,9 @@
-eagine-app-resource-provider (0.127.0) unstable; urgency=medium
+eagine-core-logging (0.129.0) unstable; urgency=medium
+
+  * Added description of logger arguments to manuals.
+
+ -- Matúš Chochlík <matus.chochlik@proton.me>  Sun, 28 Jul 2024 06:00:00 +0200
+eeagine-app-resource-provider (0.127.0) unstable; urgency=medium
 
   * Additions to bash-completion scripts.
 
