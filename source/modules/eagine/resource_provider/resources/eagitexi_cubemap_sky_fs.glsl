@@ -463,11 +463,12 @@ float thickCloudDensity(
 	float cc008 = cloudCutout(s0080000);
 	float cc004 = cloudCutout(s0040000);
 	float densi = sqrt(4.0 * cc256 * cc064 * cc032 * cc016 * cc008 * cc004);
+	float dnois = s0080000 * s0040000 * s0020000;
 
 	float mask0 = (1.0 - sqrt(max(densi - mix(0.0, 0.011, s0160000),0.0)));
 	mask0 *= 0.37;
 	float mask1 = (1.0 - sqrt(max(densi - mix(0.0, 0.004, s0080000),0.0)));
-	mask1 *= mix(1.0, 2.5, s0080000 * s0040000 * s0020000);
+	mask1 *= mix(1.0, 2.5, dnois);
 
 	densi -= pow(s0020000, 3.0) * mask0;
 	densi -= pow(s0010000, 3.0) * mask0;
@@ -482,7 +483,7 @@ float thickCloudDensity(
 
 	densi = clamp(densi, 0.0, 3.0);
 
-	return densi * sampleAtmRatio * 24.0;
+	return densi * sampleAtmRatio * mix(27.0, 11.0, dnois);
 }
 //------------------------------------------------------------------------------
 float thickCloudDensity(vec3 loc, SampleInfo sam, CloudLayerInfo layer) {
