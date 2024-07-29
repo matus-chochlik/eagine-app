@@ -483,7 +483,7 @@ float thickCloudDensity(
 
 	densi = clamp(densi, 0.0, 3.0);
 
-	return densi * sampleAtmRatio * mix(27.0, 11.0, dnois);
+	return densi * sampleAtmRatio * mix(29.0, 3.0, dnois);
 }
 //------------------------------------------------------------------------------
 float thickCloudDensity(vec3 loc, SampleInfo sam, CloudLayerInfo layer) {
