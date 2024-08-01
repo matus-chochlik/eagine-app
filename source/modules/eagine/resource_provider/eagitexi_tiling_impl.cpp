@@ -120,7 +120,7 @@ struct eagitexi_tiling_provider final
     auto has_resource(const url& locator) noexcept -> bool final;
 
     auto get_resource_io(const url& locator)
-      -> unique_holder<msgbus::source_blob_io> final;
+      -> shared_holder<msgbus::source_blob_io> final;
 
     auto get_blob_timeout(const span_size_t) noexcept
       -> std::chrono::seconds final {
@@ -151,7 +151,7 @@ auto eagitexi_tiling_provider::has_resource(const url& locator) noexcept
 }
 //------------------------------------------------------------------------------
 auto eagitexi_tiling_provider::get_resource_io(const url& locator)
-  -> unique_holder<msgbus::source_blob_io> {
+  -> shared_holder<msgbus::source_blob_io> {
     const auto& q{locator.query()};
     return {hold<eagitexi_tiling_io>, as_parent(), shared, q.arg_url("source")};
 }
@@ -540,7 +540,7 @@ struct eagitexi_tiling_noise_provider final
     auto has_resource(const url& locator) noexcept -> bool final;
 
     auto get_resource_io(const url& locator)
-      -> unique_holder<msgbus::source_blob_io> final;
+      -> shared_holder<msgbus::source_blob_io> final;
 
     auto get_blob_timeout(const span_size_t) noexcept
       -> std::chrono::seconds final {
@@ -574,7 +574,7 @@ auto eagitexi_tiling_noise_provider::has_resource(const url& locator) noexcept
 }
 //------------------------------------------------------------------------------
 auto eagitexi_tiling_noise_provider::get_resource_io(const url& locator)
-  -> unique_holder<msgbus::source_blob_io> {
+  -> shared_holder<msgbus::source_blob_io> {
     const auto& q{locator.query()};
     return {
       hold<eagitexi_tiling_noise_io>,

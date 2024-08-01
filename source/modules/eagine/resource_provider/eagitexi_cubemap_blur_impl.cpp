@@ -249,7 +249,7 @@ public:
     auto has_resource(const url& locator) noexcept -> bool final;
 
     auto get_resource_io(const url& locator)
-      -> unique_holder<msgbus::source_blob_io> final;
+      -> shared_holder<msgbus::source_blob_io> final;
 
     auto get_blob_timeout(const span_size_t size) noexcept
       -> std::chrono::seconds final;
@@ -281,7 +281,7 @@ auto eagitexi_cubemap_blur_provider::has_resource(const url& locator) noexcept
 }
 //------------------------------------------------------------------------------
 auto eagitexi_cubemap_blur_provider::get_resource_io(const url& locator)
-  -> unique_holder<msgbus::source_blob_io> {
+  -> shared_holder<msgbus::source_blob_io> {
     if(has_resource(locator)) {
         const auto& q{locator.query()};
         const auto size{q.arg_value_as<int>("size").value_or(1024)};
@@ -322,6 +322,201 @@ void eagitexi_cubemap_blur_provider::for_each_locator(
 auto provider_eagitexi_cubemap_blur(const provider_parameters& params)
   -> unique_holder<resource_provider_interface> {
     return {hold<eagitexi_cubemap_blur_provider>, params};
+}
+//------------------------------------------------------------------------------
+// level blur texture I/O
+//------------------------------------------------------------------------------
+class eagitex_cubemap_levels_blur_io
+  : public std::enable_shared_from_this<eagitex_cubemap_levels_blur_io>
+  , public main_ctx_object
+  , public msgbus::source_blob_io
+  , public valtree::object_builder_impl<eagitex_cubemap_levels_blur_io> {
+
+public:
+    eagitex_cubemap_levels_blur_io(
+      main_ctx_parent parent,
+      shared_provider_objects&,
+      url locator) noexcept;
+
+    auto prepare() noexcept -> msgbus::blob_preparation_result final;
+
+    auto total_size() noexcept -> span_size_t final;
+
+    auto fetch_fragment(const span_size_t offs, memory::block dst) noexcept
+      -> span_size_t final;
+
+public:
+    auto max_token_size() noexcept -> span_size_t final {
+        return 256;
+    }
+
+    template <std::integral T>
+    void do_add(
+      const basic_string_path& path,
+      const span<const T> data) noexcept;
+
+    template <typename T>
+    void do_add(const basic_string_path&, const span<const T>) noexcept {}
+
+    void unparsed_data(span<const memory::const_block> data) noexcept final;
+
+    auto finish() noexcept -> bool final;
+
+    void failed() noexcept final;
+
+private:
+    auto _content() const noexcept -> string_view;
+    auto _make_content() const noexcept -> std::string;
+    auto _image_locator() const noexcept -> url;
+
+    shared_provider_objects& _shared;
+    const url _locator;
+    std::string _text_content;
+    bool _started_loading{false};
+    bool _finished_loading{false};
+};
+//------------------------------------------------------------------------------
+// eagitex_cubemap_levels_blur_io
+//------------------------------------------------------------------------------
+eagitex_cubemap_levels_blur_io::eagitex_cubemap_levels_blur_io(
+  main_ctx_parent parent,
+  shared_provider_objects& shared,
+  url locator) noexcept
+  : main_ctx_object{"ITxCbLvlBl", parent}
+  , _shared{shared}
+  , _locator{std::move(locator)} {}
+//------------------------------------------------------------------------------
+auto eagitex_cubemap_levels_blur_io::_image_locator() const noexcept -> url {
+    return _locator.query().arg_url("image");
+}
+//------------------------------------------------------------------------------
+auto eagitex_cubemap_levels_blur_io::prepare() noexcept
+  -> msgbus::blob_preparation_result {
+    if(not _started_loading) {
+        shared_holder<valtree::object_builder> self{shared_from_this()};
+        const auto max_token_size{self->max_token_size()};
+        if(_shared.loader.request_json_traversal(
+             {.locator = _image_locator(), .max_time = std::chrono::minutes{5}},
+             valtree::make_building_value_tree_visitor(std::move(self)),
+             max_token_size)) {
+            _started_loading = true;
+            return {msgbus::blob_preparation_status::working};
+        }
+        return {msgbus::blob_preparation_status::failed};
+    }
+    if(not _finished_loading) {
+        return {msgbus::blob_preparation_status::working};
+    }
+    return msgbus::blob_preparation_result::finished();
+}
+//------------------------------------------------------------------------------
+auto eagitex_cubemap_levels_blur_io::_make_content() const noexcept
+  -> std::string {
+    std::stringstream hdr;
+    hdr << R"({"levels":)";
+    hdr << '}';
+    return hdr.str();
+}
+//------------------------------------------------------------------------------
+auto eagitex_cubemap_levels_blur_io::_content() const noexcept -> string_view {
+    if(_text_content.empty()) {
+        return {"{}"};
+    }
+    return {_text_content};
+}
+//------------------------------------------------------------------------------
+auto eagitex_cubemap_levels_blur_io::total_size() noexcept -> span_size_t {
+    return span_size(_content().size());
+}
+//------------------------------------------------------------------------------
+auto eagitex_cubemap_levels_blur_io::fetch_fragment(
+  const span_size_t offs,
+  memory::block dst) noexcept -> span_size_t {
+    return copy(head(skip(view(_content()), offs), dst.size()), dst).size();
+}
+//------------------------------------------------------------------------------
+template <std::integral T>
+void eagitex_cubemap_levels_blur_io::do_add(
+  const basic_string_path& path,
+  const span<const T> data) noexcept {}
+//------------------------------------------------------------------------------
+void eagitex_cubemap_levels_blur_io::unparsed_data(
+  span<const memory::const_block> data) noexcept {}
+//------------------------------------------------------------------------------
+auto eagitex_cubemap_levels_blur_io::finish() noexcept -> bool {
+    _finished_loading = true;
+    return true;
+}
+//------------------------------------------------------------------------------
+void eagitex_cubemap_levels_blur_io::failed() noexcept {
+    _finished_loading = true;
+}
+//------------------------------------------------------------------------------
+// levels blur texture provider
+//------------------------------------------------------------------------------
+class eagitex_cubemap_levels_blur_provider final
+  : public main_ctx_object
+  , public resource_provider_interface {
+public:
+    eagitex_cubemap_levels_blur_provider(const provider_parameters&) noexcept;
+
+    auto has_resource(const url& locator) noexcept -> bool final;
+
+    auto get_resource_io(const url& locator)
+      -> shared_holder<msgbus::source_blob_io> final;
+
+    void for_each_locator(
+      callable_ref<void(string_view) noexcept>) noexcept final;
+
+private:
+    shared_provider_objects& _shared;
+
+    static auto _valid_dim(int d) noexcept -> bool {
+        return (d >= 256) and math::is_positive_power_of_2(d);
+    }
+    static auto _valid_lvls(int l) noexcept -> bool {
+        return (l >= 1) and (l <= 8);
+    }
+};
+//------------------------------------------------------------------------------
+eagitex_cubemap_levels_blur_provider::eagitex_cubemap_levels_blur_provider(
+  const provider_parameters& params) noexcept
+  : main_ctx_object{"PTxCbLvlBl", params.parent}
+  , _shared{params.shared} {}
+//------------------------------------------------------------------------------
+auto eagitex_cubemap_levels_blur_provider::has_resource(
+  const url& locator) noexcept -> bool {
+    if(
+      is_valid_eagitex_resource_url(locator) and
+      locator.has_path("cube_map_levels_blur")) {
+        const auto& q{locator.query()};
+        const bool args_ok =
+          q.arg_url("image") and
+          _valid_lvls(q.arg_value_as<int>("levels").value_or(1));
+        return args_ok;
+    }
+    return false;
+}
+//------------------------------------------------------------------------------
+auto eagitex_cubemap_levels_blur_provider::get_resource_io(const url& locator)
+  -> shared_holder<msgbus::source_blob_io> {
+    if(has_resource(locator)) {
+        return {
+          hold<eagitex_cubemap_levels_blur_io>, as_parent(), _shared, locator};
+    }
+    return {};
+}
+//------------------------------------------------------------------------------
+void eagitex_cubemap_levels_blur_provider::for_each_locator(
+  callable_ref<void(string_view) noexcept> callback) noexcept {
+    callback("eagitex:///cube_map_levels_blur");
+}
+//------------------------------------------------------------------------------
+// provider factory functions
+//------------------------------------------------------------------------------
+auto provider_eagitex_cubemap_levels_blur(const provider_parameters& params)
+  -> unique_holder<resource_provider_interface> {
+    return {hold<eagitex_cubemap_levels_blur_provider>, params};
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app

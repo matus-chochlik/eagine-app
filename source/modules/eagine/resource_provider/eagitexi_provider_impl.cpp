@@ -141,7 +141,7 @@ struct eagitexi_2d_r8_provider final
     auto has_resource(const url& locator) noexcept -> bool final;
 
     auto get_resource_io(const url& locator)
-      -> unique_holder<msgbus::source_blob_io> final;
+      -> shared_holder<msgbus::source_blob_io> final;
 
     void for_each_locator(
       callable_ref<void(string_view) noexcept>) noexcept final;
@@ -169,7 +169,7 @@ auto eagitexi_2d_r8_provider::has_resource(const url& locator) noexcept
 }
 //------------------------------------------------------------------------------
 auto eagitexi_2d_r8_provider::get_resource_io(const url& locator)
-  -> unique_holder<msgbus::source_blob_io> {
+  -> shared_holder<msgbus::source_blob_io> {
     const auto& q{locator.query()};
     return {
       hold<eagitexi_2d_r8_io>,
@@ -330,7 +330,7 @@ struct eagitexi_3d_r8_provider final
     auto has_resource(const url& locator) noexcept -> bool final;
 
     auto get_resource_io(const url& locator)
-      -> unique_holder<msgbus::source_blob_io> final;
+      -> shared_holder<msgbus::source_blob_io> final;
 
     void for_each_locator(
       callable_ref<void(string_view) noexcept>) noexcept final;
@@ -359,7 +359,7 @@ auto eagitexi_3d_r8_provider::has_resource(const url& locator) noexcept
 }
 //------------------------------------------------------------------------------
 auto eagitexi_3d_r8_provider::get_resource_io(const url& locator)
-  -> unique_holder<msgbus::source_blob_io> {
+  -> shared_holder<msgbus::source_blob_io> {
     const auto& q{locator.query()};
     return {
       hold<eagitexi_3d_r8_io>,
@@ -513,7 +513,7 @@ struct eagitexi_2d_rgb8_provider final
     auto has_resource(const url& locator) noexcept -> bool final;
 
     auto get_resource_io(const url& locator)
-      -> unique_holder<msgbus::source_blob_io> final;
+      -> shared_holder<msgbus::source_blob_io> final;
 
     void for_each_locator(
       callable_ref<void(string_view) noexcept>) noexcept final;
@@ -541,7 +541,7 @@ auto eagitexi_2d_rgb8_provider::has_resource(const url& locator) noexcept
 }
 //------------------------------------------------------------------------------
 auto eagitexi_2d_rgb8_provider::get_resource_io(const url& locator)
-  -> unique_holder<msgbus::source_blob_io> {
+  -> shared_holder<msgbus::source_blob_io> {
     const auto& q{locator.query()};
     return {
       hold<eagitexi_2d_rgb8_io>,

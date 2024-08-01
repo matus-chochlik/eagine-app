@@ -25,7 +25,7 @@ public:
     auto has_resource(const url& locator) noexcept -> bool final;
 
     auto get_resource_io(const url& locator)
-      -> unique_holder<msgbus::source_blob_io> final;
+      -> shared_holder<msgbus::source_blob_io> final;
 
     void for_each_locator(
       callable_ref<void(string_view) noexcept>) noexcept final;
@@ -42,7 +42,7 @@ auto shape_provider::has_resource(const url& locator) noexcept -> bool {
 }
 //------------------------------------------------------------------------------
 auto shape_provider::get_resource_io(const url& locator)
-  -> unique_holder<msgbus::source_blob_io> {
+  -> shared_holder<msgbus::source_blob_io> {
     unique_holder<ostream_io> io{default_selector};
     if(auto gen{shapes::shape_from(locator, main_context())}) {
         shapes::to_json_options options{};

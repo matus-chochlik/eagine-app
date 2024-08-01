@@ -48,7 +48,7 @@ struct embedded_resource_provider final
     auto has_resource(const url& locator) noexcept -> bool final;
 
     auto get_resource_io(const url& locator)
-      -> unique_holder<msgbus::source_blob_io> final;
+      -> shared_holder<msgbus::source_blob_io> final;
 
     void for_each_locator(
       callable_ref<void(string_view) noexcept>) noexcept final;
@@ -63,7 +63,7 @@ auto embedded_resource_provider::has_resource(const url& locator) noexcept
 }
 //------------------------------------------------------------------------------
 auto embedded_resource_provider::get_resource_io(const url& locator)
-  -> unique_holder<msgbus::source_blob_io> {
+  -> shared_holder<msgbus::source_blob_io> {
     const auto id{locator.path_identifier()};
     return {hold<embedded_resource_io>, as_parent(), _loader.search(id)};
 }

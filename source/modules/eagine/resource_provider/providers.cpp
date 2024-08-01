@@ -65,6 +65,8 @@ auto provider_json_sky_parameters(const provider_parameters&)
 //------------------------------------------------------------------------------
 auto provider_eagitexi_cubemap_blur(const provider_parameters&)
   -> unique_holder<resource_provider_interface>;
+auto provider_eagitex_cubemap_levels_blur(const provider_parameters& params)
+  -> unique_holder<resource_provider_interface>;
 //------------------------------------------------------------------------------
 auto provider_text_tiling3(const provider_parameters&)
   -> unique_holder<resource_provider_interface>;

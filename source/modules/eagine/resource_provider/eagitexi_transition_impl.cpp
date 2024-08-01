@@ -399,7 +399,7 @@ public:
     auto has_resource(const url& locator) noexcept -> bool final;
 
     auto get_resource_io(const url& locator)
-      -> unique_holder<msgbus::source_blob_io> final;
+      -> shared_holder<msgbus::source_blob_io> final;
 
     auto get_blob_timeout(const span_size_t) noexcept
       -> std::chrono::seconds final {
@@ -422,7 +422,7 @@ auto eagitexi_tiling_transition_provider::has_resource(
 }
 //------------------------------------------------------------------------------
 auto eagitexi_tiling_transition_provider::get_resource_io(const url& locator)
-  -> unique_holder<msgbus::source_blob_io> {
+  -> shared_holder<msgbus::source_blob_io> {
     const auto& q{locator.query()};
     return {
       hold<eagitexi_tiling_transition_io>,

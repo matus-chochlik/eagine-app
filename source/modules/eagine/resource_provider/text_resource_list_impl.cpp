@@ -55,7 +55,7 @@ struct resource_list_provider final : resource_provider_interface {
     auto has_resource(const url& locator) noexcept -> bool final;
 
     auto get_resource_io(const url& locator)
-      -> unique_holder<msgbus::source_blob_io> final;
+      -> shared_holder<msgbus::source_blob_io> final;
 
     void for_each_locator(
       callable_ref<void(string_view) noexcept>) noexcept final;
@@ -66,7 +66,7 @@ auto resource_list_provider::has_resource(const url& locator) noexcept -> bool {
 }
 //------------------------------------------------------------------------------
 auto resource_list_provider::get_resource_io(const url&)
-  -> unique_holder<msgbus::source_blob_io> {
+  -> shared_holder<msgbus::source_blob_io> {
     return {hold<resource_list_io>, _shared};
 }
 //------------------------------------------------------------------------------

@@ -22,7 +22,7 @@ export struct resource_provider_interface
     virtual auto has_resource(const url&) noexcept -> bool = 0;
 
     virtual auto get_resource_io(const url&)
-      -> unique_holder<msgbus::source_blob_io> = 0;
+      -> shared_holder<msgbus::source_blob_io> = 0;
 
     virtual auto get_blob_timeout(const span_size_t size) noexcept
       -> std::chrono::seconds;
@@ -53,7 +53,7 @@ public:
     auto has_resource(const url&) noexcept -> tribool final;
 
     auto get_resource_io(const endpoint_id_t, const url&)
-      -> unique_holder<msgbus::source_blob_io> final;
+      -> shared_holder<msgbus::source_blob_io> final;
 
     auto get_blob_timeout(
       const endpoint_id_t,

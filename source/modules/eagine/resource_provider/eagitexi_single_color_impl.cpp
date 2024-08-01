@@ -138,7 +138,7 @@ struct single_rgb8_eagitex_provider final : eagitex_provider_base {
     auto has_resource(const url& locator) noexcept -> bool final;
 
     auto get_resource_io(const url& locator)
-      -> unique_holder<msgbus::source_blob_io> final;
+      -> shared_holder<msgbus::source_blob_io> final;
 
     void for_each_locator(
       callable_ref<void(string_view) noexcept>) noexcept final;
@@ -165,7 +165,7 @@ auto single_rgb8_eagitex_provider::has_resource(const url& locator) noexcept
 }
 //------------------------------------------------------------------------------
 auto single_rgb8_eagitex_provider::get_resource_io(const url& locator)
-  -> unique_holder<msgbus::source_blob_io> {
+  -> shared_holder<msgbus::source_blob_io> {
     const auto& q{locator.query()};
     const auto size{q.arg_value_as<int>("size").value_or(64)};
     using math::name_to_rgb_int;
