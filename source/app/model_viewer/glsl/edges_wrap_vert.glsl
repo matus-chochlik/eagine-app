@@ -6,6 +6,7 @@
 #version 140
 
 uniform mat4 Camera;
+uniform mat4 Model;
 
 in vec4 Position;
 in vec3 Normal;
@@ -14,7 +15,7 @@ out vec3 vertNormal;
 out vec3 vertWrapCoord;
 
 void main() {
-    gl_Position = Camera * Position;
-    vertNormal = Normal;
+    gl_Position = Camera * Model * Position;
+    vertNormal = mat3(Model) * Normal;
     vertWrapCoord = WrapCoord;
 }

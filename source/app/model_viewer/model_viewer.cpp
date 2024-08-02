@@ -50,6 +50,8 @@ private:
     auto _show_settings_handler() noexcept;
     void _setting_window(const guiplus::imgui_api&) noexcept;
 
+    auto _model_matrix() noexcept -> mat4;
+
     video_context& _video;
     model_viewer_backgrounds _backgrounds;
     model_viewer_models _models;
@@ -59,6 +61,7 @@ private:
     activity_progress _load_progress;
 
     orbiting_camera _camera;
+    float _shp_turns{0.F};
     float _fov{70.F};
     bool _show_setting_window{false};
 };
