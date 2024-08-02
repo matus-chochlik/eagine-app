@@ -378,12 +378,12 @@ private:
 
     shared_provider_objects& _shared;
     const url _locator;
-    const url _image_loc;
+    const url _source_loc;
+    std::string _image_loc;
     std::string _text_content;
     int _levels{8};
     valid_if_positive<int> _width;
     valid_if_positive<int> _height;
-    valid_if_positive<int> _depth;
     valid_if_positive<int> _channels;
     valid_if_not_empty<std::string> _data_type;
     valid_if_not_empty<std::string> _format;
@@ -402,7 +402,7 @@ eagitex_cubemap_levels_blur_io::eagitex_cubemap_levels_blur_io(
   : main_ctx_object{"ITxCbLvlBl", parent}
   , _shared{shared}
   , _locator{std::move(locator)}
-  , _image_loc{_locator.query().arg_url("image")} {}
+  , _source_loc{_locator.query().arg_url("source")} {}
 //------------------------------------------------------------------------------
 auto eagitex_cubemap_levels_blur_io::prepare() noexcept
   -> msgbus::blob_preparation_result {
@@ -410,7 +410,7 @@ auto eagitex_cubemap_levels_blur_io::prepare() noexcept
         shared_holder<valtree::object_builder> self{shared_from_this()};
         const auto max_token_size{self->max_token_size()};
         if(_shared.loader.request_json_traversal(
-             {.locator = _image_loc, .max_time = std::chrono::minutes{5}},
+             {.locator = _source_loc, .max_time = std::chrono::minutes{5}},
              valtree::make_building_value_tree_visitor(std::move(self)),
              max_token_size)) {
             _started_loading = true;
@@ -452,7 +452,7 @@ auto eagitex_cubemap_levels_blur_io::_make_content() const noexcept
     hdr << R"(,"wrap_s":"clamp_to_edge")";
     hdr << R"(,"wrap_t":"clamp_to_edge")";
     hdr << R"(,"images":)";
-    hdr << R"([{"url":")" << _image_loc.get_string() << R"("})";
+    hdr << R"([{"url":")" << _image_loc << R"("})";
 
     const auto sharpness{[](int level, int) {
         switch(level) {
@@ -475,7 +475,7 @@ auto eagitex_cubemap_levels_blur_io::_make_content() const noexcept
     }};
 
     const std::string enc_img_loc{
-      url::encode_component(_image_loc.get_string())};
+      url::encode_component(_source_loc.get_string())};
     int size{_width.value()};
     for(int level = 1; level < _levels; ++level) {
         size /= 2;
@@ -508,13 +508,21 @@ auto eagitex_cubemap_levels_blur_io::fetch_fragment(
 void eagitex_cubemap_levels_blur_io::do_add(
   const basic_string_path& path,
   span<const string_view> data) noexcept {
-    if(path.has_size(1) and data.has_single_value()) {
-        if(path.starts_with("data_type")) {
-            _data_type = to_string(*data);
-        } else if(path.starts_with("format")) {
-            _format = to_string(*data);
-        } else if(path.starts_with("iformat")) {
-            _iformat = to_string(*data);
+    if(data.has_single_value()) {
+        if(path.has_size(1)) {
+            if(path.starts_with("data_type")) {
+                _data_type = to_string(*data);
+            } else if(path.starts_with("format")) {
+                _format = to_string(*data);
+            } else if(path.starts_with("iformat")) {
+                _iformat = to_string(*data);
+            }
+        } else if(path.has_size(3)) {
+            if(path.starts_with("images") and path.ends_with("url")) {
+                if(_image_loc.empty()) {
+                    _image_loc = to_string(*data);
+                }
+            }
         }
     }
 }
@@ -523,15 +531,15 @@ template <std::integral T>
 void eagitex_cubemap_levels_blur_io::do_add(
   const basic_string_path& path,
   const span<const T> data) noexcept {
-    if(path.has_size(1) and data.has_single_value()) {
-        if(path.starts_with("width")) {
-            _success = assign_if_fits(data, _width) and _success;
-        } else if(path.starts_with("height")) {
-            _success = assign_if_fits(data, _height) and _success;
-        } else if(path.starts_with("depth")) {
-            _success = assign_if_fits(data, _depth) and _success;
-        } else if(path.starts_with("channels")) {
-            _success = assign_if_fits(data, _channels) and _success;
+    if(data.has_single_value()) {
+        if(path.has_size(1)) {
+            if(path.starts_with("width")) {
+                _success = assign_if_fits(data, _width) and _success;
+            } else if(path.starts_with("height")) {
+                _success = assign_if_fits(data, _height) and _success;
+            } else if(path.starts_with("channels")) {
+                _success = assign_if_fits(data, _channels) and _success;
+            }
         }
     }
 }
@@ -590,7 +598,7 @@ auto eagitex_cubemap_levels_blur_provider::has_resource(
       locator.has_path("cube_map_levels_blur")) {
         const auto& q{locator.query()};
         const bool args_ok =
-          is_valid_eagitexi_resource_url(q.arg_url("image")) and
+          is_valid_eagitex_resource_url(q.arg_url("source")) and
           _valid_lvls(q.arg_value_as<int>("levels").value_or(1));
         return args_ok;
     }
