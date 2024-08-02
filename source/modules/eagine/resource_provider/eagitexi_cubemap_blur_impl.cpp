@@ -265,7 +265,7 @@ private:
       -1};
     application_config_value<std::chrono::seconds> _blob_timeout{
       main_context().config(),
-      "application.resource_provider.cubemap_sky.blob_timeout",
+      "application.resource_provider.cubemap_blur.blob_timeout",
       std::chrono::seconds{900}};
 };
 //------------------------------------------------------------------------------

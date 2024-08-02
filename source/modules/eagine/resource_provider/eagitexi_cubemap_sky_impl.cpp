@@ -548,6 +548,10 @@ private:
       main_context().config(),
       "application.resource_provider.cubemap_sky.device_index",
       -1};
+    application_config_value<std::chrono::seconds> _blob_timeout{
+      main_context().config(),
+      "application.resource_provider.cubemap_sky.blob_timeout",
+      std::chrono::hours{12}};
 };
 //------------------------------------------------------------------------------
 eagitexi_cubemap_sky_provider::eagitexi_cubemap_sky_provider(
@@ -592,7 +596,7 @@ auto eagitexi_cubemap_sky_provider::get_resource_io(const url& locator)
 //------------------------------------------------------------------------------
 auto eagitexi_cubemap_sky_provider::get_blob_timeout(const span_size_t) noexcept
   -> std::chrono::seconds {
-    return adjusted_duration(std::chrono::hours{24});
+    return adjusted_duration(_blob_timeout.value());
 }
 //------------------------------------------------------------------------------
 void eagitexi_cubemap_sky_provider::for_each_locator(
