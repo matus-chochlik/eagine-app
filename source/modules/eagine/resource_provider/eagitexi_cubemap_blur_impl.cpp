@@ -385,6 +385,7 @@ private:
     const url _source_loc;
     std::string _image_loc;
     std::string _text_content;
+    flat_set<std::string> _tags;
     int _levels{8};
     valid_if_positive<int> _width;
     valid_if_positive<int> _height;
@@ -406,7 +407,11 @@ eagitex_cubemap_levels_blur_io::eagitex_cubemap_levels_blur_io(
   : main_ctx_object{"ITxCbLvlBl", parent}
   , _shared{shared}
   , _locator{std::move(locator)}
-  , _source_loc{_locator.query().arg_url("source")} {}
+  , _source_loc{_locator.query().arg_url("source")} {
+    _tags.insert("generated");
+    _tags.insert("cubemap");
+    _tags.insert("blur");
+}
 //------------------------------------------------------------------------------
 auto eagitex_cubemap_levels_blur_io::prepare() noexcept
   -> msgbus::blob_preparation_result {
@@ -455,6 +460,17 @@ auto eagitex_cubemap_levels_blur_io::_make_content() const noexcept
     hdr << R"(,"mag_filter":"linear")";
     hdr << R"(,"wrap_s":"clamp_to_edge")";
     hdr << R"(,"wrap_t":"clamp_to_edge")";
+    hdr << R"(,"tag":[)";
+    bool first_tag = true;
+    for(const auto& tag : _tags) {
+        if(first_tag) {
+            first_tag = false;
+        } else {
+            hdr << ',';
+        }
+        hdr << '"' << tag << '"';
+    }
+    hdr << "]";
     hdr << R"(,"images":)";
     hdr << R"([{"url":")" << _image_loc << R"("})";
 
@@ -465,17 +481,17 @@ auto eagitex_cubemap_levels_blur_io::_make_content() const noexcept
             case 2:
                 return 16;
             case 3:
-                return 12;
-            case 4:
                 return 8;
-            case 5:
+            case 4:
                 return 4;
-            case 6:
+            case 5:
                 return 2;
+            case 6:
+                return 1;
             default:
                 break;
         }
-        return 1;
+        return 0;
     }};
 
     const std::string enc_img_loc{
@@ -520,6 +536,10 @@ void eagitex_cubemap_levels_blur_io::do_add(
                 _format = to_string(*data);
             } else if(path.starts_with("iformat")) {
                 _iformat = to_string(*data);
+            }
+        } else if(path.has_size(2)) {
+            if(path.starts_with("tag") and path.ends_with("_")) {
+                _tags.insert(to_string(*data));
             }
         } else if(path.has_size(3)) {
             if(path.starts_with("images") and path.ends_with("url")) {
