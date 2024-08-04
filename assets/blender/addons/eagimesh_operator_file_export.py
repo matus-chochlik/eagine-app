@@ -55,6 +55,10 @@ def fixcolor(c, typ, d = None):
     f = lambda x: fixcomp(x, typ, d)
     return (f(c[0]), f(c[1]), f(c[2]))
 # ------------------------------------------------------------------------------
+def fixuv(c, typ, d = None):
+    f = lambda x: fixcomp(x, typ, d)
+    return (f(c[0]), f(c[1]))
+# ------------------------------------------------------------------------------
 def vdiff(u, v):
     return tuple(uc-vc for uc, vc in zip(u, v))
 # ------------------------------------------------------------------------------
@@ -172,6 +176,26 @@ class EAGimeshExport(Operator, ExportHelper):
     def color_precision(self):
         return int(self.color_precision_str)
 
+    export_uv: BoolProperty(
+        name="UV",
+        description="Export vertex UV coordinates",
+        default=True)
+
+    uv_type: EnumProperty(
+        items=_items_attrib_type,
+        name="UV type",
+        description="UV coordinate value type",
+        default=0)
+
+    uv_precision_str: EnumProperty(
+        items=_items_num_precision,
+        name="UV precision",
+        description="Numeric precision of UV coordinate vertex attribute",
+        default=None)
+
+    def uv_precision(self):
+        return int(self.uv_precision_str)
+
     keep_degenerate: BoolProperty(
         name="Keep degenerate",
         description="Keep degenerate mesh triangles",
@@ -239,6 +263,11 @@ class EAGimeshExport(Operator, ExportHelper):
                 if vcs.data[l_loop_index].color != vcs.data[r_loop_index].color:
                     return False
 
+        if self.export_uv:
+            for uvs in mesh.uv_layers:
+                if uvs.data[l_loop_index].uv != uvs.data[r_loop_index].uv:
+                    return False
+
         return True
 
     # --------------------------------------------------------------------------
@@ -256,6 +285,7 @@ class EAGimeshExport(Operator, ExportHelper):
         tangents = []
         bitangents = []
         colors = {}
+        uv_coords = {}
 
         for meshface in mesh.polygons:
             start_index = meshface.loop_start
@@ -315,6 +345,16 @@ class EAGimeshExport(Operator, ExportHelper):
                                 colors[vcs.name] += vc
                             except KeyError:
                                 colors[vcs.name] = vc
+                    if self.export_uv:
+                        for uvs in mesh.uv_layers:
+                            uv = fixuv(
+                                uvs.data[loop_index].uv,
+                                self.uv_type,
+                                self.uv_precision())
+                            try:
+                                uv_coords[uvs.name] += uv
+                            except KeyError:
+                                uv_coords[uvs.name] = uv
 
                     emitted_vert.add(new_vert_key)
                     indices.append(vertex_index)
@@ -363,6 +403,18 @@ class EAGimeshExport(Operator, ExportHelper):
                     result["color"].append(clr)
                 except:
                     result["color"] = [clr]
+
+        if self.export_uv and len(uv_coords) > 0:
+            for name, cvalues in uv_coords.items():
+                uvs = {
+                "values_per_vertex": 2,
+                "type": "float",
+                "name": name,
+                "data": cvalues}
+                try:
+                    result["wrap_coord"].append(uvs)
+                except:
+                    result["wrap_coord"] = [uvs]
 
         result["instructions"] = [{
             "mode": "triangles",
