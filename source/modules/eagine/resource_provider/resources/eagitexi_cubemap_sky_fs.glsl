@@ -323,11 +323,11 @@ CloudLayerInfo getCloudLayer(
 }
 //------------------------------------------------------------------------------
 CloudLayerInfo thinCloudLayer(SampleInfo sample) {
-	return getCloudLayer(sample, 257.1, vaporTop, vaporBtm);
+	return getCloudLayer(sample, 0.3571, vaporTop, vaporBtm);
 }
 //------------------------------------------------------------------------------
 CloudLayerInfo thickCloudLayer(SampleInfo sample) {
-	return getCloudLayer(sample, 33.7, cloudTop, cloudBtm);
+	return getCloudLayer(sample, 0.00211, cloudTop, cloudBtm);
 }
 //------------------------------------------------------------------------------
 struct Segment {
@@ -368,7 +368,7 @@ vec2 cloudCoord(
 	vec2 sph = vec2(atan(loc.y, loc.x) + pi, asin(loc.z));
 	vec2 sca = vec2(8.0 / scale);
 	float alt = pow(layer.altitudeRatio, mix(0.5, 2.0, to01(sin(sph.x*3.1))));
-	float layerofs = ceil(alt * layer.steps / scale);
+	float layerofs = ceil(alt * layer.steps * layer.thickness / scale);
 	offset = (sca * offset / tilingSide);
 	return vec2(
 		offset + sph * sca + vec2(phi * scale * layerofs) +
