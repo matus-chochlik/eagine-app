@@ -31,6 +31,30 @@ def fixvec(v):
 def fixnum(x, d = None):
     return (round(x, d) if d is not None else x) if x != round(x) else int(x)
 # ------------------------------------------------------------------------------
+def fixcomp(x, typ, d = None):
+    if typ == "float":
+        return fixnum(x, d)
+    if typ == "ubyte":
+        assert 0.0 <= x and x <= 1.0
+        return int(x * 255)
+    if typ == "uint_16":
+        assert 0.0 <= x and x <= 1.0
+        return int(x * 65535)
+    if typ == "uint_32":
+        assert 0.0 <= x and x <= 1.0
+        return int(x * 4294967295)
+    if typ == "int_16":
+        assert -1.0 <= x and x <= 1.0
+        return int(x * 32767)
+    if typ == "int_32":
+        assert -1.0 <= x and x <= 1.0
+        return int(x * 2147483647)
+    return 0.0
+# ------------------------------------------------------------------------------
+def fixcolor(c, typ, d = None):
+    f = lambda x: fixcomp(x, typ, d)
+    return (f(c[0]), f(c[1]), f(c[2]))
+# ------------------------------------------------------------------------------
 def vdiff(u, v):
     return tuple(uc-vc for uc, vc in zip(u, v))
 # ------------------------------------------------------------------------------
@@ -76,7 +100,7 @@ class EAGimeshExport(Operator, ExportHelper):
 
     # --------------------------------------------------------------------------
     def _items_num_precision(self, context):
-        return tuple((i, str(i), f"{i} decimals") for i in [3,4,2,5,1,6])
+        return tuple((str(i), str(i), f"{i} decimals") for i in [3,4,2,5,1,6])
 
     # --------------------------------------------------------------------------
     bl_idname = "export.eagimesh"
@@ -95,44 +119,58 @@ class EAGimeshExport(Operator, ExportHelper):
         description="Select the exported mesh",
         default=None)
 
-    position_precision: EnumProperty(
+    position_precision_str: EnumProperty(
         items=_items_num_precision,
         name="Position precision",
         description="Numeric precision of position vertex attribute",
         default=None)
+
+    def position_precision(self):
+        return int(self.position_precision_str)
+
+    normal_precision_str: EnumProperty(
+        items=_items_num_precision,
+        name="Normal precision",
+        description="Numeric precision of normal/tangent/bitangent vector vertex attribute",
+        default=None)
+
+    def normal_precision(self):
+        return int(self.normal_precision_str)
 
     export_normal: BoolProperty(
         name="Normal",
         description="Export normal vectors",
         default=True)
 
-    normal_type: EnumProperty(
-        items=_items_attrib_type,
-        name="Normal type",
-        description="Normal value type",
-        default=0)
-
     export_tangent: BoolProperty(
         name="Tangent",
         description="Export tangent vectors",
         default=True)
-
-    tangent_type: EnumProperty(
-        items=_items_attrib_type,
-        name="Tangent type",
-        description="Tangent value type",
-        default=0)
 
     export_bitangent: BoolProperty(
         name="Bitangent",
         description="Export bitangent vectors",
         default=True)
 
-    bitangent_type: EnumProperty(
+    export_color: BoolProperty(
+        name="Color",
+        description="Export vertex colors",
+        default=True)
+
+    color_type: EnumProperty(
         items=_items_attrib_type,
-        name="Bitangent type",
-        description="Bitangent value type",
+        name="Color type",
+        description="Color value type",
         default=0)
+
+    color_precision_str: EnumProperty(
+        items=_items_num_precision,
+        name="Color precision",
+        description="Numeric precision of color vertex attribute",
+        default=None)
+
+    def color_precision(self):
+        return int(self.color_precision_str)
 
     keep_degenerate: BoolProperty(
         name="Keep degenerate",
@@ -158,7 +196,10 @@ class EAGimeshExport(Operator, ExportHelper):
         for obj in context.scene.objects:
             if obj.type == 'MESH':
                 if self.export_mesh == obj.data.name:
-                    return obj.data.name, self._triangulate(context, obj), obj
+                    mesh = self._triangulate(context, obj)
+                    if self.export_normal or self.export_tangent or self.export_bitangent:
+                        mesh.calc_tangents()
+                    return obj.data.name, mesh, obj
         return None, None
 
     # --------------------------------------------------------------------------
@@ -181,6 +222,23 @@ class EAGimeshExport(Operator, ExportHelper):
         if l_meshvert.co != r_meshvert.co:
             return False
 
+        if self.export_normal:
+            if l_meshloop.normal != r_meshloop.normal:
+                return False
+
+        if self.export_tangent:
+            if l_meshloop.tangent != r_meshloop.tangent:
+                return False
+
+        if self.export_bitangent:
+            if l_meshloop.bitangent != r_meshloop.bitangent:
+                return False
+
+        if self.export_color:
+            for vcs in mesh.vertex_colors:
+                if vcs.data[l_loop_index].color != vcs.data[r_loop_index].color:
+                    return False
+
         return True
 
     # --------------------------------------------------------------------------
@@ -194,6 +252,10 @@ class EAGimeshExport(Operator, ExportHelper):
         vertex_index = 0
         indices = []
         positions = []
+        normals = []
+        tangents = []
+        bitangents = []
+        colors = {}
 
         for meshface in mesh.polygons:
             start_index = meshface.loop_start
@@ -229,8 +291,30 @@ class EAGimeshExport(Operator, ExportHelper):
 
                 if not reused_vertex:
                     positions += [
-                        fixnum(x, self.position_precision)
+                        fixnum(x, self.position_precision())
                         for x in fixvec(meshvert.co)]
+                    if self.export_normal:
+                        normals += [
+                            fixnum(x, self.normal_precision())
+                            for x in fixvec(meshloop.normal)]
+                    if self.export_tangent:
+                        tangents += [
+                            fixnum(x, self.normal_precision())
+                            for x in fixvec(meshloop.tangent)]
+                    if self.export_bitangent:
+                        bitangents += [
+                            fixnum(x, self.normal_precision())
+                            for x in fixvec(meshloop.bitangent)]
+                    if self.export_color:
+                        for vcs in mesh.vertex_colors:
+                            vc = fixcolor(
+                                vcs.data[loop_index].color,
+                                self.color_type,
+                                self.color_precision())
+                            try:
+                                colors[vcs.name] += vc
+                            except KeyError:
+                                colors[vcs.name] = vc
 
                     emitted_vert.add(new_vert_key)
                     indices.append(vertex_index)
@@ -248,8 +332,37 @@ class EAGimeshExport(Operator, ExportHelper):
         result.setdefault("position", []).append({
             "values_per_vertex": 3,
             "type": "float",
-            "data": positions
-        })
+            "data": positions})
+
+        if self.export_normal and len(normals) > 0:
+            result.setdefault("normal", []).append({
+                "values_per_vertex": 3,
+                "type": "float",
+                "data": normals})
+
+        if self.export_tangent and len(tangents) > 0:
+            result.setdefault("tangent", []).append({
+                "values_per_vertex": 3,
+                "type": "float",
+                "data": tangents})
+
+        if self.export_bitangent and len(bitangents) > 0:
+            result.setdefault("bitangent", []).append({
+                "values_per_vertex": 3,
+                "type": "float",
+                "data": bitangents})
+
+        if self.export_color and len(colors) > 0:
+            for name, cvalues in colors.items():
+                clr = {
+                "values_per_vertex": 3,
+                "type": "float",
+                "name": name,
+                "data": cvalues}
+                try:
+                    result["color"].append(clr)
+                except:
+                    result["color"] = [clr]
 
         result["instructions"] = [{
             "mode": "triangles",
