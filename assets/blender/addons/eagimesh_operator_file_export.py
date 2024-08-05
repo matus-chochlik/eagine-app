@@ -183,6 +183,12 @@ class EAGimeshExport(Operator, ExportHelper):
         return int(self.color_precision_str)
 
     # --------------------------------------------------------------------------
+    export_emission: BoolProperty(
+        name="Color",
+        description="Export vertex emission colors",
+        default=True)
+
+    # --------------------------------------------------------------------------
     export_uv: BoolProperty(
         name="UV",
         description="Export vertex UV coordinates",
@@ -230,62 +236,17 @@ class EAGimeshExport(Operator, ExportHelper):
         description="Export vertex pointiness",
         default=True)
 
-    pointiness_type: EnumProperty(
-        items=_items_attrib_type,
-        name="Pointiness type",
-        description="Pointiness value type",
-        default=0)
-
-    pointiness_precision_str: EnumProperty(
-        items=_items_num_precision,
-        name="Pointiness precision",
-        description="Numeric precision of vertex pointiness attribute",
-        default=None)
-
-    def pointiness_precision(self):
-        return int(self.pointiness_precision_str)
-
     # --------------------------------------------------------------------------
     export_roughness: BoolProperty(
         name="Roughness",
         description="Export vertex roughness",
         default=True)
 
-    roughness_type: EnumProperty(
-        items=_items_attrib_type,
-        name="Roughness type",
-        description="Roughness value type",
-        default=0)
-
-    roughness_precision_str: EnumProperty(
-        items=_items_num_precision,
-        name="Roughness precision",
-        description="Numeric precision of vertex roughness attribute",
-        default=None)
-
-    def roughness_precision(self):
-        return int(self.roughness_precision_str)
-
     # --------------------------------------------------------------------------
     export_occlusion: BoolProperty(
         name="Occlusion",
         description="Export vertex occlusion",
         default=True)
-
-    occlusion_type: EnumProperty(
-        items=_items_attrib_type,
-        name="Occlusion type",
-        description="Occlusion value type",
-        default=0)
-
-    occlusion_precision_str: EnumProperty(
-        items=_items_num_precision,
-        name="Occlusion precision",
-        description="Numeric precision of vertex occlusion attribute",
-        default=None)
-
-    def occlusion_precision(self):
-        return int(self.occlusion_precision_str)
 
     # --------------------------------------------------------------------------
     keep_degenerate: BoolProperty(
@@ -377,6 +338,10 @@ class EAGimeshExport(Operator, ExportHelper):
         def translate_name(name):
             if name.upper() == attrib:
                 return ""
+            if name.upper().startswith(attrib + "_"):
+                return name[len(attrib)+1:]
+            if name.upper().startswith(attrib):
+                return name[len(attrib):]
             return None
 
         src_names = list(src.keys())
@@ -403,6 +368,7 @@ class EAGimeshExport(Operator, ExportHelper):
         tangents = []
         bitangents = []
         colors = {}
+        emission = {}
         uv_coords = {}
         weights = {}
         pointiness = {}
@@ -495,6 +461,9 @@ class EAGimeshExport(Operator, ExportHelper):
 
                     vertex_index += 1
 
+        if self.export_emission:
+            colors, emission = self._relocate_attribs(colors, emission, "emission")
+
         if self.export_pointiness:
             weights, pointiness = self._relocate_attribs(weights, pointiness, "pointiness")
 
@@ -547,6 +516,21 @@ class EAGimeshExport(Operator, ExportHelper):
                 except:
                     result["color"] = [clr]
 
+        for do_exp, attr_map, attr_name in [
+                (self.export_emission, emission, "emission")]:
+            if do_exp and len(attr_map) > 0:
+                for name, values in attr_map.items():
+                    ent = {
+                    "values_per_vertex": 3,
+                    "type": self.color_type,
+                    "data": values}
+                    if len(name) > 0:
+                        ent["name"] = name
+                    try:
+                        result[attr_name].append(ent)
+                    except:
+                        result[attr_name] = [ent]
+
         if self.export_uv and len(uv_coords) > 0:
             for name, cvalues in uv_coords.items():
                 uvs = {
@@ -571,15 +555,15 @@ class EAGimeshExport(Operator, ExportHelper):
                 except:
                     result["weight"] = [vws]
 
-        for do_exp, attr_typ, attr_map, attr_name in [
-                (self.export_pointiness, self.pointiness_type, pointiness, "pointiness"),
-                (self.export_roughness, self.roughness_type, roughness, "roughness"),
-                (self.export_occlusion, self.occlusion_type, occlusion, "occlusion")]:
+        for do_exp, attr_map, attr_name in [
+                (self.export_pointiness, pointiness, "pointiness"),
+                (self.export_roughness, roughness, "roughness"),
+                (self.export_occlusion, occlusion, "occlusion")]:
             if do_exp and len(attr_map) > 0:
                 for name, values in attr_map.items():
                     ent = {
                     "values_per_vertex": 1,
-                    "type": attr_typ,
+                    "type": self.weight_type,
                     "data": values}
                     if len(name) > 0:
                         ent["name"] = name
