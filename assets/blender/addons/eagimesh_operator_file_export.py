@@ -196,6 +196,26 @@ class EAGimeshExport(Operator, ExportHelper):
     def uv_precision(self):
         return int(self.uv_precision_str)
 
+    export_weight: BoolProperty(
+        name="Weight",
+        description="Export vertex weights",
+        default=True)
+
+    weight_type: EnumProperty(
+        items=_items_attrib_type,
+        name="Weight type",
+        description="Weight value type",
+        default=0)
+
+    weight_precision_str: EnumProperty(
+        items=_items_num_precision,
+        name="Weight precision",
+        description="Numeric precision of vertex weight attribute",
+        default=None)
+
+    def weight_precision(self):
+        return int(self.weight_precision_str)
+
     keep_degenerate: BoolProperty(
         name="Keep degenerate",
         description="Keep degenerate mesh triangles",
@@ -268,6 +288,15 @@ class EAGimeshExport(Operator, ExportHelper):
                 if uvs.data[l_loop_index].uv != uvs.data[r_loop_index].uv:
                     return False
 
+        if self.export_weight:
+            for grp in obj.vertex_groups:
+                try: l_weight = grp.weight(l_meshvert.index)
+                except: l_weight = 0
+                try: r_weight = grp.weight(r_meshvert.index)
+                except: r_weight = 0
+                if l_weight != r_weight:
+                    return False
+
         return True
 
     # --------------------------------------------------------------------------
@@ -286,6 +315,7 @@ class EAGimeshExport(Operator, ExportHelper):
         bitangents = []
         colors = {}
         uv_coords = {}
+        weights = {}
 
         for meshface in mesh.polygons:
             start_index = meshface.loop_start
@@ -355,6 +385,18 @@ class EAGimeshExport(Operator, ExportHelper):
                                 uv_coords[uvs.name] += uv
                             except KeyError:
                                 uv_coords[uvs.name] = uv
+                    if self.export_weight:
+                        for grp in obj.vertex_groups:
+                            try:
+                                weight = fixcomp(
+                                    grp.weight(meshvert.index),
+                                    self.weight_type,
+                                    self.weight_precision())
+                            except: weight = 0
+                            try:
+                                weights[grp.name].append(weight)
+                            except KeyError:
+                                weights[grp.name] = [weight]
 
                     emitted_vert.add(new_vert_key)
                     indices.append(vertex_index)
@@ -396,7 +438,7 @@ class EAGimeshExport(Operator, ExportHelper):
             for name, cvalues in colors.items():
                 clr = {
                 "values_per_vertex": 3,
-                "type": "float",
+                "type": self.color_type,
                 "name": name,
                 "data": cvalues}
                 try:
@@ -408,13 +450,25 @@ class EAGimeshExport(Operator, ExportHelper):
             for name, cvalues in uv_coords.items():
                 uvs = {
                 "values_per_vertex": 2,
-                "type": "float",
+                "type": self.uv_type,
                 "name": name,
                 "data": cvalues}
                 try:
                     result["wrap_coord"].append(uvs)
                 except:
                     result["wrap_coord"] = [uvs]
+
+        if self.export_weight and len(weights) > 0:
+            for name, wvalues in weights.items():
+                vws = {
+                "values_per_vertex": 1,
+                "type": self.weight_type,
+                "name": name,
+                "data": wvalues}
+                try:
+                    result["weight"].append(vws)
+                except:
+                    result["weight"] = [vws]
 
         result["instructions"] = [{
             "mode": "triangles",
