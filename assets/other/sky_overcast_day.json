@@ -1,0 +1,12 @@
+{"sun_azimuth_deg":78.0
+,"sun_elevation_deg":45.0
+,"sun_apparent_angle":0.05
+,"cloud_offset_x":0.111
+,"cloud_offset_y":0.618
+,"vapor_thickness_ratio":0.25
+,"cloud_altitude_m":10000.0
+,"cloud_thickness_m":18000.0
+,"cloudiness_ratio":0.78
+,"haziness_ratio":0.95
+,"tiling_url":"text:///TlngR4S512"
+}

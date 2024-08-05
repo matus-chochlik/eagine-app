@@ -5,6 +5,7 @@
 
 set(EAGINE_APP_OTHER
 	"${CMAKE_CURRENT_SOURCE_DIR}/sky_hazy_sunrise.json"
+	"${CMAKE_CURRENT_SOURCE_DIR}/sky_overcast_day.json"
 	"${CMAKE_CURRENT_SOURCE_DIR}/sky.json.txt")
 
 add_custom_command(
