@@ -117,12 +117,14 @@ class EAGimeshExport(Operator, ExportHelper):
         options={'HIDDEN'},
         maxlen=255)
 
+    # --------------------------------------------------------------------------
     export_mesh: EnumProperty(
         items=_items_meshes,
         name="Export mesh",
         description="Select the exported mesh",
         default=None)
 
+    # --------------------------------------------------------------------------
     position_precision_str: EnumProperty(
         items=_items_num_precision,
         name="Position precision",
@@ -132,6 +134,7 @@ class EAGimeshExport(Operator, ExportHelper):
     def position_precision(self):
         return int(self.position_precision_str)
 
+    # --------------------------------------------------------------------------
     normal_precision_str: EnumProperty(
         items=_items_num_precision,
         name="Normal precision",
@@ -146,16 +149,19 @@ class EAGimeshExport(Operator, ExportHelper):
         description="Export normal vectors",
         default=True)
 
+    # --------------------------------------------------------------------------
     export_tangent: BoolProperty(
         name="Tangent",
         description="Export tangent vectors",
         default=True)
 
+    # --------------------------------------------------------------------------
     export_bitangent: BoolProperty(
         name="Bitangent",
         description="Export bitangent vectors",
         default=True)
 
+    # --------------------------------------------------------------------------
     export_color: BoolProperty(
         name="Color",
         description="Export vertex colors",
@@ -176,6 +182,7 @@ class EAGimeshExport(Operator, ExportHelper):
     def color_precision(self):
         return int(self.color_precision_str)
 
+    # --------------------------------------------------------------------------
     export_uv: BoolProperty(
         name="UV",
         description="Export vertex UV coordinates",
@@ -196,6 +203,7 @@ class EAGimeshExport(Operator, ExportHelper):
     def uv_precision(self):
         return int(self.uv_precision_str)
 
+    # --------------------------------------------------------------------------
     export_weight: BoolProperty(
         name="Weight",
         description="Export vertex weights",
@@ -216,6 +224,70 @@ class EAGimeshExport(Operator, ExportHelper):
     def weight_precision(self):
         return int(self.weight_precision_str)
 
+    # --------------------------------------------------------------------------
+    export_pointiness: BoolProperty(
+        name="Pointiness",
+        description="Export vertex pointiness",
+        default=True)
+
+    pointiness_type: EnumProperty(
+        items=_items_attrib_type,
+        name="Pointiness type",
+        description="Pointiness value type",
+        default=0)
+
+    pointiness_precision_str: EnumProperty(
+        items=_items_num_precision,
+        name="Pointiness precision",
+        description="Numeric precision of vertex pointiness attribute",
+        default=None)
+
+    def pointiness_precision(self):
+        return int(self.pointiness_precision_str)
+
+    # --------------------------------------------------------------------------
+    export_roughness: BoolProperty(
+        name="Roughness",
+        description="Export vertex roughness",
+        default=True)
+
+    roughness_type: EnumProperty(
+        items=_items_attrib_type,
+        name="Roughness type",
+        description="Roughness value type",
+        default=0)
+
+    roughness_precision_str: EnumProperty(
+        items=_items_num_precision,
+        name="Roughness precision",
+        description="Numeric precision of vertex roughness attribute",
+        default=None)
+
+    def roughness_precision(self):
+        return int(self.roughness_precision_str)
+
+    # --------------------------------------------------------------------------
+    export_occlusion: BoolProperty(
+        name="Occlusion",
+        description="Export vertex occlusion",
+        default=True)
+
+    occlusion_type: EnumProperty(
+        items=_items_attrib_type,
+        name="Occlusion type",
+        description="Occlusion value type",
+        default=0)
+
+    occlusion_precision_str: EnumProperty(
+        items=_items_num_precision,
+        name="Occlusion precision",
+        description="Numeric precision of vertex occlusion attribute",
+        default=None)
+
+    def occlusion_precision(self):
+        return int(self.occlusion_precision_str)
+
+    # --------------------------------------------------------------------------
     keep_degenerate: BoolProperty(
         name="Keep degenerate",
         description="Keep degenerate mesh triangles",
@@ -300,6 +372,23 @@ class EAGimeshExport(Operator, ExportHelper):
         return True
 
     # --------------------------------------------------------------------------
+    def _relocate_attribs(self, src, dst, attrib):
+        attrib = attrib.upper()
+        def translate_name(name):
+            if name.upper() == attrib:
+                return ""
+            return None
+
+        src_names = list(src.keys())
+        for src_name in src_names:
+            dst_name = translate_name(src_name)
+            if dst_name is not None:
+                dst[dst_name] = src[src_name]
+                del src[src_name]
+
+        return src, dst
+
+    # --------------------------------------------------------------------------
     def _get_mesh_data(self, context, obj, mesh):
         result = {}
         emitted = {}
@@ -316,6 +405,9 @@ class EAGimeshExport(Operator, ExportHelper):
         colors = {}
         uv_coords = {}
         weights = {}
+        pointiness = {}
+        roughness = {}
+        occlusion = {}
 
         for meshface in mesh.polygons:
             start_index = meshface.loop_start
@@ -403,6 +495,15 @@ class EAGimeshExport(Operator, ExportHelper):
 
                     vertex_index += 1
 
+        if self.export_pointiness:
+            weights, pointiness = self._relocate_attribs(weights, pointiness, "pointiness")
+
+        if self.export_roughness:
+            weights, roughness = self._relocate_attribs(weights, roughness, "roughness")
+
+        if self.export_occlusion:
+            weights, occlusion = self._relocate_attribs(weights, occlusion, "occlusion")
+
         result["vertex_count"] = vertex_index
         result["index_count"] = len(indices)
         if vertex_index < 2**16:
@@ -469,6 +570,23 @@ class EAGimeshExport(Operator, ExportHelper):
                     result["weight"].append(vws)
                 except:
                     result["weight"] = [vws]
+
+        for do_exp, attr_typ, attr_map, attr_name in [
+                (self.export_pointiness, self.pointiness_type, pointiness, "pointiness"),
+                (self.export_roughness, self.roughness_type, roughness, "roughness"),
+                (self.export_occlusion, self.occlusion_type, occlusion, "occlusion")]:
+            if do_exp and len(attr_map) > 0:
+                for name, values in attr_map.items():
+                    ent = {
+                    "values_per_vertex": 1,
+                    "type": attr_typ,
+                    "data": values}
+                    if len(name) > 0:
+                        ent["name"] = name
+                    try:
+                        result[attr_name].append(ent)
+                    except:
+                        result[attr_name] = [ent]
 
         result["instructions"] = [{
             "mode": "triangles",
