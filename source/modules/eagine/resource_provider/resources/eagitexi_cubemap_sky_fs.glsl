@@ -223,10 +223,10 @@ SampleInfo getSampleSun(
 //------------------------------------------------------------------------------
 vec4 sunlightColor(SampleInfo s) {
 	return mixColor012n(
-		vec4(1.5), vec4(1.4),
-		vec4(1.3, 1.3, 0.9, 1.2),
-		vec4(1.3, 0.5, 0.5, 1.0),
-		s.atmLightDistRatio * 0.7, 0.5);
+		vec4(1.5), vec4(1.5),
+		vec4(1.3, 1.3, 0.9, 1.3),
+		vec4(1.3, 0.5, 0.5, 1.1),
+		s.atmLightDistRatio * 0.7, 0.6);
 }
 //------------------------------------------------------------------------------
 vec4 clearAirColor(SampleInfo s, float cloudShadow) {
@@ -287,7 +287,8 @@ vec4 vaporColor(SampleInfo s, vec4 airColor, float cloudShadow) {
 	float cshadow = mix(0.8, 1.0, s.accumulated.vaporShadow) * cloudShadow;
 
 	vec4 vaporColor = vec4(1.0, 1.0, 1.0, 0.95) * pshadow * cshadow;
-	vec4 lightColor = sunlightColor(s) * mix(0.1 * s.planetShadow, 4.0, cloudShadow);
+	vec4 lightColor = sunlightColor(s) *
+		mix(0.1 * s.planetShadow, mix(1.0, 2.0, cloudiness), cloudShadow);
 
 	return mix(
 		mix(vaporColor, airColor, s.accumulated.planetShadow * 0.5),
@@ -327,7 +328,7 @@ CloudLayerInfo thinCloudLayer(SampleInfo sample) {
 }
 //------------------------------------------------------------------------------
 CloudLayerInfo thickCloudLayer(SampleInfo sample) {
-	return getCloudLayer(sample, 0.00211, cloudTop, cloudBtm);
+	return getCloudLayer(sample, 0.00511, cloudTop, cloudBtm);
 }
 //------------------------------------------------------------------------------
 struct Segment {
@@ -414,7 +415,7 @@ float thinCloudDensity(
 	float s000500 = thinCloudSample(loc, sam, layer, fib2( 5, 7),  0.523*phi);
 	float s000125 = thinCloudSample(loc, sam, layer, fib2( 6, 8),  0.131*phi);
 
-	float dfac = mix(0.5, 4.0, haziness);
+	float dfac = mix(0.5, 4.0, haziness) * (1.0 - exp(-sam.atmViewDistRatio));
 	float dens = sqrt(4.0 * s256000 * s128000 * s016000 * s004000);
 	dens -= pow(s002000, 2.0) * 0.41;
 	dens -= pow(s000500, 2.0) * 0.37;
@@ -483,7 +484,7 @@ float thickCloudDensity(
 
 	densi = clamp(densi, 0.0, 3.0);
 
-	return densi * sampleAtmRatio * mix(29.0, 3.0, dnois);
+	return densi * sampleAtmRatio * mix(29.0, 4.0, dnois);
 }
 //------------------------------------------------------------------------------
 float thickCloudDensity(vec3 loc, SampleInfo sam, CloudLayerInfo layer) {
