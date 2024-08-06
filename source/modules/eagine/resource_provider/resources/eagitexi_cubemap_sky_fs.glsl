@@ -223,10 +223,10 @@ SampleInfo getSampleSun(
 //------------------------------------------------------------------------------
 vec4 sunlightColor(SampleInfo s) {
 	return mixColor012n(
-		vec4(1.5), vec4(1.5),
+		vec4(1.5), vec4(1.4),
 		vec4(1.3, 1.3, 0.9, 1.3),
-		vec4(1.3, 0.5, 0.5, 1.1),
-		s.atmLightDistRatio * 0.7, 0.6);
+		vec4(1.3, 0.5, 0.4, 1.1),
+		s.atmLightDistRatio * 0.75, 0.75);
 }
 //------------------------------------------------------------------------------
 vec4 clearAirColor(SampleInfo s, float cloudShadow) {
@@ -291,7 +291,7 @@ vec4 vaporColor(SampleInfo s, vec4 airColor, float cloudShadow) {
 		mix(0.1 * s.planetShadow, mix(1.0, 2.0, cloudiness), cloudShadow);
 
 	return mix(
-		mix(vaporColor, airColor, s.accumulated.planetShadow * 0.5),
+		mix(vaporColor, airColor, s.accumulated.planetShadow * 0.25),
 		mix(vaporColor, lightColor, s.accumulated.vaporShadow),
 		pshadow * cshadow);
 }
