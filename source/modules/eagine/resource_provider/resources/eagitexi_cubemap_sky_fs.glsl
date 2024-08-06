@@ -231,7 +231,6 @@ vec4 sunlightColor(SampleInfo s) {
 //------------------------------------------------------------------------------
 vec4 clearAirColor(SampleInfo s, float cloudShadow) {
 	vec4 lightColor = sunlightColor(s);
-	float shadow = s.planetShadow * cloudShadow;
 	float groundHaze = pow(
 		1.0 - exp(-s.atmViewDistRatio * mix(0.5, 1.0, haziness)), 8.0);
 	float lightHaze = pow(s.toLight, 8.0);
@@ -269,8 +268,10 @@ vec4 clearAirColor(SampleInfo s, float cloudShadow) {
 			cloudiness),
 		s.toLight);
 
+	float shadow = s.accumulated.planetShadow * cloudShadow;
+
 	vec4 hazeColor = vec4(mix(
-		mix(lightAirColor.rgb, vec3(1.0), 0.92),
+		lightAirColor.rgb,
 		lightColor.rgb,
 		shadow * (1.0 - cloudiness)),
 		s.toLight * s.planetShadow * mix(1.0, 2.0, haziness));
@@ -286,14 +287,16 @@ vec4 vaporColor(SampleInfo s, vec4 airColor, float cloudShadow) {
 	float pshadow = mix(s.planetShadow, s.accumulated.planetShadow, 0.25);
 	float cshadow = mix(0.8, 1.0, s.accumulated.vaporShadow) * cloudShadow;
 
-	vec4 vaporColor = vec4(1.0, 1.0, 1.0, 0.95) * pshadow * cshadow;
-	vec4 lightColor = sunlightColor(s) *
-		mix(0.1 * s.planetShadow, mix(1.0, 2.0, cloudiness), cloudShadow);
+	vec4 vaporColor = vec4(pshadow * cshadow);
+	vec4 lightColor = sunlightColor(s) * mix(
+		0.1 * s.accumulated.planetShadow,
+		mix(1.0, 2.0, cloudiness),
+		cshadow);
 
 	return mix(
-		mix(vaporColor, airColor, s.accumulated.planetShadow * 0.25),
-		mix(vaporColor, lightColor, s.accumulated.vaporShadow),
-		pshadow * cshadow);
+		mix(vaporColor, airColor, pshadow),
+		mix(vaporColor, lightColor, cshadow),
+		s.accumulated.planetShadow * cshadow);
 }
 //------------------------------------------------------------------------------
 float clearAirDensity(SampleInfo sample) {
