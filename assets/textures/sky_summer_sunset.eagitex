@@ -1,0 +1,11 @@
+{"levels":1
+,"width":2048
+,"height":2048
+,"channels":4
+,"data_type":"unsigned_byte"
+,"format":"rgba"
+,"iformat":"rgba8"
+,"wrap_s":"clamp_to_edge"
+,"wrap_t":"clamp_to_edge"
+,"tag":["sky","cubemap","generated"]
+,"images":[{"url":"eagires:///app-textures.eagizip/sky_summer_sunset.eagitexi"}]}
