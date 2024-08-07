@@ -125,6 +125,19 @@ class EAGimeshExport(Operator, ExportHelper):
         default=None)
 
     # --------------------------------------------------------------------------
+    vertex_pivot_mesh: EnumProperty(
+        items=_items_meshes,
+        name="Vertex pivot mesh",
+        description="Select the vertex pivot mesh",
+        default=None)
+
+    pivot_pivot_mesh: EnumProperty(
+        items=_items_meshes,
+        name="Pivot pivot mesh",
+        description="Select the pivot pivot mesh",
+        default=None)
+
+    # --------------------------------------------------------------------------
     position_precision_str: EnumProperty(
         items=_items_num_precision,
         name="Position precision",
@@ -277,7 +290,7 @@ class EAGimeshExport(Operator, ExportHelper):
                     if self.export_normal or self.export_tangent or self.export_bitangent:
                         mesh.calc_tangents()
                     return obj.data.name, mesh, obj
-        return None, None
+        return None, None, None
 
     # --------------------------------------------------------------------------
     def _add_metadata(self, data):
