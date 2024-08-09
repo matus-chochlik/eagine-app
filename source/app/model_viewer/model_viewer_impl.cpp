@@ -52,8 +52,8 @@ void model_viewer::_init_camera(const oglplus::sphere bs) {
       .set_target(bs.center())
       .set_near(sr * 0.01F)
       .set_far(sr * 100.0F)
-      .set_orbit_min(sr * 1.2F)
-      .set_orbit_max(sr * 25.0F);
+      .set_orbit_min(sr * 1.75F)
+      .set_orbit_max(sr * 15.0F);
 }
 //------------------------------------------------------------------------------
 auto model_viewer::_all_resource_count() noexcept -> span_size_t {
