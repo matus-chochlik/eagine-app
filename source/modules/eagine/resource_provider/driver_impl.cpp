@@ -60,6 +60,7 @@ void resource_provider_driver::_populate() {
     _add(provider_eagitexi_cubemap_sky(parameters));
     _add(provider_eagitex_cubemap_sky(parameters));
     _add(provider_eagitexi_cubemap_blur(parameters));
+    _add(provider_eagitex_cubemap_levels_blur(parameters));
     _add(provider_shape(parameters));
     _add(provider_json_sky_parameters(parameters));
     _add(provider_text_tiling3(parameters));
@@ -98,7 +99,7 @@ auto resource_provider_driver::has_resource(const url& locator) noexcept
 //------------------------------------------------------------------------------
 auto resource_provider_driver::get_resource_io(
   const endpoint_id_t,
-  const url& locator) -> unique_holder<msgbus::source_blob_io> {
+  const url& locator) -> shared_holder<msgbus::source_blob_io> {
     if(const auto provider{find_provider_of(locator)}) {
         return provider->get_resource_io(locator);
     }

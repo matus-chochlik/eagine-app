@@ -1,3 +1,10 @@
+
+eagine-app-assets (0.128.0) unstable; urgency=medium
+
+  * Added some sky-box cube-map textures.
+  * Added initial version of Blender to EAGimesh export add-on.
+
+ -- Matúš Chochlík <matus.chochlik@proton.me>  Sat, 03 Aug 2024 06:00:00 +0200
 eagine-app-assets (0.125.0) unstable; urgency=medium
 
   * Initial version with CPack-based packaging.

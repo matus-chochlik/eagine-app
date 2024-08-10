@@ -52,8 +52,8 @@ void model_viewer::_init_camera(const oglplus::sphere bs) {
       .set_target(bs.center())
       .set_near(sr * 0.01F)
       .set_far(sr * 100.0F)
-      .set_orbit_min(sr * 1.2F)
-      .set_orbit_max(sr * 25.0F);
+      .set_orbit_min(sr * 1.75F)
+      .set_orbit_max(sr * 15.0F);
 }
 //------------------------------------------------------------------------------
 auto model_viewer::_all_resource_count() noexcept -> span_size_t {
@@ -132,9 +132,18 @@ void model_viewer::_clear_background_default() noexcept {
     _backgrounds.clear_default(_video, _camera);
 }
 //------------------------------------------------------------------------------
+auto model_viewer::_model_matrix() noexcept -> mat4 {
+    _shp_turns += 0.1F * context().state().frame_duration().value();
+    return oglplus::matrix_rotation_x(turns_(_shp_turns) / 1) *
+           oglplus::matrix_rotation_y(turns_(_shp_turns) / 2) *
+           oglplus::matrix_rotation_z(turns_(_shp_turns) / 3);
+}
+//------------------------------------------------------------------------------
 void model_viewer::_view_model() noexcept {
+
     _programs.use(_video);
     _programs.set_camera(_video, _camera);
+    _programs.set_model(_video, _model_matrix());
 
     _textures.use(_video);
     _models.use(_video);
@@ -196,7 +205,7 @@ void model_viewer::update() noexcept {
     if(_models and _programs and _textures) {
         auto& state = context().state();
         if(state.user_idle_too_long()) {
-            _camera.idle_update(state);
+            _camera.idle_update(state, 11.F);
         }
         _view_model();
     } else {

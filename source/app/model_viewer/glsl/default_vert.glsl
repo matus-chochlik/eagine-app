@@ -12,11 +12,12 @@ out vec3 vertNormal;
 out vec3 vertColor;
 out vec3 vertLightDir;
 uniform mat4 Camera;
+uniform mat4 Model;
 const vec3 LightDir = normalize(vec3(1.0, 1.0, 1.0));
 
 void main() {
-    gl_Position = Camera * Position;
-    vertNormal = Normal;
+    gl_Position = Camera * Model * Position;
+    vertNormal = mat3(Model) * Normal;
     vertColor = Color * Occlusion;
     vertLightDir = LightDir;
 }

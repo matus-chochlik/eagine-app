@@ -57,7 +57,7 @@ public:
     auto has_resource(const url& locator) noexcept -> bool final;
 
     auto get_resource_io(const url& locator)
-      -> unique_holder<msgbus::source_blob_io> final;
+      -> shared_holder<msgbus::source_blob_io> final;
 
     void for_each_locator(
       callable_ref<void(string_view) noexcept>) noexcept final;
@@ -71,7 +71,7 @@ private:
     auto _get_resource_io(
       const std::filesystem::path&,
       const std::filesystem::path&,
-      const url& locator) noexcept -> unique_holder<msgbus::source_blob_io>;
+      const url& locator) noexcept -> shared_holder<msgbus::source_blob_io>;
 
     void _for_each_locator(
       const std::filesystem::path&,
@@ -125,7 +125,7 @@ auto file_provider::has_resource(const url& locator) noexcept -> bool {
 auto file_provider::_get_resource_io(
   const std::filesystem::path& prefix,
   const std::filesystem::path& path,
-  const url& locator) noexcept -> unique_holder<msgbus::source_blob_io> {
+  const url& locator) noexcept -> shared_holder<msgbus::source_blob_io> {
     if(_allow_symlinks or not std::filesystem::is_symlink(path)) {
         if(std::filesystem::is_regular_file(path)) {
             std::error_code error{};
@@ -148,7 +148,7 @@ auto file_provider::_get_resource_io(
 }
 //------------------------------------------------------------------------------
 auto file_provider::get_resource_io(const url& locator)
-  -> unique_holder<msgbus::source_blob_io> {
+  -> shared_holder<msgbus::source_blob_io> {
     for(const auto& search_path : _search_paths) {
         if(auto io{_get_resource_io(search_path, search_path, locator)}) {
             return io;

@@ -112,7 +112,7 @@ struct eagitexi_random_provider final
     auto has_resource(const url& locator) noexcept -> bool final;
 
     auto get_resource_io(const url& locator)
-      -> unique_holder<msgbus::source_blob_io> final;
+      -> shared_holder<msgbus::source_blob_io> final;
 
     void for_each_locator(
       callable_ref<void(string_view) noexcept>) noexcept final;
@@ -133,7 +133,7 @@ auto eagitexi_random_provider::has_resource(const url& locator) noexcept
 }
 //------------------------------------------------------------------------------
 auto eagitexi_random_provider::get_resource_io(const url& locator)
-  -> unique_holder<msgbus::source_blob_io> {
+  -> shared_holder<msgbus::source_blob_io> {
     const auto& q{locator.query()};
     return {
       hold<eagitexi_random_io>,

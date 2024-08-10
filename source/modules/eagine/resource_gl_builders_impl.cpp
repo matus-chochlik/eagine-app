@@ -49,91 +49,14 @@ public:
 
     void do_add(
       const basic_string_path& path,
-      span<const string_view> data) noexcept {
-        if(path.has_size(1)) {
-            if(path.starts_with("label")) {
-                if(data.has_single_value()) {
-                    if(auto parent{_parent.lock()}) {
-                        parent->add_label(*data);
-                    }
-                }
-            }
-        } else if((path.has_size(3)) and data) {
-            if((path.starts_with("inputs")) and (path.ends_with("attrib"))) {
-                if(const auto kind{
-                     from_string<shapes::vertex_attrib_kind>(*data)}) {
-                    _attrib_kind = *kind;
-                } else {
-                    _input_name.clear();
-                }
-            }
-            if(path.starts_with("shaders")) {
-                if(path.ends_with("url")) {
-                    if(data.has_single_value()) {
-                        _shdr_locator = {to_string(*data)};
-                    }
-                } else if(path.ends_with("type")) {
-                    if(const auto conv{
-                         from_strings<oglplus::shader_type>(data)}) {
-                        _shdr_type = *conv;
-                    }
-                }
-            }
-        }
-    }
+      span<const string_view> data) noexcept;
 
     template <std::integral T>
-    void do_add(const basic_string_path& path, span<const T>& data) noexcept {
-        if((path.has_size(3)) and data) {
-            if((path.starts_with("inputs")) and (path.ends_with("variant"))) {
-                _attrib_variant_index = span_size(*data);
-            }
-        }
-    }
+    void do_add(const basic_string_path& path, span<const T>& data) noexcept;
 
-    void add_object(const basic_string_path& path) noexcept final {
-        if(path.has_size(2)) {
-            if(path.starts_with("inputs")) {
-                _input_name = to_string(path.back());
-                _attrib_kind = shapes::vertex_attrib_kind::position;
-                _attrib_variant_index = 0;
-            } else if(path.starts_with("shaders")) {
-                _shdr_locator = {};
-                _shdr_type = _gl_context.gl_api().constants().fragment_shader;
-            }
-        }
-    }
+    void add_object(const basic_string_path& path) noexcept final;
 
-    void finish_object(const basic_string_path& path) noexcept final {
-        if(path.has_size(2)) {
-            if(path.starts_with("inputs")) {
-                if(not _input_name.empty()) {
-                    if(auto parent{_parent.lock()}) {
-                        parent->add_gl_program_input_binding(
-                          std::move(_input_name),
-                          {_attrib_kind, _attrib_variant_index});
-                    }
-                }
-            } else if(path.starts_with("shaders")) {
-                if(_shdr_locator) {
-                    if(auto parent{_parent.lock()}) {
-                        auto& loader = parent->loader();
-                        if(auto src_request{loader.request_gl_shader(
-                             {.locator = _shdr_locator},
-                             _gl_context,
-                             _shdr_type)}) {
-                            src_request.set_continuation(parent);
-                            if(not parent->add_gl_program_shader_request(
-                                 src_request.request_id())) [[unlikely]] {
-                                src_request.info().mark_finished();
-                                parent->mark_finished();
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+    void finish_object(const basic_string_path& path) noexcept final;
 
 private:
     oglplus::shared_gl_api_context _gl_context;
@@ -143,6 +66,95 @@ private:
     shapes::vertex_attrib_kind _attrib_kind;
     span_size_t _attrib_variant_index{0};
 };
+//------------------------------------------------------------------------------
+template <std::integral T>
+void valtree_gl_program_builder::do_add(
+  const basic_string_path& path,
+  span<const T>& data) noexcept {
+    if((path.has_size(3)) and data) {
+        if((path.starts_with("inputs")) and (path.ends_with("variant"))) {
+            _attrib_variant_index = span_size(*data);
+        }
+    }
+}
+//------------------------------------------------------------------------------
+void valtree_gl_program_builder::do_add(
+  const basic_string_path& path,
+  span<const string_view> data) noexcept {
+    if(path.has_size(1)) {
+        if(path.starts_with("label")) {
+            if(data.has_single_value()) {
+                if(auto parent{_parent.lock()}) {
+                    parent->add_label(*data);
+                }
+            }
+        }
+    } else if((path.has_size(3)) and data) {
+        if((path.starts_with("inputs")) and (path.ends_with("attrib"))) {
+            if(const auto kind{
+                 from_string<shapes::vertex_attrib_kind>(*data)}) {
+                _attrib_kind = *kind;
+            } else {
+                _input_name.clear();
+            }
+        }
+        if(path.starts_with("shaders")) {
+            if(path.ends_with("url")) {
+                if(data.has_single_value()) {
+                    _shdr_locator = {to_string(*data)};
+                }
+            } else if(path.ends_with("type")) {
+                if(const auto conv{from_strings<oglplus::shader_type>(data)}) {
+                    _shdr_type = *conv;
+                }
+            }
+        }
+    }
+}
+//------------------------------------------------------------------------------
+void valtree_gl_program_builder::add_object(
+  const basic_string_path& path) noexcept {
+    if(path.has_size(2)) {
+        if(path.starts_with("inputs")) {
+            _input_name = to_string(path.back());
+            _attrib_kind = shapes::vertex_attrib_kind::position;
+            _attrib_variant_index = 0;
+        } else if(path.starts_with("shaders")) {
+            _shdr_locator = {};
+            _shdr_type = _gl_context.gl_api().constants().fragment_shader;
+        }
+    }
+}
+//------------------------------------------------------------------------------
+void valtree_gl_program_builder::finish_object(
+  const basic_string_path& path) noexcept {
+    if(path.has_size(2)) {
+        if(path.starts_with("inputs")) {
+            if(not _input_name.empty()) {
+                if(auto parent{_parent.lock()}) {
+                    parent->add_gl_program_input_binding(
+                      std::move(_input_name),
+                      {_attrib_kind, _attrib_variant_index});
+                }
+            }
+        } else if(path.starts_with("shaders")) {
+            if(_shdr_locator) {
+                if(auto parent{_parent.lock()}) {
+                    auto& loader = parent->loader();
+                    if(auto src_request{loader.request_gl_shader(
+                         {.locator = _shdr_locator}, _gl_context, _shdr_type)}) {
+                        src_request.set_continuation(parent);
+                        if(not parent->add_gl_program_shader_request(
+                             src_request.request_id())) [[unlikely]] {
+                            src_request.info().mark_finished();
+                            parent->mark_finished();
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
 //------------------------------------------------------------------------------
 auto make_valtree_gl_program_builder(
   const shared_holder<pending_resource_info>& parent,
@@ -242,29 +254,9 @@ public:
       , _target{target}
       , _params{params} {}
 
-    auto append_image_data(const memory::const_block blk) noexcept -> bool {
-        log_debug("appending texture image data")
-          .tag("apndImgDta")
-          .arg("offset", _tex_data.size())
-          .arg("size", blk.size());
-        memory::append_to(blk, _tex_data);
-        //  TODO: progressive image specification once we have enough
-        //  data for width * some constant so that the temp buffer
-        //  doesn't get too big
-        return true;
-    }
+    auto append_image_data(const memory::const_block blk) noexcept -> bool;
 
-    auto init_decompression(data_compression_method method) noexcept -> bool {
-        if(const auto parent{_parent.lock()}) {
-            _decompression = stream_decompression{
-              data_compressor{method, parent->loader().buffers()},
-              make_callable_ref<
-                &valtree_gl_texture_image_loader::append_image_data>(this),
-              method};
-            return true;
-        }
-        return false;
-    }
+    auto init_decompression(data_compression_method method) noexcept -> bool;
 
     auto max_token_size() noexcept -> span_size_t final {
         return 256;
@@ -275,123 +267,25 @@ public:
     template <std::integral T>
     void do_add(
       const basic_string_path& path,
-      const span<const T> data) noexcept {
-        if(path.has_size(1)) {
-            if(path.starts_with("level")) {
-                _success &= assign_if_fits(data, _params.level);
-            } else if(path.starts_with("x_offs")) {
-                _success &= assign_if_fits(data, _params.x_offs);
-                _params.dimensions = std::max(_params.dimensions, 1);
-            } else if(path.starts_with("y_offs")) {
-                _success &= assign_if_fits(data, _params.y_offs);
-                _params.dimensions = std::max(_params.dimensions, 2);
-            } else if(path.starts_with("z_offs")) {
-                _success &= assign_if_fits(data, _params.z_offs);
-                _params.dimensions = std::max(_params.dimensions, 3);
-            } else if(path.starts_with("channels")) {
-                _success &= assign_if_fits(data, _params.channels);
-            } else if(path.starts_with("width")) {
-                _success &= assign_if_fits(data, _params.width);
-                _params.dimensions = std::max(_params.dimensions, 1);
-            } else if(path.starts_with("height")) {
-                _success &= assign_if_fits(data, _params.height);
-                _params.dimensions = std::max(_params.dimensions, 2);
-            } else if(path.starts_with("depth")) {
-                _success &= assign_if_fits(data, _params.depth);
-                _params.dimensions = std::max(_params.dimensions, 3);
-            } else if(path.starts_with("data_type")) {
-                _success &= assign_if_fits(data, _params.data_type);
-            } else if(path.starts_with("format")) {
-                _success &= assign_if_fits(data, _params.format);
-            } else if(path.starts_with("iformat")) {
-                _success &= assign_if_fits(data, _params.iformat);
-            }
-        } else if(path.has_size(2)) {
-            if(path.starts_with("data")) {
-                _success &= append_image_data(as_bytes(data));
-            }
-        }
-    }
+      const span<const T> data) noexcept;
 
     void do_add(
       const basic_string_path& path,
-      const span<const float> data) noexcept {
-        if(path.has_size(2)) {
-            if(path.starts_with("data")) {
-                _success &= append_image_data(as_bytes(data));
-            }
-        }
-    }
+      const span<const float> data) noexcept;
 
     void do_add(
       const basic_string_path& path,
-      const span<const double> data) noexcept {
-        if(path.has_size(2)) {
-            if(path.starts_with("data")) {
-                _float_data.clear();
-                _float_data.reserve(std_size(data.size()));
-                for(const auto d : data) {
-                    _float_data.push_back(float(d));
-                }
-                _success &= append_image_data(as_bytes(view(_float_data)));
-            }
-        }
-    }
+      const span<const double> data) noexcept;
 
     void do_add(
       const basic_string_path& path,
-      const span<const string_view> data) noexcept {
-        if(path.has_size(1)) {
-            if(path.starts_with("data_type")) {
-                _success &=
-                  texture_data_type_from_string(data, _params.data_type);
-            } else if(path.starts_with("format")) {
-                _success &= texture_format_from_string(data, _params.format);
-            } else if(path.starts_with("iformat")) {
-                _success &= texture_iformat_from_string(data, _params.iformat);
-            } else if(path.starts_with("data_filter")) {
-                if(data.has_single_value()) {
-                    if(const auto method{
-                         from_string<data_compression_method>(*data)}) {
-                        _success &= init_decompression(*method);
-                    } else {
-                        _success = false;
-                    }
-                } else {
-                    _success = false;
-                }
-            }
-        }
-    }
+      const span<const string_view> data) noexcept;
 
-    void unparsed_data(span<const memory::const_block> data) noexcept final {
-        if(not _decompression.is_initialized()) {
-            _success &= init_decompression(data_compression_method::none);
-        }
-        if(_success) {
-            for(const auto& blk : data) {
-                _decompression.next(blk);
-            }
-        }
-    }
+    void unparsed_data(span<const memory::const_block> data) noexcept final;
 
-    auto finish() noexcept -> bool final {
-        if(const auto parent{_parent.lock()}) {
-            if(_success) {
-                _decompression.finish();
-                parent->handle_gl_texture_image(_target, _params, _tex_data);
-            }
-            parent->mark_finished();
-            return _success;
-        }
-        return false;
-    }
+    auto finish() noexcept -> bool final;
 
-    void failed() noexcept final {
-        if(const auto parent{_parent.lock()}) {
-            parent->mark_finished();
-        }
-    }
+    void failed() noexcept final;
 
 private:
     main_ctx_buffer _tex_data;
@@ -402,6 +296,153 @@ private:
     bool _success{true};
 };
 //------------------------------------------------------------------------------
+auto valtree_gl_texture_image_loader::append_image_data(
+  const memory::const_block blk) noexcept -> bool {
+    log_debug("appending texture image data")
+      .tag("apndImgDta")
+      .arg("offset", _tex_data.size())
+      .arg("size", blk.size());
+    memory::append_to(blk, _tex_data);
+    //  TODO: progressive image specification once we have enough
+    //  data for width * some constant so that the temp buffer
+    //  doesn't get too big
+    return true;
+}
+//------------------------------------------------------------------------------
+auto valtree_gl_texture_image_loader::init_decompression(
+  data_compression_method method) noexcept -> bool {
+    if(const auto parent{_parent.lock()}) {
+        _decompression = stream_decompression{
+          data_compressor{method, parent->loader().buffers()},
+          make_callable_ref<&valtree_gl_texture_image_loader::append_image_data>(
+            this),
+          method};
+        return true;
+    }
+    return false;
+}
+//------------------------------------------------------------------------------
+template <std::integral T>
+void valtree_gl_texture_image_loader::do_add(
+  const basic_string_path& path,
+  const span<const T> data) noexcept {
+    if(path.has_size(1)) {
+        if(path.starts_with("level")) {
+            _success &= assign_if_fits(data, _params.level);
+        } else if(path.starts_with("x_offs")) {
+            _success &= assign_if_fits(data, _params.x_offs);
+            _params.dimensions = std::max(_params.dimensions, 1);
+        } else if(path.starts_with("y_offs")) {
+            _success &= assign_if_fits(data, _params.y_offs);
+            _params.dimensions = std::max(_params.dimensions, 2);
+        } else if(path.starts_with("z_offs")) {
+            _success &= assign_if_fits(data, _params.z_offs);
+            _params.dimensions = std::max(_params.dimensions, 3);
+        } else if(path.starts_with("channels")) {
+            _success &= assign_if_fits(data, _params.channels);
+        } else if(path.starts_with("width")) {
+            _success &= assign_if_fits(data, _params.width);
+            _params.dimensions = std::max(_params.dimensions, 1);
+        } else if(path.starts_with("height")) {
+            _success &= assign_if_fits(data, _params.height);
+            _params.dimensions = std::max(_params.dimensions, 2);
+        } else if(path.starts_with("depth")) {
+            _success &= assign_if_fits(data, _params.depth);
+            _params.dimensions = std::max(_params.dimensions, 3);
+        } else if(path.starts_with("data_type")) {
+            _success &= assign_if_fits(data, _params.data_type);
+        } else if(path.starts_with("format")) {
+            _success &= assign_if_fits(data, _params.format);
+        } else if(path.starts_with("iformat")) {
+            _success &= assign_if_fits(data, _params.iformat);
+        }
+    } else if(path.has_size(2)) {
+        if(path.starts_with("data")) {
+            _success &= append_image_data(as_bytes(data));
+        }
+    }
+}
+//------------------------------------------------------------------------------
+void valtree_gl_texture_image_loader::do_add(
+  const basic_string_path& path,
+  const span<const float> data) noexcept {
+    if(path.has_size(2)) {
+        if(path.starts_with("data")) {
+            _success &= append_image_data(as_bytes(data));
+        }
+    }
+}
+//------------------------------------------------------------------------------
+void valtree_gl_texture_image_loader::do_add(
+  const basic_string_path& path,
+  const span<const double> data) noexcept {
+    if(path.has_size(2)) {
+        if(path.starts_with("data")) {
+            _float_data.clear();
+            _float_data.reserve(std_size(data.size()));
+            for(const auto d : data) {
+                _float_data.push_back(float(d));
+            }
+            _success &= append_image_data(as_bytes(view(_float_data)));
+        }
+    }
+}
+//------------------------------------------------------------------------------
+void valtree_gl_texture_image_loader::do_add(
+  const basic_string_path& path,
+  const span<const string_view> data) noexcept {
+    if(path.has_size(1)) {
+        if(path.starts_with("data_type")) {
+            _success &= texture_data_type_from_string(data, _params.data_type);
+        } else if(path.starts_with("format")) {
+            _success &= texture_format_from_string(data, _params.format);
+        } else if(path.starts_with("iformat")) {
+            _success &= texture_iformat_from_string(data, _params.iformat);
+        } else if(path.starts_with("data_filter")) {
+            if(data.has_single_value()) {
+                if(const auto method{
+                     from_string<data_compression_method>(*data)}) {
+                    _success &= init_decompression(*method);
+                } else {
+                    _success = false;
+                }
+            } else {
+                _success = false;
+            }
+        }
+    }
+}
+//------------------------------------------------------------------------------
+void valtree_gl_texture_image_loader::unparsed_data(
+  span<const memory::const_block> data) noexcept {
+    if(not _decompression.is_initialized()) {
+        _success &= init_decompression(data_compression_method::none);
+    }
+    if(_success) {
+        for(const auto& blk : data) {
+            _decompression.next(blk);
+        }
+    }
+}
+//------------------------------------------------------------------------------
+auto valtree_gl_texture_image_loader::finish() noexcept -> bool {
+    if(const auto parent{_parent.lock()}) {
+        if(_success) {
+            _decompression.finish();
+            parent->handle_gl_texture_image(_target, _params, _tex_data);
+        }
+        parent->mark_finished();
+        return _success;
+    }
+    return false;
+}
+//------------------------------------------------------------------------------
+void valtree_gl_texture_image_loader::failed() noexcept {
+    if(const auto parent{_parent.lock()}) {
+        parent->mark_finished();
+    }
+}
+//------------------------------------------------------------------------------
 auto make_valtree_gl_texture_image_loader(
   const shared_holder<pending_resource_info>& parent,
   oglplus::texture_target target,
@@ -409,7 +450,6 @@ auto make_valtree_gl_texture_image_loader(
   -> unique_holder<valtree::object_builder> {
     return {hold<valtree_gl_texture_image_loader>, parent, target, params};
 }
-
 //------------------------------------------------------------------------------
 // valtree_gl_texture_builder
 //------------------------------------------------------------------------------
@@ -441,26 +481,9 @@ public:
       , _tex_target{tex_target}
       , _tex_unit{tex_unit} {}
 
-    auto append_image_data(const memory::const_block blk) noexcept -> bool {
-        log_debug("appending texture image data")
-          .tag("apndImgDta")
-          .arg("offset", _tex_data.size())
-          .arg("size", blk.size());
-        memory::append_to(blk, _tex_data);
-        return true;
-    }
+    auto append_image_data(const memory::const_block blk) noexcept -> bool;
 
-    auto init_decompression(data_compression_method method) noexcept -> bool {
-        if(const auto parent{_parent.lock()}) {
-            _decompression = stream_decompression{
-              data_compressor{method, parent->loader().buffers()},
-              make_callable_ref<&valtree_gl_texture_builder::append_image_data>(
-                this),
-              method};
-            return true;
-        }
-        return false;
-    }
+    auto init_decompression(data_compression_method method) noexcept -> bool;
 
     auto max_token_size() noexcept -> span_size_t final {
         return 256;
@@ -471,238 +494,23 @@ public:
     template <std::integral T>
     void do_add(
       const basic_string_path& path,
-      const span<const T> data) noexcept {
-        if(path.has_size(1)) {
-            if(path.starts_with("levels")) {
-                _success &= assign_if_fits(data, _params.levels);
-            } else if(path.starts_with("width")) {
-                _success &= assign_if_fits(data, _params.width);
-                _params.dimensions = std::max(_params.dimensions, 1);
-            } else if(path.starts_with("height")) {
-                _success &= assign_if_fits(data, _params.height);
-                _params.dimensions = std::max(_params.dimensions, 2);
-            } else if(path.starts_with("depth")) {
-                _success &= assign_if_fits(data, _params.depth);
-                _params.dimensions = std::max(_params.dimensions, 3);
-            } else if(path.starts_with("data_type")) {
-                _success &= assign_if_fits(data, _params.data_type);
-            } else if(path.starts_with("format")) {
-                _success &= assign_if_fits(data, _params.format);
-            } else if(path.starts_with("iformat")) {
-                _success &= assign_if_fits(data, _params.iformat);
-            }
-        } else if(path.has_size(3)) {
-            if(path.starts_with("images")) {
-                if(path.ends_with("level")) {
-                    _success &= assign_if_fits(data, _image_params.level);
-                } else if(path.ends_with("x_offs")) {
-                    _success &= assign_if_fits(data, _image_params.x_offs);
-                    _image_params.dimensions =
-                      std::max(_image_params.dimensions, 1);
-                } else if(path.ends_with("y_offs")) {
-                    _success &= assign_if_fits(data, _image_params.y_offs);
-                    _image_params.dimensions =
-                      std::max(_image_params.dimensions, 2);
-                } else if(path.ends_with("z_offs")) {
-                    _success &= assign_if_fits(data, _image_params.z_offs);
-                    _image_params.dimensions =
-                      std::max(_image_params.dimensions, 3);
-                }
-            }
-        }
-    }
+      const span<const T> data) noexcept;
 
     void do_add(
       const basic_string_path& path,
-      const span<const bool> data) noexcept {
-        if(path.has_size(1)) {
-            if(path.starts_with("generate_mipmap")) {
-                _success &= assign_if_fits(data, _params.generate_mipmap);
-            }
-        }
-    }
+      const span<const bool> data) noexcept;
 
     void do_add(
       const basic_string_path& path,
-      const span<const string_view> data) noexcept {
-        if(path.has_size(1)) {
-            using It = oglplus::gl_types::int_type;
-            using Et = oglplus::gl_types::enum_type;
+      const span<const string_view> data) noexcept;
 
-            if(path.starts_with("label")) {
-                if(data.has_single_value()) {
-                    if(const auto parent{_parent.lock()}) {
-                        parent->add_label(*data);
-                    }
-                }
-            } else if(path.starts_with("data_type")) {
-                _success &=
-                  texture_data_type_from_string(data, _params.data_type);
-            } else if(path.starts_with("format")) {
-                _success &= texture_format_from_string(data, _params.format);
-            } else if(path.starts_with("iformat")) {
-                _success &= texture_iformat_from_string(data, _params.iformat);
-            } else if(path.starts_with("min_filter")) {
-                Et e{0};
-                if(_success &= texture_min_filter_from_string(data, e)) {
-                    _i_params.emplace_back(0x2801, It(e));
-                }
-            } else if(path.starts_with("mag_filter")) {
-                Et e{0};
-                if(_success &= texture_mag_filter_from_string(data, e)) {
-                    _i_params.emplace_back(0x2800, It(e));
-                }
-            } else if(path.starts_with("wrap_s")) {
-                Et e{0};
-                if(_success &= texture_wrap_mode_from_string(data, e)) {
-                    _i_params.emplace_back(0x2802, It(e));
-                }
-            } else if(path.starts_with("wrap_t")) {
-                Et e{0};
-                if(_success &= texture_wrap_mode_from_string(data, e)) {
-                    _i_params.emplace_back(0x2803, It(e));
-                }
-            } else if(path.starts_with("wrap_r")) {
-                Et e{0};
-                if(_success &= texture_wrap_mode_from_string(data, e)) {
-                    _i_params.emplace_back(0x8072, It(e));
-                }
-            } else if(path.starts_with("swizzle_r")) {
-                Et e{0};
-                if(_success &= texture_swizzle_from_string(data, e)) {
-                    _i_params.emplace_back(0x8E42, It(e));
-                }
-            } else if(path.starts_with("swizzle_g")) {
-                Et e{0};
-                if(_success &= texture_swizzle_from_string(data, e)) {
-                    _i_params.emplace_back(0x8E43, It(e));
-                }
-            } else if(path.starts_with("swizzle_b")) {
-                Et e{0};
-                if(_success &= texture_swizzle_from_string(data, e)) {
-                    _i_params.emplace_back(0x8E44, It(e));
-                }
-            } else if(path.starts_with("swizzle_a")) {
-                Et e{0};
-                if(_success &= texture_swizzle_from_string(data, e)) {
-                    _i_params.emplace_back(0x8E45, It(e));
-                }
-            } else if(path.starts_with("data_filter")) {
-                if(data.has_single_value()) {
-                    if(const auto method{
-                         from_string<data_compression_method>(*data)}) {
-                        _success &= init_decompression(*method);
-                    } else {
-                        _success = false;
-                    }
-                } else {
-                    _success = false;
-                }
-            }
-        } else if(path.has_size(3)) {
-            if(path.starts_with("images")) {
-                if(path.ends_with("url")) {
-                    if(data.has_single_value()) {
-                        _image_locator = {to_string(*data)};
-                    } else {
-                        _success = false;
-                    }
-                } else if(path.ends_with("target")) {
-                    oglplus::gl_types::enum_type tgt{0};
-                    if(texture_target_from_string(data, tgt)) {
-                        _image_target = oglplus::texture_target{tgt};
-                    } else {
-                        log_error("invalid texture target '${name}'")
-                          .arg("name", *data);
-                        _success = false;
-                    }
-                }
-            }
-        }
-    }
+    void add_object(const basic_string_path& path) noexcept final;
 
-    void add_object(const basic_string_path& path) noexcept final {
-        if(path.has_size(2)) {
-            if(path.starts_with("images")) {
-                _image_locator = {};
-                _image_params = {};
-                _image_target = _tex_target;
-            }
-        }
-    }
+    void unparsed_data(span<const memory::const_block> data) noexcept final;
 
-    void unparsed_data(span<const memory::const_block> data) noexcept final {
-        if(_success and _decompression.is_initialized()) {
-            for(const auto& blk : data) {
-                _decompression.next(blk);
-            }
-        }
-    }
+    void finish_object(const basic_string_path& path) noexcept final;
 
-    void finish_object(const basic_string_path& path) noexcept final {
-        if(path.empty()) {
-            if(_success) {
-                if(const auto parent{_parent.lock()}) {
-                    _success &= parent->handle_gl_texture_params(_params);
-                } else {
-                    _success = false;
-                }
-            }
-        } else if(path.has_size(2)) {
-            if(path.starts_with("images")) {
-                if(_image_locator) {
-                    _image_requests.emplace_back(
-                      std::move(_image_locator), _image_target, _image_params);
-                }
-            }
-        }
-    }
-
-    auto finish() noexcept -> bool final {
-        if(const auto parent{_parent.lock()}) {
-            if(_success and _decompression.is_initialized()) {
-                resource_gl_texture_image_params img_params{
-                  .dimensions = _params.dimensions,
-                  .level = 0,
-                  .width = _params.width,
-                  .height = _params.height,
-                  .depth = _params.depth,
-                  .iformat = _params.iformat,
-                  .format = _params.format,
-                  .data_type = _params.data_type};
-                parent->handle_gl_texture_image(
-                  _tex_target, img_params, _tex_data);
-            }
-            if(_success) {
-                for(auto& [loc, tgt, para] : _image_requests) {
-                    const auto& rqparam{parent->parameters()};
-                    const auto img_request{
-                      parent->loader().request_gl_texture_image(
-                        {.locator = std::move(loc),
-                         .max_time = rqparam.max_time,
-                         .priority = rqparam.priority},
-                        tgt,
-                        para)};
-                    img_request.set_continuation(parent);
-                    parent->add_gl_texture_image_request(
-                      img_request.request_id());
-                }
-                _image_requests.clear();
-                for(const auto [param, value] : _i_params) {
-                    parent->handle_gl_texture_i_param(
-                      oglplus::texture_parameter{param}, value);
-                }
-                if(_params.generate_mipmap) {
-                    parent->handle_gl_texture_generate_mipmap();
-                }
-                parent->mark_loaded();
-            } else {
-                parent->mark_finished();
-            }
-            return _success;
-        }
-        return false;
-    }
+    auto finish() noexcept -> bool final;
 
 private:
     oglplus::shared_gl_api_context _gl_context;
@@ -723,6 +531,265 @@ private:
     bool _success{true};
 };
 //------------------------------------------------------------------------------
+auto valtree_gl_texture_builder::append_image_data(
+  const memory::const_block blk) noexcept -> bool {
+    log_debug("appending texture image data")
+      .tag("apndImgDta")
+      .arg("offset", _tex_data.size())
+      .arg("size", blk.size());
+    memory::append_to(blk, _tex_data);
+    return true;
+}
+//------------------------------------------------------------------------------
+auto valtree_gl_texture_builder::init_decompression(
+  data_compression_method method) noexcept -> bool {
+    if(const auto parent{_parent.lock()}) {
+        _decompression = stream_decompression{
+          data_compressor{method, parent->loader().buffers()},
+          make_callable_ref<&valtree_gl_texture_builder::append_image_data>(
+            this),
+          method};
+        return true;
+    }
+    return false;
+}
+//------------------------------------------------------------------------------
+template <std::integral T>
+void valtree_gl_texture_builder::do_add(
+  const basic_string_path& path,
+  const span<const T> data) noexcept {
+    if(path.has_size(1)) {
+        if(path.starts_with("levels")) {
+            _success &= assign_if_fits(data, _params.levels);
+        } else if(path.starts_with("width")) {
+            _success &= assign_if_fits(data, _params.width);
+            _params.dimensions = std::max(_params.dimensions, 1);
+        } else if(path.starts_with("height")) {
+            _success &= assign_if_fits(data, _params.height);
+            _params.dimensions = std::max(_params.dimensions, 2);
+        } else if(path.starts_with("depth")) {
+            _success &= assign_if_fits(data, _params.depth);
+            _params.dimensions = std::max(_params.dimensions, 3);
+        } else if(path.starts_with("data_type")) {
+            _success &= assign_if_fits(data, _params.data_type);
+        } else if(path.starts_with("format")) {
+            _success &= assign_if_fits(data, _params.format);
+        } else if(path.starts_with("iformat")) {
+            _success &= assign_if_fits(data, _params.iformat);
+        }
+    } else if(path.has_size(3)) {
+        if(path.starts_with("images")) {
+            if(path.ends_with("level")) {
+                _success &= assign_if_fits(data, _image_params.level);
+            } else if(path.ends_with("x_offs")) {
+                _success &= assign_if_fits(data, _image_params.x_offs);
+                _image_params.dimensions =
+                  std::max(_image_params.dimensions, 1);
+            } else if(path.ends_with("y_offs")) {
+                _success &= assign_if_fits(data, _image_params.y_offs);
+                _image_params.dimensions =
+                  std::max(_image_params.dimensions, 2);
+            } else if(path.ends_with("z_offs")) {
+                _success &= assign_if_fits(data, _image_params.z_offs);
+                _image_params.dimensions =
+                  std::max(_image_params.dimensions, 3);
+            }
+        }
+    }
+}
+//------------------------------------------------------------------------------
+void valtree_gl_texture_builder::do_add(
+  const basic_string_path& path,
+  const span<const bool> data) noexcept {
+    if(path.has_size(1)) {
+        if(path.starts_with("generate_mipmap")) {
+            _success &= assign_if_fits(data, _params.generate_mipmap);
+        }
+    }
+}
+//------------------------------------------------------------------------------
+void valtree_gl_texture_builder::do_add(
+  const basic_string_path& path,
+  const span<const string_view> data) noexcept {
+    if(path.has_size(1)) {
+        using It = oglplus::gl_types::int_type;
+        using Et = oglplus::gl_types::enum_type;
+
+        if(path.starts_with("label")) {
+            if(data.has_single_value()) {
+                if(const auto parent{_parent.lock()}) {
+                    parent->add_label(*data);
+                }
+            }
+        } else if(path.starts_with("data_type")) {
+            _success &= texture_data_type_from_string(data, _params.data_type);
+        } else if(path.starts_with("format")) {
+            _success &= texture_format_from_string(data, _params.format);
+        } else if(path.starts_with("iformat")) {
+            _success &= texture_iformat_from_string(data, _params.iformat);
+        } else if(path.starts_with("min_filter")) {
+            Et e{0};
+            if(_success &= texture_min_filter_from_string(data, e)) {
+                _i_params.emplace_back(0x2801, It(e));
+            }
+        } else if(path.starts_with("mag_filter")) {
+            Et e{0};
+            if(_success &= texture_mag_filter_from_string(data, e)) {
+                _i_params.emplace_back(0x2800, It(e));
+            }
+        } else if(path.starts_with("wrap_s")) {
+            Et e{0};
+            if(_success &= texture_wrap_mode_from_string(data, e)) {
+                _i_params.emplace_back(0x2802, It(e));
+            }
+        } else if(path.starts_with("wrap_t")) {
+            Et e{0};
+            if(_success &= texture_wrap_mode_from_string(data, e)) {
+                _i_params.emplace_back(0x2803, It(e));
+            }
+        } else if(path.starts_with("wrap_r")) {
+            Et e{0};
+            if(_success &= texture_wrap_mode_from_string(data, e)) {
+                _i_params.emplace_back(0x8072, It(e));
+            }
+        } else if(path.starts_with("swizzle_r")) {
+            Et e{0};
+            if(_success &= texture_swizzle_from_string(data, e)) {
+                _i_params.emplace_back(0x8E42, It(e));
+            }
+        } else if(path.starts_with("swizzle_g")) {
+            Et e{0};
+            if(_success &= texture_swizzle_from_string(data, e)) {
+                _i_params.emplace_back(0x8E43, It(e));
+            }
+        } else if(path.starts_with("swizzle_b")) {
+            Et e{0};
+            if(_success &= texture_swizzle_from_string(data, e)) {
+                _i_params.emplace_back(0x8E44, It(e));
+            }
+        } else if(path.starts_with("swizzle_a")) {
+            Et e{0};
+            if(_success &= texture_swizzle_from_string(data, e)) {
+                _i_params.emplace_back(0x8E45, It(e));
+            }
+        } else if(path.starts_with("data_filter")) {
+            if(data.has_single_value()) {
+                if(const auto method{
+                     from_string<data_compression_method>(*data)}) {
+                    _success &= init_decompression(*method);
+                } else {
+                    _success = false;
+                }
+            } else {
+                _success = false;
+            }
+        }
+    } else if(path.has_size(3)) {
+        if(path.starts_with("images")) {
+            if(path.ends_with("url")) {
+                if(data.has_single_value()) {
+                    _image_locator = {to_string(*data)};
+                } else {
+                    _success = false;
+                }
+            } else if(path.ends_with("target")) {
+                oglplus::gl_types::enum_type tgt{0};
+                if(texture_target_from_string(data, tgt)) {
+                    _image_target = oglplus::texture_target{tgt};
+                } else {
+                    log_error("invalid texture target '${name}'")
+                      .arg("name", *data);
+                    _success = false;
+                }
+            }
+        }
+    }
+}
+//------------------------------------------------------------------------------
+void valtree_gl_texture_builder::add_object(
+  const basic_string_path& path) noexcept {
+    if(path.has_size(2)) {
+        if(path.starts_with("images")) {
+            _image_locator = {};
+            _image_params = {};
+            _image_target = _tex_target;
+        }
+    }
+}
+//------------------------------------------------------------------------------
+void valtree_gl_texture_builder::unparsed_data(
+  span<const memory::const_block> data) noexcept {
+    if(_success and _decompression.is_initialized()) {
+        for(const auto& blk : data) {
+            _decompression.next(blk);
+        }
+    }
+}
+//------------------------------------------------------------------------------
+void valtree_gl_texture_builder::finish_object(
+  const basic_string_path& path) noexcept {
+    if(path.empty()) {
+        if(_success) {
+            if(const auto parent{_parent.lock()}) {
+                _success &= parent->handle_gl_texture_params(_params);
+            } else {
+                _success = false;
+            }
+        }
+    } else if(path.has_size(2)) {
+        if(path.starts_with("images")) {
+            if(_image_locator) {
+                _image_requests.emplace_back(
+                  std::move(_image_locator), _image_target, _image_params);
+            }
+        }
+    }
+}
+//------------------------------------------------------------------------------
+auto valtree_gl_texture_builder::finish() noexcept -> bool {
+    if(const auto parent{_parent.lock()}) {
+        if(_success and _decompression.is_initialized()) {
+            resource_gl_texture_image_params img_params{
+              .dimensions = _params.dimensions,
+              .level = 0,
+              .width = _params.width,
+              .height = _params.height,
+              .depth = _params.depth,
+              .iformat = _params.iformat,
+              .format = _params.format,
+              .data_type = _params.data_type};
+            parent->handle_gl_texture_image(_tex_target, img_params, _tex_data);
+        }
+        if(_success) {
+            for(auto& [loc, tgt, para] : _image_requests) {
+                const auto& rqparam{parent->parameters()};
+                const auto img_request{
+                  parent->loader().request_gl_texture_image(
+                    {.locator = std::move(loc),
+                     .max_time = rqparam.max_time,
+                     .priority = rqparam.priority},
+                    tgt,
+                    para)};
+                img_request.set_continuation(parent);
+                parent->add_gl_texture_image_request(img_request.request_id());
+            }
+            _image_requests.clear();
+            for(const auto [param, value] : _i_params) {
+                parent->handle_gl_texture_i_param(
+                  oglplus::texture_parameter{param}, value);
+            }
+            if(_params.generate_mipmap) {
+                parent->handle_gl_texture_generate_mipmap();
+            }
+            parent->mark_loaded();
+        } else {
+            parent->mark_finished();
+        }
+        return _success;
+    }
+    return false;
+}
+//------------------------------------------------------------------------------
 auto make_valtree_gl_texture_builder(
   const shared_holder<pending_resource_info>& parent,
   const oglplus::shared_gl_api_context& gl_context,
@@ -731,6 +798,8 @@ auto make_valtree_gl_texture_builder(
   -> unique_holder<valtree::object_builder> {
     return {hold<valtree_gl_texture_builder>, parent, gl_context, target, unit};
 }
+//------------------------------------------------------------------------------
+// helper functions
 //------------------------------------------------------------------------------
 static void _adjust_texture_dimensions(
   const oglplus::texture_target target,
@@ -1150,17 +1219,7 @@ public:
 
     void do_add(
       const basic_string_path& path,
-      span<const string_view> data) noexcept {
-        if(path.has_size(1)) {
-            if(path.starts_with("label")) {
-                if(data.has_single_value()) {
-                    if(auto parent{_parent.lock()}) {
-                        parent->add_label(*data);
-                    }
-                }
-            }
-        }
-    }
+      span<const string_view> data) noexcept;
 
     // TODO
     void do_add(const basic_string_path&, const auto&) noexcept {}
@@ -1173,6 +1232,20 @@ private:
     bool _success{true};
 };
 //------------------------------------------------------------------------------
+void valtree_gl_buffer_builder::do_add(
+  const basic_string_path& path,
+  span<const string_view> data) noexcept {
+    if(path.has_size(1)) {
+        if(path.starts_with("label")) {
+            if(data.has_single_value()) {
+                if(auto parent{_parent.lock()}) {
+                    parent->add_label(*data);
+                }
+            }
+        }
+    }
+}
+//------------------------------------------------------------------------------
 auto make_valtree_gl_buffer_builder(
   const shared_holder<pending_resource_info>& parent,
   const oglplus::shared_gl_api_context& gl_context,
@@ -1180,6 +1253,8 @@ auto make_valtree_gl_buffer_builder(
   -> unique_holder<valtree::object_builder> {
     return {hold<valtree_gl_buffer_builder>, parent, gl_context, target};
 }
+//------------------------------------------------------------------------------
+// pending resource info
 //------------------------------------------------------------------------------
 auto pending_resource_info::handle_gl_buffer_params(
   const resource_gl_buffer_params& params) noexcept -> bool {

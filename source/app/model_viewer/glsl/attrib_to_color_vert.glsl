@@ -8,8 +8,9 @@ in vec4 Position;
 in vec3 Attrib;
 out vec3 vertColor;
 uniform mat4 Camera;
+uniform mat4 Model;
 
 void main() {
-    gl_Position = Camera * Position;
+    gl_Position = Camera * Model * Position;
     vertColor = Attrib;
 }

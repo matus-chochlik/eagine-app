@@ -54,6 +54,12 @@ auto model_viewer_programs::set_camera(
     return *this;
 }
 //------------------------------------------------------------------------------
+auto model_viewer_programs::set_model(video_context& video, const mat4& model)
+  -> model_viewer_programs& {
+    current().set_model(video, model);
+    return *this;
+}
+//------------------------------------------------------------------------------
 auto model_viewer_programs::set_cube_map_unit(
   video_context& video,
   oglplus::texture_unit tu) -> model_viewer_programs& {

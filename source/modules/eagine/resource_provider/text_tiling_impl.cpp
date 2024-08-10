@@ -134,7 +134,7 @@ public:
     auto has_resource(const url& locator) noexcept -> bool final;
 
     auto get_resource_io(const url& locator)
-      -> unique_holder<msgbus::source_blob_io> final;
+      -> shared_holder<msgbus::source_blob_io> final;
 
     auto get_blob_timeout(const span_size_t size) noexcept
       -> std::chrono::seconds final;
@@ -155,7 +155,7 @@ auto tiling_provider<Rank>::has_resource(const url& locator) noexcept -> bool {
 //------------------------------------------------------------------------------
 template <unsigned Rank>
 auto tiling_provider<Rank>::get_resource_io(const url& locator)
-  -> unique_holder<msgbus::source_blob_io> {
+  -> shared_holder<msgbus::source_blob_io> {
     return {
       hold<tiling_io<Rank>>,
       as_parent(),

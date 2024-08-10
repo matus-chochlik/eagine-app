@@ -224,14 +224,13 @@ SampleInfo getSampleSun(
 vec4 sunlightColor(SampleInfo s) {
 	return mixColor012n(
 		vec4(1.5), vec4(1.4),
-		vec4(1.3, 1.3, 0.9, 1.2),
-		vec4(1.3, 0.5, 0.5, 1.0),
-		s.atmLightDistRatio * 0.7, 0.5);
+		vec4(1.3, 1.3, 0.9, 1.3),
+		vec4(1.3, 0.5, 0.4, 1.1),
+		s.atmLightDistRatio * 0.75, 0.75);
 }
 //------------------------------------------------------------------------------
 vec4 clearAirColor(SampleInfo s, float cloudShadow) {
 	vec4 lightColor = sunlightColor(s);
-	float shadow = s.planetShadow * cloudShadow;
 	float groundHaze = pow(
 		1.0 - exp(-s.atmViewDistRatio * mix(0.5, 1.0, haziness)), 8.0);
 	float lightHaze = pow(s.toLight, 8.0);
@@ -269,8 +268,10 @@ vec4 clearAirColor(SampleInfo s, float cloudShadow) {
 			cloudiness),
 		s.toLight);
 
+	float shadow = s.accumulated.planetShadow * cloudShadow;
+
 	vec4 hazeColor = vec4(mix(
-		mix(lightAirColor.rgb, vec3(1.0), 0.92),
+		lightAirColor.rgb,
 		lightColor.rgb,
 		shadow * (1.0 - cloudiness)),
 		s.toLight * s.planetShadow * mix(1.0, 2.0, haziness));
@@ -286,13 +287,16 @@ vec4 vaporColor(SampleInfo s, vec4 airColor, float cloudShadow) {
 	float pshadow = mix(s.planetShadow, s.accumulated.planetShadow, 0.25);
 	float cshadow = mix(0.8, 1.0, s.accumulated.vaporShadow) * cloudShadow;
 
-	vec4 vaporColor = vec4(1.0, 1.0, 1.0, 0.95) * pshadow * cshadow;
-	vec4 lightColor = sunlightColor(s) * mix(0.1 * s.planetShadow, 4.0, cloudShadow);
+	vec4 vaporColor = vec4(pshadow * cshadow);
+	vec4 lightColor = sunlightColor(s) * mix(
+		0.1 * s.accumulated.planetShadow,
+		mix(1.0, 2.0, cloudiness),
+		cshadow);
 
 	return mix(
-		mix(vaporColor, airColor, s.accumulated.planetShadow * 0.5),
-		mix(vaporColor, lightColor, s.accumulated.vaporShadow),
-		pshadow * cshadow);
+		mix(vaporColor, airColor, pshadow),
+		mix(vaporColor, lightColor, cshadow),
+		s.accumulated.planetShadow * cshadow);
 }
 //------------------------------------------------------------------------------
 float clearAirDensity(SampleInfo sample) {
@@ -323,11 +327,11 @@ CloudLayerInfo getCloudLayer(
 }
 //------------------------------------------------------------------------------
 CloudLayerInfo thinCloudLayer(SampleInfo sample) {
-	return getCloudLayer(sample, 257.1, vaporTop, vaporBtm);
+	return getCloudLayer(sample, 0.3571, vaporTop, vaporBtm);
 }
 //------------------------------------------------------------------------------
 CloudLayerInfo thickCloudLayer(SampleInfo sample) {
-	return getCloudLayer(sample, 33.7, cloudTop, cloudBtm);
+	return getCloudLayer(sample, 0.00511, cloudTop, cloudBtm);
 }
 //------------------------------------------------------------------------------
 struct Segment {
@@ -368,7 +372,7 @@ vec2 cloudCoord(
 	vec2 sph = vec2(atan(loc.y, loc.x) + pi, asin(loc.z));
 	vec2 sca = vec2(8.0 / scale);
 	float alt = pow(layer.altitudeRatio, mix(0.5, 2.0, to01(sin(sph.x*3.1))));
-	float layerofs = ceil(alt * layer.steps / scale);
+	float layerofs = ceil(alt * layer.steps * layer.thickness / scale);
 	offset = (sca * offset / tilingSide);
 	return vec2(
 		offset + sph * sca + vec2(phi * scale * layerofs) +
@@ -414,7 +418,7 @@ float thinCloudDensity(
 	float s000500 = thinCloudSample(loc, sam, layer, fib2( 5, 7),  0.523*phi);
 	float s000125 = thinCloudSample(loc, sam, layer, fib2( 6, 8),  0.131*phi);
 
-	float dfac = mix(0.5, 4.0, haziness);
+	float dfac = mix(0.5, 4.0, haziness) * (1.0 - exp(-sam.atmViewDistRatio));
 	float dens = sqrt(4.0 * s256000 * s128000 * s016000 * s004000);
 	dens -= pow(s002000, 2.0) * 0.41;
 	dens -= pow(s000500, 2.0) * 0.37;
@@ -463,11 +467,12 @@ float thickCloudDensity(
 	float cc008 = cloudCutout(s0080000);
 	float cc004 = cloudCutout(s0040000);
 	float densi = sqrt(4.0 * cc256 * cc064 * cc032 * cc016 * cc008 * cc004);
+	float dnois = s0080000 * s0040000 * s0020000;
 
 	float mask0 = (1.0 - sqrt(max(densi - mix(0.0, 0.011, s0160000),0.0)));
 	mask0 *= 0.37;
 	float mask1 = (1.0 - sqrt(max(densi - mix(0.0, 0.004, s0080000),0.0)));
-	mask1 *= mix(1.0, 2.5, s0080000 * s0040000 * s0020000);
+	mask1 *= mix(1.0, 2.5, dnois);
 
 	densi -= pow(s0020000, 3.0) * mask0;
 	densi -= pow(s0010000, 3.0) * mask0;
@@ -482,7 +487,7 @@ float thickCloudDensity(
 
 	densi = clamp(densi, 0.0, 3.0);
 
-	return densi * sampleAtmRatio * 24.0;
+	return densi * sampleAtmRatio * mix(29.0, 4.0, dnois);
 }
 //------------------------------------------------------------------------------
 float thickCloudDensity(vec3 loc, SampleInfo sam, CloudLayerInfo layer) {

@@ -4,6 +4,7 @@
 # https://www.boost.org/LICENSE_1_0.txt
 find_program(ZIP_COMMAND zip)
 
+add_subdirectory(blender)
 add_subdirectory(models)
 add_subdirectory(tilings)
 add_subdirectory(tilesets)

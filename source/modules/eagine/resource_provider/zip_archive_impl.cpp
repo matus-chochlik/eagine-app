@@ -173,7 +173,7 @@ public:
     auto has_resource(const url& locator) noexcept -> bool final;
 
     auto get_resource_io(const url& locator)
-      -> unique_holder<msgbus::source_blob_io> final;
+      -> shared_holder<msgbus::source_blob_io> final;
 
     void for_each_locator(
       callable_ref<void(string_view) noexcept>) noexcept final;
@@ -293,7 +293,7 @@ auto zip_archive_provider::has_resource(const url& locator) noexcept -> bool {
 }
 //------------------------------------------------------------------------------
 auto zip_archive_provider::get_resource_io(const url& locator)
-  -> unique_holder<msgbus::source_blob_io> {
+  -> shared_holder<msgbus::source_blob_io> {
     for(const auto& search_path : _search_paths) {
         if(auto zip{_search_archive_file(std::move(search_path), locator)}) {
             return {hold<zip_archive_io>, std::move(zip)};

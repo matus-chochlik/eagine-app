@@ -17,12 +17,13 @@ out float vertRough;
 out float vertOccl;
 
 uniform mat4 Camera;
+uniform mat4 Model;
 const vec3 LightDir = normalize(vec3(1.0, 1.0, 1.0));
 
 void main() {
-    gl_Position = Camera * Position;
+    gl_Position = Camera * Model * Position;
     vec3 cameraLoc = (vec4(0.0, 0.0, 0.0, 1.0) * Camera).xyz;
-    vertNormal = Normal;
+    vertNormal = mat3(Model) * Normal;
     vertViewDir = cameraLoc - Position.xyz;
     vertLightDir = LightDir;
     vertColor = Color * Occlusion;

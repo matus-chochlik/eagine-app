@@ -6,9 +6,11 @@ application:
     cubemap_blur:
       device_index: 0
       tile_size: 16
+      blob_timeout: 30min
     cubemap_sky:
       device_index: 0
-      tile_size: 2
+      tile_size: 4
+      blob_timeout: 24hr
 
 msgbus:
   router:
