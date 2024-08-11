@@ -21,38 +21,33 @@ class Obj2EAGiMeshArgParser(argparse.ArgumentParser):
         self.add_argument(
             '--debug',
             action="store_true",
-            default=False
-        )
+            default=False)
         self.add_argument(
             '--output', '-o',
             dest="output_path",
             metavar="PATH",
             type=os.path.realpath,
             action="store",
-            default=None
-        )
+            default=None)
         self.add_argument(
             '--input', '-i',
             dest="input_path",
             metavar="PATH",
             type=os.path.realpath,
             action="store",
-            default=None
-        )
+            default=None)
         self.add_argument(
             '--name', '-n',
             dest="mesh_name",
             metavar="NAME",
             action="store",
-            default=None
-        )
+            default=None)
 
         self.add_argument(
             '--patches', '-p',
             dest="patches",
             action="store_true",
-            default=False
-        )
+            default=False)
 
     # --------------------------------------------------------------------------
     def process_parsed_options(self, options):
@@ -74,8 +69,7 @@ class Obj2EAGiMeshArgParser(argparse.ArgumentParser):
     # --------------------------------------------------------------------------
     def parse_args(self, args):
         return self.process_parsed_options(
-            argparse.ArgumentParser.parse_args(self, args)
-        )
+            argparse.ArgumentParser.parse_args(self, args))
 
 # ------------------------------------------------------------------------------
 def make_argument_parser():
@@ -83,8 +77,7 @@ def make_argument_parser():
             prog=os.path.basename(__file__),
             description="""
             OBJ mesh converter script
-        """
-    )
+        """)
 # ------------------------------------------------------------------------------
 class Obj2EAGiMeshOutput(object):
     # --------------------------------------------------------------------------
@@ -174,8 +167,7 @@ class Obj2EAGiMeshConverter(object):
             (re_position, self.handle_position),
             (re_texcoord, self.handle_texcoord),
             (re_triangle, self.handle_triangle),
-            (re_comment,  self.handle_comment)
-        ]
+            (re_comment,  self.handle_comment)]
 
     # --------------------------------------------------------------------------
     def handle_position(self, l, m, o):
