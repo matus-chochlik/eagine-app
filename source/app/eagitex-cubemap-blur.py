@@ -122,33 +122,30 @@ class ArgParser(argparse.ArgumentParser):
                 self._parent = parent
 
             # ------------------------------------------------------------------
-            def fetchResource(self, url, dest=tempfile.TemporaryFile()):
+            def fetchResource(self, url):
+                dest = tempfile.NamedTemporaryFile(mode="w+")
                 cmd = [
                     self.resource_get,
                     "--msgbus-" + self._connection_kind,
                     "--msgbus-router-address", self._connection_address,
-                    "--url", str(url)]
-                subprocess.Popen(cmd, stdout=dest, stderr=None).communicate()
+                    "--url", url]
+                p = subprocess.Popen(cmd, stdout=dest, stderr=None)
+                p.wait()
                 dest.flush()
-                dest.seek(0)
                 return dest
 
             # ------------------------------------------------------------------
-            def fetchInputs(self):
-                for input_url in self.input_urls:
-                    yield input_url, self.fetchResource(input_url)
-                for input_url in self._input_urls:
-                    yield input_url, self.fetchResource(input_url)
-
-            # ------------------------------------------------------------------
             def inputs(self):
-                for input_url, input_io in self.fetchInputs():
-                    try:
-                        yield input_url, json.load(input_io)
-                        input_io.close()
-                    except:
-                        raise
-                        self._parent.error(f"failed to parse '{input_url}'")
+                for input_url in self.input_urls + self._input_urls:
+                    with self.fetchResource(input_url) as fd:
+                        try:
+                            fd.seek(0)
+                            yield input_url, json.load(fd)
+                        except:
+                            if self.debug:
+                                raise
+                            else:
+                                self._parent.error(f"failed to parse '{input_url}'")
 
         # ----------------------------------------------------------------------
         options = _Options(self.processParsedOptions(
@@ -191,12 +188,12 @@ def makeOutput(options):
             basename = os.path.basename(urllib.parse.urlparse(img0).path)
             basename = os.path.splitext(basename)[0]
 
-            with options.fetchResource(img0, tempfile.NamedTemporaryFile()) as fdi0:
+            with options.fetchResource(img0) as fdi0:
                 output.write(fdi0.name, arcname=f"{basename}-l0.eagitexi")
 
             img_prefix = f"eagires:///{options.archive_prefix}{archive_name}/{basename}-l"
             iurl = img_prefix + "0.eagitexi"
-            images = [{"url":iurl, "level":0}]
+            images = [{"url":iurl}]
 
             for level in range(1, 8):
                 size = max(size / 2, 1)
@@ -204,12 +201,14 @@ def makeOutput(options):
                 imgl = "eagitexi:///cube_map_blur?source="+\
                         urllib.parse.quote(url, safe="")+\
                         f"&level={level}&size={size}&sharpness={sharpness}"
-                with options.fetchResource(imgl, tempfile.NamedTemporaryFile()) as fdi:
+                with options.fetchResource(imgl) as fdi:
                     output.write(fdi.name, arcname=f"{basename}-l{level}.eagitexi")
                 iurl = img_prefix + f"{level}.eagitexi"
-                images.append({"url":iurl, "level":level})
+                images.append({"url":iurl})
 
             eagitex["levels"] = len(images)
+            eagitex["min_filter"] = "linear_mipmap_linear"
+            eagitex["max_filter"] = "linear"
             eagitex["images"] = images
 
             with tempfile.NamedTemporaryFile(mode="w+") as fdt:
