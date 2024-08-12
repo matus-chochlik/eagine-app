@@ -22,6 +22,13 @@ class Obj2EAGiMeshArgParser(argparse.ArgumentParser):
             '--debug',
             action="store_true",
             default=False)
+
+        self.add_argument(
+            '--print-bash-completion',
+            metavar='FILE|-',
+            dest='print_bash_completion',
+            default=None)
+
         self.add_argument(
             '--output', '-o',
             dest="output_path",
@@ -29,6 +36,7 @@ class Obj2EAGiMeshArgParser(argparse.ArgumentParser):
             type=os.path.realpath,
             action="store",
             default=None)
+
         self.add_argument(
             '--input', '-i',
             dest="input_path",
@@ -36,6 +44,7 @@ class Obj2EAGiMeshArgParser(argparse.ArgumentParser):
             type=os.path.realpath,
             action="store",
             default=None)
+
         self.add_argument(
             '--name', '-n',
             dest="mesh_name",
@@ -59,6 +68,9 @@ class Obj2EAGiMeshArgParser(argparse.ArgumentParser):
         else:
             options.prefix = None
             options.output = sys.stdout
+
+        if options.input_path is None:
+            options.input_path = "a.eagimesh"
 
         if options.mesh_name is None:
             options.mesh_name = os.path.splitext(
@@ -207,20 +219,45 @@ class Obj2EAGiMeshConverter(object):
             out.finish()
 
 # ------------------------------------------------------------------------------
+#  bash completion
+# ------------------------------------------------------------------------------
+def printBashCompletion(argparser, options):
+    from eagine.argparseUtil import printBashComplete
+    def _printIt(fd):
+        printBashComplete(
+            argparser,
+            "_eagine_obj_to_eagimesh",
+            "eagine-obj-to-eagimesh",
+            ["--print-bash-completion"],
+            fd)
+    if options.print_bash_completion == "-":
+        _printIt(sys.stdout)
+    else:
+        with open(options.print_bash_completion, "wt") as fd:
+            _printIt(fd)
+
+# ------------------------------------------------------------------------------
+#  Main
+# ------------------------------------------------------------------------------
 def main():
+    debug = True
     try:
         arg_parser = make_argument_parser()
         options = arg_parser.parse_args(sys.argv[1:])
-        if options.debug:
-            print(options)
+        debug = options.debug
+        if options.print_bash_completion:
+            printBashCompletion(arg_parser, options)
+            return 0
         else:
             converter = Obj2EAGiMeshConverter(options)
             converter.convert(
                 options.input_path,
                 Obj2EAGiMeshOutput(options))
     except Exception as err:
-        print(err)
-        raise
+        if debug:
+            raise
+        else:
+            print(err)
 # ------------------------------------------------------------------------------
 main()
 
