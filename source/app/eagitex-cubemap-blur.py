@@ -54,7 +54,7 @@ class ArgParser(argparse.ArgumentParser):
             default=_valid_executable("eagine-msgbus-resource-get"))
 
         self.add_argument(
-            "--msgbus",
+            '--msgbus', '-m',
             metavar='KIND',
             dest='_connection_kind',
             nargs='?',
@@ -64,7 +64,7 @@ class ArgParser(argparse.ArgumentParser):
             default="asio-local-stream")
 
         self.add_argument(
-            "--msgbus-addr",
+            '--msgbus-addr', '-a',
             metavar='ADDRESS',
             dest='_connection_address',
             nargs='?',
@@ -72,7 +72,7 @@ class ArgParser(argparse.ArgumentParser):
             default="/tmp/eagibus.socket")
 
         self.add_argument(
-            '--archive-prefix',
+            '--archive-prefix', '-p',
             metavar="PATH-PREFIX",
             dest="archive_prefix",
             action="store",
@@ -168,6 +168,21 @@ def makeArgumentParser():
         """)
 # ------------------------------------------------------------------------------
 def makeOutput(options):
+    def _sharpness(level):
+        if level == 1:
+            return 20
+        if level == 2:
+            return 16
+        if level == 3:
+            return 8
+        if level == 4:
+            return 4
+        if level == 5:
+            return 2
+        if level == 6:
+            return 1
+        return 0
+
     with zipfile.ZipFile(options.output_path, mode="w") as output:
         archive_name = os.path.basename(options.output_path)
         for url, eagitex in options.inputs():
@@ -184,7 +199,8 @@ def makeOutput(options):
             images = [{"url":iurl, "level":0}]
 
             for level in range(1, 8):
-                sharpness = 20
+                size = max(size / 2, 1)
+                sharpness = _sharpness(level)
                 imgl = "eagitexi:///cube_map_blur?source="+\
                         urllib.parse.quote(url, safe="")+\
                         f"&level={level}&size={size}&sharpness={sharpness}"
@@ -193,10 +209,11 @@ def makeOutput(options):
                 iurl = img_prefix + f"{level}.eagitexi"
                 images.append({"url":iurl, "level":level})
 
+            eagitex["levels"] = len(images)
             eagitex["images"] = images
 
             with tempfile.NamedTemporaryFile(mode="w+") as fdt:
-                json.dump(eagitex, fdt)
+                json.dump(eagitex, fdt, separators=("\n,",":"))
                 fdt.flush()
                 output.write(fdt.name, arcname=f"{basename}.eagitex")
 
