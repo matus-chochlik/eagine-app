@@ -22,10 +22,10 @@ class ArgParser(argparse.ArgumentParser):
         # ----------------------------------------------------------------------
         def _valid_input_url(x):
             try:
-                p = urllib.parse.urlparse
+                p = urllib.parse.urlparse(x)
                 return x
             except:
-                self.error("`%s' is not an existing executable file" % str(x))
+                self.error("`%s' is not a valid URL" % str(x))
 
         # ----------------------------------------------------------------------
         def _valid_executable(x):
@@ -70,6 +70,13 @@ class ArgParser(argparse.ArgumentParser):
             nargs='?',
             action="store",
             default="/tmp/eagibus.socket")
+
+        self.add_argument(
+            '--archive-prefix',
+            metavar="PATH-PREFIX",
+            dest="archive_prefix",
+            action="store",
+            default="")
 
         self.add_argument(
             '--output', '-o',
@@ -162,18 +169,30 @@ def makeArgumentParser():
 # ------------------------------------------------------------------------------
 def makeOutput(options):
     with zipfile.ZipFile(options.output_path, mode="w") as output:
+        archive_name = os.path.basename(options.output_path)
         for url, eagitex in options.inputs():
             img0 = eagitex["images"][0]["url"]
+            size = int(eagitex["width"])
             basename = os.path.basename(urllib.parse.urlparse(img0).path)
             basename = os.path.splitext(basename)[0]
 
             with options.fetchResource(img0, tempfile.NamedTemporaryFile()) as fdi0:
                 output.write(fdi0.name, arcname=f"{basename}-l0.eagitexi")
 
-            for level in range(1, 8):
-                pass
+            img_prefix = f"eagires:///{options.archive_prefix}{archive_name}/{basename}-l"
+            iurl = img_prefix + "0.eagitexi"
+            images = [{"url":iurl, "level":0}]
 
-            images = [{"url":f"eagires:///{basename}-l0.eagitexi","level":0}]
+            for level in range(1, 8):
+                sharpness = 20
+                imgl = "eagitexi:///cube_map_blur?source="+\
+                        urllib.parse.quote(url, safe="")+\
+                        f"&level={level}&size={size}&sharpness={sharpness}"
+                with options.fetchResource(imgl, tempfile.NamedTemporaryFile()) as fdi:
+                    output.write(fdi.name, arcname=f"{basename}-l{level}.eagitexi")
+                iurl = img_prefix + f"{level}.eagitexi"
+                images.append({"url":iurl, "level":level})
+
             eagitex["images"] = images
 
             with tempfile.NamedTemporaryFile(mode="w+") as fdt:
