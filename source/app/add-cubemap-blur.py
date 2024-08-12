@@ -46,6 +46,12 @@ class ArgParser(argparse.ArgumentParser):
             default=False)
 
         self.add_argument(
+            '--print-bash-completion',
+            metavar='FILE|-',
+            dest='print_bash_completion',
+            default=None)
+
+        self.add_argument(
             '--resource-get', '-g',
             dest="resource_get",
             metavar="FILE-PATH",
@@ -217,6 +223,24 @@ def makeOutput(options):
                 output.write(fdt.name, arcname=f"{basename}.eagitex")
 
 # ------------------------------------------------------------------------------
+#  bash completion
+# ------------------------------------------------------------------------------
+def printBashCompletion(argparser, options):
+    from eagine.argparseUtil import printBashComplete
+    def _printIt(fd):
+        printBashComplete(
+            argparser,
+            "_eagine_add_cubemap_blur",
+            "eagine-add-cubemap-blur",
+            ["--print-bash-completion"],
+            fd)
+    if options.print_bash_completion == "-":
+        _printIt(sys.stdout)
+    else:
+        with open(options.print_bash_completion, "wt") as fd:
+            _printIt(fd)
+
+# ------------------------------------------------------------------------------
 #  Main
 # ------------------------------------------------------------------------------
 def main():
@@ -225,7 +249,11 @@ def main():
         arg_parser = makeArgumentParser()
         options = arg_parser.parseArgs(sys.argv[1:])
         debug = options.debug
-        makeOutput(options)
+        if options.print_bash_completion:
+            printBashCompletion(arg_parser, options)
+            return 0
+        else:
+            makeOutput(options)
     except Exception as err:
         if debug:
             raise
