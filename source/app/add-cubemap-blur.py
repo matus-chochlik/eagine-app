@@ -165,9 +165,9 @@ def makeArgumentParser():
     return ArgParser(
             prog=os.path.basename(__file__),
             description="""
-            Reads eagitex files, uses resource provider to create blurred
+            Reads eagitex cube-map files, uses resource provider to create blurred
             higher image-levels of the texture, generates a new eagitex file
-            and saves it with all the images into a zip file.
+            and saves it with all the images into a zip archive.
         """)
 # ------------------------------------------------------------------------------
 def makeOutput(options):
@@ -214,7 +214,8 @@ def makeOutput(options):
 
             eagitex["levels"] = len(images)
             eagitex["min_filter"] = "linear_mipmap_linear"
-            eagitex["max_filter"] = "linear"
+            eagitex["mag_filter"] = "linear"
+            eagitex.setdefault("tag", []).append("blur")
             eagitex["images"] = images
 
             with tempfile.NamedTemporaryFile(mode="w+") as fdt:
@@ -254,6 +255,8 @@ def main():
             return 0
         else:
             makeOutput(options)
+    except KeyboardInterrupt:
+        pass
     except Exception as err:
         if debug:
             raise
