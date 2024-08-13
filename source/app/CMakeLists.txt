@@ -10,7 +10,7 @@ add_subdirectory(resource_provider)
 
 find_program(PYTHON3_COMMAND python3)
 
-foreach(APP make-voronoi-svg)
+foreach(APP add-cubemap-blur make-voronoi-svg obj-to-eagimesh)
 	add_custom_command(
 		OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/eagine-${APP}.bco"
 		COMMAND ${PYTHON3_COMMAND} "${CMAKE_CURRENT_SOURCE_DIR}/${APP}.py"
@@ -30,13 +30,12 @@ foreach(APP make-voronoi-svg)
 
 	install(
 		PROGRAMS ${APP}.py
-		COMPONENT oglplus-apps
+		COMPONENT app-apps
 		RENAME eagine-${APP}
 		DESTINATION bin)
 endforeach()
 
 foreach(APP
-		obj-to-eagimesh
 		blender-bake-light
 		blender-bake-to-vertex
 		blender-export-mesh
