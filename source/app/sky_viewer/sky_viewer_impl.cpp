@@ -82,12 +82,13 @@ auto sky_viewer::_make_anim_url() noexcept -> url {
     if(_animation_mode) {
         return _make_anim_url(0);
     }
+
     std::string query;
     query.append("eagitex:///cube_map_sky");
     query.append("?size=");
     query.append(std::to_string(_resolution));
     query.append("&params=");
-    query.append(url::encode_component("json:///SkyParams"));
+    query.append(url::encode_component(_params));
     return url{std::move(query)};
 }
 //------------------------------------------------------------------------------
@@ -123,6 +124,13 @@ auto sky_viewer::_get_resolution() noexcept -> int {
 //------------------------------------------------------------------------------
 auto sky_viewer::_get_animation_mode() noexcept -> bool {
     return context().main_context().args().find("--animation");
+}
+//------------------------------------------------------------------------------
+auto sky_viewer::_get_params() noexcept -> std::string {
+    if(url locator{context().main_context().args().find("--params").next()}) {
+        return locator.release_string();
+    }
+    return {"json:///SkyParams"};
 }
 //------------------------------------------------------------------------------
 auto sky_viewer::_get_animation_template() noexcept -> std::string {
