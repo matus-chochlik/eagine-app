@@ -211,6 +211,13 @@ gl_rendered_source_blob_io::gl_rendered_source_blob_io(
 //------------------------------------------------------------------------------
 static bool gl_renderer_active{false};
 //------------------------------------------------------------------------------
+gl_rendered_source_blob_io::~gl_rendered_source_blob_io() noexcept {
+    if(_renderer) {
+        _renderer.reset();
+        gl_renderer_active = false;
+    }
+}
+//------------------------------------------------------------------------------
 auto gl_rendered_source_blob_io::prepare() noexcept
   -> msgbus::blob_preparation_result {
     if(not _finished) {
