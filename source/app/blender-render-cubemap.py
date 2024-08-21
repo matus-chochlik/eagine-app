@@ -57,80 +57,69 @@ class CubeMapArgParser(argparse.ArgumentParser):
         self.add_argument(
             '--debug',
             action="store_true",
-            default=False
-        )
+            default=False)
 
         self.add_argument(
             '--size', '-s',
             type=self._positive_int,
             action="store",
-            default=1024
-        )
+            default=1024)
 
         self.add_argument(
             '--face', '-f',
             type=self._face_name,
             action="store",
-            default=None
-        )
+            default=None)
 
         self.add_argument(
             '--prefix', '-P',
             type=os.path.realpath,
             action="store",
-            default="/tmp"
-        )
+            default="/tmp")
 
         self.add_argument(
             '--name', '-n',
             type=str,
             action="store",
-            default="cubemap"
-        )
+            default="cubemap")
 
         self.add_argument(
             '--engine', '-E',
             type=str,
             action="store",
             default=None,
-            choices=["CYCLES", "BLENDER_EEVEE", "BLENDER_WORKBENCH"]
-        )
+            choices=["CYCLES", "BLENDER_EEVEE", "BLENDER_WORKBENCH"])
 
         self.add_argument(
             '--threads', '-T',
             type=self._positive_int,
             action="store",
-            default=None
-        )
+            default=None)
 
         self.add_argument(
             '--samples', '-S',
             type=self._positive_int,
             action="store",
-            default=None
-        )
+            default=None)
 
         self.add_argument(
             '--tile-width', '-TW',
             type=self._positive_int,
             action="store",
-            default=None
-        )
+            default=None)
 
         self.add_argument(
             '--tile-height', '-TH',
             type=self._positive_int,
             action="store",
-            default=None
-        )
+            default=None)
     # --------------------------------------------------------------------------
     def process_parsed_options(self, options):
         return options
     # --------------------------------------------------------------------------
     def parse_args(self, args):
         return self.process_parsed_options(
-            argparse.ArgumentParser.parse_args(self, args)
-        )
+            argparse.ArgumentParser.parse_args(self, args))
 
 # ------------------------------------------------------------------------------
 def make_argument_parser():
@@ -138,8 +127,7 @@ def make_argument_parser():
             prog=os.path.basename(__file__),
             description="""
             Blender cube-map renderer script
-        """
-    )
+        """)
 # ------------------------------------------------------------------------------
 def do_render_face(axis_name, options):
     try:
@@ -161,9 +149,7 @@ def do_render_face(axis_name, options):
         scene.render.filepath = os.path.realpath("%s/%s-%s.png" % (
                 options.prefix,
                 options.name,
-                axis_name
-            )
-        )
+                axis_name))
         scene.render.resolution_x = options.size
         scene.render.resolution_y = options.size
 
@@ -211,7 +197,4 @@ def main():
         except: pass
 # ------------------------------------------------------------------------------
 main()
-
-
-
 
