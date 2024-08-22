@@ -128,23 +128,25 @@ public:
       const resource_request_params&,
       resource_kind k) noexcept;
 
-    auto request_id() const noexcept -> identifier_t {
+    [[nodiscard]] auto request_id() const noexcept -> identifier_t {
         return _request_id;
     }
 
-    auto parameters() const noexcept -> const resource_request_params& {
+    [[nodiscard]] auto parameters() const noexcept
+      -> const resource_request_params& {
         return _params;
     }
 
-    auto is(resource_kind kind) const noexcept -> bool {
+    [[nodiscard]] auto is(resource_kind kind) const noexcept -> bool {
         return _kind == kind;
     }
 
-    auto is_finished() const noexcept -> bool {
+    [[nodiscard]] auto is_finished() const noexcept -> bool {
         return is(resource_kind::finished);
     }
 
-    auto continuation() const noexcept -> shared_holder<pending_resource_info> {
+    [[nodiscard]] auto continuation() const noexcept
+      -> shared_holder<pending_resource_info> {
         return _continuation.lock();
     }
 
@@ -153,13 +155,13 @@ public:
         _continuation = cont;
     }
 
-    auto loader() noexcept -> resource_loader& {
+    [[nodiscard]] auto loader() noexcept -> resource_loader& {
         return _parent;
     }
 
     void mark_loaded() noexcept;
     void mark_finished() noexcept;
-    auto is_done() const noexcept -> bool;
+    [[nodiscard]] auto is_done() const noexcept -> bool;
 
     void add_label(const string_view) noexcept;
     void apply_label() noexcept;
@@ -628,29 +630,30 @@ public:
         return not _was_cancelled;
     }
 
-    auto info() const noexcept -> pending_resource_info&;
+    [[nodiscard]] auto info() const noexcept -> pending_resource_info&;
 
     operator shared_holder<pending_resource_info>() const noexcept {
         return _info;
     }
 
     /// @brief Returns a reference to the parent loader.
-    auto loader() const noexcept -> resource_loader& {
+    [[nodiscard]] auto loader() const noexcept -> resource_loader& {
         return info().loader();
     }
 
     /// @brief Returns the unique id of the request.
-    auto request_id() const noexcept -> identifier_t {
+    [[nodiscard]] auto request_id() const noexcept -> identifier_t {
         return info().request_id();
     }
 
     /// @brief Returns the request parameters.
-    auto parameters() const noexcept -> const resource_request_params& {
+    [[nodiscard]] auto parameters() const noexcept
+      -> const resource_request_params& {
         return info()._params;
     }
 
     /// @brief Returns the locator of the requested resource.
-    auto locator() const noexcept -> const url& {
+    [[nodiscard]] auto locator() const noexcept -> const url& {
         return parameters().locator;
     }
 
@@ -714,7 +717,7 @@ export struct resource_loader_signals {
     signal<void(const shape_generator_load_info&) noexcept>
       shape_generator_loaded;
 
-    auto load_signal(
+    [[nodiscard]] auto load_signal(
       std::type_identity<shared_holder<shapes::generator>>) noexcept -> auto& {
         return shape_generator_loaded;
     }
@@ -734,8 +737,8 @@ export struct resource_loader_signals {
     /// @brief Emitted when a oglplus shape wrapper is loaded.
     signal<void(const gl_shape_load_info&) noexcept> gl_shape_loaded;
 
-    auto load_signal(std::type_identity<oglplus::shape_generator>) noexcept
-      -> auto& {
+    [[nodiscard]] auto load_signal(
+      std::type_identity<oglplus::shape_generator>) noexcept -> auto& {
         return gl_shape_loaded;
     }
 
@@ -756,8 +759,8 @@ export struct resource_loader_signals {
     signal<void(const gl_geometry_and_bindings_load_info&) noexcept>
       gl_geometry_and_bindings_loaded;
 
-    auto load_signal(std::type_identity<gl_geometry_and_bindings>) noexcept
-      -> auto& {
+    [[nodiscard]] auto load_signal(
+      std::type_identity<gl_geometry_and_bindings>) noexcept -> auto& {
         return gl_geometry_and_bindings_loaded;
     }
 
@@ -791,7 +794,8 @@ export struct resource_loader_signals {
     /// @brief Emitted when a value tree is loaded.
     signal<void(const value_tree_load_info&) noexcept> value_tree_loaded;
 
-    auto load_signal(std::type_identity<valtree::compound>) noexcept -> auto& {
+    [[nodiscard]] auto load_signal(
+      std::type_identity<valtree::compound>) noexcept -> auto& {
         return value_tree_loaded;
     }
 
@@ -810,7 +814,8 @@ export struct resource_loader_signals {
     /// @brief Emitted when plain text is loaded.
     signal<void(const plain_text_load_info&) noexcept> plain_text_loaded;
 
-    auto load_signal(std::type_identity<std::string>) noexcept -> auto& {
+    [[nodiscard]] auto load_signal(std::type_identity<std::string>) noexcept
+      -> auto& {
         return plain_text_loaded;
     }
 
@@ -832,8 +837,8 @@ export struct resource_loader_signals {
     /// @brief Emitted when list of strings is loaded.
     signal<void(const string_list_load_info&) noexcept> string_list_loaded;
 
-    auto load_signal(std::type_identity<std::vector<std::string>>) noexcept
-      -> auto& {
+    [[nodiscard]] auto load_signal(
+      std::type_identity<std::vector<std::string>>) noexcept -> auto& {
         return string_list_loaded;
     }
 
@@ -852,7 +857,8 @@ export struct resource_loader_signals {
     /// @brief Emitted when list of strings is loaded.
     signal<void(const url_list_load_info&) noexcept> url_list_loaded;
 
-    auto load_signal(std::type_identity<std::vector<url>>) noexcept -> auto& {
+    [[nodiscard]] auto load_signal(std::type_identity<std::vector<url>>) noexcept
+      -> auto& {
         return url_list_loaded;
     }
 
@@ -871,7 +877,8 @@ export struct resource_loader_signals {
     /// @brief Emitted when a vector of floating-point values is loaded.
     signal<void(const float_vector_load_info&) noexcept> float_vector_loaded;
 
-    auto load_signal(std::type_identity<std::vector<float>>) noexcept -> auto& {
+    [[nodiscard]] auto load_signal(
+      std::type_identity<std::vector<float>>) noexcept -> auto& {
         return float_vector_loaded;
     }
 
@@ -890,7 +897,7 @@ export struct resource_loader_signals {
     /// @brief Emitted when a vector of vec3 values is loaded.
     signal<void(const vec3_vector_load_info&) noexcept> vec3_vector_loaded;
 
-    auto load_signal(
+    [[nodiscard]] auto load_signal(
       std::type_identity<std::vector<math::vector<float, 3, true>>>) noexcept
       -> auto& {
         return vec3_vector_loaded;
@@ -913,7 +920,7 @@ export struct resource_loader_signals {
     signal<void(const smooth_vec3_curve_load_info&) noexcept>
       smooth_vec3_curve_loaded;
 
-    auto load_signal(
+    [[nodiscard]] auto load_signal(
       std::type_identity<
         math::cubic_bezier_curves<math::vector<float, 3, true>, float>>) noexcept
       -> auto& {
@@ -935,7 +942,7 @@ export struct resource_loader_signals {
     /// @brief Emitted when a vector of mat4 values is loaded.
     signal<void(const mat4_vector_load_info&) noexcept> mat4_vector_loaded;
 
-    auto load_signal(
+    [[nodiscard]] auto load_signal(
       std::type_identity<
         std::vector<math::matrix<float, 4, 4, true, true>>>) noexcept -> auto& {
         return mat4_vector_loaded;
@@ -970,8 +977,8 @@ export struct resource_loader_signals {
     /// @brief Emitted when a GL shader is successfully created and compiled.
     signal<void(const gl_shader_load_info&) noexcept> gl_shader_loaded;
 
-    auto load_signal(std::type_identity<oglplus::owned_shader_name>) noexcept
-      -> auto& {
+    [[nodiscard]] auto load_signal(
+      std::type_identity<oglplus::owned_shader_name>) noexcept -> auto& {
         return gl_shader_loaded;
     }
 
@@ -1043,8 +1050,8 @@ export struct resource_loader_signals {
     /// @brief Emitted when a GL program is successfully created and linked.
     signal<void(const gl_program_load_info&) noexcept> gl_program_loaded;
 
-    auto load_signal(std::type_identity<oglplus::owned_program_name>) noexcept
-      -> auto& {
+    [[nodiscard]] auto load_signal(
+      std::type_identity<oglplus::owned_program_name>) noexcept -> auto& {
         return gl_program_loaded;
     }
 
@@ -1080,8 +1087,8 @@ export struct resource_loader_signals {
     /// @brief Emitted when a GL texture is successfully created and its parameters set-up.
     signal<void(const gl_texture_load_info&) noexcept> gl_texture_loaded;
 
-    auto load_signal(std::type_identity<oglplus::owned_texture_name>) noexcept
-      -> auto& {
+    [[nodiscard]] auto load_signal(
+      std::type_identity<oglplus::owned_texture_name>) noexcept -> auto& {
         return gl_texture_loaded;
     }
 
@@ -1115,8 +1122,8 @@ export struct resource_loader_signals {
     /// @brief Emitted when a GL buffer is successfully created and set-up.
     signal<void(const gl_buffer_load_info&) noexcept> gl_buffer_loaded;
 
-    auto load_signal(std::type_identity<oglplus::owned_buffer_name>) noexcept
-      -> auto& {
+    [[nodiscard]] auto load_signal(
+      std::type_identity<oglplus::owned_buffer_name>) noexcept -> auto& {
         return gl_buffer_loaded;
     }
 
@@ -1171,7 +1178,7 @@ export struct resource_loader_signals {
     signal<void(const mapped_struct_load_info&) noexcept> mapped_struct_loaded;
 
     template <mapped_struct O>
-    auto load_signal(std::type_identity<O>) noexcept -> auto& {
+    [[nodiscard]] auto load_signal(std::type_identity<O>) noexcept -> auto& {
         return mapped_struct_loaded;
     }
 };
@@ -1322,7 +1329,7 @@ public:
     }
 
     /// @brief Indicates if this loader has any pending requests.
-    auto has_pending_requests() const noexcept -> bool {
+    [[nodiscard]] auto has_pending_requests() const noexcept -> bool {
         return not _pending.empty();
     }
 
@@ -1670,12 +1677,12 @@ public:
     }
 
     /// @brief Returns the number of currently pending resource requests.
-    auto pending_count() const noexcept -> span_size_t {
+    [[nodiscard]] auto pending_count() const noexcept -> span_size_t {
         return span_size(_request_ids.size());
     }
 
     /// @brief Indicates if all the tracked requests finished loading.
-    auto all_are_loaded() const noexcept -> bool {
+    [[nodiscard]] auto all_are_loaded() const noexcept -> bool {
         return _request_ids.empty();
     }
 
