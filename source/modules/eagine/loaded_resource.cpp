@@ -48,13 +48,14 @@ public:
 
     /// @brief Returns this resource's URL.
     /// @see parameters
-    auto locator() const noexcept -> url {
+    [[nodiscard]] auto locator() const noexcept -> url {
         return {_locator_str};
     }
 
     /// @brief Returns the resource request parameters.
     /// @see locator
-    auto request_parameters() const noexcept -> resource_request_params {
+    [[nodiscard]] auto request_parameters() const noexcept
+      -> resource_request_params {
         return {
           .locator = locator(), .max_time = _max_time, .priority = _priority};
     }
@@ -63,7 +64,7 @@ public:
     /// @see is_loaded
     /// @see is_cancelled
     /// @see has_failed
-    auto is_loading() const noexcept -> bool {
+    [[nodiscard]] auto is_loading() const noexcept -> bool {
         return (_request_id != 0) and
                (_status == resource_load_status::loading);
     }
@@ -72,14 +73,14 @@ public:
     /// @see is_loading
     /// @see is_cancelled
     /// @see has_failed
-    auto is_loaded() const noexcept -> bool {
+    [[nodiscard]] auto is_loaded() const noexcept -> bool {
         return _status == resource_load_status::loaded;
     }
 
     /// @brief Indicates if this resource is cancelled.
     /// @see is_loading
     /// @see has_failed
-    auto is_cancelled() const noexcept -> bool {
+    [[nodiscard]] auto is_cancelled() const noexcept -> bool {
         return _status == resource_load_status::cancelled;
     }
 
@@ -87,29 +88,32 @@ public:
     /// @see is_loading
     /// @see is_loaded
     /// @see is_cancelled
-    auto has_failed() const noexcept -> bool {
+    [[nodiscard]] auto has_failed() const noexcept -> bool {
         return (_status == resource_load_status::cancelled) or
                (_status == resource_load_status::error);
     }
 
     /// @brief Indicates if this resource is the same as that resource.
-    auto is(const loaded_resource_base& that) const noexcept -> bool {
+    [[nodiscard]] auto is(const loaded_resource_base& that) const noexcept
+      -> bool {
         return this->_locator_str == that._locator_str;
     }
 
     /// @brief Compares resources for equality.
-    auto operator==(const loaded_resource_base& that) const noexcept -> bool {
+    [[nodiscard]] auto operator==(
+      const loaded_resource_base& that) const noexcept -> bool {
         return this->is(that);
     }
 
     /// @brief Indicates if this resource is the same as that resource and it's loaded.
-    auto is_loaded(const loaded_resource_base& that) const noexcept -> bool {
+    [[nodiscard]] auto is_loaded(const loaded_resource_base& that) const noexcept
+      -> bool {
         return is_loaded() and this->is(that);
     }
 
     /// @brief Indicates if this resource is one in the specified collection.
     template <std::derived_from<loaded_resource_base>... R>
-    auto is_one_of(const R&... those) const noexcept -> bool {
+    [[nodiscard]] auto is_one_of(const R&... those) const noexcept -> bool {
         return (... or is(those));
     }
 
@@ -140,7 +144,6 @@ struct get_resource_load_context_params : std::type_identity<Params> {};
 export template <typename Params>
 using resource_load_context_params =
   typename get_resource_load_context_params<Params>::type;
-//------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 export template <typename Resource>
 class loaded_resource;
@@ -194,12 +197,12 @@ public:
     }
 
     /// @brief Returns a reference to the underlying resource.
-    auto resource() noexcept -> Resource& {
+    [[nodiscard]] auto resource() noexcept -> Resource& {
         return *this;
     }
 
     /// @brief Returns a const reference to the underlying resource.
-    auto resource() const noexcept -> const Resource& {
+    [[nodiscard]] auto resource() const noexcept -> const Resource& {
         return *this;
     }
 
@@ -284,12 +287,14 @@ public:
     }
 
     /// @brief Indicates if the load info originated from this loaded resource.
-    auto originated(const base_load_info& info) const noexcept -> bool {
+    [[nodiscard]] auto originated(const base_load_info& info) const noexcept
+      -> bool {
         return info.request_id == _request_id;
     }
 
     /// @brief Indicates if the load info originated from this loaded resource.
-    auto originated(const load_info& info) const noexcept -> bool {
+    [[nodiscard]] auto originated(const load_info& info) const noexcept
+      -> bool {
         return originated(info.base);
     }
 
@@ -455,22 +460,24 @@ public:
     }
 
     /// @brief Returns a reference to the underlying resource.
-    auto resource() noexcept -> Resource& {
+    [[nodiscard]] auto resource() noexcept -> Resource& {
         return *this;
     }
 
     /// @brief Returns a const reference to the underlying resource.
-    auto resource() const noexcept -> const Resource& {
+    [[nodiscard]] auto resource() const noexcept -> const Resource& {
         return *this;
     }
 
     /// @brief Indicates if the load info originated from this loaded resource.
-    auto originated(const base_load_info& info) const noexcept -> bool {
+    [[nodiscard]] auto originated(const base_load_info& info) const noexcept
+      -> bool {
         return info.request_id == _request_id;
     }
 
     /// @brief Indicates if the load info originated from this loaded resource.
-    auto originated(const load_info& info) const noexcept -> bool {
+    [[nodiscard]] auto originated(const load_info& info) const noexcept
+      -> bool {
         return originated(info.base);
     }
 
@@ -849,7 +856,8 @@ struct resource_load_info<oglplus::owned_program_name> {
     }
 
     /// @brief Returns the location of a uniform with the specified name.
-    auto get_uniform_location(const string_view var_name) const noexcept {
+    [[nodiscard]] auto get_uniform_location(
+      const string_view var_name) const noexcept {
         return base.get_uniform_location(var_name);
     }
 
@@ -867,7 +875,7 @@ struct resource_load_info<oglplus::owned_program_name> {
     }
 
     /// @brief Returns the location of a storge block with the specified name.
-    auto get_shader_storage_block_index(
+    [[nodiscard]] auto get_shader_storage_block_index(
       const string_view var_name) const noexcept {
         return base.get_shader_storage_block_index(var_name);
     }
@@ -914,15 +922,16 @@ public:
     }
 
     /// @brief Returns the location of a uniform with the specified name.
-    auto get_uniform_location(
+    [[nodiscard]] auto get_uniform_location(
       const oglplus::gl_api& glapi,
       const string_view var_name) const noexcept {
         return glapi.get_uniform_location(*this, var_name);
     }
 
     /// @brief Returns the location of a uniform with the specified name.
-    auto get_uniform_location(video_context& video, const string_view var_name)
-      const noexcept {
+    [[nodiscard]] auto get_uniform_location(
+      video_context& video,
+      const string_view var_name) const noexcept {
         return get_uniform_location(video.gl_api(), var_name);
     }
 
