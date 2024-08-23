@@ -695,7 +695,8 @@ export using shape_generator_resource =
 //------------------------------------------------------------------------------
 template <>
 struct get_resource_load_params<gl_geometry_and_bindings>
-  : std::type_identity<std::tuple<span_size_t>> {};
+  : std::type_identity<std::tuple<oglplus::vertex_attrib_bindings, span_size_t>> {
+};
 
 export template <>
 class loaded_resource<gl_geometry_and_bindings>
@@ -727,7 +728,8 @@ public:
 
     /// @brief Updates the resource, possibly doing resource load request.
     auto load_if_needed(execution_context& ctx) -> work_done {
-        return common::load_if_needed(ctx, 0);
+        return common::load_if_needed(
+          ctx, oglplus::vertex_attrib_bindings{}, 0);
     }
 
     auto assign(const typename common::base_load_info& info) noexcept -> bool {
