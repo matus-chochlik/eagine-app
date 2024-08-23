@@ -78,8 +78,9 @@ example_shapes::operator bool() const noexcept {
 }
 //------------------------------------------------------------------------------
 void example_shapes::load_if_needed(execution_context& ec) noexcept {
+    auto bindings{example_shape_data::attrib_bindings()};
     for(auto& shape : *this) {
-        shape.geometry.load_if_needed(ec);
+        shape.geometry.load_if_needed(ec, bindings, 0);
     }
 }
 //------------------------------------------------------------------------------
