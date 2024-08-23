@@ -44,7 +44,7 @@ example_uv_map::example_uv_map(execution_context& ec, video_context& vc)
   : timeouting_application{ec, std::chrono::seconds{30}}
   , _video{vc}
   , _prog{_resources, ec, url{"json:///Program"}}
-  , _barrel{_resources, ec, url{"json:///Barrel"}, 0}
+  , _barrel{_resources, ec, url{"json:///Barrel"}, oglplus::vertex_attrib_bindings{}, 0}
   , _color_tex{
       _resources,
       ec,

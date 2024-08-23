@@ -43,7 +43,7 @@ example_uv_map::example_uv_map(execution_context& ec, video_context& vc)
   : timeouting_application{ec, std::chrono::seconds{30}}
   , _video{vc}
   , _prog{_resources, ec, url{"json:///Program"}}
-  , _crate{_resources, ec, url{"json:///Crate"}, 0}
+  , _crate{_resources, ec, url{"json:///Crate"}, oglplus::vertex_attrib_bindings{}, 0}
   , _color_tex{
       _resources,
       ec,
