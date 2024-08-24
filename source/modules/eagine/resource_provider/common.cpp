@@ -118,6 +118,8 @@ protected:
       const gl_rendered_blob_params& params,
       span_size_t buffer_size) noexcept;
 
+    virtual ~gl_rendered_source_blob_io() noexcept;
+
     virtual auto config_attribs(const shared_provider_objects&) noexcept
       -> eglplus::config_attributes;
 

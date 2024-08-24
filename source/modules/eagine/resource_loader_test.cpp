@@ -407,82 +407,81 @@ struct test_request_mat4_vector : eagitest::app_case {
                         info.base.locator.has_path("/TestMat4");
         if(info.base.values.size() == 3 and mats.size() == 3) {
             using eagine::are_equal;
-            using eagine::math::get_rm;
             content_is_ok = true;
             content_is_ok =
-              content_is_ok and are_equal(get_rm<0, 0>(mats[0]), 1.F);
+              content_is_ok and are_equal(mats[0].get_rm(0, 0), 1.F);
             content_is_ok =
-              content_is_ok and are_equal(get_rm<0, 1>(mats[0]), 0.F);
+              content_is_ok and are_equal(mats[0].get_rm(0, 1), 0.F);
             content_is_ok =
-              content_is_ok and are_equal(get_rm<0, 2>(mats[0]), 0.F);
+              content_is_ok and are_equal(mats[0].get_rm(0, 2), 0.F);
             content_is_ok =
-              content_is_ok and are_equal(get_rm<0, 3>(mats[0]), 0.F);
+              content_is_ok and are_equal(mats[0].get_rm(0, 3), 0.F);
             content_is_ok =
-              content_is_ok and are_equal(get_rm<1, 0>(mats[0]), 0.F);
+              content_is_ok and are_equal(mats[0].get_rm(1, 0), 0.F);
             content_is_ok =
-              content_is_ok and are_equal(get_rm<1, 1>(mats[0]), 2.F);
+              content_is_ok and are_equal(mats[0].get_rm(1, 1), 2.F);
             content_is_ok =
-              content_is_ok and are_equal(get_rm<1, 2>(mats[0]), 0.F);
+              content_is_ok and are_equal(mats[0].get_rm(1, 2), 0.F);
             content_is_ok =
-              content_is_ok and are_equal(get_rm<1, 3>(mats[0]), 0.F);
+              content_is_ok and are_equal(mats[0].get_rm(1, 3), 0.F);
             content_is_ok =
-              content_is_ok and are_equal(get_rm<2, 0>(mats[0]), 0.F);
+              content_is_ok and are_equal(mats[0].get_rm(2, 0), 0.F);
             content_is_ok =
-              content_is_ok and are_equal(get_rm<2, 1>(mats[0]), 0.F);
+              content_is_ok and are_equal(mats[0].get_rm(2, 1), 0.F);
             content_is_ok =
-              content_is_ok and are_equal(get_rm<2, 2>(mats[0]), 3.F);
+              content_is_ok and are_equal(mats[0].get_rm(2, 2), 3.F);
             content_is_ok =
-              content_is_ok and are_equal(get_rm<2, 3>(mats[0]), 0.F);
+              content_is_ok and are_equal(mats[0].get_rm(2, 3), 0.F);
             content_is_ok =
-              content_is_ok and are_equal(get_rm<3, 0>(mats[0]), 0.F);
+              content_is_ok and are_equal(mats[0].get_rm(3, 0), 0.F);
             content_is_ok =
-              content_is_ok and are_equal(get_rm<3, 1>(mats[0]), 0.F);
+              content_is_ok and are_equal(mats[0].get_rm(3, 1), 0.F);
             content_is_ok =
-              content_is_ok and are_equal(get_rm<3, 2>(mats[0]), 0.F);
+              content_is_ok and are_equal(mats[0].get_rm(3, 2), 0.F);
             content_is_ok =
-              content_is_ok and are_equal(get_rm<3, 3>(mats[0]), 4.F);
+              content_is_ok and are_equal(mats[0].get_rm(3, 3), 4.F);
 
             content_is_ok =
-              content_is_ok and are_equal(get_rm<0, 0>(mats[1]), 5.F);
+              content_is_ok and are_equal(mats[1].get_rm(0, 0), 5.F);
             content_is_ok =
-              content_is_ok and are_equal(get_rm<1, 1>(mats[1]), 6.F);
+              content_is_ok and are_equal(mats[1].get_rm(1, 1), 6.F);
             content_is_ok =
-              content_is_ok and are_equal(get_rm<2, 2>(mats[1]), 7.F);
+              content_is_ok and are_equal(mats[1].get_rm(2, 2), 7.F);
             content_is_ok =
-              content_is_ok and are_equal(get_rm<3, 3>(mats[1]), 8.F);
+              content_is_ok and are_equal(mats[1].get_rm(3, 3), 8.F);
 
             content_is_ok =
-              content_is_ok and are_equal(get_rm<0, 0>(mats[2]), 0.F);
+              content_is_ok and are_equal(mats[2].get_rm(0, 0), 0.F);
             content_is_ok =
-              content_is_ok and are_equal(get_rm<0, 1>(mats[2]), 1.F);
+              content_is_ok and are_equal(mats[2].get_rm(0, 1), 1.F);
             content_is_ok =
-              content_is_ok and are_equal(get_rm<0, 2>(mats[2]), 2.F);
+              content_is_ok and are_equal(mats[2].get_rm(0, 2), 2.F);
             content_is_ok =
-              content_is_ok and are_equal(get_rm<0, 3>(mats[2]), 3.F);
+              content_is_ok and are_equal(mats[2].get_rm(0, 3), 3.F);
             content_is_ok =
-              content_is_ok and are_equal(get_rm<1, 0>(mats[2]), 4.F);
+              content_is_ok and are_equal(mats[2].get_rm(1, 0), 4.F);
             content_is_ok =
-              content_is_ok and are_equal(get_rm<1, 1>(mats[2]), 5.F);
+              content_is_ok and are_equal(mats[2].get_rm(1, 1), 5.F);
             content_is_ok =
-              content_is_ok and are_equal(get_rm<1, 2>(mats[2]), 6.F);
+              content_is_ok and are_equal(mats[2].get_rm(1, 2), 6.F);
             content_is_ok =
-              content_is_ok and are_equal(get_rm<1, 3>(mats[2]), 7.F);
+              content_is_ok and are_equal(mats[2].get_rm(1, 3), 7.F);
             content_is_ok =
-              content_is_ok and are_equal(get_rm<2, 0>(mats[2]), 8.F);
+              content_is_ok and are_equal(mats[2].get_rm(2, 0), 8.F);
             content_is_ok =
-              content_is_ok and are_equal(get_rm<2, 1>(mats[2]), 9.F);
+              content_is_ok and are_equal(mats[2].get_rm(2, 1), 9.F);
             content_is_ok =
-              content_is_ok and are_equal(get_rm<2, 2>(mats[2]), 10.F);
+              content_is_ok and are_equal(mats[2].get_rm(2, 2), 10.F);
             content_is_ok =
-              content_is_ok and are_equal(get_rm<2, 3>(mats[2]), 11.F);
+              content_is_ok and are_equal(mats[2].get_rm(2, 3), 11.F);
             content_is_ok =
-              content_is_ok and are_equal(get_rm<3, 0>(mats[2]), 12.F);
+              content_is_ok and are_equal(mats[2].get_rm(3, 0), 12.F);
             content_is_ok =
-              content_is_ok and are_equal(get_rm<3, 1>(mats[2]), 13.F);
+              content_is_ok and are_equal(mats[2].get_rm(3, 1), 13.F);
             content_is_ok =
-              content_is_ok and are_equal(get_rm<3, 2>(mats[2]), 14.F);
+              content_is_ok and are_equal(mats[2].get_rm(3, 2), 14.F);
             content_is_ok =
-              content_is_ok and are_equal(get_rm<3, 3>(mats[2]), 15.F);
+              content_is_ok and are_equal(mats[2].get_rm(3, 3), 15.F);
         }
     }
 

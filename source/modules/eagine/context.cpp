@@ -47,12 +47,12 @@ public:
       shared_holder<video_provider> provider) noexcept;
 
     /// @brief Returns a reference to the parent application execution context.
-    auto parent() const noexcept -> execution_context& {
+    [[nodiscard]] auto parent() const noexcept -> execution_context& {
         return _parent;
     }
 
     /// @brief Returns the current video frame number.
-    auto frame_number() const noexcept {
+    [[nodiscard]] auto frame_number() const noexcept {
         return _frame_no;
     }
 
@@ -77,21 +77,22 @@ public:
     auto init_gl_api(execution_context&) noexcept -> bool;
 
     /// @brief Returns the shared GL API context wrapper.
-    auto gl_context() const noexcept -> oglplus::shared_gl_api_context {
+    [[nodiscard]] auto gl_context() const noexcept
+      -> oglplus::shared_gl_api_context {
         return _gl_api_context;
     }
 
     /// @brief Indicates if the GL rendering API in this video context is initialized.
     /// @see init_gl_api
     /// @see gl_api
-    auto has_gl_api() const noexcept {
+    [[nodiscard]] auto has_gl_api() const noexcept {
         return bool(_gl_api_context);
     }
 
     /// @brief Returns a smart reference to the GL rendering API in this context.
     /// @see init_gl_api
     /// @see with_gl
-    auto gl_ref() const noexcept -> oglplus::gl_api_reference {
+    [[nodiscard]] auto gl_ref() const noexcept -> oglplus::gl_api_reference {
         return _gl_api_context.gl_ref();
     }
 
@@ -100,7 +101,7 @@ public:
     /// @see gl_ref
     /// @see with_gl
     /// @pre has_gl_api()
-    auto gl_api() const noexcept -> const oglplus::gl_api& {
+    [[nodiscard]] auto gl_api() const noexcept -> const oglplus::gl_api& {
         assert(has_gl_api());
         return _gl_api_context.gl_api();
     }
@@ -117,7 +118,7 @@ public:
     /// @see init_egl_api
     /// @see egl_display
     /// @see with_egl
-    auto egl_ref() const noexcept -> eglplus::egl_api_reference {
+    [[nodiscard]] auto egl_ref() const noexcept -> eglplus::egl_api_reference {
         if(_provider) [[likely]] {
             return _provider->egl_ref();
         }
@@ -126,7 +127,7 @@ public:
 
     /// @brief Returns a handle to this context's EGL display (if any).
     /// @see egl_ref
-    auto egl_display() noexcept -> eglplus::display_handle {
+    [[nodiscard]] auto egl_display() noexcept -> eglplus::display_handle {
         if(_provider) [[likely]] {
             return _provider->egl_display();
         }
@@ -143,7 +144,7 @@ public:
     }
 
     /// @brief Returns the rendering surface's dimensions (in pixels).
-    auto surface_size() noexcept -> std::tuple<int, int> {
+    [[nodiscard]] auto surface_size() noexcept -> std::tuple<int, int> {
         if(_provider) [[likely]] {
             return _provider->surface_size();
         }
@@ -151,13 +152,13 @@ public:
     }
 
     /// @brief Returns the rendering surface's dimensions (in pixels) as vec2.
-    auto surface_size_vec2() noexcept -> vec2 {
+    [[nodiscard]] auto surface_size_vec2() noexcept -> vec2 {
         const auto [x, y] = surface_size();
         return vec2{float(x), float(y)};
     }
 
     /// @brief Returns the rendering surface's aspect ratio.
-    auto surface_aspect() noexcept -> float {
+    [[nodiscard]] auto surface_aspect() noexcept -> float {
         if(_provider) [[likely]] {
             return _provider->surface_aspect();
         }
@@ -223,21 +224,22 @@ public:
     auto init_al_api(execution_context&) noexcept -> bool;
 
     /// @brief Returns the shared AL API context wrapper.
-    auto al_context() const noexcept -> oalplus::shared_al_api_context {
+    [[nodiscard]] auto al_context() const noexcept
+      -> oalplus::shared_al_api_context {
         return _al_api_context;
     }
 
     /// @brief Indicates if the AL rendering API in this video context is initialized.
     /// @see init_al_api
     /// @see al_api
-    auto has_al_api() const noexcept {
+    [[nodiscard]] auto has_al_api() const noexcept {
         return bool(_al_api_context);
     }
 
     /// @brief Returns a smart reference to the AL rendering API in this context.
     /// @see init_al_api
     /// @see with_al
-    auto al_ref() const noexcept -> oalplus::al_api_reference {
+    [[nodiscard]] auto al_ref() const noexcept -> oalplus::al_api_reference {
         return _al_api_context.al_ref();
     }
 
@@ -246,7 +248,7 @@ public:
     /// @see al_ref
     /// @see with_al
     /// @pre has_al_api()
-    auto al_api() const noexcept -> const oalplus::al_api& {
+    [[nodiscard]] auto al_api() const noexcept -> const oalplus::al_api& {
         assert(has_al_api());
         return _al_api_context.al_api();
     }
@@ -258,7 +260,8 @@ public:
 
     /// @brief Returns a reference to the ALUT sound API in this context.
     /// @see with_alut
-    auto alut_ref() const noexcept -> oalplus::alut_api_reference {
+    [[nodiscard]] auto alut_ref() const noexcept
+      -> oalplus::alut_api_reference {
         return _alut_api_context.alut_ref();
     }
 
@@ -292,7 +295,7 @@ public:
       , _gl_context{gl_context} {}
 
     /// @brief Reference to a resource's parent loader.
-    auto loader() const noexcept -> resource_loader& {
+    [[nodiscard]] auto loader() const noexcept -> resource_loader& {
         return _loader.get();
     }
 
@@ -309,22 +312,24 @@ public:
     }
 
     /// @brief Reference to a resource's parent GL context.
-    auto gl_context() const noexcept -> const oglplus::shared_gl_api_context& {
+    [[nodiscard]] auto gl_context() const noexcept
+      -> const oglplus::shared_gl_api_context& {
         return _gl_context;
     }
 
     /// @brief Reference to a resource's parent GL API.
-    auto gl_api() const noexcept -> const oglplus::gl_api& {
+    [[nodiscard]] auto gl_api() const noexcept -> const oglplus::gl_api& {
         return _gl_context.gl_api();
     }
 
     /// @brief Reference to a resource's parent AL context.
-    auto al_context() const noexcept -> const oalplus::shared_al_api_context& {
+    [[nodiscard]] auto al_context() const noexcept
+      -> const oalplus::shared_al_api_context& {
         return _al_context;
     }
 
     /// @brief Reference to a resource's parent AL API.
-    auto al_api() const noexcept -> const oalplus::al_api& {
+    [[nodiscard]] auto al_api() const noexcept -> const oalplus::al_api& {
         return _al_context.al_api();
     }
 
@@ -346,33 +351,34 @@ public:
     execution_context(main_ctx_parent parent) noexcept;
 
     /// @brief Returns the application execution result.
-    auto result() const noexcept -> int {
+    [[nodiscard]] auto result() const noexcept -> int {
         return _exec_result;
     }
 
     /// @brief Returns a reference to the launch options.
-    auto options() const noexcept -> const launch_options& {
+    [[nodiscard]] auto options() const noexcept -> const launch_options& {
         return _options;
     }
 
     /// @brief Returns a reference to the resource loading context
-    auto resource_context() noexcept -> loaded_resource_context&;
+    [[nodiscard]] auto resource_context() noexcept -> loaded_resource_context&;
 
     /// @brief Returns a reference to the resource loader.
-    auto loader() noexcept -> resource_loader&;
+    [[nodiscard]] auto loader() noexcept -> resource_loader&;
 
     /// @brief Returns a references to a multi-purpose memory buffer.
-    auto buffer() const noexcept -> memory::buffer&;
+    [[nodiscard]] auto buffer() const noexcept -> memory::buffer&;
 
     /// @brief Returns a reference to the context state view.
-    auto state() const noexcept -> const context_state_view&;
+    [[nodiscard]] auto state() const noexcept -> const context_state_view&;
 
     /// @brief Prepares the application launch pad object.
-    auto prepare(unique_holder<launchpad> pad) -> execution_context&;
+    [[nodiscard]] auto prepare(unique_holder<launchpad> pad)
+      -> execution_context&;
 
     /// @brief Indicates if the application is running its main loop.
     /// @see stop_running
-    auto is_running() noexcept -> bool;
+    [[nodiscard]] auto is_running() noexcept -> bool;
 
     /// @brief Stops the main application loop.
     /// @see is_running
@@ -385,50 +391,54 @@ public:
     void clean_up() noexcept;
 
     /// @brief Starts the main application loop (will block until stopped).
-    auto run() noexcept -> execution_context&;
+    [[nodiscard]] auto run() noexcept -> execution_context&;
 
     /// @brief Indicates if the application ran long enough.
-    auto enough_run_time() const noexcept -> bool;
+    [[nodiscard]] auto enough_run_time() const noexcept -> bool;
 
     /// @brief Indicates if the application rendered enough frames.
-    auto enough_frames(const span_size_t frame_no) const noexcept -> bool;
+    [[nodiscard]] auto enough_frames(const span_size_t frame_no) const noexcept
+      -> bool;
 
     /// @brief Returns the count of created video contexts.
-    auto video_ctx_count() const noexcept -> span_size_t;
+    [[nodiscard]] auto video_ctx_count() const noexcept -> span_size_t;
 
     /// @brief Returns the video context at the specified index.
-    auto video_ctx(const span_size_t index = 0) const noexcept
+    [[nodiscard]] auto video_ctx(const span_size_t index = 0) const noexcept
       -> optional_reference<video_context>;
 
     /// @brief Returns the main video context.
-    auto main_video() const noexcept -> video_context&;
+    [[nodiscard]] auto main_video() const noexcept -> video_context&;
 
     auto gl_initialized(video_context&) noexcept -> execution_context&;
 
     /// @brief Returns the count of created audio contexts.
-    auto audio_ctx_count() const noexcept -> span_size_t;
+    [[nodiscard]] auto audio_ctx_count() const noexcept -> span_size_t;
 
     /// @brief Returns the audio context at the specified index.
-    auto audio_ctx(const span_size_t index = 0) const noexcept
+    [[nodiscard]] auto audio_ctx(const span_size_t index = 0) const noexcept
       -> optional_reference<audio_context>;
 
     /// @brief Returns the main audio context.
-    auto main_audio() const noexcept -> audio_context&;
+    [[nodiscard]] auto main_audio() const noexcept -> audio_context&;
 
     auto al_initialized(audio_context&) noexcept -> execution_context&;
 
     /// @brief Returns the canonical device id for application gui inputs.
-    constexpr auto app_gui_device_id() const noexcept -> identifier {
+    [[nodiscard]] constexpr auto app_gui_device_id() const noexcept
+      -> identifier {
         return {"AppGUI"};
     }
 
     /// @brief Returns the canonical device id for keyboard.
-    constexpr auto keyboard_device_id() const noexcept -> identifier {
+    [[nodiscard]] constexpr auto keyboard_device_id() const noexcept
+      -> identifier {
         return {"Keyboard"};
     }
 
     /// @brief Returns the canonical device id for mouse.
-    constexpr auto mouse_device_id() const noexcept -> identifier {
+    [[nodiscard]] constexpr auto mouse_device_id() const noexcept
+      -> identifier {
         return {"Mouse"};
     }
 
@@ -654,7 +664,7 @@ public:
         return switch_input_mapping({});
     }
 
-    auto stop_running_input() noexcept -> input_slot;
+    [[nodiscard]] auto stop_running_input() noexcept -> input_slot;
 
     /// @brief Generates random uniformly-distributed bytes into @p dest.
     void random_uniform(span<byte> dest);
@@ -663,10 +673,10 @@ public:
     void random_uniform_01(span<float> dest);
 
     /// @brief Generates random uniformly-distributed float in <0, 1>.
-    auto random_uniform_01() -> float;
+    [[nodiscard]] auto random_uniform_01() -> float;
 
     /// @brief Generates random uniformly-distributed float in <-1, 1>.
-    auto random_uniform_11() -> float;
+    [[nodiscard]] auto random_uniform_11() -> float;
 
     /// @brief Generates random normally-distributed floats into @p dest.
     void random_normal(span<float> dest);
@@ -729,7 +739,7 @@ public:
       : _ctx{ec} {}
 
     /// @brief Returns the associated execution context.
-    auto context() const noexcept -> execution_context& {
+    [[nodiscard]] auto context() const noexcept -> execution_context& {
         return _ctx;
     }
 

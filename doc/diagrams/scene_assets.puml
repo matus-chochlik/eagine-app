@@ -1,0 +1,40 @@
+@startuml
+class Scene
+class Model
+class Mesh
+class "Vertex\nAttribute" as VertexAttrib
+class "Vertex\nIndex" as VertexIndex
+class "Drawing\nInstruction" as Instruction
+class Texture
+class Image
+class Animation
+class Skeleton
+class Bone
+class Program
+class Shader
+Program --* Scene
+Scene *-- Shader
+Model --* Scene
+Texture --* Scene
+Scene *-- Mesh
+Scene *-- Animation
+Scene *-- Skeleton
+Program o-- Shader
+Model o-- Mesh
+Model o-- Texture
+Model o-- Animation
+Model o-- Skeleton
+Mesh *-- VertexAttrib
+Mesh *-- VertexIndex
+Mesh *-- Instruction
+Shader .. VertexAttrib
+Shader .. Texture
+Instruction .. VertexIndex: Element
+Skeleton o-- Animation
+Mesh o-- Animation
+Skeleton *-- Bone
+Texture *-- Image
+Texture .. VertexAttrib: Wrap\nCoord
+Bone .. VertexAttrib: Skinning\nWeight
+Animation .. Bone
+@enduml

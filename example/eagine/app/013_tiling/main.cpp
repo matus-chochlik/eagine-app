@@ -66,7 +66,7 @@ example_tiling::example_tiling(execution_context& ec, video_context& vc)
   : timeouting_application{ec, std::chrono::seconds{60}}
   , _video{vc}
   , _prog{_resources, ec, _prog_url()}
-  , _cube{_resources, ec, _cube_url(), 0}
+  , _cube{_resources, ec, _cube_url(), oglplus::vertex_attrib_bindings{}, 0}
   , _tiling_tex{
       _resources,
       ec,

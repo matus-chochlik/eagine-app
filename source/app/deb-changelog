@@ -1,3 +1,8 @@
+eagine-app-apps (0.129.0) unstable; urgency=medium
+
+  * Added the eagitex-cubemap-blur script.
+
+ -- Matúš Chochlík <matus.chochlik@proton.me>  Mon, 12 Jun 2024 20:30:00 +0200
 eagine-app-apps (0.125.0) unstable; urgency=medium
 
   * Initial version with CPack-based packaging.

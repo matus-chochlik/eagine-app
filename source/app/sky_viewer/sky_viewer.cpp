@@ -34,6 +34,7 @@ public:
 private:
     auto _get_resolution() noexcept -> int;
     auto _get_animation_mode() noexcept -> bool;
+    auto _get_params() noexcept -> std::string;
     auto _get_animation_template() noexcept -> std::string;
 
     void _init_inputs();
@@ -61,6 +62,7 @@ private:
 
     float _fov{90.F};
     long _anim_frame_no{0};
+    const std::string _params{_get_params()};
     const std::string _animation_template{_get_animation_template()};
     const int _resolution{_get_resolution()};
     const bool _animation_mode{_get_animation_mode()};

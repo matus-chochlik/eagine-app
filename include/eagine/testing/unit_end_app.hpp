@@ -15,10 +15,14 @@ template <typename Case, typename... Args>
 auto app_suite::once(Args&&... args) -> app_suite& {
     try {
         using L = typename Case::launcher;
-        eagine::app::execution_context(_ctx)
-          .prepare({eagine::hold<L>, *this, std::forward<Args>(args)...})
-          .run()
-          .result();
+        const auto result{
+          eagine::app::execution_context(_ctx)
+            .prepare({eagine::hold<L>, *this, std::forward<Args>(args)...})
+            .run()
+            .result()};
+        if(result != 0) {
+            this->checks_failed();
+        }
     } catch(const abort_test_case&) {
     } catch(...) {
     }

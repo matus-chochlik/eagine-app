@@ -1,3 +1,9 @@
+eagine-app-sky-viewer (0.129.0) unstable; urgency=medium
+
+  * Added support for specifying of sky-texture parameters from command-line
+    argument.
+
+ -- Matúš Chochlík <matus.chochlik@proton.me>  Mon, 19 Aug 2024 20:00:00 +0200
 eagine-app-sky-viewer (0.127.0) unstable; urgency=medium
 
   * Added handling of texture loading failure signal.

@@ -76,10 +76,11 @@ void background_icosahedron::_init(auto& gl, auto& GL, auto& api) noexcept {
             const string_view vs_source = R"(
 			#version 140
 			in vec3 Position;
+			uniform vec3 Offset = vec3(0.0);
 			uniform float Scale = 1.0;
 
 			void main() {
-				gl_Position = vec4(Position * Scale, 1.0);
+				gl_Position = vec4(Position * Scale + Offset, 1.0);
 			})";
             gl.shader_source(vs, oglplus::glsl_string_ref(vs_source));
         } else {
@@ -89,10 +90,11 @@ void background_icosahedron::_init(auto& gl, auto& GL, auto& api) noexcept {
 			out vec4 geomColor;
 			uniform mat4 Camera;
 			uniform vec4 Color;
+			uniform vec3 Offset = vec3(0.0);
 			uniform float Scale = 1.0;
 
 			void main() {
-				gl_Position = Camera * vec4(Position * Scale, 1.0);
+				gl_Position = Camera * vec4(Position * Scale + Offset, 1.0);
 				geomColor = Color;
 			})";
             gl.shader_source(vs, oglplus::glsl_string_ref(vs_source));
@@ -105,6 +107,7 @@ void background_icosahedron::_init(auto& gl, auto& GL, auto& api) noexcept {
     gl.use_program(_prog);
 
     gl.get_uniform_location(_prog, "Camera") >> _camera_loc;
+    gl.get_uniform_location(_prog, "Offset") >> _offset_loc;
     gl.get_uniform_location(_prog, "Scale") >> _scale_loc;
     gl.get_uniform_location(_prog, "Color") >> _color_loc;
 
@@ -163,6 +166,7 @@ auto background_icosahedron::clear(
         gl.clear(GL.color_buffer_bit);
         gl.use_program(_prog);
         api.set_uniform(_prog, _camera_loc, cam_mat);
+        api.set_uniform(_prog, _offset_loc, -cam_mat.translation());
         api.set_uniform(_prog, _scale_loc, radius);
         gl.disable(GL.depth_test);
         gl.disable(GL.cull_face);
@@ -241,6 +245,7 @@ void background_skybox::_init(auto& gl, auto& GL, auto& api) noexcept {
             in vec3 vertCoord[3];
             out vec3 geomCoord;
             uniform mat4 Camera;
+			uniform vec3 Offset = vec3(0.0);
             uniform float Scale = 1.0;
 
             void emit(vec3 bary) {
@@ -249,7 +254,7 @@ void background_skybox::_init(auto& gl, auto& GL, auto& api) noexcept {
                     gl_in[1].gl_Position.xyz * bary.y+
                     gl_in[2].gl_Position.xyz * bary.z;
                 Position = normalize(Position);
-                gl_Position = Camera * vec4(Scale * Position, 1.0);
+                gl_Position = Camera * vec4(Position * Scale + Offset, 1.0);
                 geomCoord =
                     vertCoord[0] * bary.x+
                     vertCoord[1] * bary.y+
@@ -314,10 +319,11 @@ void background_skybox::_init(auto& gl, auto& GL, auto& api) noexcept {
             layout(location=1) in vec3 Coord;
             out vec3 geomCoord;
             uniform mat4 Camera;
+			uniform vec3 Offset = vec3(0.0);
             uniform float Scale = 1.0;
 
             void main() {
-                gl_Position = Camera * vec4(Position * Scale, 1.0);
+                gl_Position = Camera * vec4(Position * Scale + Offset, 1.0);
                 geomCoord = Coord;
             })";
             gl.shader_source(vs, oglplus::glsl_string_ref(vs_source));
@@ -330,6 +336,7 @@ void background_skybox::_init(auto& gl, auto& GL, auto& api) noexcept {
     gl.use_program(_prog);
 
     gl.get_uniform_location(_prog, "Camera") >> _camera_loc;
+    gl.get_uniform_location(_prog, "Offset") >> _offset_loc;
     gl.get_uniform_location(_prog, "Scale") >> _scale_loc;
     gl.get_uniform_location(_prog, "Tex") >> _tex_loc;
 
@@ -408,6 +415,7 @@ auto background_skybox::clear(
     video.with_gl([&, this](auto& gl, auto& GL, auto& api) {
         gl.use_program(_prog);
         api.set_uniform(_prog, _camera_loc, cam_mat);
+        api.set_uniform(_prog, _offset_loc, -cam_mat.translation());
         api.set_uniform(_prog, _scale_loc, distance);
         gl.bind_vertex_array(_vao);
         gl.disable(GL.depth_test);

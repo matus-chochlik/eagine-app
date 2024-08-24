@@ -280,58 +280,58 @@ auto valtree_mat4_vector_builder::_do_add(
         if((path.starts_with("values")) or (path.starts_with("data"))) {
             if(data.has_single_value()) {
                 if(path.ends_with("ii")) {
-                    math::set_rm<0, 0>(_temp, float(*data));
+                    _temp.set_rm(0, 0, float(*data));
                     return true;
                 } else if(path.ends_with("ij")) {
-                    math::set_rm<0, 1>(_temp, float(*data));
+                    _temp.set_rm(0, 1, float(*data));
                     return true;
                 } else if(path.ends_with("ik")) {
-                    math::set_rm<0, 2>(_temp, float(*data));
+                    _temp.set_rm(0, 2, float(*data));
                     return true;
                 } else if(path.ends_with("il")) {
-                    math::set_rm<0, 3>(_temp, float(*data));
+                    _temp.set_rm(0, 3, float(*data));
                     return true;
                 } else if(path.ends_with("ji")) {
-                    math::set_rm<1, 0>(_temp, float(*data));
+                    _temp.set_rm(1, 0, float(*data));
                     return true;
                 } else if(path.ends_with("jj")) {
-                    math::set_rm<1, 1>(_temp, float(*data));
+                    _temp.set_rm(1, 1, float(*data));
                     return true;
                 } else if(path.ends_with("jk")) {
-                    math::set_rm<1, 2>(_temp, float(*data));
+                    _temp.set_rm(1, 2, float(*data));
                     return true;
                 } else if(path.ends_with("jl")) {
-                    math::set_rm<1, 3>(_temp, float(*data));
+                    _temp.set_rm(1, 3, float(*data));
                     return true;
                 } else if(path.ends_with("ki")) {
-                    math::set_rm<2, 0>(_temp, float(*data));
+                    _temp.set_rm(2, 0, float(*data));
                     return true;
                 } else if(path.ends_with("kj")) {
-                    math::set_rm<2, 1>(_temp, float(*data));
+                    _temp.set_rm(2, 1, float(*data));
                     return true;
                 } else if(path.ends_with("kk")) {
-                    math::set_rm<2, 2>(_temp, float(*data));
+                    _temp.set_rm(2, 2, float(*data));
                     return true;
                 } else if(path.ends_with("kl")) {
-                    math::set_rm<2, 3>(_temp, float(*data));
+                    _temp.set_rm(2, 3, float(*data));
                     return true;
                 } else if(path.ends_with("li")) {
-                    math::set_rm<3, 0>(_temp, float(*data));
+                    _temp.set_rm(3, 0, float(*data));
                     return true;
                 } else if(path.ends_with("lj")) {
-                    math::set_rm<3, 1>(_temp, float(*data));
+                    _temp.set_rm(3, 1, float(*data));
                     return true;
                 } else if(path.ends_with("lk")) {
-                    math::set_rm<3, 2>(_temp, float(*data));
+                    _temp.set_rm(3, 2, float(*data));
                     return true;
                 } else if(path.ends_with("ll")) {
-                    math::set_rm<3, 3>(_temp, float(*data));
+                    _temp.set_rm(3, 3, float(*data));
                     return true;
                 }
             }
             if(path.ends_with("_")) {
                 for(const auto i : index_range(data)) {
-                    math::set_rm(_temp, _offs / 4, _offs % 4, float(data[i]));
+                    _temp.set_rm(_offs / 4, _offs % 4, float(data[i]));
                     if(++_offs == 16) {
                         _offs = 0;
                         _roffs = 0;
@@ -346,8 +346,7 @@ auto valtree_mat4_vector_builder::_do_add(
     } else if(path.has_size(4)) {
         if(path.ends_with("_")) {
             for(const auto i : index_range(data)) {
-                math::set_rm(_temp, _roffs, _coffs, float(data[i]));
-                _temp._v[_roffs][_coffs] = data[i];
+                _temp.set_rm(_roffs, _coffs, float(data[i]));
                 if(++_coffs == 4) {
                     _coffs = 0;
                     if(++_roffs == 4) {

@@ -29,35 +29,30 @@ class PivotMeshArgParser(argparse.ArgumentParser):
         self.add_argument(
             '--debug', '-d',
             action="store_true",
-            default=False
-        )
+            default=False)
 
         self.add_argument(
             '--do-not-save', '-D',
             dest="do_not_save",
             action="store_true",
-            default=False
-        )
+            default=False)
 
         self.add_argument(
             '--mesh', '-m',
             required=True,
             dest="position_mesh",
-            default=None
-        )
+            default=None)
 
         self.add_argument(
             '--epsilon', '-e',
             dest="epsilon",
             type=float,
-            default=0.001
-        )
+            default=0.001)
 
         self.add_argument(
             '--pivot-mesh', '-p',
             dest="pivot_mesh",
-            default=None
-        )
+            default=None)
     # --------------------------------------------------------------------------
     def process_parsed_options(self, options):
         def _strip(s, w):
@@ -71,8 +66,7 @@ class PivotMeshArgParser(argparse.ArgumentParser):
     # --------------------------------------------------------------------------
     def parse_args(self, args):
         return self.process_parsed_options(
-            argparse.ArgumentParser.parse_args(self, args)
-        )
+            argparse.ArgumentParser.parse_args(self, args))
 
 # ------------------------------------------------------------------------------
 def make_argument_parser():
@@ -80,8 +74,7 @@ def make_argument_parser():
             prog=os.path.basename(__file__),
             description="""
             Blender vertex pivot mesh generator
-        """
-    )
+        """)
 # ------------------------------------------------------------------------------
 def find_nearest_point_t(options, pa, va, pb, vb):
     vc = numpy.cross(vb, va)
@@ -174,5 +167,4 @@ def main():
         except: pass
 # ------------------------------------------------------------------------------
 main()
-
 

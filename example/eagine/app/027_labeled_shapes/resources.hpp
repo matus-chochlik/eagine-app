@@ -40,6 +40,12 @@ struct example_shape_data {
     vec4 label_pos;
     vec2 screen_pos;
 
+    static auto attrib_bindings() noexcept {
+        return oglplus::vertex_attrib_bindings{
+          shapes::vertex_attrib_kind::position,
+          shapes::vertex_attrib_kind::normal};
+    }
+
     example_shape_data(
       execution_context& ec,
       string_view lbl,

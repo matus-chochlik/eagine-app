@@ -149,6 +149,7 @@ private:
 
     oglplus::owned_program_name _prog;
     oglplus::uniform_location _camera_loc;
+    oglplus::uniform_location _offset_loc;
     oglplus::uniform_location _scale_loc;
     oglplus::uniform_location _color_loc;
 
@@ -184,6 +185,7 @@ private:
 
     oglplus::owned_program_name _prog;
     oglplus::uniform_location _camera_loc;
+    oglplus::uniform_location _offset_loc;
     oglplus::uniform_location _scale_loc;
     oglplus::uniform_location _tex_loc;
 
