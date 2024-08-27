@@ -17,15 +17,15 @@ namespace app {
 //------------------------------------------------------------------------------
 /// @brief 2d floating-point vector type.
 /// @ingroup application
-export using vec2 = oglplus::tvec<float, 2, true>;
+export using vec2 = oglplus::vector<float, 2, true>;
 
 /// @brief 3d floating-point vector type.
 /// @ingroup application
-export using vec3 = oglplus::tvec<float, 3, true>;
+export using vec3 = oglplus::vector<float, 3, true>;
 
 /// @brief 4d floating-point vector type.
 /// @ingroup application
-export using vec4 = oglplus::tvec<float, 4, true>;
+export using vec4 = oglplus::vector<float, 4, true>;
 
 /// @brief 3x3 floating-point matrix type.
 /// @ingroup application
