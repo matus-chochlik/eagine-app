@@ -32,7 +32,7 @@ private:
     video_context& _video;
     background_icosahedron _bg;
 
-    oglplus::tmat<float, 4, 4, true> prev_model;
+    oglplus::matrix<float, 4, 4, true> prev_model;
 
     hair_program _hair_prog;
     surface_program _surf_prog;

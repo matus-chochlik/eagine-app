@@ -36,7 +36,7 @@ private:
 struct example_shape_data {
     string_view label;
     gl_geometry_and_bindings_resource geometry;
-    math::translation<mat4::base> transform;
+    math::translation<mat4> transform;
     vec4 label_pos;
     vec2 screen_pos;
 

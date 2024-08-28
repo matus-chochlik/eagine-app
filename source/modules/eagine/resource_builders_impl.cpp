@@ -258,11 +258,7 @@ private:
 
     static constexpr auto _default() noexcept
       -> math::matrix<float, 4, 4, true> {
-        return {
-          {{1.F, 0.F, 0.F, 0.F},
-           {0.F, 1.F, 0.F, 0.F},
-           {0.F, 0.F, 1.F, 0.F},
-           {0.F, 0.F, 0.F, 1.F}}};
+        return {};
     }
 
     math::matrix<float, 4, 4, true> _temp{_default()};
@@ -388,11 +384,7 @@ void valtree_mat4_vector_builder::finish_object(
     if(path.has_size(2)) {
         if((path.starts_with("values")) or (path.starts_with("data"))) {
             _values.push_back(_temp);
-            _temp = {
-              {{1.F, 0.F, 0.F, 0.F},
-               {0.F, 1.F, 0.F, 0.F},
-               {0.F, 0.F, 1.F, 0.F},
-               {0.F, 0.F, 0.F, 1.F}}};
+            _temp = {};
         }
     }
 }

@@ -29,15 +29,15 @@ export using vec4 = oglplus::vector<float, 4>;
 
 /// @brief 3x3 floating-point matrix type.
 /// @ingroup application
-export using mat2 = oglplus::tmat<float, 2, 2, true>;
+export using mat2 = oglplus::matrix<float, 2, 2, true>;
 
 /// @brief 3x3 floating-point matrix type.
 /// @ingroup application
-export using mat3 = oglplus::tmat<float, 3, 3, true>;
+export using mat3 = oglplus::matrix<float, 3, 3, true>;
 
 /// @brief 4x4 floating-point matrix type.
 /// @ingroup application
-export using mat4 = oglplus::tmat<float, 4, 4, true>;
+export using mat4 = oglplus::matrix<float, 4, 4, true>;
 //------------------------------------------------------------------------------
 /// @brief Video / graphics rendering context kind.
 /// @ingroup application
