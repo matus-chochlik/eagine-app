@@ -126,7 +126,7 @@ void example_picking::update() noexcept {
 
     if(has_moved) {
         oglplus::line ray(
-          oglplus::vec3(x_pos, y_pos, 1.F), oglplus::vec3(0.F, 0.F, -1.F));
+          oglplus::point3(x_pos, y_pos, 1.F), oglplus::vec3(0.F, 0.F, -1.F));
 
         is_inside = bool(math::line_triangle_intersection(ray, tri));
         has_moved = false;
