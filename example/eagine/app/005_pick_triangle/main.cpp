@@ -26,9 +26,9 @@ private:
     video_context& _video;
 
     oglplus::triangle tri{
-      oglplus::vec3{-0.2F, 0.5F, 0.0F},
-      oglplus::vec3{-0.7F, -0.6F, 0.0F},
-      oglplus::vec3{0.6F, 0.2F, 0.0F}};
+      {-0.2F, 0.5F, 0.0F},
+      {-0.7F, -0.6F, 0.0F},
+      {0.6F, 0.2F, 0.0F}};
 
     float x_pos{0.F};
     float y_pos{0.F};
