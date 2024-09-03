@@ -34,7 +34,11 @@ auto model_viewer_background::clear(
   video_context& video,
   orbiting_camera& camera) -> model_viewer_background& {
     assert(_impl);
-    _impl->clear(video, camera.matrix(video), camera.skybox_distance());
+    _impl->clear(
+      video,
+      camera.matrix(video),
+      camera.position().to_vector(),
+      camera.skybox_distance());
     return *this;
 }
 //------------------------------------------------------------------------------
@@ -48,7 +52,11 @@ public:
     void load_if_needed(execution_context&, video_context&) final;
     void use(video_context&) final;
     void set_skybox_unit(video_context&, oglplus::texture_unit) final;
-    void clear(video_context&, const mat4& camera, const float distance) final;
+    void clear(
+      video_context&,
+      const mat4& camera,
+      const vec3&,
+      const float distance) final;
     void clean_up(execution_context&, video_context&) final;
     auto settings_height() -> float final;
     void settings(const guiplus::imgui_api&) noexcept final;
@@ -105,8 +113,9 @@ void model_viewer_default_background::set_skybox_unit(
 void model_viewer_default_background::clear(
   video_context& video,
   const mat4& camera,
+  const vec3& offset,
   const float distance) {
-    _bg.clear(video, camera, distance);
+    _bg.clear(video, camera, offset, distance);
 }
 //------------------------------------------------------------------------------
 void model_viewer_default_background::clean_up(
@@ -167,7 +176,11 @@ public:
     void load_if_needed(execution_context&, video_context&) final;
     void use(video_context&) final;
     void set_skybox_unit(video_context&, oglplus::texture_unit) final;
-    void clear(video_context&, const mat4& camera, const float distance) final;
+    void clear(
+      video_context&,
+      const mat4& camera,
+      const vec3& offset,
+      const float distance) final;
     void clean_up(execution_context&, video_context&) final;
     auto settings_height() -> float final;
     void settings(const guiplus::imgui_api&) noexcept final;
@@ -200,8 +213,9 @@ void model_viewer_skybox_background::set_skybox_unit(
 void model_viewer_skybox_background::clear(
   video_context& video,
   const mat4& camera,
+  const vec3& offset,
   const float distance) {
-    _bg.clear(video, camera, distance);
+    _bg.clear(video, camera, offset, distance);
 }
 //------------------------------------------------------------------------------
 void model_viewer_skybox_background::clean_up(
