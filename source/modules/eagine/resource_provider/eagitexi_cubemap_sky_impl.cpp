@@ -53,12 +53,11 @@ struct cubemap_scene {
 
     cubemap_scene(const url& locator) noexcept;
 
-    auto cloud_offset() const noexcept -> math::vector<float, 2, true>;
+    auto cloud_offset() const noexcept -> math::vector<float, 2>;
 
-    auto sun_coord() const noexcept
-      -> math::unit_spherical_coordinate<float, true>;
+    auto sun_coord() const noexcept -> math::unit_spherical_coordinate<float>;
 
-    auto sun_xyz() const noexcept -> math::vector<float, 3, true>;
+    auto sun_xyz() const noexcept -> math::vector<float, 3>;
 };
 //------------------------------------------------------------------------------
 } // namespace app
@@ -135,17 +134,16 @@ auto cubemap_scene::query_arg_str(
       to_string(fallback));
 }
 //------------------------------------------------------------------------------
-auto cubemap_scene::cloud_offset() const noexcept
-  -> math::vector<float, 2, true> {
+auto cubemap_scene::cloud_offset() const noexcept -> math::vector<float, 2> {
     return {cloud_offset_x, cloud_offset_y};
 }
 //------------------------------------------------------------------------------
 auto cubemap_scene::sun_coord() const noexcept
-  -> math::unit_spherical_coordinate<float, true> {
+  -> math::unit_spherical_coordinate<float> {
     return {degrees_(sun_azimuth_deg), degrees_(sun_elevation_deg)};
 }
 //------------------------------------------------------------------------------
-auto cubemap_scene::sun_xyz() const noexcept -> math::vector<float, 3, true> {
+auto cubemap_scene::sun_xyz() const noexcept -> math::vector<float, 3> {
     return math::to_cartesian(sun_coord());
 }
 //------------------------------------------------------------------------------

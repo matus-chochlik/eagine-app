@@ -235,6 +235,8 @@ auto zip_archive_provider::_search_archive(
   const url& locator) noexcept
   -> std::tuple<optional_reference<zip_archive>, std::string> {
     std::string file_path;
+    std::filesystem::path temp_path;
+    const bool is_eagizip{locator.has_scheme("eagizip")};
     bool found_archive{false};
     for(const auto entry : locator.path()) {
         if(found_archive) {
@@ -245,7 +247,18 @@ auto zip_archive_provider::_search_archive(
         } else {
             archive_path /= to_string(entry);
             if(not std::filesystem::exists(archive_path)) {
-                return {};
+                if(not is_eagizip and archive_path.has_extension()) {
+                    return {};
+                } else {
+                    temp_path.assign(archive_path);
+                    temp_path.replace_extension(".eagizip");
+                    if(std::filesystem::exists(temp_path)) {
+                        if(std::filesystem::is_regular_file(temp_path)) {
+                            using std::swap;
+                            swap(archive_path, temp_path);
+                        }
+                    }
+                }
             }
             if(std::filesystem::is_regular_file(archive_path)) {
                 if(not _is_zip_archive(archive_path)) {

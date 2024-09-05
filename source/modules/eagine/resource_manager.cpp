@@ -268,11 +268,11 @@ export using managed_string_list = managed_resource<std::vector<std::string>>;
 export using managed_url_list = managed_resource<std::vector<url>>;
 export using managed_float_vector = managed_resource<std::vector<float>>;
 export using managed_vec3_vector =
-  managed_resource<std::vector<math::vector<float, 3, true>>>;
+  managed_resource<std::vector<math::vector<float, 3>>>;
 export using managed_smooth_vec3_curve =
-  managed_resource<math::bezier_curves<math::vector<float, 3, true>, float, 3>>;
+  managed_resource<math::bezier_curves<math::vector<float, 3>, float, 3>>;
 export using managed_mat4_vector =
-  managed_resource<std::vector<math::matrix<float, 4, 4, true, true>>>;
+  managed_resource<std::vector<math::matrix<float, 4, 4, true>>>;
 export using managed_value_tree = managed_resource<valtree::compound>;
 export using managed_gl_geometry_and_bindings =
   managed_resource<gl_geometry_and_bindings>;

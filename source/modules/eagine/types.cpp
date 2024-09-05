@@ -17,27 +17,27 @@ namespace app {
 //------------------------------------------------------------------------------
 /// @brief 2d floating-point vector type.
 /// @ingroup application
-export using vec2 = oglplus::tvec<float, 2, true>;
+export using vec2 = oglplus::vector<float, 2>;
 
 /// @brief 3d floating-point vector type.
 /// @ingroup application
-export using vec3 = oglplus::tvec<float, 3, true>;
+export using vec3 = oglplus::vector<float, 3>;
 
 /// @brief 4d floating-point vector type.
 /// @ingroup application
-export using vec4 = oglplus::tvec<float, 4, true>;
+export using vec4 = oglplus::vector<float, 4>;
 
 /// @brief 3x3 floating-point matrix type.
 /// @ingroup application
-export using mat2 = oglplus::tmat<float, 2, 2, true>;
+export using mat2 = oglplus::matrix<float, 2, 2, true>;
 
 /// @brief 3x3 floating-point matrix type.
 /// @ingroup application
-export using mat3 = oglplus::tmat<float, 3, 3, true>;
+export using mat3 = oglplus::matrix<float, 3, 3, true>;
 
 /// @brief 4x4 floating-point matrix type.
 /// @ingroup application
-export using mat4 = oglplus::tmat<float, 4, 4, true>;
+export using mat4 = oglplus::matrix<float, 4, 4, true>;
 //------------------------------------------------------------------------------
 /// @brief Video / graphics rendering context kind.
 /// @ingroup application
@@ -48,7 +48,7 @@ export enum class video_context_kind : std::uint8_t {
     openvg
 };
 //------------------------------------------------------------------------------
-/// @brief Audio / sound playback and recodring context kind.
+/// @brief Audio / sound playback and recording context kind.
 /// @ingroup application
 export enum class audio_context_kind : std::uint8_t {
     /// @brief OpenAL© context.

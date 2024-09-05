@@ -468,7 +468,7 @@ void pending_resource_info::handle_float_vector(
 //------------------------------------------------------------------------------
 void pending_resource_info::handle_vec3_vector(
   const pending_resource_info& source,
-  std::vector<math::vector<float, 3, true>>& values) noexcept {
+  std::vector<math::vector<float, 3>>& values) noexcept {
     _parent.log_info("loaded vec3 values")
       .arg("requestId", _request_id)
       .arg("size", values.size())
@@ -490,10 +490,10 @@ void pending_resource_info::handle_vec3_vector(
 //------------------------------------------------------------------------------
 void pending_resource_info::_handle_vec3_vector(
   const pending_resource_info& source,
-  const std::vector<math::vector<float, 3, true>>& values) noexcept {
+  const std::vector<math::vector<float, 3>>& values) noexcept {
     if(is(resource_kind::smooth_vec3_curve)) {
         /// TODO: other kinds of curves
-        math::cubic_bezier_loop<math::vector<float, 3, true>, float> curve{
+        math::cubic_bezier_loop<math::vector<float, 3>, float> curve{
           view(values)};
         _parent.smooth_vec3_curve_loaded(
           {.request_id = _request_id,
@@ -506,7 +506,7 @@ void pending_resource_info::_handle_vec3_vector(
 //------------------------------------------------------------------------------
 void pending_resource_info::handle_mat4_vector(
   const pending_resource_info& source,
-  std::vector<math::matrix<float, 4, 4, true, true>>& values) noexcept {
+  std::vector<math::matrix<float, 4, 4, true>>& values) noexcept {
     _parent.log_info("loaded mat4 values")
       .arg("requestId", _request_id)
       .arg("size", values.size())
@@ -528,7 +528,7 @@ void pending_resource_info::handle_mat4_vector(
 //------------------------------------------------------------------------------
 void pending_resource_info::_handle_mat4_vector(
   const pending_resource_info& source,
-  const std::vector<math::matrix<float, 4, 4, true, true>>& values) noexcept {
+  const std::vector<math::matrix<float, 4, 4, true>>& values) noexcept {
     mark_finished();
 }
 //------------------------------------------------------------------------------
@@ -1054,7 +1054,7 @@ auto resource_loader::request_vec3_vector(
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request(
-  std::type_identity<std::vector<math::vector<float, 3, true>>>,
+  std::type_identity<std::vector<math::vector<float, 3>>>,
   const resource_request_params& params,
   loaded_resource_context&) noexcept -> resource_request_result {
     return request_vec3_vector(params);
@@ -1073,8 +1073,7 @@ auto resource_loader::request_smooth_vec3_curve(
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request(
-  std::type_identity<
-    math::cubic_bezier_curves<math::vector<float, 3, true>, float>>,
+  std::type_identity<math::cubic_bezier_curves<math::vector<float, 3>, float>>,
   const resource_request_params& params,
   loaded_resource_context&) noexcept -> resource_request_result {
     return request_smooth_vec3_curve(params);
@@ -1093,7 +1092,7 @@ auto resource_loader::request_mat4_vector(
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request(
-  std::type_identity<std::vector<math::matrix<float, 4, 4, true, true>>>,
+  std::type_identity<std::vector<math::matrix<float, 4, 4, true>>>,
   const resource_request_params& params,
   loaded_resource_context&) noexcept -> resource_request_result {
     return request_mat4_vector(params);

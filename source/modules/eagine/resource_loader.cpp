@@ -180,11 +180,11 @@ public:
 
     void handle_vec3_vector(
       const pending_resource_info& source,
-      std::vector<math::vector<float, 3, true>>& values) noexcept;
+      std::vector<math::vector<float, 3>>& values) noexcept;
 
     void handle_mat4_vector(
       const pending_resource_info& source,
-      std::vector<math::matrix<float, 4, 4, true, true>>& values) noexcept;
+      std::vector<math::matrix<float, 4, 4, true>>& values) noexcept;
 
     void add_shape_generator(shared_holder<shapes::generator> gen) noexcept;
     void add_gl_shape_context(const oglplus::shared_gl_api_context&) noexcept;
@@ -354,11 +354,11 @@ private:
 
     void _handle_vec3_vector(
       const pending_resource_info& source,
-      const std::vector<math::vector<float, 3, true>>& values) noexcept;
+      const std::vector<math::vector<float, 3>>& values) noexcept;
 
     void _handle_mat4_vector(
       const pending_resource_info& source,
-      const std::vector<math::matrix<float, 4, 4, true, true>>& values) noexcept;
+      const std::vector<math::matrix<float, 4, 4, true>>& values) noexcept;
 
     auto _apply_shape_modifiers(shared_holder<shapes::generator>) noexcept
       -> shared_holder<shapes::generator>;
@@ -887,18 +887,18 @@ export struct resource_loader_signals {
     struct vec3_vector_load_info {
         const identifier_t request_id;
         const url& locator;
-        std::vector<math::vector<float, 3, true>>& values;
+        std::vector<math::vector<float, 3>>& values;
     };
 
     template <>
-    struct get_load_info<std::vector<math::vector<float, 3, true>>>
+    struct get_load_info<std::vector<math::vector<float, 3>>>
       : std::type_identity<vec3_vector_load_info> {};
 
     /// @brief Emitted when a vector of vec3 values is loaded.
     signal<void(const vec3_vector_load_info&) noexcept> vec3_vector_loaded;
 
     [[nodiscard]] auto load_signal(
-      std::type_identity<std::vector<math::vector<float, 3, true>>>) noexcept
+      std::type_identity<std::vector<math::vector<float, 3>>>) noexcept
       -> auto& {
         return vec3_vector_loaded;
     }
@@ -908,12 +908,11 @@ export struct resource_loader_signals {
     struct smooth_vec3_curve_load_info {
         const identifier_t request_id;
         const url& locator;
-        math::cubic_bezier_curves<math::vector<float, 3, true>, float>& curve;
+        math::cubic_bezier_curves<math::vector<float, 3>, float>& curve;
     };
 
     template <>
-    struct get_load_info<
-      math::cubic_bezier_curves<math::vector<float, 3, true>, float>>
+    struct get_load_info<math::cubic_bezier_curves<math::vector<float, 3>, float>>
       : std::type_identity<smooth_vec3_curve_load_info> {};
 
     /// @brief Emitted when a smooth closed loop of vec3 values is loaded.
@@ -922,7 +921,7 @@ export struct resource_loader_signals {
 
     [[nodiscard]] auto load_signal(
       std::type_identity<
-        math::cubic_bezier_curves<math::vector<float, 3, true>, float>>) noexcept
+        math::cubic_bezier_curves<math::vector<float, 3>, float>>) noexcept
       -> auto& {
         return smooth_vec3_curve_loaded;
     }
@@ -932,19 +931,19 @@ export struct resource_loader_signals {
     struct mat4_vector_load_info {
         const identifier_t request_id;
         const url& locator;
-        std::vector<math::matrix<float, 4, 4, true, true>>& values;
+        std::vector<math::matrix<float, 4, 4, true>>& values;
     };
 
     template <>
-    struct get_load_info<std::vector<math::matrix<float, 4, 4, true, true>>>
+    struct get_load_info<std::vector<math::matrix<float, 4, 4, true>>>
       : std::type_identity<mat4_vector_load_info> {};
 
     /// @brief Emitted when a vector of mat4 values is loaded.
     signal<void(const mat4_vector_load_info&) noexcept> mat4_vector_loaded;
 
     [[nodiscard]] auto load_signal(
-      std::type_identity<
-        std::vector<math::matrix<float, 4, 4, true, true>>>) noexcept -> auto& {
+      std::type_identity<std::vector<math::matrix<float, 4, 4, true>>>) noexcept
+      -> auto& {
         return mat4_vector_loaded;
     }
 
@@ -1379,7 +1378,7 @@ public:
       -> resource_request_result;
 
     auto request(
-      std::type_identity<std::vector<math::vector<float, 3, true>>>,
+      std::type_identity<std::vector<math::vector<float, 3>>>,
       const resource_request_params&,
       loaded_resource_context&) noexcept -> resource_request_result;
 
@@ -1389,7 +1388,7 @@ public:
 
     auto request(
       std::type_identity<
-        math::cubic_bezier_curves<math::vector<float, 3, true>, float>>,
+        math::cubic_bezier_curves<math::vector<float, 3>, float>>,
       const resource_request_params&,
       loaded_resource_context&) noexcept -> resource_request_result;
 
@@ -1398,7 +1397,7 @@ public:
       -> resource_request_result;
 
     auto request(
-      std::type_identity<std::vector<math::matrix<float, 4, 4, true, true>>>,
+      std::type_identity<std::vector<math::matrix<float, 4, 4, true>>>,
       const resource_request_params&,
       loaded_resource_context&) noexcept -> resource_request_result;
 

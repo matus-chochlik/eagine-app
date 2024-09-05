@@ -143,8 +143,8 @@ private:
     auto _do_add(const basic_string_path& path, span<const T> data) noexcept
       -> bool;
 
-    math::vector<float, 3, true> _temp{0.F, 0.F, 0.F};
-    std::vector<math::vector<float, 3, true>> _values;
+    math::vector<float, 3> _temp{0.F, 0.F, 0.F};
+    std::vector<math::vector<float, 3>> _values;
     std::size_t _offs{0U};
 };
 //------------------------------------------------------------------------------
@@ -257,16 +257,12 @@ private:
       -> bool;
 
     static constexpr auto _default() noexcept
-      -> math::matrix<float, 4, 4, true, true> {
-        return {
-          {{1.F, 0.F, 0.F, 0.F},
-           {0.F, 1.F, 0.F, 0.F},
-           {0.F, 0.F, 1.F, 0.F},
-           {0.F, 0.F, 0.F, 1.F}}};
+      -> math::matrix<float, 4, 4, true> {
+        return {};
     }
 
-    math::matrix<float, 4, 4, true, true> _temp{_default()};
-    std::vector<math::matrix<float, 4, 4, true, true>> _values;
+    math::matrix<float, 4, 4, true> _temp{_default()};
+    std::vector<math::matrix<float, 4, 4, true>> _values;
     std::size_t _offs{0U};
     std::size_t _roffs{0U};
     std::size_t _coffs{0U};
@@ -388,11 +384,7 @@ void valtree_mat4_vector_builder::finish_object(
     if(path.has_size(2)) {
         if((path.starts_with("values")) or (path.starts_with("data"))) {
             _values.push_back(_temp);
-            _temp = {
-              {{1.F, 0.F, 0.F, 0.F},
-               {0.F, 1.F, 0.F, 0.F},
-               {0.F, 0.F, 1.F, 0.F},
-               {0.F, 0.F, 0.F, 1.F}}};
+            _temp = {};
         }
     }
 }

@@ -24,9 +24,9 @@ private:
     background_color _bg;
 
     oglplus::triangle tri{
-      oglplus::vec3{-0.2F, 0.5F, 0.0F},
-      oglplus::vec3{-0.7F, -0.6F, 0.0F},
-      oglplus::vec3{0.6F, 0.2F, 0.0F}};
+      {-0.2F, 0.5F, 0.0F},
+      {-0.7F, -0.6F, 0.0F},
+      {0.6F, 0.2F, 0.0F}};
 
     oglplus::owned_vertex_array_name vao;
 

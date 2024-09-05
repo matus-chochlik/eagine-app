@@ -83,7 +83,6 @@ example_stencil_shadow::example_stencil_shadow(
       .set_pitch_min(degrees_(10.F))
       .set_orbit_max(6.5F)
       .set_orbit_min(3.5F)
-      .set_target(0.F)
       .set_fov(degrees_(70))
       .set_near(0.01F)
       .set_far(100.0F);

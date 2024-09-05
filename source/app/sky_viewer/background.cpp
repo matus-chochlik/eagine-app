@@ -17,7 +17,11 @@ namespace eagine::app {
 //------------------------------------------------------------------------------
 struct sky_viewer_background_intf : sky_viewer_resource_intf {
     virtual void set_skybox_unit(video_context&, oglplus::texture_unit) = 0;
-    virtual void clear(video_context&, const mat4&, const float distance) = 0;
+    virtual void clear(
+      video_context&,
+      const mat4&,
+      const vec3&,
+      const float distance) = 0;
 };
 using sky_viewer_background_holder = unique_holder<sky_viewer_background_intf>;
 //------------------------------------------------------------------------------

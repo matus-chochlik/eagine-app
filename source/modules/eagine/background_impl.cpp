@@ -161,12 +161,13 @@ auto background_icosahedron::clean_up(video_context& video) noexcept
 auto background_icosahedron::clear(
   video_context& video,
   const mat4& cam_mat,
+  const vec3& offset,
   const float radius) noexcept -> background_icosahedron& {
     video.with_gl([&, this](auto& gl, auto& GL, auto& api) {
         gl.clear(GL.color_buffer_bit);
         gl.use_program(_prog);
         api.set_uniform(_prog, _camera_loc, cam_mat);
-        api.set_uniform(_prog, _offset_loc, -cam_mat.translation());
+        api.set_uniform(_prog, _offset_loc, offset);
         api.set_uniform(_prog, _scale_loc, radius);
         gl.disable(GL.depth_test);
         gl.disable(GL.cull_face);
@@ -188,7 +189,11 @@ auto background_icosahedron::clear(
 auto background_icosahedron::clear(
   video_context& video,
   const orbiting_camera& camera) noexcept -> background_icosahedron& {
-    return clear(video, camera.matrix(video), camera.skybox_distance());
+    return clear(
+      video,
+      camera.matrix(video),
+      camera.position().to_vector(),
+      camera.skybox_distance());
 }
 //------------------------------------------------------------------------------
 auto background_icosahedron::edge_color(oglplus::vec4 c) noexcept
@@ -411,11 +416,12 @@ auto background_skybox::clean_up(video_context& video) noexcept
 auto background_skybox::clear(
   video_context& video,
   const mat4& cam_mat,
+  const vec3& offset,
   const float distance) noexcept -> background_skybox& {
     video.with_gl([&, this](auto& gl, auto& GL, auto& api) {
         gl.use_program(_prog);
         api.set_uniform(_prog, _camera_loc, cam_mat);
-        api.set_uniform(_prog, _offset_loc, -cam_mat.translation());
+        api.set_uniform(_prog, _offset_loc, offset);
         api.set_uniform(_prog, _scale_loc, distance);
         gl.bind_vertex_array(_vao);
         gl.disable(GL.depth_test);
@@ -433,7 +439,11 @@ auto background_skybox::clear(
 auto background_skybox::clear(
   video_context& video,
   const orbiting_camera& camera) noexcept -> background_skybox& {
-    return clear(video, camera.matrix(video), camera.skybox_distance());
+    return clear(
+      video,
+      camera.matrix(video),
+      camera.position().to_vector(),
+      camera.skybox_distance());
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app
