@@ -425,22 +425,13 @@ public:
     auto al_initialized(audio_context&) noexcept -> execution_context&;
 
     /// @brief Returns the canonical device id for application gui inputs.
-    [[nodiscard]] constexpr auto app_gui_device_id() const noexcept
-      -> identifier {
-        return {"AppGUI"};
-    }
+    [[nodiscard]] auto app_gui_device_id() const noexcept -> identifier;
 
     /// @brief Returns the canonical device id for keyboard.
-    [[nodiscard]] constexpr auto keyboard_device_id() const noexcept
-      -> identifier {
-        return {"Keyboard"};
-    }
+    [[nodiscard]] auto keyboard_device_id() const noexcept -> identifier;
 
     /// @brief Returns the canonical device id for mouse.
-    [[nodiscard]] constexpr auto mouse_device_id() const noexcept
-      -> identifier {
-        return {"Mouse"};
-    }
+    [[nodiscard]] auto mouse_device_id() const noexcept -> identifier;
 
     /// @brief Connect the specified logical input to a callable handler reference.
     auto connect_input(const message_id input_id, const input_handler handler)

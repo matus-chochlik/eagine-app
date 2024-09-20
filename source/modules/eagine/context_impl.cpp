@@ -667,6 +667,18 @@ void execution_context::update() noexcept {
     _app->update();
 }
 //------------------------------------------------------------------------------
+auto execution_context::app_gui_device_id() const noexcept -> identifier {
+    return {"AppGUI"};
+}
+//------------------------------------------------------------------------------
+auto execution_context::keyboard_device_id() const noexcept -> identifier {
+    return {"Keyboard"};
+}
+//------------------------------------------------------------------------------
+auto execution_context::mouse_device_id() const noexcept -> identifier {
+    return {"Mouse"};
+}
+//------------------------------------------------------------------------------
 auto execution_context::connect_input(
   const message_id input_id,
   const input_handler handler) -> execution_context& {
