@@ -10,8 +10,7 @@ eagine_add_module(
 		std
 		eagine.core.types
 		eagine.core.reflection
-		eagine.oglplus
-)
+		eagine.oglplus)
 
 eagine_add_module(
 	eagine.app
@@ -25,8 +24,7 @@ eagine_add_module(
 		eagine.core.identifier
 		eagine.core.reflection
 		eagine.core.valid_if
-		eagine.core.main_ctx
-)
+		eagine.core.main_ctx)
 
 eagine_add_module(
 	eagine.app
@@ -40,8 +38,7 @@ eagine_add_module(
 		eagine.core.reflection
 		eagine.core.valid_if
 		eagine.core.utility
-		eagine.core.runtime
-)
+		eagine.core.runtime)
 
 eagine_add_module(
 	eagine.app
@@ -55,8 +52,7 @@ eagine_add_module(
 		eagine.core.runtime
 		eagine.core.utility
 		eagine.core.units
-		eagine.core.main_ctx
-)
+		eagine.core.main_ctx)
 
 eagine_add_module(
 	eagine.app
@@ -70,8 +66,7 @@ eagine_add_module(
 		eagine.core.utility
 		eagine.core.main_ctx
 		eagine.eglplus
-		eagine.guiplus
-)
+		eagine.guiplus)
 
 eagine_add_module(
 	eagine.app
@@ -80,8 +75,7 @@ eagine_add_module(
 	IMPORTS
 		std interface
 		eagine.core.types
-		eagine.core.main_ctx
-)
+		eagine.core.main_ctx)
 
 eagine_add_module(
 	eagine.app
@@ -93,8 +87,7 @@ eagine_add_module(
 		eagine.core.memory
 		eagine.core.reflection
 		eagine.core.runtime
-		eagine.core.main_ctx
-)
+		eagine.core.main_ctx)
 
 eagine_add_module(
 	eagine.app
@@ -118,8 +111,7 @@ eagine_add_module(
 		eagine.core.main_ctx
 		eagine.shapes
 		eagine.oglplus
-		eagine.msgbus
-)
+		eagine.msgbus)
 
 eagine_add_module(
 	eagine.app
@@ -138,8 +130,7 @@ eagine_add_module(
 		eagine.eglplus
 		eagine.oglplus
 		eagine.oalplus
-		eagine.msgbus
-)
+		eagine.msgbus)
 
 eagine_add_module(
 	eagine.app
@@ -148,8 +139,7 @@ eagine_add_module(
 	IMPORTS
 		std interface context
 		eagine.core.types
-		eagine.core.main_ctx
-)
+		eagine.core.main_ctx)
 
 eagine_add_module(
 	eagine.app
@@ -159,8 +149,7 @@ eagine_add_module(
 		std context
 		eagine.core.types
 		eagine.core.memory
-		eagine.oglplus
-)
+		eagine.oglplus)
 
 eagine_add_module(
 	eagine.app
@@ -171,8 +160,7 @@ eagine_add_module(
 		eagine.core.types
 		eagine.core.memory
 		eagine.shapes
-		eagine.oglplus
-)
+		eagine.oglplus)
 
 eagine_add_module(
 	eagine.app
@@ -187,8 +175,7 @@ eagine_add_module(
 		eagine.core.units
 		eagine.core.utility
 		eagine.core.valid_if
-		eagine.oglplus
-)
+		eagine.oglplus)
 
 eagine_add_module(
 	eagine.app
@@ -200,8 +187,7 @@ eagine_add_module(
 		eagine.core.memory
 		eagine.core.c_api
 		eagine.shapes
-		eagine.oglplus
-)
+		eagine.oglplus)
 
 eagine_add_module(
 	eagine.app
@@ -220,8 +206,7 @@ eagine_add_module(
 		eagine.core.value_tree
 		eagine.shapes
 		eagine.oglplus
-		eagine.msgbus
-)
+		eagine.msgbus)
 
 eagine_add_module(
 	eagine.app
@@ -236,8 +221,7 @@ eagine_add_module(
 		eagine.core.runtime
 		eagine.core.identifier
 		eagine.core.value_tree
-		eagine.oglplus
-)
+		eagine.oglplus)
 
 eagine_add_module(
 	eagine.app
@@ -281,8 +265,7 @@ eagine_add_module(
 		eagine.guiplus
 		eagine.msgbus
 	PRIVATE_LINK_LIBRARIES
-		EAGine::Deps::GLFW3
-)
+		EAGine::Deps::GLFW3)
 
 eagine_add_module_tests(
 	eagine.app
@@ -295,8 +278,8 @@ eagine_add_module_tests(
 		eagine.app
 	PRIVATE_LINK_LIBRARIES
 		eagine-app-testing-headers
-		EAGine::Deps::GLFW3
-)
+		EAGine::Deps::GLFW3)
+
 eagine_embed_target_resources(
 	TARGET test.eagine.app.resource_loader
 	RESOURCES
@@ -309,8 +292,8 @@ eagine_embed_target_resources(
 		TestThdn2 "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_thdn2.json"
 		TestPath  "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_path.json"
 		TestMesh  "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_mesh.json"
-	PACKED ENABLE_SEARCH
-)
+	PACKED ENABLE_SEARCH)
+
 set_tests_properties(execute-test.eagine.app.resource_loader PROPERTIES COST 10)
 
 eagine_embed_target_resources(
@@ -318,8 +301,8 @@ eagine_embed_target_resources(
 	RESOURCES
 		TestThdn1 "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_thdn1.json"
 		TestThdn2 "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_thdn2.json"
-	PACKED ENABLE_SEARCH
-)
+	PACKED ENABLE_SEARCH)
+
 set_tests_properties(execute-test.eagine.app.resource_manager PROPERTIES COST 10)
 
 add_subdirectory(resource_provider)
