@@ -26,7 +26,8 @@ import eagine.shapes;
 import eagine.oglplus;
 import eagine.msgbus;
 
-namespace eagine::app {
+namespace eagine {
+namespace app {
 
 export class loaded_resource_context;
 export class execution_context;
@@ -1747,5 +1748,19 @@ private:
     flat_set<identifier_t> _request_ids;
 };
 //------------------------------------------------------------------------------
-} // namespace eagine::app
-
+} // namespace app
+//------------------------------------------------------------------------------
+export template <>
+struct enumerator_traits<app::resource_load_status> {
+    static constexpr auto mapping() noexcept {
+        using app::resource_load_status;
+        return enumerator_map_type<resource_load_status, 5>{
+          {{"loading", resource_load_status::loading},
+           {"loaded", resource_load_status::loaded},
+           {"cancelled", resource_load_status::cancelled},
+           {"not_found", resource_load_status::not_found},
+           {"error", resource_load_status::error}}};
+    }
+};
+//------------------------------------------------------------------------------
+} // namespace eagine
