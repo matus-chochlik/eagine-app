@@ -147,7 +147,15 @@ void example_tess::update() noexcept {
         _geom.draw(_video);
     } else {
         _prog.load_if_needed(context());
-        _geom.load_if_needed(context());
+        _geom.load_if_needed(
+          context(),
+          oglplus::vertex_attrib_bindings{
+            shapes::vertex_attrib_kind::pivot_pivot,
+            shapes::vertex_attrib_kind::vertex_pivot,
+            shapes::vertex_attrib_kind::position,
+            shapes::vertex_attrib_kind::opposite_length,
+            shapes::vertex_attrib_kind::face_area},
+          0);
     }
 
     _video.commit(*this);
