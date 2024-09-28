@@ -94,6 +94,8 @@ export enum class resource_kind {
     value_tree_traversal,
     /// @brief GLSL source string collection.
     glsl_source,
+    /// @brief GL shader source include string.
+    gl_shader_include,
     /// @brief GL shader object.
     gl_shader,
     /// @brief GL program object.
@@ -193,6 +195,9 @@ public:
       oglplus::vertex_attrib_bindings,
       shapes::drawing_variant) noexcept;
 
+    void add_gl_shader_include_context(
+      const oglplus::shared_gl_api_context&,
+      std::string include_path) noexcept;
     void add_gl_shader_context(
       const oglplus::shared_gl_api_context&,
       oglplus::shader_type) noexcept;
@@ -266,6 +271,11 @@ private:
         oglplus::shared_gl_api_context gl_context;
         oglplus::vertex_attrib_bindings bindings;
         span_size_t draw_var_idx;
+    };
+
+    struct _pending_gl_shader_include_state {
+        oglplus::shared_gl_api_context gl_context;
+        std::string include_path;
     };
 
     struct _pending_gl_shader_state {
@@ -379,6 +389,10 @@ private:
       const pending_resource_info& source,
       const oglplus::glsl_source_ref& glsl_src) noexcept;
 
+    void _handle_gl_shader_include(
+      const pending_resource_info& source,
+      const std::string_view text) noexcept;
+
     auto _finish_gl_program(_pending_gl_program_state&) noexcept -> bool;
     void _handle_gl_shader(
       const pending_resource_info& source,
@@ -437,6 +451,7 @@ private:
       _pending_shape_generator_state,
       _pending_gl_shape_state,
       _pending_gl_geometry_and_bindings_state,
+      _pending_gl_shader_include_state,
       _pending_gl_shader_state,
       _pending_gl_program_state,
       _pending_gl_texture_update_state,
@@ -958,6 +973,19 @@ export struct resource_loader_signals {
     /// @brief Emitted when a GLSL source code is loaded.
     signal<void(const glsl_source_load_info&) noexcept> glsl_source_loaded;
 
+    /// @brief Type of parameter of the gl_shader_include_loaded signal.
+    /// @see gl_shader_include_loaded
+    struct gl_shader_include_load_info {
+        const identifier_t request_id;
+        const url& locator;
+        const std::string_view include_path;
+        const std::string_view shader_source;
+    };
+
+    /// @brief Emitted when a GL shader include string is loaded.
+    signal<void(const gl_shader_include_load_info&) noexcept>
+      gl_shader_include_loaded;
+
     /// @brief Type of parameter of the gl_shader_loaded signal.
     /// @see gl_shader_loaded
     struct gl_shader_load_info {
@@ -1237,6 +1265,13 @@ concept resource_glsl_source_loaded_observer =
   };
 
 template <typename T>
+concept resource_gl_shader_include_loaded_observer = requires(
+  T v,
+  const resource_loader_signals::gl_shader_include_load_info& info) {
+    v.handle_gl_shader_include_loaded(info);
+};
+
+template <typename T>
 concept resource_gl_shader_loaded_observer =
   requires(T v, const resource_loader_signals::gl_shader_load_info& info) {
       v.handle_gl_shader_loaded(info);
@@ -1308,6 +1343,10 @@ public:
         if constexpr(resource_glsl_source_loaded_observer<O>) {
             connect<&O::handle_glsl_source_loaded>(
               &observer, this->glsl_source_loaded);
+        }
+        if constexpr(resource_gl_shader_include_loaded_observer<O>) {
+            connect<&O::handle_gl_shader_include_loaded>(
+              &observer, this->gl_shader_include_loaded);
         }
         if constexpr(resource_gl_shader_loaded_observer<O>) {
             connect<&O::handle_gl_shader_loaded>(
@@ -1490,6 +1529,12 @@ public:
 
     /// @brief Requests GLSL shader source code resource.
     auto request_glsl_source(const resource_request_params&) noexcept
+      -> resource_request_result;
+
+    /// @brief Requests GL shader include string resource.
+    auto request_gl_shader_include(
+      const resource_request_params&,
+      const oglplus::shared_gl_api_context&) noexcept
       -> resource_request_result;
 
     /// @brief Requests a compiled GL shader object of a specified type.
