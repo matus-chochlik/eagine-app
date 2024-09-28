@@ -64,21 +64,21 @@ auto example_tess::_shape_url(identifier id) -> url {
         return url{
           "shape:///unit_icosahedron"
           "?to_patches=true"
-          "+pivot_pivot=true"
-          "+vertex_pivot=true"
-          "+position=true"
-          "+opposite_length=true"
-          "+face_area=true"};
+          "&pivot_pivot=true"
+          "&vertex_pivot=true"
+          "&position=true"
+          "&opposite_length=true"
+          "&face_area=true"};
     }
     if(id == identifier{"torus"}) {
         return url{
           "shape:///unit_torus"
           "?to_patches=true"
-          "+pivot_pivot=true"
-          "+vertex_pivot=true"
-          "+position=true"
-          "+opposite_length=true"
-          "+face_area=true"};
+          "&pivot_pivot=true"
+          "&vertex_pivot=true"
+          "&position=true"
+          "&opposite_length=true"
+          "&face_area=true"};
     }
     return context().loader().embedded_resource_locator("json", id);
 }
