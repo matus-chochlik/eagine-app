@@ -69,6 +69,7 @@ void pending_resource_info::_streaming_progressed(
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::mark_loaded() noexcept {
+    _preparation.finish();
     if(auto pgps{get_if<_pending_gl_program_state>(_state)}) {
         pgps->loaded = true;
         _finish_gl_program(*pgps);

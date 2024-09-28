@@ -1211,9 +1211,11 @@ void glfw3_opengl_window::update_gui(
             if(_gui.imgui.begin(
                  "Activities", visible, _gui.imgui.window_no_resize)) {
                 for(const auto& info : activities) {
-                    const auto progress{
-                      float(info.current_steps) / float(info.total_steps)};
-                    _gui.imgui.progress_bar(progress, info.title);
+                    if(info.current_steps > 0) {
+                        const auto progress{
+                          float(info.current_steps) / float(info.total_steps)};
+                        _gui.imgui.progress_bar(progress, info.title);
+                    }
                 }
                 _gui.imgui.end();
             }
