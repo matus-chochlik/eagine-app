@@ -1601,12 +1601,14 @@ void glfw3_opengl_provider::activity_begun(
   [[maybe_unused]] const string_view title,
   [[maybe_unused]] const span_size_t total_steps) noexcept {
 #if EAGINE_APP_HAS_GLFW3
-    _activities.emplace_back();
-    auto& info = _activities.back();
-    info.activity_id = activity_id;
-    info.parent_id = parent_id;
-    info.total_steps = total_steps;
-    info.title = to_string(title);
+    if(total_steps > 0) {
+        _activities.emplace_back();
+        auto& info = _activities.back();
+        info.activity_id = activity_id;
+        info.parent_id = parent_id;
+        info.total_steps = total_steps;
+        info.title = to_string(title);
+    }
 #endif
 }
 //------------------------------------------------------------------------------
@@ -1617,7 +1619,8 @@ void glfw3_opengl_provider::activity_finished(
   [[maybe_unused]] span_size_t total_steps) noexcept {
 #if EAGINE_APP_HAS_GLFW3
     std::erase_if(_activities, [activity_id](const auto& activity) -> bool {
-        return activity.activity_id == activity_id;
+        return (activity.activity_id == activity_id) or
+               (activity.current_steps >= activity.total_steps);
     });
 #endif
 }

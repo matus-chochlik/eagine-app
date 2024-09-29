@@ -32,6 +32,8 @@ private:
 
     void _change_factor(const input&) noexcept;
 
+    puzzle_progress<3> _load_progress;
+
     video_context& _video;
     background_icosahedron _bg;
 
@@ -62,27 +64,28 @@ auto example_tess::_shape_url(identifier id) -> url {
         return url{
           "shape:///unit_icosahedron"
           "?to_patches=true"
-          "+pivot_pivot=true"
-          "+vertex_pivot=true"
-          "+position=true"
-          "+opposite_length=true"
-          "+face_area=true"};
+          "&pivot_pivot=true"
+          "&vertex_pivot=true"
+          "&position=true"
+          "&opposite_length=true"
+          "&face_area=true"};
     }
     if(id == identifier{"torus"}) {
         return url{
           "shape:///unit_torus"
           "?to_patches=true"
-          "+pivot_pivot=true"
-          "+vertex_pivot=true"
-          "+position=true"
-          "+opposite_length=true"
-          "+face_area=true"};
+          "&pivot_pivot=true"
+          "&vertex_pivot=true"
+          "&position=true"
+          "&opposite_length=true"
+          "&face_area=true"};
     }
     return context().loader().embedded_resource_locator("json", id);
 }
 //------------------------------------------------------------------------------
 example_tess::example_tess(execution_context& ec, video_context& vc)
   : timeouting_application{ec, std::chrono::seconds{60}}
+  , _load_progress{ec.progress(), "Loading resources"}
   , _video{vc}
   , _bg{_video, {0.0F, 0.0F, 0.0F, 1.F}, {0.25F, 0.25F, 0.25F, 0.0F}, 1.F}
   , _prog{ec}
@@ -118,6 +121,7 @@ void example_tess::_on_loaded(const loaded_resource_base& loaded) noexcept {
     if(_prog and _geom) {
         _prog.apply_input_bindings(_video, _geom);
     }
+    _load_progress.update_progress(_prog and _geom and _other);
     reset_timeout();
 }
 //------------------------------------------------------------------------------
@@ -139,7 +143,7 @@ void example_tess::update() noexcept {
 
     _bg.clear(_video, _camera);
 
-    if(_prog and _geom and _other) {
+    if(_load_progress.done()) {
         _prog.use(_video);
         _prog.set_projection(_video, _camera);
         _prog.set_factor(_video, _tess_factor);
@@ -147,7 +151,15 @@ void example_tess::update() noexcept {
         _geom.draw(_video);
     } else {
         _prog.load_if_needed(context());
-        _geom.load_if_needed(context());
+        _geom.load_if_needed(
+          context(),
+          oglplus::vertex_attrib_bindings{
+            shapes::vertex_attrib_kind::pivot_pivot,
+            shapes::vertex_attrib_kind::vertex_pivot,
+            shapes::vertex_attrib_kind::position,
+            shapes::vertex_attrib_kind::opposite_length,
+            shapes::vertex_attrib_kind::face_area},
+          0);
     }
 
     _video.commit(*this);

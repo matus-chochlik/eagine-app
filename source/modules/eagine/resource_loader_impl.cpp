@@ -69,6 +69,7 @@ void pending_resource_info::_streaming_progressed(
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::mark_loaded() noexcept {
+    _preparation.finish();
     if(auto pgps{get_if<_pending_gl_program_state>(_state)}) {
         pgps->loaded = true;
         _finish_gl_program(*pgps);
@@ -134,6 +135,13 @@ void pending_resource_info::add_gl_geometry_and_bindings_context(
       .gl_context = gl_context,
       .bindings = std::move(bindings),
       .draw_var_idx = draw_var_idx};
+}
+//------------------------------------------------------------------------------
+void pending_resource_info::add_gl_shader_include_context(
+  const oglplus::shared_gl_api_context& gl_context,
+  std::string include_path) noexcept {
+    _state = _pending_gl_shader_include_state{
+      .gl_context = gl_context, .include_path = std::move(include_path)};
 }
 //------------------------------------------------------------------------------
 void pending_resource_info::add_gl_shader_context(
@@ -291,11 +299,18 @@ void pending_resource_info::_handle_plain_text(
         append_to(as_chars(chunk), text);
     }
 
-    if(is(resource_kind::plain_text)) {
-        _parent.plain_text_loaded(
-          {.request_id = _request_id,
-           .locator = _params.locator,
-           .text = std::move(text)});
+    if(not text.empty()) {
+        if(const auto cont{continuation()}) {
+            if(cont->is(resource_kind::gl_shader_include)) {
+                cont->_handle_gl_shader_include(*this, text);
+            }
+        }
+        if(is(resource_kind::plain_text)) {
+            _parent.plain_text_loaded(
+              {.request_id = _request_id,
+               .locator = _params.locator,
+               .text = std::move(text)});
+        }
     }
     _parent.resource_loaded(_request_id, _kind, _params.locator);
     mark_finished();
@@ -687,6 +702,30 @@ void pending_resource_info::_handle_glsl_source(
             }
         }
     }
+    mark_finished();
+}
+//------------------------------------------------------------------------------
+void pending_resource_info::_handle_gl_shader_include(
+  const pending_resource_info& source,
+  const std::string_view text) noexcept {
+    if(const auto pgsis{get_if<_pending_gl_shader_include_state>(_state)}) {
+        const auto& glapi{pgsis->gl_context.gl_api()};
+        const auto& [gl, GL] = glapi;
+
+        _parent.log_info("loaded GL shader include text <${path}>")
+          .arg("requestId", _request_id)
+          .arg("path", pgsis->include_path)
+          .arg("locator", _params.locator.str());
+
+        gl.named_string(GL.shader_include, pgsis->include_path, text);
+
+        _parent.gl_shader_include_loaded(
+          {.request_id = _request_id,
+           .locator = _params.locator,
+           .include_path = pgsis->include_path,
+           .shader_source = text});
+    }
+
     mark_finished();
 }
 //------------------------------------------------------------------------------
@@ -1297,6 +1336,28 @@ auto resource_loader::request_glsl_source(
     }
 
     return _cancelled_resource(params);
+}
+//------------------------------------------------------------------------------
+auto resource_loader::request_gl_shader_include(
+  const resource_request_params& params,
+  const oglplus::shared_gl_api_context& gl_context) noexcept
+  -> resource_request_result {
+    auto include_path{params.locator.query().decoded_arg_value("path")};
+    if(
+      include_path and (params.locator.has_path_suffix(".glsl") or
+                        params.locator.has_scheme("glsl"))) {
+        if(const auto src_request{_new_resource(
+             fetch_resource_chunks(params, 8 * 1024),
+             resource_kind::plain_text)}) {
+            auto new_request{
+              _new_resource(params, resource_kind::gl_shader_include)};
+            new_request.info().add_gl_shader_include_context(
+              gl_context, *include_path);
+            src_request.set_continuation(new_request);
+            return new_request;
+        }
+    }
+    return _cancelled_resource(params, resource_kind::gl_shader_include);
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request_gl_shader(
