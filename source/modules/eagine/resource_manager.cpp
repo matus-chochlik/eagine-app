@@ -20,14 +20,66 @@ import :geometry;
 import :context;
 
 namespace eagine::app {
+export template <typename Resource>
+class managed_resource;
+
 export template <typename... Resources>
 class basic_resource_manager;
 //------------------------------------------------------------------------------
+class managed_resource_utils {
+private:
+    template <typename X>
+    struct _adjust_res : std::type_identity<loaded_resource<X>> {};
+
+    template <typename R>
+    struct _adjust_res<loaded_resource<R>>
+      : std::type_identity<loaded_resource<R>> {};
+
+    template <typename R>
+    struct _adjust_res<managed_resource<R>>
+      : std::type_identity<loaded_resource<R>> {};
+
+    template <typename X>
+    using adjust_res_t = typename _adjust_res<X>::type;
+
+    template <typename Resource>
+    struct resource_and_params {
+        loaded_resource_context context; // TODO: optimize as flyweight
+        Resource resource;
+        resource_load_params<Resource> params;
+
+        template <typename... Args>
+        resource_and_params(
+          loaded_resource_context& ctx,
+          url locator,
+          Args&&... args) noexcept
+          : context{ctx}
+          , resource{std::move(locator), ctx}
+          , params{std::forward<Args>(args)...} {}
+
+        auto load_if_needed() noexcept {
+            return resource.load_if_needed(context, params);
+        }
+
+        auto clean_up() noexcept {
+            return resource.clean_up(context);
+        }
+    };
+
+public:
+    template <typename Resource>
+    using managed_resource_context =
+      resource_and_params<adjust_res_t<Resource>>;
+};
+//------------------------------------------------------------------------------
 export template <typename Resource>
 class managed_resource {
+    using _context_t =
+      managed_resource_utils::managed_resource_context<Resource>;
+
 public:
-    managed_resource(loaded_resource<Resource>& ref) noexcept
-      : _ref{ref} {}
+    managed_resource(shared_holder<_context_t> ref) noexcept
+      : _ref{std::move(ref)} {}
 
     template <typename... Resources, typename... Args>
     managed_resource(
@@ -83,11 +135,11 @@ public:
           std::forward<Args>(args)...} {}
 
     auto resource() const noexcept -> loaded_resource<Resource>& {
-        return _ref;
+        return _ref->resource;
     }
 
     auto is_loaded() const noexcept -> bool {
-        return _ref.is_loaded();
+        return resource().is_loaded();
     }
 
     explicit operator bool() const noexcept {
@@ -95,17 +147,17 @@ public:
     }
 
     operator loaded_resource<Resource>&() const noexcept {
-        return _ref;
+        return resource();
     }
 
     auto operator->() const noexcept -> loaded_resource<Resource>* {
-        return &_ref;
+        return &(resource());
     }
 
     auto connect(
       callable_ref<void(const loaded_resource_base&) noexcept> handler) noexcept
       -> managed_resource& {
-        _ref.load_event.connect(std::move(handler));
+        resource().load_event.connect(std::move(handler));
         return *this;
     }
 
@@ -113,7 +165,7 @@ public:
       callable_ref<
         void(const typename loaded_resource<Resource>::load_info&) noexcept>
         handler) noexcept -> managed_resource& {
-        _ref.loaded.connect(std::move(handler));
+        resource().loaded.connect(std::move(handler));
         return *this;
     }
 
@@ -123,54 +175,15 @@ public:
     }
 
 private:
-    loaded_resource<Resource>& _ref;
+    shared_holder<_context_t> _ref;
 };
 //------------------------------------------------------------------------------
 export template <typename... Resources>
 class basic_resource_manager {
-    template <typename X>
-    struct _adjust_res : std::type_identity<loaded_resource<X>> {};
-
-    template <typename R>
-    struct _adjust_res<loaded_resource<R>>
-      : std::type_identity<loaded_resource<R>> {};
-
-    template <typename R>
-    struct _adjust_res<managed_resource<R>>
-      : std::type_identity<loaded_resource<R>> {};
 
     template <typename X>
-    using adjust_res_t = typename _adjust_res<X>::type;
-
-    template <typename Resource>
-    struct resource_and_params {
-        loaded_resource_context context; // TODO: optimize as flyweight
-        Resource resource;
-        resource_load_params<Resource> params;
-
-        template <typename... Args>
-        resource_and_params(
-          loaded_resource_context& ctx,
-          url locator,
-          Args&&... args) noexcept
-          : context{ctx}
-          , resource{std::move(locator), ctx}
-          , params{std::forward<Args>(args)...} {}
-
-        auto load_if_needed() noexcept {
-            return resource.load_if_needed(context, params);
-        }
-
-        auto clean_up() noexcept {
-            return resource.clean_up(context);
-        }
-    };
-
-    template <typename X>
-    using adj_res_and_params = resource_and_params<adjust_res_t<X>>;
-
-    template <typename X>
-    using resource_storage = std::vector<unique_holder<adj_res_and_params<X>>>;
+    using resource_storage = std::vector<
+      shared_holder<managed_resource_utils::managed_resource_context<X>>>;
 
 public:
     template <typename Resource, typename... Args>
@@ -179,11 +192,15 @@ public:
       identifier, // TODO (use as map key)
       url locator,
       loaded_resource_context& context,
-      Args&&... args) -> managed_resource<Resource> {
+      Args&&... args)
+      -> shared_holder<
+        managed_resource_utils::managed_resource_context<Resource>> {
         auto& res_vec{_get(rtid)};
-        res_vec.emplace_back(std::make_unique<adj_res_and_params<Resource>>(
-          context, std::move(locator), std::forward<Args>(args)...));
-        return {res_vec.back()->resource};
+        res_vec.emplace_back(
+          std::make_shared<
+            managed_resource_utils::managed_resource_context<Resource>>(
+            context, std::move(locator), std::forward<Args>(args)...));
+        return res_vec.back();
     }
 
     [[nodiscard]] auto are_loaded() noexcept -> bool {
