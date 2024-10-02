@@ -43,26 +43,31 @@ private:
     using adjust_res_t = typename _adjust_res<X>::type;
 
     template <typename Resource>
-    struct resource_and_params {
-        loaded_resource_context context; // TODO: optimize as flyweight
-        Resource resource;
-        resource_load_params<Resource> params;
+    class resource_and_params {
+        loaded_resource_context _context; // TODO: optimize as flyweight
+        Resource _resource;
+        resource_load_params<Resource> _params;
 
+    public:
         template <typename... Args>
         resource_and_params(
           loaded_resource_context& ctx,
           url locator,
           Args&&... args) noexcept
-          : context{ctx}
-          , resource{std::move(locator), ctx}
-          , params{std::forward<Args>(args)...} {}
+          : _context{ctx}
+          , _resource{std::move(locator), ctx}
+          , _params{std::forward<Args>(args)...} {}
+
+        auto resource() noexcept -> Resource& {
+            return _resource;
+        }
 
         auto load_if_needed() noexcept {
-            return resource.load_if_needed(context, params);
+            return _resource.load_if_needed(_context, _params);
         }
 
         auto clean_up() noexcept {
-            return resource.clean_up(context);
+            return _resource.clean_up(_context);
         }
     };
 
@@ -135,11 +140,15 @@ public:
           std::forward<Args>(args)...} {}
 
     auto resource() const noexcept -> loaded_resource<Resource>& {
-        return _ref->resource;
+        return _ref->resource();
     }
 
     auto is_loaded() const noexcept -> bool {
         return resource().is_loaded();
+    }
+
+    auto has_value() const noexcept -> bool {
+        return is_loaded();
     }
 
     explicit operator bool() const noexcept {
@@ -184,6 +193,10 @@ class basic_resource_manager {
     template <typename X>
     using resource_storage = std::vector<
       shared_holder<managed_resource_utils::managed_resource_context<X>>>;
+
+    static constexpr auto _is() noexcept {
+        return std::make_index_sequence<sizeof...(Resources)>();
+    }
 
 public:
     template <typename Resource, typename... Args>
@@ -230,14 +243,10 @@ private:
         return std::get<resource_storage<Resource>>(_resources);
     }
 
-    static constexpr auto _is() noexcept {
-        return std::make_index_sequence<sizeof...(Resources)>();
-    }
-
     template <typename V>
     auto _are_loaded(V& res_vec) const noexcept -> span_size_t {
         for(const auto& res_info : res_vec) {
-            if(not res_info->resource.is_loaded()) {
+            if(not res_info->resource().is_loaded()) {
                 return false;
             }
         }
