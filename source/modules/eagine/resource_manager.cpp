@@ -77,6 +77,8 @@ public:
       resource_and_params<adjust_res_t<Resource>>;
 };
 //------------------------------------------------------------------------------
+/// @brief Template for resources managed by basic_resource_manager.
+/// @see resource_loader
 export template <typename Resource>
 class managed_resource {
     using _context_t =
@@ -114,6 +116,7 @@ public:
           std::move(locator),
           std::forward<Args>(args)...} {}
 
+    /// @brief Add or lookup a new managed resource in the specified manager.
     template <typename... Resources, typename... Args>
     managed_resource(
       basic_resource_manager<Resources...>& manager,
@@ -127,6 +130,7 @@ public:
           locator,
           std::forward<Args>(args)...} {}
 
+    /// @brief Add or lookup a new managed resource in the specified manager.
     template <typename... Resources, typename... Args>
     managed_resource(
       basic_resource_manager<Resources...>& manager,
@@ -139,30 +143,41 @@ public:
           std::move(locator),
           std::forward<Args>(args)...} {}
 
+    /// @brier Returns a reference to the underlying loaded_resource.
     auto resource() const noexcept -> loaded_resource<Resource>& {
         return _ref->resource();
     }
 
+    /// @brief Indicates if this resource is already loaded.
     auto is_loaded() const noexcept -> bool {
         return resource().is_loaded();
     }
 
+    /// @brief Indicates if this resource is already loaded.
+    /// @see is_loaded
     auto has_value() const noexcept -> bool {
         return is_loaded();
     }
 
+    /// @brief Indicates if this resource is already loaded.
+    /// @see is_loaded
     explicit operator bool() const noexcept {
         return is_loaded();
     }
 
+    /// @brief Conversion to reference to the underlying loaded_resource.
+    /// @see resource
     operator loaded_resource<Resource>&() const noexcept {
         return resource();
     }
 
+    /// @brief Returns a pointer to the underlying loaded_resource.
+    /// @see resource
     auto operator->() const noexcept -> loaded_resource<Resource>* {
         return &(resource());
     }
 
+    /// @brief Connects the specified callable to the load event of the loaded_resource.
     auto connect(
       callable_ref<void(const loaded_resource_base&) noexcept> handler) noexcept
       -> managed_resource& {
@@ -170,6 +185,7 @@ public:
         return *this;
     }
 
+    /// @brief Connects the specified callable to the load signal of the loaded_resource.
     auto connect(
       callable_ref<
         void(const typename loaded_resource<Resource>::load_info&) noexcept>
@@ -178,6 +194,7 @@ public:
         return *this;
     }
 
+    /// @brief Connects the specified member function to a signal of the loaded_resource.
     template <auto MemFnPtr, typename C>
     auto connect_to(C* obj) noexcept -> managed_resource& {
         return connect(make_callable_ref<MemFnPtr>(obj));
@@ -187,6 +204,8 @@ private:
     shared_holder<_context_t> _ref;
 };
 //------------------------------------------------------------------------------
+/// @brief Class managing a collection of managed_resources.
+/// @see resource_loader
 export template <typename... Resources>
 class basic_resource_manager {
 
@@ -216,14 +235,17 @@ public:
         return res_vec.back();
     }
 
+    /// @brief Indicates if all currently managed resources are loaded.
     [[nodiscard]] auto are_loaded() noexcept -> bool {
         return _are_loaded(_resources, _is());
     }
 
+    /// @brief Load all pending resources.
     auto load() noexcept -> span_size_t {
         return _load(_resources, _is());
     }
 
+    /// @brief Updates the internal state of this manager, loads resources if needed.
     auto update() noexcept -> basic_resource_manager& {
         if(not are_loaded()) {
             load();
@@ -231,6 +253,7 @@ public:
         return *this;
     }
 
+    /// @brief Clean-up and remove all currently managed resources.
     auto clean_up() noexcept -> basic_resource_manager& {
         _clean_up(_resources, _is());
         return *this;
@@ -289,24 +312,40 @@ private:
     std::tuple<resource_storage<Resources>...> _resources;
 };
 //------------------------------------------------------------------------------
+/// @brief Alias for managed text string resource.
 export using managed_plain_text = managed_resource<std::string>;
+/// @brief Alias for managed text string list resource.
 export using managed_string_list = managed_resource<std::vector<std::string>>;
+/// @brief Alias for managed URL list resource.
 export using managed_url_list = managed_resource<std::vector<url>>;
+/// @brief Alias for managed floating-point number resource.
 export using managed_float_vector = managed_resource<std::vector<float>>;
+/// @brief Alias for managed floating-point number 3d vector resource.
 export using managed_vec3_vector =
   managed_resource<std::vector<math::vector<float, 3>>>;
+/// @brief Alias for managed curve of 3d vectors resource.
 export using managed_smooth_vec3_curve =
   managed_resource<math::bezier_curves<math::vector<float, 3>, float, 3>>;
+/// @brief Alias for managed curve of 4x4 matrices resource.
 export using managed_mat4_vector =
   managed_resource<std::vector<math::matrix<float, 4, 4, true>>>;
+/// @brief Alias for managed value tree resource.
 export using managed_value_tree = managed_resource<valtree::compound>;
+/// @brief Alias for managed GL geometry and attribute bindings resource.
 export using managed_gl_geometry_and_bindings =
   managed_resource<gl_geometry_and_bindings>;
+/// @brief Alias for managed GL shader resource.
 export using managed_gl_shader = managed_resource<oglplus::owned_shader_name>;
+/// @brief Alias for managed GL GPU program resource.
 export using managed_gl_program = managed_resource<oglplus::owned_program_name>;
+/// @brief Alias for managed GL texture resource.
 export using managed_gl_texture = managed_resource<oglplus::owned_texture_name>;
+/// @brief Alias for managed GL buffer resource.
 export using managed_gl_buffer = managed_resource<oglplus::owned_buffer_name>;
 //------------------------------------------------------------------------------
+/// @brief Template for the default resource manager instantiations.
+/// @see resource_manager
+/// @see managed_resource
 export template <typename... Resources>
 using default_resource_manager = basic_resource_manager<
   plain_text_resource,
@@ -324,6 +363,8 @@ using default_resource_manager = basic_resource_manager<
   gl_buffer_resource,
   Resources...>;
 //------------------------------------------------------------------------------
+/// @brief Template for the default resource manager.
+/// @see managed_resource
 export using resource_manager = default_resource_manager<>;
 //------------------------------------------------------------------------------
 } // namespace eagine::app
