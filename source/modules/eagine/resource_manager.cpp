@@ -90,7 +90,7 @@ public:
     managed_resource(
       basic_resource_manager<Resources...>& manager,
       loaded_resource_context& context,
-      identifier resource_id,
+      identifier_t resource_id,
       url locator,
       Args&&... args)
       : managed_resource{manager.do_add(
@@ -104,7 +104,7 @@ public:
     managed_resource(
       basic_resource_manager<Resources...>& manager,
       execution_context& ec,
-      identifier resource_id,
+      identifier_t resource_id,
       url locator,
       Args&&... args)
       : managed_resource{
@@ -202,7 +202,7 @@ public:
     template <typename Resource, typename... Args>
     [[nodiscard]] auto do_add(
       std::type_identity<Resource> rtid,
-      identifier, // TODO (use as map key)
+      identifier_t, // TODO (use as map key)
       url locator,
       loaded_resource_context& context,
       Args&&... args)
