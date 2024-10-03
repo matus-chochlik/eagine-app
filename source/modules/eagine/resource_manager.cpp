@@ -210,7 +210,8 @@ export template <typename... Resources>
 class basic_resource_manager {
 
     template <typename X>
-    using resource_storage = std::vector<
+    using resource_storage = std::map<
+      identifier_t,
       shared_holder<managed_resource_utils::managed_resource_context<X>>>;
 
     static constexpr auto _is() noexcept {
@@ -221,18 +222,28 @@ public:
     template <typename Resource, typename... Args>
     [[nodiscard]] auto do_add(
       std::type_identity<Resource> rtid,
-      identifier_t, // TODO (use as map key)
+      identifier_t res_id,
       url locator,
       loaded_resource_context& context,
       Args&&... args)
       -> shared_holder<
         managed_resource_utils::managed_resource_context<Resource>> {
-        auto& res_vec{_get(rtid)};
-        res_vec.emplace_back(
-          std::make_shared<
-            managed_resource_utils::managed_resource_context<Resource>>(
-            context, std::move(locator), std::forward<Args>(args)...));
-        return res_vec.back();
+        // try find in already loaded resource storage
+        auto& loaded{_get_loaded(rtid)};
+        const auto pos{loaded.find(res_id)};
+        if(pos != loaded.end()) {
+            return std::get<1>(*pos);
+        }
+
+        // find or emplace to pending resource storage
+        auto& pending{_get_pending(rtid)};
+        auto& info{pending[res_id]};
+        if(not info.has_value()) {
+            info = std::make_shared<
+              managed_resource_utils::managed_resource_context<Resource>>(
+              context, std::move(locator), std::forward<Args>(args)...);
+        }
+        return info;
     }
 
     /// @brief Indicates if all currently managed resources are loaded.
@@ -261,16 +272,30 @@ public:
 
 private:
     template <typename Resource>
-    auto _get(std::type_identity<Resource>) noexcept
+    auto _get_both(std::type_identity<Resource>) noexcept
+      -> std::array<resource_storage<Resource>, 2Z>& {
+        return std::get<std::array<resource_storage<Resource>, 2Z>>(_resources);
+    }
+
+    template <typename Resource>
+    auto _get_pending(std::type_identity<Resource> tid) noexcept
       -> resource_storage<Resource>& {
-        return std::get<resource_storage<Resource>>(_resources);
+        return _get_both(tid)[0];
+    }
+
+    template <typename Resource>
+    auto _get_loaded(std::type_identity<Resource> tid) noexcept
+      -> resource_storage<Resource>& {
+        return _get_both(tid)[1];
     }
 
     template <typename V>
-    auto _are_loaded(V& res_vec) const noexcept -> span_size_t {
-        for(const auto& res_info : res_vec) {
-            if(not res_info->resource().is_loaded()) {
-                return false;
+    auto _are_loaded(V& res_stores) const noexcept -> span_size_t {
+        for(const auto& res_entry : res_stores[0]) {
+            if(auto& res_info{std::get<1>(res_entry)}) {
+                if(not res_info->resource().is_loaded()) {
+                    return false;
+                }
             }
         }
         return true;
@@ -282,11 +307,22 @@ private:
     }
 
     template <typename V>
-    auto _do_load(V& res_vec) noexcept -> span_size_t {
+    auto _do_load(V& res_stores) noexcept -> span_size_t {
         span_size_t result{0};
-        for(auto& res_info : res_vec) {
-            if(res_info->load_if_needed()) {
-                ++result;
+        auto& pending{res_stores[0]};
+        auto& loaded{res_stores[1]};
+        for(auto pos{pending.begin()}; pos != pending.end();) {
+            auto& res_info{std::get<1>(*pos)};
+            if(res_info.has_value()) {
+                if(res_info->load_if_needed()) {
+                    loaded[std::get<0>(*pos)] = std::move(res_info);
+                    pos = pending.erase(pos);
+                    result++;
+                } else {
+                    ++pos;
+                }
+            } else {
+                pos = pending.erase(pos);
             }
         }
         return result;
@@ -303,13 +339,19 @@ private:
     }
 
     template <typename V>
-    void _do_clean_up(V& res_vec) noexcept {
-        for(auto& res_info : res_vec) {
-            res_info->clean_up();
+    void _do_clean_up(V& res_stores) noexcept {
+        for(auto& res_store : res_stores) {
+            for(auto& res_entry : res_store) {
+                if(auto& res_info{std::get<1>(res_entry)}) {
+                    res_info->clean_up();
+                }
+            }
         }
     }
 
-    std::tuple<resource_storage<Resources>...> _resources;
+    // the first element is the storage of pending (not yet loaded resources)
+    // the second element is the storage of already loaded resources
+    std::tuple<std::array<resource_storage<Resources>, 2Z>...> _resources;
 };
 //------------------------------------------------------------------------------
 /// @brief Alias for managed text string resource.
