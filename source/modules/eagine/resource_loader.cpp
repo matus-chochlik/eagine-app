@@ -228,7 +228,8 @@ public:
       const oglplus::shared_gl_api_context&,
       oglplus::texture_target,
       oglplus::texture_unit) noexcept;
-    auto handle_gl_texture_params(resource_gl_texture_params&) noexcept -> bool;
+    auto handle_gl_texture_params(
+      shared_holder<resource_gl_texture_params>&) noexcept -> bool;
 
     void add_gl_buffer_context(
       const oglplus::shared_gl_api_context&,
@@ -301,7 +302,7 @@ private:
 
     struct _pending_gl_texture_state {
         oglplus::shared_gl_api_context gl_context;
-        const resource_gl_texture_params* pparams{nullptr};
+        shared_holder<const resource_gl_texture_params> params;
         flat_set<identifier_t> pending_requests;
         std::bitset<32> level_images_done;
         span_size_t levels{0};
@@ -613,7 +614,7 @@ auto make_valtree_gl_program_builder(
 auto make_valtree_gl_texture_image_loader(
   const shared_holder<pending_resource_info>& parent,
   oglplus::texture_target,
-  const resource_gl_texture_image_params& params) noexcept
+  const shared_holder<resource_gl_texture_image_params>& params) noexcept
   -> unique_holder<valtree::object_builder>;
 auto make_valtree_gl_texture_builder(
   const shared_holder<pending_resource_info>& parent,
@@ -1575,7 +1576,7 @@ public:
     auto request_gl_texture_image(
       const resource_request_params&,
       oglplus::texture_target,
-      const resource_gl_texture_image_params&) noexcept
+      const shared_holder<resource_gl_texture_image_params>&) noexcept
       -> resource_request_result;
 
     auto request_gl_texture_image(

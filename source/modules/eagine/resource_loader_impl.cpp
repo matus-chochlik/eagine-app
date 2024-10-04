@@ -800,8 +800,8 @@ auto pending_resource_info::_finish_gl_texture(
         const auto& gl = pgts.gl_context.gl_api().operations();
         gl.active_texture(pgts.tex_unit);
 
-        if(pgts.pparams) {
-            const auto& params{*pgts.pparams};
+        if(pgts.params) {
+            const auto& params{*pgts.params};
             for(const auto level : integer_range(pgts.levels)) {
                 if(not pgts.level_images_done[std_size(level)]) {
                     _clear_gl_texture_image(pgts, params, level, {});
@@ -1444,7 +1444,7 @@ auto resource_loader::request(
 auto resource_loader::request_gl_texture_image(
   const resource_request_params& params,
   oglplus::texture_target target,
-  const resource_gl_texture_image_params& img_params) noexcept
+  const shared_holder<resource_gl_texture_image_params>& img_params) noexcept
   -> resource_request_result {
     auto new_request{_new_resource(params, resource_kind::gl_texture_image)};
 

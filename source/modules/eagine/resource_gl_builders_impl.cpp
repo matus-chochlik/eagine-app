@@ -248,7 +248,7 @@ public:
     valtree_gl_texture_image_loader(
       shared_holder<pending_resource_info> info,
       oglplus::texture_target target,
-      const resource_gl_texture_image_params& params) noexcept
+      const shared_holder<resource_gl_texture_image_params>& params) noexcept
       : base{"GLtxiBuldr", std::move(info)}
       , _tex_data{*this, 1024 * 1024 * 4, nothing}
       , _target{target}
@@ -292,7 +292,7 @@ private:
     std::vector<float> _float_data;
     stream_decompression _decompression;
     oglplus::texture_target _target;
-    resource_gl_texture_image_params _params{};
+    shared_holder<resource_gl_texture_image_params> _params{};
     bool _success{true};
 };
 //------------------------------------------------------------------------------
@@ -328,33 +328,33 @@ void valtree_gl_texture_image_loader::do_add(
   const span<const T> data) noexcept {
     if(path.has_size(1)) {
         if(path.starts_with("level")) {
-            _success &= assign_if_fits(data, _params.level);
+            _success &= assign_if_fits(data, _params->level);
         } else if(path.starts_with("x_offs")) {
-            _success &= assign_if_fits(data, _params.x_offs);
-            _params.dimensions = std::max(_params.dimensions, 1);
+            _success &= assign_if_fits(data, _params->x_offs);
+            _params->dimensions = std::max(_params->dimensions, 1);
         } else if(path.starts_with("y_offs")) {
-            _success &= assign_if_fits(data, _params.y_offs);
-            _params.dimensions = std::max(_params.dimensions, 2);
+            _success &= assign_if_fits(data, _params->y_offs);
+            _params->dimensions = std::max(_params->dimensions, 2);
         } else if(path.starts_with("z_offs")) {
-            _success &= assign_if_fits(data, _params.z_offs);
-            _params.dimensions = std::max(_params.dimensions, 3);
+            _success &= assign_if_fits(data, _params->z_offs);
+            _params->dimensions = std::max(_params->dimensions, 3);
         } else if(path.starts_with("channels")) {
-            _success &= assign_if_fits(data, _params.channels);
+            _success &= assign_if_fits(data, _params->channels);
         } else if(path.starts_with("width")) {
-            _success &= assign_if_fits(data, _params.width);
-            _params.dimensions = std::max(_params.dimensions, 1);
+            _success &= assign_if_fits(data, _params->width);
+            _params->dimensions = std::max(_params->dimensions, 1);
         } else if(path.starts_with("height")) {
-            _success &= assign_if_fits(data, _params.height);
-            _params.dimensions = std::max(_params.dimensions, 2);
+            _success &= assign_if_fits(data, _params->height);
+            _params->dimensions = std::max(_params->dimensions, 2);
         } else if(path.starts_with("depth")) {
-            _success &= assign_if_fits(data, _params.depth);
-            _params.dimensions = std::max(_params.dimensions, 3);
+            _success &= assign_if_fits(data, _params->depth);
+            _params->dimensions = std::max(_params->dimensions, 3);
         } else if(path.starts_with("data_type")) {
-            _success &= assign_if_fits(data, _params.data_type);
+            _success &= assign_if_fits(data, _params->data_type);
         } else if(path.starts_with("format")) {
-            _success &= assign_if_fits(data, _params.format);
+            _success &= assign_if_fits(data, _params->format);
         } else if(path.starts_with("iformat")) {
-            _success &= assign_if_fits(data, _params.iformat);
+            _success &= assign_if_fits(data, _params->iformat);
         }
     } else if(path.has_size(2)) {
         if(path.starts_with("data")) {
@@ -393,11 +393,11 @@ void valtree_gl_texture_image_loader::do_add(
   const span<const string_view> data) noexcept {
     if(path.has_size(1)) {
         if(path.starts_with("data_type")) {
-            _success &= texture_data_type_from_string(data, _params.data_type);
+            _success &= texture_data_type_from_string(data, _params->data_type);
         } else if(path.starts_with("format")) {
-            _success &= texture_format_from_string(data, _params.format);
+            _success &= texture_format_from_string(data, _params->format);
         } else if(path.starts_with("iformat")) {
-            _success &= texture_iformat_from_string(data, _params.iformat);
+            _success &= texture_iformat_from_string(data, _params->iformat);
         } else if(path.starts_with("data_filter")) {
             if(data.has_single_value()) {
                 if(const auto method{
@@ -429,7 +429,7 @@ auto valtree_gl_texture_image_loader::finish() noexcept -> bool {
     if(const auto parent{_parent.lock()}) {
         if(_success) {
             _decompression.finish();
-            parent->handle_gl_texture_image(_target, _params, _tex_data);
+            parent->handle_gl_texture_image(_target, *_params, _tex_data);
         }
         parent->mark_finished();
         return _success;
@@ -446,7 +446,7 @@ void valtree_gl_texture_image_loader::failed() noexcept {
 auto make_valtree_gl_texture_image_loader(
   const shared_holder<pending_resource_info>& parent,
   oglplus::texture_target target,
-  const resource_gl_texture_image_params& params) noexcept
+  const shared_holder<resource_gl_texture_image_params>& params) noexcept
   -> unique_holder<valtree::object_builder> {
     return {hold<valtree_gl_texture_image_loader>, parent, target, params};
 }
@@ -516,14 +516,17 @@ private:
     oglplus::shared_gl_api_context _gl_context;
     main_ctx_buffer _tex_data;
     stream_decompression _decompression;
-    resource_gl_texture_params _params{};
+    shared_holder<resource_gl_texture_params> _params{default_selector};
     url _image_locator;
-    resource_gl_texture_image_params _image_params;
+    shared_holder<resource_gl_texture_image_params> _image_params{
+      default_selector};
     oglplus::texture_target _image_target;
     oglplus::texture_target _tex_target;
     oglplus::texture_unit _tex_unit;
-    std::vector<
-      std::tuple<url, oglplus::texture_target, resource_gl_texture_image_params>>
+    std::vector<std::tuple<
+      url,
+      oglplus::texture_target,
+      shared_holder<resource_gl_texture_image_params>>>
       _image_requests;
     std::vector<
       std::tuple<oglplus::gl_types::enum_type, oglplus::gl_types::int_type>>
@@ -560,39 +563,39 @@ void valtree_gl_texture_builder::do_add(
   const span<const T> data) noexcept {
     if(path.has_size(1)) {
         if(path.starts_with("levels")) {
-            _success &= assign_if_fits(data, _params.levels);
+            _success &= assign_if_fits(data, _params->levels);
         } else if(path.starts_with("width")) {
-            _success &= assign_if_fits(data, _params.width);
-            _params.dimensions = std::max(_params.dimensions, 1);
+            _success &= assign_if_fits(data, _params->width);
+            _params->dimensions = std::max(_params->dimensions, 1);
         } else if(path.starts_with("height")) {
-            _success &= assign_if_fits(data, _params.height);
-            _params.dimensions = std::max(_params.dimensions, 2);
+            _success &= assign_if_fits(data, _params->height);
+            _params->dimensions = std::max(_params->dimensions, 2);
         } else if(path.starts_with("depth")) {
-            _success &= assign_if_fits(data, _params.depth);
-            _params.dimensions = std::max(_params.dimensions, 3);
+            _success &= assign_if_fits(data, _params->depth);
+            _params->dimensions = std::max(_params->dimensions, 3);
         } else if(path.starts_with("data_type")) {
-            _success &= assign_if_fits(data, _params.data_type);
+            _success &= assign_if_fits(data, _params->data_type);
         } else if(path.starts_with("format")) {
-            _success &= assign_if_fits(data, _params.format);
+            _success &= assign_if_fits(data, _params->format);
         } else if(path.starts_with("iformat")) {
-            _success &= assign_if_fits(data, _params.iformat);
+            _success &= assign_if_fits(data, _params->iformat);
         }
     } else if(path.has_size(3)) {
         if(path.starts_with("images")) {
             if(path.ends_with("level")) {
-                _success &= assign_if_fits(data, _image_params.level);
+                _success &= assign_if_fits(data, _image_params->level);
             } else if(path.ends_with("x_offs")) {
-                _success &= assign_if_fits(data, _image_params.x_offs);
-                _image_params.dimensions =
-                  std::max(_image_params.dimensions, 1);
+                _success &= assign_if_fits(data, _image_params->x_offs);
+                _image_params->dimensions =
+                  std::max(_image_params->dimensions, 1);
             } else if(path.ends_with("y_offs")) {
-                _success &= assign_if_fits(data, _image_params.y_offs);
-                _image_params.dimensions =
-                  std::max(_image_params.dimensions, 2);
+                _success &= assign_if_fits(data, _image_params->y_offs);
+                _image_params->dimensions =
+                  std::max(_image_params->dimensions, 2);
             } else if(path.ends_with("z_offs")) {
-                _success &= assign_if_fits(data, _image_params.z_offs);
-                _image_params.dimensions =
-                  std::max(_image_params.dimensions, 3);
+                _success &= assign_if_fits(data, _image_params->z_offs);
+                _image_params->dimensions =
+                  std::max(_image_params->dimensions, 3);
             }
         }
     }
@@ -603,7 +606,7 @@ void valtree_gl_texture_builder::do_add(
   const span<const bool> data) noexcept {
     if(path.has_size(1)) {
         if(path.starts_with("generate_mipmap")) {
-            _success &= assign_if_fits(data, _params.generate_mipmap);
+            _success &= assign_if_fits(data, _params->generate_mipmap);
         }
     }
 }
@@ -622,11 +625,11 @@ void valtree_gl_texture_builder::do_add(
                 }
             }
         } else if(path.starts_with("data_type")) {
-            _success &= texture_data_type_from_string(data, _params.data_type);
+            _success &= texture_data_type_from_string(data, _params->data_type);
         } else if(path.starts_with("format")) {
-            _success &= texture_format_from_string(data, _params.format);
+            _success &= texture_format_from_string(data, _params->format);
         } else if(path.starts_with("iformat")) {
-            _success &= texture_iformat_from_string(data, _params.iformat);
+            _success &= texture_iformat_from_string(data, _params->iformat);
         } else if(path.starts_with("min_filter")) {
             Et e{0};
             if(_success &= texture_min_filter_from_string(data, e)) {
@@ -711,7 +714,7 @@ void valtree_gl_texture_builder::add_object(
     if(path.has_size(2)) {
         if(path.starts_with("images")) {
             _image_locator = {};
-            _image_params = {};
+            _image_params = {default_selector};
             _image_target = _tex_target;
         }
     }
@@ -750,14 +753,14 @@ auto valtree_gl_texture_builder::finish() noexcept -> bool {
     if(const auto parent{_parent.lock()}) {
         if(_success and _decompression.is_initialized()) {
             resource_gl_texture_image_params img_params{
-              .dimensions = _params.dimensions,
+              .dimensions = _params->dimensions,
               .level = 0,
-              .width = _params.width,
-              .height = _params.height,
-              .depth = _params.depth,
-              .iformat = _params.iformat,
-              .format = _params.format,
-              .data_type = _params.data_type};
+              .width = _params->width,
+              .height = _params->height,
+              .depth = _params->depth,
+              .iformat = _params->iformat,
+              .format = _params->format,
+              .data_type = _params->data_type};
             parent->handle_gl_texture_image(_tex_target, img_params, _tex_data);
         }
         if(_success) {
@@ -778,7 +781,7 @@ auto valtree_gl_texture_builder::finish() noexcept -> bool {
                 parent->handle_gl_texture_i_param(
                   oglplus::texture_parameter{param}, value);
             }
-            if(_params.generate_mipmap) {
+            if(_params->generate_mipmap) {
                 parent->handle_gl_texture_generate_mipmap();
             }
             parent->mark_loaded();
@@ -981,23 +984,23 @@ auto pending_resource_info::_handle_pending_gl_texture_state(
 }
 //------------------------------------------------------------------------------
 auto pending_resource_info::handle_gl_texture_params(
-  resource_gl_texture_params& params) noexcept -> bool {
+  shared_holder<resource_gl_texture_params>& params) noexcept -> bool {
     if(const auto pgts{get_if<_pending_gl_texture_state>(_state)}) {
-        _adjust_gl_texture_params(pgts->tex_target, *pgts, params);
+        _adjust_gl_texture_params(pgts->tex_target, *pgts, *params);
         _parent.log_info("loaded GL texture storage parameters")
-          .arg("levels", params.levels)
-          .arg("width", params.width)
-          .arg("height", params.height)
-          .arg("depth", params.depth)
-          .arg("dimensions", params.dimensions)
-          .arg("iformat", params.iformat);
+          .arg("levels", params->levels)
+          .arg("width", params->width)
+          .arg("height", params->height)
+          .arg("depth", params->depth)
+          .arg("dimensions", params->dimensions)
+          .arg("iformat", params->iformat);
 
-        pgts->pparams = &params;
-        pgts->levels = span_size(params.levels);
+        pgts->params = params;
+        pgts->levels = span_size(params->levels);
 
         const auto& glapi{pgts->gl_context.gl_api()};
         const auto& [gl, GL] = glapi;
-        return _handle_pending_gl_texture_state(gl, GL, glapi, *pgts, params);
+        return _handle_pending_gl_texture_state(gl, GL, glapi, *pgts, *params);
     }
     return false;
 }
@@ -1187,8 +1190,7 @@ void pending_resource_info::_handle_gl_texture_image(
 auto resource_loader::request_gl_texture_image(
   const resource_request_params& params,
   oglplus::texture_target target) noexcept -> resource_request_result {
-    return request_gl_texture_image(
-      params, target, resource_gl_texture_image_params{});
+    return request_gl_texture_image(params, target, {default_selector});
 }
 //------------------------------------------------------------------------------
 // valtree_gl_buffer_builder
