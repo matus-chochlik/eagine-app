@@ -988,6 +988,11 @@ export struct resource_loader_signals {
     signal<void(const gl_shader_include_load_info&) noexcept>
       gl_shader_include_loaded;
 
+    [[nodiscard]] auto load_signal(
+      std::type_identity<oglplus::shader_include>) noexcept -> auto& {
+        return gl_shader_include_loaded;
+    }
+
     /// @brief Type of parameter of the gl_shader_loaded signal.
     /// @see gl_shader_loaded
     struct gl_shader_load_info {

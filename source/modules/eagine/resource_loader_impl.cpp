@@ -724,6 +724,7 @@ void pending_resource_info::_handle_gl_shader_include(
            .locator = _params.locator,
            .include_path = pgsis->include_path,
            .shader_source = text});
+        _parent.resource_loaded(_request_id, _kind, _params.locator);
     }
 
     mark_finished();
