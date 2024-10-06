@@ -1,0 +1,130 @@
+/// @file
+///
+/// Copyright Matus Chochlik.
+/// Distributed under the Boost Software License, Version 1.0.
+/// See accompanying file LICENSE_1_0.txt or copy at
+/// https://www.boost.org/LICENSE_1_0.txt
+///
+module;
+
+#include <cassert>
+
+export module eagine.app:resource_mapped;
+
+import std;
+import eagine.core.types;
+import eagine.core.math;
+import eagine.core.memory;
+import eagine.core.string;
+import eagine.core.serialization;
+import eagine.core.identifier;
+import eagine.core.value_tree;
+import eagine.core.reflection;
+import eagine.core.valid_if;
+import eagine.core.utility;
+import eagine.core.runtime;
+import eagine.core.progress;
+import eagine.core.main_ctx;
+import eagine.msgbus;
+import :resource_loader;
+import :resource_basic;
+
+namespace eagine::app::exp {
+//------------------------------------------------------------------------------
+// valtree_mapped_struct_builder
+//------------------------------------------------------------------------------
+template <mapped_struct O>
+class valtree_mapped_struct_builder final
+  : public valtree::object_builder_impl<valtree_mapped_struct_builder<O>> {
+    using base = valtree::object_builder_impl<valtree_mapped_struct_builder<O>>;
+
+public:
+    auto max_token_size() noexcept -> span_size_t final {
+        return max_identifier_length(_object);
+    }
+
+    void do_add(const basic_string_path&, const auto&) noexcept {}
+
+    template <typename T>
+    void do_add(const basic_string_path& path, span<const T> data) noexcept {
+        _forwarder.forward_data(path, data, _object);
+    }
+
+    auto finish() noexcept -> bool final;
+
+    using resource_type = O;
+
+    auto release_resource() noexcept -> O&& {
+        return std::move(_object);
+    }
+
+private:
+    O _object{};
+    valtree::object_builder_data_forwarder _forwarder;
+};
+//------------------------------------------------------------------------------
+template <mapped_struct O>
+auto valtree_mapped_struct_builder<O>::finish() noexcept -> bool {
+    // TODO: notify continuation
+    return true;
+}
+//------------------------------------------------------------------------------
+export template <mapped_struct O>
+auto make_mapped_struct_builder(std::type_identity<O> = {}) noexcept
+  -> unique_holder<valtree::object_builder> {
+    return {hold<valtree_mapped_struct_builder<O>>};
+}
+//------------------------------------------------------------------------------
+export template <mapped_struct Struct>
+class mapped_struct_resource final : public resource_interface {
+public:
+    auto kind() const noexcept -> identifier final {
+        return "MppdStruct";
+    }
+
+    auto load_status() const noexcept -> resource_status final {
+        return _status;
+    }
+
+    auto make_loader(resource_request_params params) noexcept
+      -> shared_holder<loader> final {
+        return {
+          hold<mapped_struct_resource::_loader>,
+          *this,
+          std::move(params),
+          make_building_value_tree_visitor(
+            make_mapped_struct_builder(std::type_identity<Struct>{}))};
+    }
+
+private:
+    struct _loader final : loader_of<mapped_struct_resource> {
+
+        _loader(
+          resource_interface& resource,
+          resource_request_params params,
+          shared_holder<valtree::value_tree_visitor> visitor) noexcept
+          : loader_of<mapped_struct_resource>{resource, std::move(params)}
+          , _visit{
+              std::move(visitor),
+              max_identifier_length(this->resource()._object)} {}
+
+        auto request_dependencies(resource_loader& res_loader) noexcept
+          -> valid_if_not_zero<identifier_t> final {
+            _visit_req_id = res_loader.load(_visit, this->parameters());
+            if(_visit_req_id > 0) {
+                this->resource()._status = resource_status::loading;
+                return this->_set_request_id(res_loader.get_request_id());
+            }
+            this->resource()._status = resource_status::error;
+            return 0;
+        }
+        visited_valtree_resource _visit;
+        identifier_t _visit_req_id{0};
+    };
+    friend struct _loader;
+
+    Struct _object{};
+    resource_status _status{resource_status::created};
+};
+//------------------------------------------------------------------------------
+} // namespace eagine::app::exp

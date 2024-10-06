@@ -38,6 +38,7 @@ export struct resource_provider_interface
 struct shared_provider_objects {
     external_apis& apis;
     resource_provider_driver& driver;
+    old_resource_loader& old_loader;
     resource_loader& loader;
 };
 //------------------------------------------------------------------------------
@@ -45,7 +46,11 @@ export class resource_provider_driver final
   : public main_ctx_object
   , public msgbus::resource_server_driver {
 public:
-    resource_provider_driver(main_ctx_parent, external_apis&, resource_loader&);
+    resource_provider_driver(
+      main_ctx_parent,
+      external_apis&,
+      old_resource_loader&,
+      resource_loader&);
 
     auto find_provider_of(const url&) noexcept
       -> optional_reference<resource_provider_interface>;

@@ -35,13 +35,13 @@ private:
     void _process_cell(const byte);
     void _process_line(const string_view);
 
-    void _line_loaded(resource_loader::string_list_load_info& info) noexcept;
+    void _line_loaded(old_resource_loader::string_list_load_info& info) noexcept;
     void _loaded(const loaded_resource_base& info) noexcept;
 
     shared_provider_objects& _shared;
     string_list_resource _tiling;
     const signal_binding _line_binding{
-      _shared.loader.string_line_loaded
+      _shared.old_loader.string_line_loaded
         .bind_to<&eagitexi_tiling_io::_line_loaded>(this)};
     const signal_binding _done_binding{
       _tiling.load_event.bind_to<&eagitexi_tiling_io::_loaded>(this)};
@@ -54,18 +54,18 @@ eagitexi_tiling_io::eagitexi_tiling_io(
   const url& locator)
   : compressed_buffer_source_blob_io{"ITxTlng", parent, 1024 * 1024}
   , _shared{shared}
-  , _tiling{locator, shared.loader} {
+  , _tiling{locator, shared.old_loader} {
     append(R"({"level":0,"channels":1,"data_type":"unsigned_byte")");
     append(R"(,"tag":["tiling"])");
     append(R"(,"format":"red_integer","iformat":"r8ui")");
 }
 //------------------------------------------------------------------------------
 eagitexi_tiling_io::~eagitexi_tiling_io() noexcept {
-    _tiling.clean_up(_shared.loader);
+    _tiling.clean_up(_shared.old_loader);
 }
 //------------------------------------------------------------------------------
 auto eagitexi_tiling_io::prepare() noexcept -> msgbus::blob_preparation_result {
-    loaded_resource_context context{_shared.loader};
+    loaded_resource_context context{_shared.old_loader, _shared.loader};
     return _prep_status(_tiling.load_if_needed(context));
 }
 //------------------------------------------------------------------------------
@@ -90,7 +90,7 @@ void eagitexi_tiling_io::_process_line(const string_view line) {
 }
 //------------------------------------------------------------------------------
 void eagitexi_tiling_io::_line_loaded(
-  resource_loader::string_list_load_info& info) noexcept {
+  old_resource_loader::string_list_load_info& info) noexcept {
     if(_tiling.originated(info)) {
         for(const auto& line : info.strings) {
             _process_line(line);
@@ -297,12 +297,12 @@ private:
     void _process_cell(const byte);
     void _process_line(const string_view);
 
-    void _line_loaded(resource_loader::string_list_load_info& info) noexcept;
+    void _line_loaded(old_resource_loader::string_list_load_info& info) noexcept;
 
     shared_provider_objects& _shared;
     string_list_resource _tiling;
     const signal_binding _line_binding{
-      _shared.loader.string_line_loaded.bind_to<&tiling_data::_line_loaded>(
+      _shared.old_loader.string_line_loaded.bind_to<&tiling_data::_line_loaded>(
         this)};
     std::vector<float> _data;
 
@@ -321,12 +321,12 @@ tiling_data::tiling_data(
   const url& locator)
   : main_ctx_object{"TilingData", parent}
   , _shared{shared}
-  , _tiling{locator, _shared.loader} {
+  , _tiling{locator, _shared.old_loader} {
     _data.reserve(1024U * 1024U);
 }
 //------------------------------------------------------------------------------
 tiling_data::~tiling_data() noexcept {
-    _tiling.clean_up(_shared.loader);
+    _tiling.clean_up(_shared.old_loader);
 }
 //------------------------------------------------------------------------------
 void tiling_data::_process_cell(const byte b) {
@@ -334,7 +334,7 @@ void tiling_data::_process_cell(const byte b) {
 }
 //------------------------------------------------------------------------------
 auto tiling_data::is_loaded() noexcept -> bool {
-    loaded_resource_context context{_shared.loader};
+    loaded_resource_context context{_shared.old_loader, _shared.loader};
     _tiling.load_if_needed(context);
     return _tiling.is_loaded() and (_width > 0) and (_height > 0);
 }
@@ -382,7 +382,7 @@ void tiling_data::_process_line(const string_view line) {
 }
 //------------------------------------------------------------------------------
 void tiling_data::_line_loaded(
-  resource_loader::string_list_load_info& info) noexcept {
+  old_resource_loader::string_list_load_info& info) noexcept {
     if(_tiling.originated(info)) {
         for(const auto& line : info.strings) {
             _process_line(line);

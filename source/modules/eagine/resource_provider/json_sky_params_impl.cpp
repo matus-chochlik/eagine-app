@@ -48,7 +48,7 @@ sky_parameters_io::sky_parameters_io(
   : _shared{shared}
   , _locator{locator} {
     if(auto tpl_url{_locator.query().arg_url("template")}) {
-        _template_resource.emplace(std::move(tpl_url), _shared.loader);
+        _template_resource.emplace(std::move(tpl_url), _shared.old_loader);
     } else {
         _template_load_status = resource_load_status::loaded;
     }
@@ -56,7 +56,7 @@ sky_parameters_io::sky_parameters_io(
 //------------------------------------------------------------------------------
 sky_parameters_io::~sky_parameters_io() noexcept {
     if(_template_resource) {
-        _template_resource->clean_up(_shared.loader);
+        _template_resource->clean_up(_shared.old_loader);
         _template_resource.reset();
     }
 }
@@ -115,7 +115,7 @@ auto sky_parameters_io::_content() noexcept -> string_view {
 auto sky_parameters_io::prepare() noexcept -> msgbus::blob_preparation_result {
     if(_template_resource) {
         if(not *_template_resource) {
-            loaded_resource_context context{_shared.loader};
+            loaded_resource_context context{_shared.old_loader, _shared.loader};
             _template_resource->load_if_needed(context);
             return {msgbus::blob_preparation_status::working};
         }

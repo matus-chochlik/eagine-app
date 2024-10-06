@@ -207,7 +207,7 @@ private:
     void _process_cell(byte);
     void _process_line(const string_view);
 
-    void _line_loaded(resource_loader::string_list_load_info& info) noexcept;
+    void _line_loaded(old_resource_loader::string_list_load_info& info) noexcept;
     void _loaded(const loaded_resource_base& info) noexcept;
 
     auto _build_program(
@@ -224,7 +224,7 @@ private:
     main_ctx_buffer _tiling_line;
     string_list_resource _tiling;
     const signal_binding _line_binding{
-      _shared.loader.string_line_loaded
+      _shared.old_loader.string_line_loaded
         .bind_to<&eagitexi_cubemap_sky_renderer::_line_loaded>(this)};
     const signal_binding _done_binding{
       _tiling.load_event.bind_to<&eagitexi_cubemap_sky_renderer::_loaded>(
@@ -243,18 +243,18 @@ eagitexi_cubemap_sky_renderer::eagitexi_cubemap_sky_renderer(
   , _tiling_tex{gl_api().create_texture_object(gl_api().texture_2d)}
   , _shared{shared}
   , _tiling_line{*this, 1024}
-  , _tiling{url{scene.tiling_url}, shared.loader} {
+  , _tiling{url{scene.tiling_url}, shared.old_loader} {
     _tiling_line.clear();
     _init_program(_build_program(params, scene));
 }
 //------------------------------------------------------------------------------
 eagitexi_cubemap_sky_renderer::~eagitexi_cubemap_sky_renderer() noexcept {
-    _tiling.clean_up(_shared.loader);
+    _tiling.clean_up(_shared.old_loader);
 }
 //------------------------------------------------------------------------------
 auto eagitexi_cubemap_sky_renderer::prepare_render() noexcept
   -> msgbus::blob_preparation_result {
-    loaded_resource_context context{_shared.loader};
+    loaded_resource_context context{_shared.old_loader, _shared.loader};
     return _prep_status(_tiling.load_if_needed(context));
 }
 //------------------------------------------------------------------------------
@@ -389,7 +389,7 @@ void eagitexi_cubemap_sky_renderer::_process_line(const string_view line) {
 }
 //------------------------------------------------------------------------------
 void eagitexi_cubemap_sky_renderer::_line_loaded(
-  resource_loader::string_list_load_info& info) noexcept {
+  old_resource_loader::string_list_load_info& info) noexcept {
     if(_tiling.originated(info)) {
         for(const auto& line : info.strings) {
             if(not line.empty()) {
@@ -483,7 +483,7 @@ eagitexi_cubemap_sky_io::eagitexi_cubemap_sky_io(
   , _locator{locator}
   , _size{size} {
     if(const auto params_url{_locator.query().arg_url("params")}) {
-        _scene_request.emplace(shared.loader.request_value_tree_traversal(
+        _scene_request.emplace(shared.old_loader.request_value_tree_traversal(
           {.locator = params_url, .max_time = std::chrono::hours{12}},
           make_mapped_struct_loader(_scene, _scene_load_status)));
     } else {
