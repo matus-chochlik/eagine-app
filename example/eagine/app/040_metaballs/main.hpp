@@ -29,7 +29,7 @@ public:
     }
 
     auto loader() noexcept -> auto& {
-        return context().loader();
+        return context().old_loader();
     }
 
     auto camera() noexcept -> auto& {

@@ -74,9 +74,14 @@ void resource_provider_driver::_populate() {
 resource_provider_driver::resource_provider_driver(
   main_ctx_parent parent,
   external_apis& apis,
+  old_resource_loader& old_loader,
   resource_loader& loader)
   : main_ctx_object{"RsrcPrDrvr", parent}
-  , _shared{.apis = apis, .driver = *this, .loader = loader} {
+  , _shared{
+      .apis = apis,
+      .driver = *this,
+      .old_loader = old_loader,
+      .loader = loader} {
     _populate();
 }
 //------------------------------------------------------------------------------

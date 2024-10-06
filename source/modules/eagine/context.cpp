@@ -28,6 +28,7 @@ import :options;
 import :state;
 import :input;
 import :resource_loader;
+import :old_resource_loader;
 
 namespace eagine::app {
 export class video_context_state;
@@ -282,17 +283,27 @@ private:
 //------------------------------------------------------------------------------
 /// @brief Class providing various contexts to which a loaded_resource belongs
 /// @see loaded_resource
-/// @see resource_loader
+/// @see old_resource_loader
 export class loaded_resource_context {
 public:
-    loaded_resource_context(resource_loader& loader) noexcept
-      : _loader{loader} {}
+    loaded_resource_context(
+      old_resource_loader& old_loader,
+      resource_loader& loader) noexcept
+      : _old_loader{old_loader}
+      , _loader{loader} {}
 
     loaded_resource_context(
+      old_resource_loader& old_loader,
       resource_loader& loader,
       const oglplus::shared_gl_api_context& gl_context) noexcept
-      : _loader{loader}
+      : _old_loader{old_loader}
+      , _loader{loader}
       , _gl_context{gl_context} {}
+
+    /// @brief Reference to a resource's parent loader.
+    [[nodiscard]] auto old_loader() const noexcept -> old_resource_loader& {
+        return _old_loader.get();
+    }
 
     /// @brief Reference to a resource's parent loader.
     [[nodiscard]] auto loader() const noexcept -> resource_loader& {
@@ -334,6 +345,7 @@ public:
     }
 
 private:
+    std::reference_wrapper<old_resource_loader> _old_loader;
     std::reference_wrapper<resource_loader> _loader;
     oglplus::shared_gl_api_context _gl_context;
     oalplus::shared_al_api_context _al_context;
@@ -362,6 +374,9 @@ public:
 
     /// @brief Returns a reference to the resource loading context
     [[nodiscard]] auto resource_context() noexcept -> loaded_resource_context&;
+
+    /// @brief Returns a reference to the old resource loader.
+    [[nodiscard]] auto old_loader() noexcept -> old_resource_loader&;
 
     /// @brief Returns a reference to the resource loader.
     [[nodiscard]] auto loader() noexcept -> resource_loader&;

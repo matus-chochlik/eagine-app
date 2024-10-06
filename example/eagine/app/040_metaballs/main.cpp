@@ -19,7 +19,7 @@ example::example(execution_context& ec, video_context& vc)
   , _field_prog{*this}
   , _srfce_prog{*this}
   , _other{context()} {
-    _other.add(ec.loader().request_camera_parameters(
+    _other.add(ec.old_loader().request_camera_parameters(
       {.locator = url{"json:///Camera"}}, _camera));
 
     _mball_prog.loaded.connect(_load_handler());

@@ -51,7 +51,7 @@ auto example_tess::_shape_id() -> identifier {
             if(
               (res_id == identifier{"icosphere"}) or
               (res_id == identifier{"torus"}) or
-              context().loader().has_embedded_resource(res_id)) {
+              context().old_loader().has_embedded_resource(res_id)) {
                 return res_id;
             }
         }
@@ -80,7 +80,7 @@ auto example_tess::_shape_url(identifier id) -> url {
           "&opposite_length=true"
           "&face_area=true"};
     }
-    return context().loader().embedded_resource_locator("json", id);
+    return context().old_loader().embedded_resource_locator("json", id);
 }
 //------------------------------------------------------------------------------
 example_tess::example_tess(execution_context& ec, video_context& vc)
@@ -93,8 +93,8 @@ example_tess::example_tess(execution_context& ec, video_context& vc)
   , _other{ec} {
     _prog.load_event.connect(_load_handler());
     _geom.load_event.connect(_load_handler());
-    _other.add(
-      ec.loader().request_input_setup({.locator = url{"json:///Inputs"}}, ec));
+    _other.add(ec.old_loader().request_input_setup(
+      {.locator = url{"json:///Inputs"}}, ec));
 
     _camera.connect_inputs(ec).basic_input_mapping(ec);
     ec.setup_inputs().connect_input(

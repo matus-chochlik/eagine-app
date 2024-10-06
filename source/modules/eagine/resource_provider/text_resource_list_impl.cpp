@@ -25,7 +25,7 @@ private:
 };
 //------------------------------------------------------------------------------
 resource_list_io::resource_list_io(shared_provider_objects& shared) noexcept
-  : simple_buffer_source_blob_io{"IResrcList", shared.loader.as_parent(), 16 * 1024}
+  : simple_buffer_source_blob_io{"IResrcList", shared.old_loader.as_parent(), 16 * 1024}
   , _shared{shared} {
     append("text:///resource_list\n");
 }

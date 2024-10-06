@@ -418,7 +418,7 @@ auto eagitex_cubemap_levels_blur_io::prepare() noexcept
     if(not _started_loading) {
         shared_holder<valtree::object_builder> self{shared_from_this()};
         const auto max_token_size{self->max_token_size()};
-        if(_shared.loader.request_json_traversal(
+        if(_shared.old_loader.request_json_traversal(
              {.locator = _source_loc, .max_time = std::chrono::minutes{5}},
              valtree::make_building_value_tree_visitor(std::move(self)),
              max_token_size)) {

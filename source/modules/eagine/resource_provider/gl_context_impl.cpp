@@ -175,7 +175,7 @@ gl_rendered_blob_context::gl_rendered_blob_context(
   egl_rendered_blob_context context) noexcept
   : main_ctx_object{"GLRSBlbCtx", parent}
   , _egl_context{default_selector, shared, std::move(context)}
-  , _resource_context{shared.loader, {as_parent(), _egl_context}}
+  , _resource_context{shared.old_loader, shared.loader, {as_parent(), _egl_context}}
   , _color_rbo{_resource_context.gl_api().create_renderbuffer_object()}
   , _offscreen_fbo{_resource_context.gl_api().create_framebuffer_object()} {
     if(debug_build) {

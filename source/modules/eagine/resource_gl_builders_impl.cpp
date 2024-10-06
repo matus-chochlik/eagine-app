@@ -1187,7 +1187,7 @@ void pending_resource_info::_handle_gl_texture_image(
     mark_finished();
 }
 //------------------------------------------------------------------------------
-auto resource_loader::request_gl_texture_image(
+auto old_resource_loader::request_gl_texture_image(
   const resource_request_params& params,
   oglplus::texture_target target) noexcept -> resource_request_result {
     return request_gl_texture_image(params, target, {default_selector});
