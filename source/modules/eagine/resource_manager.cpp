@@ -376,6 +376,9 @@ export using managed_value_tree = managed_resource<valtree::compound>;
 /// @brief Alias for managed GL geometry and attribute bindings resource.
 export using managed_gl_geometry_and_bindings =
   managed_resource<gl_geometry_and_bindings>;
+/// @brief Alias for managed GL shader include resource.
+export using managed_gl_shader_include =
+  managed_resource<oglplus::shader_include>;
 /// @brief Alias for managed GL shader resource.
 export using managed_gl_shader = managed_resource<oglplus::owned_shader_name>;
 /// @brief Alias for managed GL GPU program resource.
@@ -399,6 +402,7 @@ using default_resource_manager = basic_resource_manager<
   mat4_vector_resource,
   value_tree_resource,
   gl_geometry_and_bindings_resource,
+  gl_shader_include_resource,
   gl_shader_resource,
   gl_program_resource,
   gl_texture_resource,

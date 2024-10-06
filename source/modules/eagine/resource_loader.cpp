@@ -1541,8 +1541,14 @@ public:
     /// @brief Requests GL shader include string resource.
     auto request_gl_shader_include(
       const resource_request_params&,
-      const oglplus::shared_gl_api_context&) noexcept
-      -> resource_request_result;
+      const oglplus::shared_gl_api_context&,
+      std::string path = {}) noexcept -> resource_request_result;
+
+    auto request(
+      std::type_identity<oglplus::shader_include>,
+      const resource_request_params&,
+      loaded_resource_context& ctx,
+      std::string path) noexcept -> resource_request_result;
 
     /// @brief Requests a compiled GL shader object of a specified type.
     auto request_gl_shader(

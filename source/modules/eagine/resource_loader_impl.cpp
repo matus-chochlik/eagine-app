@@ -1341,9 +1341,11 @@ auto resource_loader::request_glsl_source(
 //------------------------------------------------------------------------------
 auto resource_loader::request_gl_shader_include(
   const resource_request_params& params,
-  const oglplus::shared_gl_api_context& gl_context) noexcept
-  -> resource_request_result {
-    auto include_path{params.locator.query().decoded_arg_value("path")};
+  const oglplus::shared_gl_api_context& gl_context,
+  std::string path) noexcept -> resource_request_result {
+    auto include_path{
+      path.empty() ? params.locator.query().decoded_arg_value("path")
+                   : std::move(path)};
     if(
       include_path and (params.locator.has_path_suffix(".glsl") or
                         params.locator.has_scheme("glsl"))) {
@@ -1359,6 +1361,14 @@ auto resource_loader::request_gl_shader_include(
         }
     }
     return _cancelled_resource(params, resource_kind::gl_shader_include);
+}
+//------------------------------------------------------------------------------
+auto resource_loader::request(
+  std::type_identity<oglplus::shader_include>,
+  const resource_request_params& params,
+  loaded_resource_context& ctx,
+  std::string path) noexcept -> resource_request_result {
+    return request_gl_shader_include(params, ctx.gl_context(), std::move(path));
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request_gl_shader(
