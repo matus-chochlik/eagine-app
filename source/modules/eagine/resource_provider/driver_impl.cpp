@@ -61,6 +61,7 @@ void resource_provider_driver::_populate() {
     _add(provider_eagitex_cubemap_sky(parameters));
     _add(provider_eagitexi_cubemap_blur(parameters));
     _add(provider_eagitex_cubemap_levels_blur(parameters));
+    _add(provider_eagiaudi_ogg_clip(parameters));
     _add(provider_shape(parameters));
     _add(provider_json_sky_parameters(parameters));
     _add(provider_text_tiling3(parameters));

@@ -109,7 +109,7 @@ export enum class resource_kind {
     gl_texture_update,
     /// @brief GL buffer object.
     gl_buffer,
-    /// @brief GL buffer image update.
+    /// @brief GL buffer content update.
     gl_buffer_update,
     /// @brief Arbitrary structure with defined attribute mapping.
     mapped_struct,
