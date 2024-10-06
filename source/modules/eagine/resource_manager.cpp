@@ -12,7 +12,7 @@ import eagine.core.types;
 import eagine.core.math;
 import eagine.core.utility;
 import eagine.core.runtime;
-import eagine.core.identifier;
+import eagine.core.container;
 import eagine.core.value_tree;
 import eagine.oglplus;
 import :loaded_resource;
@@ -210,7 +210,7 @@ export template <typename... Resources>
 class basic_resource_manager {
 
     template <typename X>
-    using resource_storage = std::map<
+    using resource_storage = flat_map<
       identifier_t,
       shared_holder<managed_resource_utils::managed_resource_context<X>>>;
 
