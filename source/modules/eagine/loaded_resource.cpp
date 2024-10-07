@@ -790,6 +790,40 @@ public:
 export using value_tree_resource = loaded_resource<valtree::compound>;
 //------------------------------------------------------------------------------
 template <>
+struct get_resource_load_params<oglplus::shader_include>
+  : std::type_identity<std::tuple<std::string>> {};
+
+export template <>
+class loaded_resource<oglplus::shader_include>
+  : public loaded_resource_common<loaded_resource<oglplus::shader_include>> {
+
+    using common =
+      loaded_resource_common<loaded_resource<oglplus::shader_include>>;
+
+public:
+    using common::common;
+
+    /// @brief Cleans up this resource.
+    void clean_up(resource_loader& loader, const oglplus::gl_api& glapi) {
+        glapi.clean_up(std::move(resource()));
+        common::_disconnect(loader);
+    }
+
+    /// @brief Cleans up this resource.
+    void clean_up(loaded_resource_context& ctx) {
+        clean_up(ctx.loader(), ctx.gl_api());
+    }
+
+    /// @brief Cleans up this resource.
+    void clean_up(execution_context& ctx) {
+        clean_up(ctx.resource_context());
+    }
+};
+
+export using gl_shader_include_resource =
+  loaded_resource<oglplus::shader_include>;
+//------------------------------------------------------------------------------
+template <>
 struct get_resource_load_params<oglplus::owned_shader_name>
   : std::type_identity<std::tuple<oglplus::shader_type>> {};
 

@@ -109,7 +109,7 @@ export enum class resource_kind {
     gl_texture_update,
     /// @brief GL buffer object.
     gl_buffer,
-    /// @brief GL buffer image update.
+    /// @brief GL buffer content update.
     gl_buffer_update,
     /// @brief Arbitrary structure with defined attribute mapping.
     mapped_struct,
@@ -228,7 +228,8 @@ public:
       const oglplus::shared_gl_api_context&,
       oglplus::texture_target,
       oglplus::texture_unit) noexcept;
-    auto handle_gl_texture_params(resource_gl_texture_params&) noexcept -> bool;
+    auto handle_gl_texture_params(
+      shared_holder<resource_gl_texture_params>&) noexcept -> bool;
 
     void add_gl_buffer_context(
       const oglplus::shared_gl_api_context&,
@@ -301,7 +302,7 @@ private:
 
     struct _pending_gl_texture_state {
         oglplus::shared_gl_api_context gl_context;
-        const resource_gl_texture_params* pparams{nullptr};
+        shared_holder<const resource_gl_texture_params> params;
         flat_set<identifier_t> pending_requests;
         std::bitset<32> level_images_done;
         span_size_t levels{0};
@@ -613,7 +614,7 @@ auto make_valtree_gl_program_builder(
 auto make_valtree_gl_texture_image_loader(
   const shared_holder<pending_resource_info>& parent,
   oglplus::texture_target,
-  const resource_gl_texture_image_params& params) noexcept
+  const shared_holder<resource_gl_texture_image_params>& params) noexcept
   -> unique_holder<valtree::object_builder>;
 auto make_valtree_gl_texture_builder(
   const shared_holder<pending_resource_info>& parent,
@@ -986,6 +987,11 @@ export struct resource_loader_signals {
     /// @brief Emitted when a GL shader include string is loaded.
     signal<void(const gl_shader_include_load_info&) noexcept>
       gl_shader_include_loaded;
+
+    [[nodiscard]] auto load_signal(
+      std::type_identity<oglplus::shader_include>) noexcept -> auto& {
+        return gl_shader_include_loaded;
+    }
 
     /// @brief Type of parameter of the gl_shader_loaded signal.
     /// @see gl_shader_loaded
@@ -1535,8 +1541,14 @@ public:
     /// @brief Requests GL shader include string resource.
     auto request_gl_shader_include(
       const resource_request_params&,
-      const oglplus::shared_gl_api_context&) noexcept
-      -> resource_request_result;
+      const oglplus::shared_gl_api_context&,
+      std::string path = {}) noexcept -> resource_request_result;
+
+    auto request(
+      std::type_identity<oglplus::shader_include>,
+      const resource_request_params&,
+      loaded_resource_context& ctx,
+      std::string path) noexcept -> resource_request_result;
 
     /// @brief Requests a compiled GL shader object of a specified type.
     auto request_gl_shader(
@@ -1575,7 +1587,7 @@ public:
     auto request_gl_texture_image(
       const resource_request_params&,
       oglplus::texture_target,
-      const resource_gl_texture_image_params&) noexcept
+      const shared_holder<resource_gl_texture_image_params>&) noexcept
       -> resource_request_result;
 
     auto request_gl_texture_image(

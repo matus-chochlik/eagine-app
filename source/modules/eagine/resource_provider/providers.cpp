@@ -77,6 +77,9 @@ auto provider_text_tiling5(const provider_parameters&)
 auto provider_text_lorem_ipsum(const provider_parameters&)
   -> unique_holder<resource_provider_interface>;
 //------------------------------------------------------------------------------
+auto provider_eagiaudi_ogg_clip(const provider_parameters& p)
+  -> unique_holder<resource_provider_interface>;
+//------------------------------------------------------------------------------
 auto provider_text_resource_list(const provider_parameters&)
   -> unique_holder<resource_provider_interface>;
 //------------------------------------------------------------------------------

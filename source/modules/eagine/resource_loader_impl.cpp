@@ -724,6 +724,7 @@ void pending_resource_info::_handle_gl_shader_include(
            .locator = _params.locator,
            .include_path = pgsis->include_path,
            .shader_source = text});
+        _parent.resource_loaded(_request_id, _kind, _params.locator);
     }
 
     mark_finished();
@@ -800,8 +801,8 @@ auto pending_resource_info::_finish_gl_texture(
         const auto& gl = pgts.gl_context.gl_api().operations();
         gl.active_texture(pgts.tex_unit);
 
-        if(pgts.pparams) {
-            const auto& params{*pgts.pparams};
+        if(pgts.params) {
+            const auto& params{*pgts.params};
             for(const auto level : integer_range(pgts.levels)) {
                 if(not pgts.level_images_done[std_size(level)]) {
                     _clear_gl_texture_image(pgts, params, level, {});
@@ -1340,9 +1341,11 @@ auto resource_loader::request_glsl_source(
 //------------------------------------------------------------------------------
 auto resource_loader::request_gl_shader_include(
   const resource_request_params& params,
-  const oglplus::shared_gl_api_context& gl_context) noexcept
-  -> resource_request_result {
-    auto include_path{params.locator.query().decoded_arg_value("path")};
+  const oglplus::shared_gl_api_context& gl_context,
+  std::string path) noexcept -> resource_request_result {
+    auto include_path{
+      path.empty() ? params.locator.query().decoded_arg_value("path")
+                   : std::move(path)};
     if(
       include_path and (params.locator.has_path_suffix(".glsl") or
                         params.locator.has_scheme("glsl"))) {
@@ -1358,6 +1361,14 @@ auto resource_loader::request_gl_shader_include(
         }
     }
     return _cancelled_resource(params, resource_kind::gl_shader_include);
+}
+//------------------------------------------------------------------------------
+auto resource_loader::request(
+  std::type_identity<oglplus::shader_include>,
+  const resource_request_params& params,
+  loaded_resource_context& ctx,
+  std::string path) noexcept -> resource_request_result {
+    return request_gl_shader_include(params, ctx.gl_context(), std::move(path));
 }
 //------------------------------------------------------------------------------
 auto resource_loader::request_gl_shader(
@@ -1444,7 +1455,7 @@ auto resource_loader::request(
 auto resource_loader::request_gl_texture_image(
   const resource_request_params& params,
   oglplus::texture_target target,
-  const resource_gl_texture_image_params& img_params) noexcept
+  const shared_holder<resource_gl_texture_image_params>& img_params) noexcept
   -> resource_request_result {
     auto new_request{_new_resource(params, resource_kind::gl_texture_image)};
 

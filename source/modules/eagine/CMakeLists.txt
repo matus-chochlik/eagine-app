@@ -219,7 +219,7 @@ eagine_add_module(
 		eagine.core.math
 		eagine.core.utility
 		eagine.core.runtime
-		eagine.core.identifier
+		eagine.core.container
 		eagine.core.value_tree
 		eagine.oglplus)
 
