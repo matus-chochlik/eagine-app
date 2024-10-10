@@ -20,6 +20,7 @@ import eagine.core.container;
 import eagine.core.identifier;
 import eagine.core.reflection;
 import eagine.core.value_tree;
+import eagine.core.valid_if;
 import eagine.core.utility;
 import eagine.core.runtime;
 import eagine.core.logging;
@@ -115,12 +116,22 @@ export using msgbus::resource_request_params;
 //------------------------------------------------------------------------------
 export class resource_interface : public interface<resource_interface> {
 public:
+    struct load_info {
+        const url& locator;
+        identifier_t request_id{0};
+        resource_kind kind{};
+    };
+
     struct loader : abstract<loader> {
         loader(
           resource_interface& resource,
           resource_request_params params) noexcept
           : _resource{resource}
           , _params{std::move(params)} {}
+
+        auto request_id() const noexcept -> identifier_t {
+            return _request_id;
+        }
 
         auto locator() const noexcept -> const url& {
             return _params.locator;
@@ -136,16 +147,28 @@ public:
 
         virtual auto request_dependencies(
           const std::shared_ptr<resource_loader>&,
-          resource_request_params&& params) noexcept -> bool = 0;
+          resource_request_params&& params) noexcept
+          -> valid_if_not_zero<identifier_t> = 0;
 
         virtual void stream_data_appended(
-          const msgbus::blob_stream_chunk&) noexcept {}
+          const msgbus::blob_stream_chunk&) noexcept;
 
-        virtual void stream_finished() noexcept {}
+        virtual void stream_finished() noexcept;
 
-        virtual void stream_cancelled() noexcept {}
+        virtual void stream_cancelled() noexcept;
+
+        virtual void resource_loaded(const load_info&) noexcept;
+
+        virtual void resource_cancelled(const load_info&) noexcept;
+
+    protected:
+        auto _set_request_id(identifier_t req_id) noexcept -> identifier_t;
+
+        void _notify_loaded(resource_loader&) noexcept;
+        void _notify_cancelled(resource_loader&) noexcept;
 
     private:
+        identifier_t _request_id{0};
         std::reference_wrapper<resource_interface> _resource;
         const resource_request_params _params;
     };
@@ -158,8 +181,16 @@ public:
         return load_status() == resource_status::loaded;
     }
 
+    auto is_loading() const noexcept -> bool {
+        return load_status() == resource_status::loading;
+    }
+
     auto can_be_loaded() const noexcept -> bool {
         return load_status() == resource_status::created;
+    }
+
+    auto should_be_loaded() const noexcept -> bool {
+        return not is_loaded() and not is_loaded() and can_be_loaded();
     }
 
     explicit operator bool() const noexcept {
@@ -183,6 +214,44 @@ protected:
             return resource().load_status();
         }
     };
+
+    template <typename Resource>
+    class simple_loader_of
+      : public std::enable_shared_from_this<typename Resource::_loader>
+      , public loader_of<Resource> {
+    public:
+        using loader_of<Resource>::loader_of;
+
+        using loader_of<Resource>::resource;
+
+        void stream_finished() noexcept override {
+            derived().set_status(resource_status::loaded);
+            if(_res_loader) [[likely]] {
+                this->_notify_loaded(*_res_loader);
+            }
+        }
+
+        void stream_cancelled() noexcept override {
+            derived().set_status(resource_status::cancelled);
+            if(_res_loader) [[likely]] {
+                this->_notify_cancelled(*_res_loader);
+            }
+        }
+
+    protected:
+        auto derived() noexcept -> typename Resource::_loader& {
+            return *static_cast<typename Resource::_loader*>(this);
+        }
+
+        auto _add_single_dependency(
+          identifier_t req_id,
+          shared_holder<resource_loader> res_loader) noexcept -> identifier_t;
+
+        shared_holder<resource_loader> _res_loader;
+
+    private:
+        identifier_t _dep_req_id{0};
+    };
 };
 //------------------------------------------------------------------------------
 /// @brief Loader of resources of various types.
@@ -196,16 +265,30 @@ public:
     /// @brief Initializing constructor
     resource_loader(msgbus::endpoint& bus);
 
+    signal<void(const resource_interface::load_info&) noexcept> resource_loaded;
+
+    signal<void(const resource_interface::load_info&) noexcept>
+      resource_cancelled;
+
     template <std::derived_from<resource_interface> Resource>
     auto load(Resource& resource, resource_request_params params) noexcept
       -> identifier_t {
         if(auto loader{resource.make_loader(std::move(params))}) {
-            if(loader->request_dependencies(
-                 shared_from_this(), std::move(params))) {
-                return get_request_id();
+            if(auto req_id{loader->request_dependencies(
+                 shared_from_this(), std::move(params))}) {
+                return req_id.value_anyway();
             }
         }
         return {};
+    }
+
+    template <std::derived_from<resource_interface> Resource, typename Getter>
+    auto load_if_needed(Resource& resource, const Getter& param_getter) noexcept
+      -> identifier_t {
+        if(resource.should_be_loaded()) {
+            return load(resource, param_getter());
+        }
+        return 0;
     }
 
     auto has_pending_resources() const noexcept -> bool;
@@ -219,16 +302,44 @@ public:
     auto update_and_process_all() noexcept -> work_done final;
 
 private:
+    friend class resource_interface::loader;
+
     void _handle_preparation_progressed(identifier_t blob_id, float) noexcept;
     void _handle_stream_data_appended(const msgbus::blob_stream_chunk&) noexcept;
     void _handle_stream_finished(identifier_t blob_id) noexcept;
     void _handle_stream_cancelled(identifier_t blob_id) noexcept;
 
+    void _handle_resource_loaded(
+      identifier_t,
+      const url&,
+      resource_interface&) noexcept;
+
+    void _handle_resource_cancelled(
+      identifier_t,
+      const url&,
+      const resource_interface&) noexcept;
+
     flat_map<identifier_t, shared_holder<resource_interface::loader>> _pending;
     flat_map<identifier_t, shared_holder<resource_interface::loader>> _consumer;
 };
 //------------------------------------------------------------------------------
+template <typename Resource>
+auto resource_interface::simple_loader_of<Resource>::_add_single_dependency(
+  identifier_t req_id,
+  shared_holder<resource_loader> res_loader) noexcept -> identifier_t {
+    if(req_id > 0) {
+        _res_loader = std::move(res_loader);
+        _res_loader->add_consumer(req_id, this->shared_from_this());
+        _dep_req_id = req_id;
+        derived().set_status(resource_status::loading);
+        return this->_set_request_id(res_loader->get_request_id());
+    }
+    derived().set_status(resource_status::error);
+    return 0;
+}
+//------------------------------------------------------------------------------
 } // namespace exp
+export using exp::resource_interface;
 export using exp::resource_loader;
 } // namespace app
 //------------------------------------------------------------------------------

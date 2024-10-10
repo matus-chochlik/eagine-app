@@ -18,27 +18,36 @@ struct test_request_plain_text : eagitest::app_case {
 
     test_request_plain_text(auto& s, auto& ec)
       : eagitest::app_case{s, ec, 1, "plain text"} {
+        main_context().loader().resource_loaded.connect(
+          make_callable_ref<&test_request_plain_text::on_loaded>(this));
         too_long.reset();
     }
 
-    auto is_loaded() const noexcept {
-        return load_signal_received and locator_is_ok and content_is_ok;
+    void on_loaded(eagine::app::resource_load_info& info) noexcept {
+        load_signal_received = true;
+        locator_is_ok =
+          info.locator.has_scheme("txt") and info.locator.has_path("/TestText");
+        content_is_ok = text->starts_with("Lorem ipsum dolor sit amet") and
+                        text->ends_with("deserunt mollit anim id est laborum.");
     }
 
     auto is_done() noexcept -> bool final {
-        return too_long or is_loaded();
+        return too_long or text.is_loaded();
     }
 
     void update() noexcept final {
-        if(not text) {
-        }
+        main_context().loader().load_if_needed(
+          text, [] -> eagine::app::resource_request_params {
+              return {eagine::url{"txt:///TestText"}};
+          });
+        bager;
     }
 
     void clean_up() noexcept final {
-        check(text.is_loaded() or true, "text is loaded");
-        check(load_signal_received or true, "load signal received");
-        check(locator_is_ok or true, "locator is ok");
-        check(content_is_ok or true, "content is ok");
+        check(text.is_loaded(), "text is loaded");
+        check(load_signal_received, "load signal received");
+        check(locator_is_ok, "locator is ok");
+        check(content_is_ok, "content is ok");
     }
 
     eagine::timeout too_long{std::chrono::seconds{10}};

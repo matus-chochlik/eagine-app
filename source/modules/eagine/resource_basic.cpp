@@ -47,8 +47,13 @@ public:
         return std::move(_text);
     }
 
-private:
+    auto operator->() const noexcept -> const resource_type* {
+        return &_text;
+    }
+
     struct _loader;
+
+private:
     friend struct _loader;
 
     std::string _text;
@@ -76,8 +81,13 @@ public:
         return std::move(_strings);
     }
 
-private:
+    auto operator->() const noexcept -> const resource_type* {
+        return &_strings;
+    }
+
     struct _loader;
+
+private:
     friend struct _loader;
 
     std::vector<std::string> _strings;
@@ -103,6 +113,10 @@ public:
 
     auto release_resource() noexcept -> resource_type&& {
         return std::move(_urls);
+    }
+
+    auto operator->() const noexcept -> const resource_type* {
+        return &_urls;
     }
 
 private:
@@ -154,7 +168,7 @@ private:
 export class float_list_resource final : public resource_interface {
 public:
     auto kind() const noexcept -> resource_kind final {
-        return resource_kind::url_list;
+        return resource_kind::float_list;
     }
 
     auto load_status() const noexcept -> resource_status final {
@@ -170,6 +184,10 @@ public:
         return std::move(_values);
     }
 
+    auto operator->() const noexcept -> const resource_type* {
+        return &_values;
+    }
+
 private:
     struct _loader;
     friend struct _loader;
@@ -183,7 +201,7 @@ private:
 export class vec3_list_resource final : public resource_interface {
 public:
     auto kind() const noexcept -> resource_kind final {
-        return resource_kind::url_list;
+        return resource_kind::vec3_list;
     }
 
     auto load_status() const noexcept -> resource_status final {
@@ -197,6 +215,10 @@ public:
 
     auto release_resource() noexcept -> resource_type&& {
         return std::move(_values);
+    }
+
+    auto operator->() const noexcept -> const resource_type* {
+        return &_values;
     }
 
 private:

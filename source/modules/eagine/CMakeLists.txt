@@ -127,6 +127,7 @@ eagine_add_module(
 		eagine.core.reflection
 		eagine.core.container
 		eagine.core.value_tree
+		eagine.core.valid_if
 		eagine.core.utility
 		eagine.core.runtime
 		eagine.core.logging
@@ -167,6 +168,7 @@ eagine_add_module(
 		eagine.core.value_tree
 		eagine.core.serialization
 		eagine.core.reflection
+		eagine.core.valid_if
 		eagine.core.utility
 		eagine.core.runtime
 		eagine.core.progress
@@ -180,6 +182,7 @@ eagine_add_module(
 	IMPORTS
 		std interface options
 		types state input
+		resource_loader
 		old_resource_loader
 		eagine.core.types
 		eagine.core.memory

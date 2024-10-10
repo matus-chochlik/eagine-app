@@ -17,6 +17,7 @@ import eagine.core.memory;
 import eagine.core.string;
 import eagine.core.math;
 import eagine.core.value_tree;
+import eagine.core.valid_if;
 import eagine.core.utility;
 import eagine.core.runtime;
 import eagine.core.main_ctx;
@@ -48,32 +49,28 @@ void for_each_chunk_line(
 //------------------------------------------------------------------------------
 // plain_text_resource
 //------------------------------------------------------------------------------
-struct plain_text_resource::_loader final : loader_of<plain_text_resource> {
-    using loader_of<plain_text_resource>::loader_of;
+struct plain_text_resource::_loader final
+  : simple_loader_of<plain_text_resource> {
+    using simple_loader_of<plain_text_resource>::simple_loader_of;
 
     auto request_dependencies(
       const std::shared_ptr<resource_loader>& loader,
-      resource_request_params&& params) noexcept -> bool final;
+      resource_request_params&& params) noexcept
+      -> valid_if_not_zero<identifier_t> final;
 
     void stream_data_appended(const msgbus::blob_stream_chunk&) noexcept final;
 
-    void stream_finished() noexcept final;
-
-    void stream_cancelled() noexcept final;
-
-    identifier_t _chunk_req_id{0};
+    void set_status(resource_status status) noexcept {
+        resource()._status = status;
+    }
 };
 //------------------------------------------------------------------------------
 auto plain_text_resource::_loader::request_dependencies(
   const std::shared_ptr<resource_loader>& res_loader,
-  resource_request_params&& params) noexcept -> bool {
-    _chunk_req_id = res_loader->fetch_resource_chunks(params, 1024).first;
-    if(_chunk_req_id > 0) {
-        resource()._status = resource_status::loading;
-        return true;
-    }
-    resource()._status = resource_status::error;
-    return false;
+  resource_request_params&& params) noexcept
+  -> valid_if_not_zero<identifier_t> {
+    return _add_single_dependency(
+      res_loader->fetch_resource_chunks(params, 1024).first, _res_loader);
 }
 //------------------------------------------------------------------------------
 void plain_text_resource::_loader::stream_data_appended(
@@ -89,14 +86,6 @@ void plain_text_resource::_loader::stream_data_appended(
     }
 }
 //------------------------------------------------------------------------------
-void plain_text_resource::_loader::stream_finished() noexcept {
-    resource()._status = resource_status::loaded;
-}
-//------------------------------------------------------------------------------
-void plain_text_resource::_loader::stream_cancelled() noexcept {
-    resource()._status = resource_status::cancelled;
-}
-//------------------------------------------------------------------------------
 auto plain_text_resource::make_loader(resource_request_params params) noexcept
   -> shared_holder<resource_interface::loader> {
     if(
@@ -109,33 +98,33 @@ auto plain_text_resource::make_loader(resource_request_params params) noexcept
 //------------------------------------------------------------------------------
 // string_list_resource
 //------------------------------------------------------------------------------
-struct string_list_resource::_loader final : loader_of<string_list_resource> {
-    using loader_of<string_list_resource>::loader_of;
+struct string_list_resource::_loader final
+  : simple_loader_of<string_list_resource> {
+    using base = simple_loader_of<string_list_resource>;
+    using base::base;
 
     auto request_dependencies(
       const std::shared_ptr<resource_loader>& loader,
-      resource_request_params&& params) noexcept -> bool final;
+      resource_request_params&& params) noexcept
+      -> valid_if_not_zero<identifier_t> final;
 
     void stream_data_appended(const msgbus::blob_stream_chunk&) noexcept final;
 
     void stream_finished() noexcept final;
 
-    void stream_cancelled() noexcept final;
+    void set_status(resource_status status) noexcept {
+        resource()._status = status;
+    }
 
     std::string _chunk_line;
-    identifier_t _chunk_req_id{0};
 };
 //------------------------------------------------------------------------------
 auto string_list_resource::_loader::request_dependencies(
   const std::shared_ptr<resource_loader>& res_loader,
-  resource_request_params&& params) noexcept -> bool {
-    _chunk_req_id = res_loader->fetch_resource_chunks(params, 1024).first;
-    if(_chunk_req_id > 0) {
-        resource()._status = resource_status::loading;
-        return true;
-    }
-    resource()._status = resource_status::error;
-    return false;
+  resource_request_params&& params) noexcept
+  -> valid_if_not_zero<identifier_t> {
+    return _add_single_dependency(
+      res_loader->fetch_resource_chunks(params, 1024).first, res_loader);
 }
 //------------------------------------------------------------------------------
 void string_list_resource::_loader::stream_data_appended(
@@ -149,11 +138,7 @@ void string_list_resource::_loader::stream_finished() noexcept {
     if(not _chunk_line.empty()) {
         resource()._strings.emplace_back(std::move(_chunk_line));
     }
-    resource()._status = resource_status::loaded;
-}
-//------------------------------------------------------------------------------
-void string_list_resource::_loader::stream_cancelled() noexcept {
-    resource()._status = resource_status::cancelled;
+    base::stream_finished();
 }
 //------------------------------------------------------------------------------
 auto string_list_resource::make_loader(resource_request_params params) noexcept
@@ -174,7 +159,8 @@ struct url_list_resource::_loader final : loader_of<url_list_resource> {
 
     auto request_dependencies(
       const std::shared_ptr<resource_loader>& loader,
-      resource_request_params&& params) noexcept -> bool final;
+      resource_request_params&& params) noexcept
+      -> valid_if_not_zero<identifier_t> final;
 
     void stream_data_appended(const msgbus::blob_stream_chunk&) noexcept final;
 
@@ -188,14 +174,15 @@ struct url_list_resource::_loader final : loader_of<url_list_resource> {
 //------------------------------------------------------------------------------
 auto url_list_resource::_loader::request_dependencies(
   const std::shared_ptr<resource_loader>& res_loader,
-  resource_request_params&& params) noexcept -> bool {
+  resource_request_params&& params) noexcept
+  -> valid_if_not_zero<identifier_t> {
     _chunk_req_id = res_loader->fetch_resource_chunks(params, 1024).first;
     if(_chunk_req_id > 0) {
         resource()._status = resource_status::loading;
-        return true;
+        return _set_request_id(res_loader->get_request_id());
     }
     resource()._status = resource_status::error;
-    return false;
+    return 0;
 }
 //------------------------------------------------------------------------------
 void url_list_resource::_loader::stream_data_appended(
@@ -245,7 +232,8 @@ struct visited_valtree_resource::_loader final
 
     auto request_dependencies(
       const std::shared_ptr<resource_loader>& loader,
-      resource_request_params&& params) noexcept -> bool final;
+      resource_request_params&& params) noexcept
+      -> valid_if_not_zero<identifier_t> final;
 
     void stream_data_appended(const msgbus::blob_stream_chunk&) noexcept final;
 
@@ -260,14 +248,15 @@ struct visited_valtree_resource::_loader final
 //------------------------------------------------------------------------------
 auto visited_valtree_resource::_loader::request_dependencies(
   const std::shared_ptr<resource_loader>& res_loader,
-  resource_request_params&& params) noexcept -> bool {
+  resource_request_params&& params) noexcept
+  -> valid_if_not_zero<identifier_t> {
     _chunk_req_id = res_loader->fetch_resource_chunks(params, 1024).first;
     if(_chunk_req_id > 0) {
         resource()._status = resource_status::loading;
-        return true;
+        return _set_request_id(res_loader->get_request_id());
     }
     resource()._status = resource_status::error;
-    return false;
+    return 0;
 }
 //------------------------------------------------------------------------------
 void visited_valtree_resource::_loader::stream_data_appended(
@@ -422,7 +411,8 @@ struct float_list_resource::_loader final : loader_of<float_list_resource> {
 
     auto request_dependencies(
       const std::shared_ptr<resource_loader>& loader,
-      resource_request_params&& params) noexcept -> bool final;
+      resource_request_params&& params) noexcept
+      -> valid_if_not_zero<identifier_t> final;
 
     visited_valtree_resource _visit;
     identifier_t _visit_req_id{0};
@@ -430,14 +420,15 @@ struct float_list_resource::_loader final : loader_of<float_list_resource> {
 //------------------------------------------------------------------------------
 auto float_list_resource::_loader::request_dependencies(
   const std::shared_ptr<resource_loader>& res_loader,
-  resource_request_params&& params) noexcept -> bool {
+  resource_request_params&& params) noexcept
+  -> valid_if_not_zero<identifier_t> {
     _visit_req_id = res_loader->load(_visit, std::move(params));
     if(_visit_req_id > 0) {
         resource()._status = resource_status::loading;
-        return true;
+        return _set_request_id(res_loader->get_request_id());
     }
     resource()._status = resource_status::error;
-    return false;
+    return 0;
 }
 //------------------------------------------------------------------------------
 auto float_list_resource::make_loader(resource_request_params params) noexcept
@@ -571,7 +562,8 @@ struct vec3_list_resource::_loader final : loader_of<vec3_list_resource> {
 
     auto request_dependencies(
       const std::shared_ptr<resource_loader>& loader,
-      resource_request_params&& params) noexcept -> bool final;
+      resource_request_params&& params) noexcept
+      -> valid_if_not_zero<identifier_t> final;
 
     visited_valtree_resource _visit;
     identifier_t _visit_req_id{0};
@@ -579,14 +571,15 @@ struct vec3_list_resource::_loader final : loader_of<vec3_list_resource> {
 //------------------------------------------------------------------------------
 auto vec3_list_resource::_loader::request_dependencies(
   const std::shared_ptr<resource_loader>& res_loader,
-  resource_request_params&& params) noexcept -> bool {
+  resource_request_params&& params) noexcept
+  -> valid_if_not_zero<identifier_t> {
     _visit_req_id = res_loader->load(_visit, std::move(params));
     if(_visit_req_id > 0) {
         resource()._status = resource_status::loading;
-        return true;
+        return _set_request_id(res_loader->get_request_id());
     }
     resource()._status = resource_status::error;
-    return false;
+    return 0;
 }
 //------------------------------------------------------------------------------
 auto vec3_list_resource::make_loader(resource_request_params params) noexcept

@@ -27,6 +27,38 @@ import eagine.msgbus;
 
 namespace eagine::app::exp {
 //------------------------------------------------------------------------------
+// resource_interface::loader
+//------------------------------------------------------------------------------
+void resource_interface::loader::stream_data_appended(
+  const msgbus::blob_stream_chunk&) noexcept {}
+//------------------------------------------------------------------------------
+void resource_interface::loader::stream_finished() noexcept {}
+//------------------------------------------------------------------------------
+void resource_interface::loader::stream_cancelled() noexcept {}
+//------------------------------------------------------------------------------
+void resource_interface::loader::resource_loaded(
+  const resource_interface::load_info&) noexcept {}
+//------------------------------------------------------------------------------
+void resource_interface::loader::resource_cancelled(
+  const resource_interface::load_info&) noexcept {}
+//------------------------------------------------------------------------------
+auto resource_interface::loader::_set_request_id(identifier_t req_id) noexcept
+  -> identifier_t {
+    _request_id = req_id;
+    return _request_id;
+}
+//------------------------------------------------------------------------------
+void resource_interface::loader::_notify_loaded(
+  resource_loader& res_loader) noexcept {
+    res_loader._handle_resource_loaded(_request_id, _params.locator, _resource);
+}
+//------------------------------------------------------------------------------
+void resource_interface::loader::_notify_cancelled(
+  resource_loader& res_loader) noexcept {
+    res_loader._handle_resource_cancelled(
+      _request_id, _params.locator, _resource);
+}
+//------------------------------------------------------------------------------
 // resource_loader
 //------------------------------------------------------------------------------
 resource_loader::resource_loader(msgbus::endpoint& bus)
@@ -88,6 +120,36 @@ void resource_loader::_handle_stream_cancelled(
             loader->stream_cancelled();
         }
     }
+}
+//------------------------------------------------------------------------------
+void resource_loader::_handle_resource_loaded(
+  identifier_t request_id,
+  const url& locator,
+  resource_interface& resource) noexcept {
+    const resource_interface::load_info info{
+      locator, request_id, resource.kind()};
+
+    if(const auto found{find(_consumer, request_id)}) {
+        if(const auto& loader{*found}) {
+            loader->resource_loaded(info);
+        }
+    }
+    resource_loaded(info);
+}
+//------------------------------------------------------------------------------
+void resource_loader::_handle_resource_cancelled(
+  identifier_t request_id,
+  const url& locator,
+  const resource_interface& resource) noexcept {
+    const resource_interface::load_info info{
+      locator, request_id, resource.kind()};
+
+    if(const auto found{find(_consumer, request_id)}) {
+        if(const auto& loader{*found}) {
+            loader->resource_cancelled(info);
+        }
+    }
+    resource_cancelled(info);
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app::exp

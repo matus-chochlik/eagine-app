@@ -19,6 +19,7 @@ import eagine.core.string;
 import eagine.core.serialization;
 import eagine.core.value_tree;
 import eagine.core.reflection;
+import eagine.core.valid_if;
 import eagine.core.utility;
 import eagine.core.runtime;
 import eagine.core.progress;
@@ -107,15 +108,16 @@ private:
               max_identifier_length(this->resource()._object)} {}
 
         auto request_dependencies(
-          const std::shared_ptr<resource_loader>& loader,
-          resource_request_params&& params) noexcept -> bool final {
-            _visit_req_id = loader->load(_visit, std::move(params));
+          const std::shared_ptr<resource_loader>& res_loader,
+          resource_request_params&& params) noexcept
+          -> valid_if_not_zero<identifier_t> final {
+            _visit_req_id = res_loader->load(_visit, std::move(params));
             if(_visit_req_id > 0) {
                 this->resource()._status = resource_status::loading;
-                return true;
+                return this->_set_request_id(res_loader->get_request_id());
             }
             this->resource()._status = resource_status::error;
-            return false;
+            return 0;
         }
         visited_valtree_resource _visit;
         identifier_t _visit_req_id{0};
