@@ -92,7 +92,7 @@ eagine_add_module(
 eagine_add_module(
 	eagine.app
 	COMPONENT app-dev
-	PARTITION resource_loader
+	PARTITION old_resource_loader
 	IMPORTS
 		std
 		eagine.core.types
@@ -116,11 +116,76 @@ eagine_add_module(
 eagine_add_module(
 	eagine.app
 	COMPONENT app-dev
+	PARTITION resource_loader
+	IMPORTS
+		std
+		eagine.core.types
+		eagine.core.math
+		eagine.core.memory
+		eagine.core.string
+		eagine.core.identifier
+		eagine.core.reflection
+		eagine.core.container
+		eagine.core.value_tree
+		eagine.core.valid_if
+		eagine.core.utility
+		eagine.core.runtime
+		eagine.core.logging
+		eagine.core.progress
+		eagine.core.main_ctx
+		eagine.msgbus)
+
+eagine_add_module(
+	eagine.app
+	COMPONENT app-dev
+	PARTITION resource_basic
+	IMPORTS
+		resource_loader
+		std
+		eagine.core.types
+		eagine.core.math
+		eagine.core.memory
+		eagine.core.string
+		eagine.core.identifier
+		eagine.core.value_tree
+		eagine.core.utility
+		eagine.core.runtime
+		eagine.core.progress
+		eagine.core.main_ctx
+		eagine.msgbus)
+
+eagine_add_module(
+	eagine.app
+	COMPONENT app-dev
+	PARTITION resource_mapped
+	IMPORTS
+		resource_loader
+		resource_basic
+		std
+		eagine.core.types
+		eagine.core.math
+		eagine.core.memory
+		eagine.core.string
+		eagine.core.identifier
+		eagine.core.value_tree
+		eagine.core.serialization
+		eagine.core.reflection
+		eagine.core.valid_if
+		eagine.core.utility
+		eagine.core.runtime
+		eagine.core.progress
+		eagine.core.main_ctx
+		eagine.msgbus)
+
+eagine_add_module(
+	eagine.app
+	COMPONENT app-dev
 	PARTITION context
 	IMPORTS
 		std interface options
 		types state input
 		resource_loader
+		old_resource_loader
 		eagine.core.types
 		eagine.core.memory
 		eagine.core.identifier
@@ -195,7 +260,7 @@ eagine_add_module(
 	PARTITION loaded_resource
 	IMPORTS
 		std context geometry
-		resource_loader
+		old_resource_loader
 		eagine.core.types
 		eagine.core.math
 		eagine.core.memory
@@ -214,7 +279,7 @@ eagine_add_module(
 	PARTITION resource_manager
 	IMPORTS
 		std loaded_resource geometry
-		context resource_loader
+		context old_resource_loader
 		eagine.core.types
 		eagine.core.math
 		eagine.core.utility
@@ -234,7 +299,9 @@ eagine_add_module(
 		openal_oalplus
 		opengl_eglplus
 		opengl_glfw3
+		old_resource_loader
 		resource_loader
+		resource_basic
 		resource_builders
 		resource_gl_builders
 		context
@@ -270,6 +337,7 @@ eagine_add_module(
 eagine_add_module_tests(
 	eagine.app
 	UNITS
+		old_resource_loader
 		resource_loader
 		resource_manager
 	IMPORTS
@@ -295,6 +363,22 @@ eagine_embed_target_resources(
 	PACKED ENABLE_SEARCH)
 
 set_tests_properties(execute-test.eagine.app.resource_loader PROPERTIES COST 10)
+
+eagine_embed_target_resources(
+	TARGET test.eagine.app.old_resource_loader
+	RESOURCES
+		TestText  "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_text.txt"
+		TestURLs  "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_urls.txt"
+		TestInts  "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_ints.json"
+		TestVec3  "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_vec3.json"
+		TestMat4  "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_mat4.json"
+		TestThdn1 "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_thdn1.json"
+		TestThdn2 "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_thdn2.json"
+		TestPath  "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_path.json"
+		TestMesh  "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_mesh.json"
+	PACKED ENABLE_SEARCH)
+
+set_tests_properties(execute-test.eagine.app.old_resource_loader PROPERTIES COST 10)
 
 eagine_embed_target_resources(
 	TARGET test.eagine.app.resource_manager

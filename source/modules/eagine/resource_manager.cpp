@@ -78,7 +78,7 @@ public:
 };
 //------------------------------------------------------------------------------
 /// @brief Template for resources managed by basic_resource_manager.
-/// @see resource_loader
+/// @see old_resource_loader
 export template <typename Resource>
 class managed_resource {
     using _context_t =
@@ -205,7 +205,7 @@ private:
 };
 //------------------------------------------------------------------------------
 /// @brief Class managing a collection of managed_resources.
-/// @see resource_loader
+/// @see old_resource_loader
 export template <typename... Resources>
 class basic_resource_manager {
 

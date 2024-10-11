@@ -96,7 +96,7 @@ void sky_viewer_texture_resource::request_update(
     video.with_gl([&, this](auto&, auto& GL) {
         gl_texture_resource::request_update(
           locator,
-          ctx.loader(),
+          ctx.old_loader(),
           ctx.resource_context(),
           _tex_target,
           texture_unit(video));

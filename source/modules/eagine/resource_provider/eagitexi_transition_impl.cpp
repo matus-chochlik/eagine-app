@@ -125,7 +125,7 @@ tiling_transition_tiling::tiling_transition_tiling(
   const url& locator) noexcept
   : main_ctx_object{"TlgTrnsTlg", parent}
   , _shared{shared}
-  , _tiling{_get_source(locator), _shared.loader}
+  , _tiling{_get_source(locator), _shared.old_loader}
   , _threshold{_get_threshold(locator)} {}
 //------------------------------------------------------------------------------
 auto tiling_transition_tiling::is_valid_locator(const url& locator) noexcept
@@ -138,7 +138,7 @@ auto tiling_transition_tiling::is_valid_locator(const url& locator) noexcept
 //------------------------------------------------------------------------------
 auto tiling_transition_tiling::prepare() noexcept
   -> msgbus::blob_preparation_result {
-    loaded_resource_context context{_shared.loader};
+    loaded_resource_context context{_shared.old_loader, _shared.loader};
     return _prep_status(_tiling.load_if_needed(context));
 }
 //------------------------------------------------------------------------------

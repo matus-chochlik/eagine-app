@@ -21,12 +21,12 @@ import eagine.oglplus;
 import eagine.msgbus;
 import :context;
 import :geometry;
-import :resource_loader;
+import :old_resource_loader;
 
 namespace eagine::app {
 //------------------------------------------------------------------------------
 /// @brief Common base for loaded resource template.
-/// @see resource_loader
+/// @see old_resource_loader
 export class loaded_resource_base {
 public:
     loaded_resource_base(url locator) noexcept
@@ -150,7 +150,7 @@ class loaded_resource;
 
 export template <typename Resource>
 struct resource_load_info {
-    using base_load_info = typename resource_loader::load_info_t<Resource>;
+    using base_load_info = typename old_resource_loader::load_info_t<Resource>;
 
     /// @brief The base info from the loader signal.
     const base_load_info& base;
@@ -182,7 +182,7 @@ class loaded_resource
 
 public:
     /// @brief Type of the load_event signal parameter.
-    using base_load_info = typename resource_loader::load_info_t<Resource>;
+    using base_load_info = typename old_resource_loader::load_info_t<Resource>;
 
     /// @brief Type of the loaded signal parameter.
     using load_info = resource_load_info<Resource>;
@@ -215,22 +215,22 @@ public:
       : loaded_resource_base{params} {}
 
     /// @brief Delay-initializes the resource.
-    void init(resource_loader& loader) noexcept {
+    void init(old_resource_loader& loader) noexcept {
         _connect(loader);
     }
 
     /// @brief Delay-initializes the resource.
     void init(loaded_resource_context& ctx) noexcept {
-        _connect(ctx.loader());
+        _connect(ctx.old_loader());
     }
 
     /// @brief Delay-initializes the resource.
     void init(execution_context& ctx) noexcept {
-        _connect(ctx.loader());
+        _connect(ctx.old_loader());
     }
 
     /// @brief Constructor specifying the locator and initializing the resource.
-    loaded_resource(url locator, resource_loader& loader)
+    loaded_resource(url locator, old_resource_loader& loader)
       : loaded_resource_base{std::move(locator)} {
         init(loader);
     }
@@ -250,7 +250,7 @@ public:
     /// @brief Constructor specifying the parameters and initializing the resource.
     loaded_resource(
       const resource_request_params& params,
-      resource_loader& loader)
+      old_resource_loader& loader)
       : loaded_resource_base{params} {
         init(loader);
     }
@@ -272,18 +272,18 @@ public:
     }
 
     /// @brief Cleans up this resource.
-    void clean_up(resource_loader& loader) {
+    void clean_up(old_resource_loader& loader) {
         _disconnect(loader);
     }
 
     /// @brief Cleans up this resource.
     void clean_up(loaded_resource_context& ctx) {
-        derived().clean_up(ctx.loader());
+        derived().clean_up(ctx.old_loader());
     }
 
     /// @brief Cleans up this resource.
     void clean_up(execution_context& ctx) {
-        derived().clean_up(ctx.loader());
+        derived().clean_up(ctx.old_loader());
     }
 
     /// @brief Indicates if the load info originated from this loaded resource.
@@ -301,7 +301,7 @@ public:
     /// @brief Updates the resource, possibly doing resource load request.
     auto load_if_needed(loaded_resource_context& ctx) -> work_done {
         if(not is_loaded() and not is_loading()) {
-            if(const auto request{ctx.loader().request(
+            if(const auto request{ctx.old_loader().request(
                  std::type_identity<Resource>{}, request_parameters(), ctx)}) {
                 _request_id = request.request_id();
             }
@@ -320,16 +320,16 @@ public:
     }
 
     auto load_if_needed(execution_context& ctx, std::tuple<>) -> work_done {
-        return load_if_needed(ctx.loader());
+        return load_if_needed(ctx.old_loader());
     }
 
 private:
-    void _connect(resource_loader& loader) noexcept {
+    void _connect(old_resource_loader& loader) noexcept {
         _sig_key = connect<&loaded_resource::_handle_loaded>(
           this, loader.mapped_struct_loaded);
     }
 
-    void _disconnect(resource_loader& loader) noexcept {
+    void _disconnect(old_resource_loader& loader) noexcept {
         if(_sig_key) {
             loader.mapped_struct_loaded.disconnect(_sig_key);
             _sig_key = {};
@@ -384,7 +384,7 @@ public:
     }
 
     /// @brief Type of the load_event signal parameter.
-    using base_load_info = typename resource_loader::load_info_t<Resource>;
+    using base_load_info = typename old_resource_loader::load_info_t<Resource>;
 
     /// @brief Type of the loaded signal parameter.
     using load_info = resource_load_info<Resource>;
@@ -397,7 +397,7 @@ public:
       : loaded_resource_base{std::move(locator)} {}
 
     /// @brief Constructor specifying the resource locator.
-    loaded_resource_common(url locator, resource_loader& loader) noexcept
+    loaded_resource_common(url locator, old_resource_loader& loader) noexcept
       : loaded_resource_base{std::move(locator)} {
         derived().init(loader);
     }
@@ -417,7 +417,7 @@ public:
     /// @brief Constructor specifying the resource request parameters.
     loaded_resource_common(
       const resource_request_params& params,
-      resource_loader& loader) noexcept
+      old_resource_loader& loader) noexcept
       : loaded_resource_base{params} {
         derived().init(loader);
     }
@@ -439,18 +439,18 @@ public:
     }
 
     /// @brief Delay-initializes the resource.
-    void init(resource_loader& loader) noexcept {
+    void init(old_resource_loader& loader) noexcept {
         _connect(loader);
     }
 
     /// @brief Delay-initializes the resource.
     void init(loaded_resource_context& ctx) noexcept {
-        _connect(ctx.loader());
+        _connect(ctx.old_loader());
     }
 
     /// @brief Delay-initializes the resource.
     void init(execution_context& ctx) noexcept {
-        _connect(ctx.loader());
+        _connect(ctx.old_loader());
     }
 
     /// @brief Indicates if this resource is loaded.
@@ -485,7 +485,7 @@ public:
     auto load_if_needed(loaded_resource_context& ctx, LoadP... params)
       -> work_done {
         if(not is_loaded() and not is_loading()) {
-            if(const auto request{ctx.loader().request(
+            if(const auto request{ctx.old_loader().request(
                  std::type_identity<Resource>{},
                  request_parameters(),
                  ctx,
@@ -518,21 +518,21 @@ public:
 
     /// @brief Cleans up this resource.
     void clean_up(loaded_resource_context& ctx) {
-        derived().clean_up(ctx.loader());
+        derived().clean_up(ctx.old_loader());
     }
 
     /// @brief Cleans up this resource.
     void clean_up(execution_context& ctx) {
-        derived().clean_up(ctx.loader());
+        derived().clean_up(ctx.old_loader());
     }
 
 protected:
-    void _connect(resource_loader& loader) noexcept {
+    void _connect(old_resource_loader& loader) noexcept {
         _sig_key = connect<&loaded_resource_common::_handle_loaded>(
           this, loader.load_signal(resource_tid()));
     }
 
-    void _disconnect(resource_loader& loader) noexcept {
+    void _disconnect(old_resource_loader& loader) noexcept {
         if(_sig_key) {
             loader.load_signal(resource_tid()).disconnect(_sig_key);
             _sig_key = {};
@@ -572,7 +572,7 @@ public:
     using common::common;
 
     /// @brief Cleans up this resource.
-    void clean_up(resource_loader& loader) {
+    void clean_up(old_resource_loader& loader) {
         this->resource().clear();
         common::_disconnect(loader);
     }
@@ -594,7 +594,7 @@ public:
     using common::common;
 
     /// @brief Cleans up this resource.
-    void clean_up(resource_loader& loader) {
+    void clean_up(old_resource_loader& loader) {
         this->resource().clear();
         common::_disconnect(loader);
     }
@@ -626,7 +626,7 @@ public:
     }
 
     /// @brief Cleans up this resource.
-    void clean_up(resource_loader& loader) {
+    void clean_up(old_resource_loader& loader) {
         this->resource().clear();
         common::_disconnect(loader);
     }
@@ -656,7 +656,7 @@ public:
     using common::common;
 
     /// @brief Cleans up this resource.
-    void clean_up(resource_loader& loader) {
+    void clean_up(old_resource_loader& loader) {
         this->clear();
         common::_disconnect(loader);
     }
@@ -681,7 +681,7 @@ public:
     using common::common;
 
     /// @brief Cleans up this resource.
-    void clean_up(resource_loader& loader) {
+    void clean_up(old_resource_loader& loader) {
         resource().reset();
         common::_disconnect(loader);
     }
@@ -709,14 +709,14 @@ public:
     using common::common;
 
     /// @brief Cleans up this resource.
-    void clean_up(resource_loader& loader, const oglplus::gl_api& glapi) {
+    void clean_up(old_resource_loader& loader, const oglplus::gl_api& glapi) {
         resource().clean_up(glapi);
         common::_disconnect(loader);
     }
 
     /// @brief Cleans up this resource.
     void clean_up(loaded_resource_context& ctx) {
-        clean_up(ctx.loader(), ctx.gl_api());
+        clean_up(ctx.old_loader(), ctx.gl_api());
     }
 
     /// @brief Cleans up this resource.
@@ -742,7 +742,7 @@ export using gl_geometry_and_bindings_resource =
 export template <>
 struct resource_load_info<valtree::compound> {
     using Resource = valtree::compound;
-    using base_load_info = typename resource_loader::load_info_t<Resource>;
+    using base_load_info = typename old_resource_loader::load_info_t<Resource>;
 
     /// @brief The base info from the loader signal.
     const base_load_info& base;
@@ -778,7 +778,7 @@ public:
     using common::common;
 
     /// @brief Cleans up this resource.
-    void clean_up(resource_loader& loader) {
+    void clean_up(old_resource_loader& loader) {
         common::_disconnect(loader);
     }
 
@@ -804,14 +804,14 @@ public:
     using common::common;
 
     /// @brief Cleans up this resource.
-    void clean_up(resource_loader& loader, const oglplus::gl_api& glapi) {
+    void clean_up(old_resource_loader& loader, const oglplus::gl_api& glapi) {
         glapi.clean_up(std::move(resource()));
         common::_disconnect(loader);
     }
 
     /// @brief Cleans up this resource.
     void clean_up(loaded_resource_context& ctx) {
-        clean_up(ctx.loader(), ctx.gl_api());
+        clean_up(ctx.old_loader(), ctx.gl_api());
     }
 
     /// @brief Cleans up this resource.
@@ -838,14 +838,14 @@ public:
     using common::common;
 
     /// @brief Cleans up this resource.
-    void clean_up(resource_loader& loader, const oglplus::gl_api& glapi) {
+    void clean_up(old_resource_loader& loader, const oglplus::gl_api& glapi) {
         glapi.clean_up(std::move(resource()));
         common::_disconnect(loader);
     }
 
     /// @brief Cleans up this resource.
     void clean_up(loaded_resource_context& ctx) {
-        clean_up(ctx.loader(), ctx.gl_api());
+        clean_up(ctx.old_loader(), ctx.gl_api());
     }
 
     /// @brief Cleans up this resource.
@@ -866,7 +866,7 @@ struct get_resource_load_params<oglplus::owned_program_name>
 export template <>
 struct resource_load_info<oglplus::owned_program_name> {
     using Resource = oglplus::owned_program_name;
-    using base_load_info = typename resource_loader::load_info_t<Resource>;
+    using base_load_info = typename old_resource_loader::load_info_t<Resource>;
 
     /// @brief The base info from the loader signal.
     const base_load_info& base;
@@ -1034,14 +1034,14 @@ public:
     }
 
     /// @brief Cleans up this resource.
-    void clean_up(resource_loader& loader, const oglplus::gl_api& glapi) {
+    void clean_up(old_resource_loader& loader, const oglplus::gl_api& glapi) {
         glapi.clean_up(std::move(resource()));
         common::_disconnect(loader);
     }
 
     /// @brief Cleans up this resource.
     void clean_up(loaded_resource_context& ctx) {
-        clean_up(ctx.loader(), ctx.gl_api());
+        clean_up(ctx.old_loader(), ctx.gl_api());
     }
 
     /// @brief Cleans up this resource.
@@ -1070,7 +1070,7 @@ struct get_resource_load_params<oglplus::owned_texture_name>
 export template <>
 struct resource_load_info<oglplus::owned_texture_name> {
     using Resource = oglplus::owned_texture_name;
-    using base_load_info = typename resource_loader::load_info_t<Resource>;
+    using base_load_info = typename old_resource_loader::load_info_t<Resource>;
 
     /// @brief The base info from the loader signal.
     const base_load_info& base;
@@ -1114,7 +1114,7 @@ public:
     /// @brief Request the update of the texture image data.
     auto request_update(
       url new_locator,
-      resource_loader& loader,
+      old_resource_loader& loader,
       loaded_resource_context& ctx,
       oglplus::texture_target tgt,
       oglplus::texture_unit tu) -> auto& {
@@ -1129,7 +1129,7 @@ public:
 
     auto request_update(
       url new_locator,
-      resource_loader& loader,
+      old_resource_loader& loader,
       execution_context& ctx,
       oglplus::texture_target tgt,
       oglplus::texture_unit tu) -> auto& {
@@ -1138,14 +1138,14 @@ public:
     }
 
     /// @brief Cleans up this resource.
-    void clean_up(resource_loader& loader, const oglplus::gl_api& glapi) {
+    void clean_up(old_resource_loader& loader, const oglplus::gl_api& glapi) {
         glapi.clean_up(std::move(resource()));
         common::_disconnect(loader);
     }
 
     /// @brief Cleans up this resource.
     void clean_up(loaded_resource_context& ctx) {
-        clean_up(ctx.loader(), ctx.gl_api());
+        clean_up(ctx.old_loader(), ctx.gl_api());
     }
 
     /// @brief Cleans up this resource.
@@ -1172,14 +1172,14 @@ class loaded_resource<oglplus::owned_buffer_name>
 
 public:
     /// @brief Cleans up this resource.
-    void clean_up(resource_loader& loader, const oglplus::gl_api& glapi) {
+    void clean_up(old_resource_loader& loader, const oglplus::gl_api& glapi) {
         glapi.clean_up(std::move(resource()));
         common::_disconnect(loader);
     }
 
     /// @brief Cleans up this resource.
     void clean_up(loaded_resource_context& ctx) {
-        clean_up(ctx.loader(), ctx.gl_api());
+        clean_up(ctx.old_loader(), ctx.gl_api());
     }
 
     /// @brief Cleans up this resource.

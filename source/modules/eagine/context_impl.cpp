@@ -430,7 +430,9 @@ inline auto make_all_hmi_providers(main_ctx_parent parent)
 //------------------------------------------------------------------------------
 execution_context::execution_context(main_ctx_parent parent) noexcept
   : main_ctx_object("AppExecCtx", parent)
-  , _resource_context{_registry.emplace<resource_loader>("RsrsLoadr")} {}
+  , _resource_context{
+      _registry.emplace<old_resource_loader>("ORsrLoadr"),
+      _registry.emplace<resource_loader>("RsrsLoadr")} {}
 //------------------------------------------------------------------------------
 inline auto execution_context::_setup_providers() noexcept -> bool {
     const auto try_init{[&](auto provider) -> bool {
@@ -494,6 +496,10 @@ inline auto execution_context::_setup_providers() noexcept -> bool {
 auto execution_context::resource_context() noexcept
   -> loaded_resource_context& {
     return _resource_context;
+}
+//------------------------------------------------------------------------------
+auto execution_context::old_loader() noexcept -> old_resource_loader& {
+    return resource_context().old_loader();
 }
 //------------------------------------------------------------------------------
 auto execution_context::loader() noexcept -> resource_loader& {
