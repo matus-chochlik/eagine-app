@@ -23,6 +23,7 @@ import eagine.core.runtime;
 import eagine.core.progress;
 import eagine.core.main_ctx;
 import eagine.msgbus;
+import eagine.oglplus;
 import :resource_loader;
 
 namespace eagine::app::exp {
@@ -43,8 +44,9 @@ public:
         return _status;
     }
 
-    auto make_loader(resource_request_params params) noexcept
-      -> shared_holder<loader> final;
+    auto make_loader(
+      const shared_holder<loaded_resource_context>&,
+      resource_request_params params) noexcept -> shared_holder<loader> final;
 
     using resource_type = shared_holder<valtree::value_tree_visitor>;
 
@@ -62,6 +64,10 @@ public:
 
     struct _loader;
 
+    void _private_set_status(resource_status s) noexcept {
+        _status = s;
+    }
+
 private:
     friend struct _loader;
 
@@ -76,8 +82,9 @@ export class plain_text_resource final : public simple_resource<std::string> {
 public:
     auto kind() const noexcept -> identifier final;
 
-    auto make_loader(resource_request_params params) noexcept
-      -> shared_holder<loader> final;
+    auto make_loader(
+      const shared_holder<loaded_resource_context>&,
+      resource_request_params params) noexcept -> shared_holder<loader> final;
 
     struct _loader;
 };
@@ -89,8 +96,9 @@ export class string_list_resource final
 public:
     auto kind() const noexcept -> identifier final;
 
-    auto make_loader(resource_request_params params) noexcept
-      -> shared_holder<loader> final;
+    auto make_loader(
+      const shared_holder<loaded_resource_context>&,
+      resource_request_params params) noexcept -> shared_holder<loader> final;
 
     struct _loader;
 };
@@ -102,8 +110,9 @@ export class url_list_resource final
 public:
     auto kind() const noexcept -> identifier final;
 
-    auto make_loader(resource_request_params params) noexcept
-      -> shared_holder<loader> final;
+    auto make_loader(
+      const shared_holder<loaded_resource_context>&,
+      resource_request_params params) noexcept -> shared_holder<loader> final;
 
     struct _loader;
 };
@@ -115,8 +124,9 @@ export class float_list_resource final
 public:
     auto kind() const noexcept -> identifier final;
 
-    auto make_loader(resource_request_params params) noexcept
-      -> shared_holder<loader> final;
+    auto make_loader(
+      const shared_holder<loaded_resource_context>&,
+      resource_request_params params) noexcept -> shared_holder<loader> final;
 
     struct _loader;
 };
@@ -128,8 +138,9 @@ export class vec3_list_resource final
 public:
     auto kind() const noexcept -> identifier final;
 
-    auto make_loader(resource_request_params params) noexcept
-      -> shared_holder<loader> final;
+    auto make_loader(
+      const shared_holder<loaded_resource_context>&,
+      resource_request_params params) noexcept -> shared_holder<loader> final;
 
     struct _loader;
 };
@@ -141,8 +152,52 @@ export class mat4_list_resource final
 public:
     auto kind() const noexcept -> identifier final;
 
-    auto make_loader(resource_request_params params) noexcept
-      -> shared_holder<loader> final;
+    auto make_loader(
+      const shared_holder<loaded_resource_context>&,
+      resource_request_params params) noexcept -> shared_holder<loader> final;
+
+    struct _loader;
+};
+//------------------------------------------------------------------------------
+// smooth_float_curve_resource
+//------------------------------------------------------------------------------
+export class smooth_float_curve_resource final
+  : public simple_resource<math::cubic_bezier_curves<float, float>> {
+public:
+    auto kind() const noexcept -> identifier final;
+
+    auto make_loader(
+      const shared_holder<loaded_resource_context>&,
+      resource_request_params params) noexcept -> shared_holder<loader> final;
+
+    struct _loader;
+};
+//------------------------------------------------------------------------------
+// smooth_vec3_curve_resource
+//------------------------------------------------------------------------------
+export class smooth_vec3_curve_resource final
+  : public simple_resource<
+      math::cubic_bezier_curves<math::vector<float, 3>, float>> {
+public:
+    auto kind() const noexcept -> identifier final;
+
+    auto make_loader(
+      const shared_holder<loaded_resource_context>&,
+      resource_request_params params) noexcept -> shared_holder<loader> final;
+
+    struct _loader;
+};
+//------------------------------------------------------------------------------
+// glsl_string_resource
+//------------------------------------------------------------------------------
+export class glsl_string_resource final
+  : public simple_resource<oglplus::glsl_string> {
+public:
+    auto kind() const noexcept -> identifier final;
+
+    auto make_loader(
+      const shared_holder<loaded_resource_context>&,
+      resource_request_params params) noexcept -> shared_holder<loader> final;
 
     struct _loader;
 };

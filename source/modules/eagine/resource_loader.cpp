@@ -32,6 +32,8 @@ namespace eagine {
 namespace app {
 namespace exp {
 //------------------------------------------------------------------------------
+export class loaded_resource_context;
+//------------------------------------------------------------------------------
 /// @brief Resource loading status.
 /// @see resource_loader
 /// @see loaded resource
@@ -71,8 +73,10 @@ public:
     struct loader : abstract<loader> {
         loader(
           resource_interface& resource,
+          shared_holder<loaded_resource_context> context,
           resource_request_params params) noexcept
           : _resource{resource}
+          , _context{std::move(context)}
           , _params{std::move(params)} {}
 
         /// @brief Returns the resource_loader identifier for the associated request.
@@ -124,6 +128,7 @@ public:
     private:
         identifier_t _request_id{0};
         std::reference_wrapper<resource_interface> _resource;
+        shared_holder<loaded_resource_context> _context;
         const resource_request_params _params;
     };
 
@@ -170,8 +175,12 @@ public:
 
     /// @brief Constructs a temporary resource-specific loader object.
     /// @note Do not use directly, use resource_loader instead.
-    virtual auto make_loader(resource_request_params params) noexcept
-      -> shared_holder<loader> = 0;
+    virtual auto make_loader(
+      const shared_holder<loaded_resource_context>&,
+      resource_request_params params) noexcept -> shared_holder<loader> = 0;
+
+    /// @brief Cleans-up the resource within the specified context.
+    virtual void clean_up(loaded_resource_context&) noexcept;
 
 protected:
     template <typename Resource>
@@ -225,6 +234,10 @@ protected:
             }
         }
 
+        void set_status(resource_status status) noexcept {
+            resource()._private_set_status(status);
+        }
+
     protected:
         auto derived() noexcept -> typename Resource::_loader& {
             return *static_cast<typename Resource::_loader*>(this);
@@ -259,18 +272,43 @@ public:
     signal<void(const resource_interface::load_info&) noexcept>
       resource_cancelled;
 
+    /// @brief Loads the specified resource in context with the specified parameters.
+    /// @see load_if_needed
+    /// @note The resource may not get destroyed while it is being loaded.
+    template <std::derived_from<resource_interface> Resource>
+    auto load(
+      Resource& resource,
+      const shared_holder<loaded_resource_context>& context,
+      resource_request_params params) noexcept -> identifier_t {
+        if(auto loader{resource.make_loader(context, std::move(params))}) {
+            if(const auto req_id{loader->request_dependencies(*this)}) {
+                return req_id.value_anyway();
+            }
+        }
+        return {};
+    }
+
     /// @brief Loads the specified resource with the specified parameters.
     /// @see load_if_needed
     /// @note The resource may not get destroyed while it is being loaded.
     template <std::derived_from<resource_interface> Resource>
     auto load(Resource& resource, resource_request_params params) noexcept
       -> identifier_t {
-        if(auto loader{resource.make_loader(std::move(params))}) {
-            if(const auto req_id{loader->request_dependencies(*this)}) {
-                return req_id.value_anyway();
-            }
+        return load(resource, {}, std::move(params));
+    }
+
+    /// @brief Loads resource if necessary, using param_getter to get the load parameters.
+    /// @see load
+    /// @note The resource may not get destroyed while it is being loaded.
+    template <std::derived_from<resource_interface> Resource, typename Getter>
+    auto load_if_needed(
+      Resource& resource,
+      const shared_holder<loaded_resource_context>& context,
+      const Getter& param_getter) noexcept -> identifier_t {
+        if(resource.should_be_loaded()) {
+            return load(resource, context, param_getter());
         }
-        return {};
+        return 0;
     }
 
     /// @brief Loads resource if necessary, using param_getter to get the load parameters.

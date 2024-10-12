@@ -434,19 +434,68 @@ struct test_request_mat4_list : eagitest::app_case {
     bool content_is_ok{false};
 };
 //------------------------------------------------------------------------------
+// glsl string
+//------------------------------------------------------------------------------
+struct test_request_glsl_string : eagitest::app_case {
+    using launcher = eagitest::launcher<test_request_glsl_string>;
+
+    test_request_glsl_string(auto& s, auto& ec)
+      : eagitest::app_case{s, ec, 7, "GLSL string"}
+      , loader{context().loader()} {
+        loader.resource_loaded.connect(
+          make_callable_ref<&test_request_glsl_string::on_loaded>(this));
+        too_long.reset();
+    }
+
+    void on_loaded(
+      const eagine::app::resource_interface::load_info& info) noexcept {
+        load_signal_received = true;
+        locator_is_ok = info.locator.has_scheme("glsl") and
+                        info.locator.has_path("/TestFragS");
+        content_is_ok = glsl->storage().starts_with("#version 140\n") and
+                        glsl->storage().contains("void main() {\n") and
+                        glsl->storage().ends_with("}\n");
+    }
+
+    auto is_done() noexcept -> bool final {
+        return too_long or glsl.is_loaded();
+    }
+
+    void update() noexcept final {
+        loader.load_if_needed(glsl, [] -> eagine::app::resource_request_params {
+            return {eagine::url{"glsl:///TestFragS"}};
+        });
+    }
+
+    void clean_up() noexcept final {
+        check(glsl.is_loaded(), "GLSL string is loaded");
+        check(load_signal_received, "load signal received");
+        check(locator_is_ok, "locator is ok");
+        check(content_is_ok, "content is ok");
+    }
+
+    eagine::app::resource_loader& loader;
+    eagine::timeout too_long{std::chrono::seconds{10}};
+    eagine::app::exp::glsl_string_resource glsl;
+    bool load_signal_received{false};
+    bool locator_is_ok{false};
+    bool content_is_ok{false};
+};
+//------------------------------------------------------------------------------
 // main
 //------------------------------------------------------------------------------
 auto test_main(eagine::test_ctx& ctx) -> int {
     enable_message_bus(ctx);
     ctx.preinitialize();
 
-    eagitest::app_suite test{ctx, "resource loader", 6};
+    eagitest::app_suite test{ctx, "resource loader", 7};
     test.once<test_request_plain_text>();
     test.once<test_request_string_list>();
     test.once<test_request_url_list>();
     test.once<test_request_float_list>();
     test.once<test_request_vec3_list>();
     test.once<test_request_mat4_list>();
+    test.once<test_request_glsl_string>();
     return test.exit_code();
 }
 //------------------------------------------------------------------------------

@@ -27,6 +27,10 @@ import eagine.msgbus;
 
 namespace eagine::app::exp {
 //------------------------------------------------------------------------------
+// resource_interface
+//------------------------------------------------------------------------------
+void resource_interface::clean_up(loaded_resource_context&) noexcept {}
+//------------------------------------------------------------------------------
 // resource_interface::loader
 //------------------------------------------------------------------------------
 void resource_interface::loader::stream_data_appended(
