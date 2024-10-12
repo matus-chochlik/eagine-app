@@ -27,7 +27,7 @@ import eagine.core.progress;
 import eagine.core.main_ctx;
 import eagine.msgbus;
 import :resource_loader;
-import :resource_basic;
+import :resource_valtree;
 
 namespace eagine::app::exp {
 //------------------------------------------------------------------------------
