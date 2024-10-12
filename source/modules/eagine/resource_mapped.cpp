@@ -86,8 +86,9 @@ public:
         return _status;
     }
 
-    auto make_loader(resource_request_params params) noexcept
-      -> shared_holder<loader> final {
+    auto make_loader(
+      const shared_holder<loaded_resource_context>&,
+      resource_request_params params) noexcept -> shared_holder<loader> final {
         return {
           hold<mapped_struct_resource::_loader>,
           *this,

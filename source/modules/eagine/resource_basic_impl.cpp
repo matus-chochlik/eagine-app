@@ -23,6 +23,7 @@ import eagine.core.utility;
 import eagine.core.runtime;
 import eagine.core.main_ctx;
 import eagine.msgbus;
+import eagine.oglplus;
 
 namespace eagine::app::exp {
 //------------------------------------------------------------------------------
@@ -39,9 +40,10 @@ struct visited_valtree_resource::_loader final
 
     _loader(
       resource_interface& resource,
+      const shared_holder<loaded_resource_context>& context,
       resource_request_params params,
       valtree::value_tree_stream_input input) noexcept
-      : base{resource, std::move(params)}
+      : base{resource, context, std::move(params)}
       , _input{std::move(input)} {}
 
     auto request_dependencies(resource_loader& loader) noexcept
@@ -50,10 +52,6 @@ struct visited_valtree_resource::_loader final
     void stream_data_appended(const msgbus::blob_stream_chunk&) noexcept final;
 
     void stream_finished(identifier_t) noexcept final;
-
-    void set_status(resource_status status) noexcept {
-        resource()._status = status;
-    }
 
     valtree::value_tree_stream_input _input;
     bool _finished{false};
@@ -87,6 +85,7 @@ void visited_valtree_resource::_loader::stream_finished(
 }
 //------------------------------------------------------------------------------
 auto visited_valtree_resource::make_loader(
+  const shared_holder<loaded_resource_context>& context,
   resource_request_params params) noexcept
   -> shared_holder<resource_interface::loader> {
     if(
@@ -95,6 +94,7 @@ auto visited_valtree_resource::make_loader(
         return {
           hold<visited_valtree_resource::_loader>,
           *this,
+          context,
           std::move(params),
           traverse_json_stream(
             _visitor,
@@ -108,6 +108,7 @@ auto visited_valtree_resource::make_loader(
         return {
           hold<visited_valtree_resource::_loader>,
           *this,
+          context,
           std::move(params),
           traverse_yaml_stream(
             _visitor,
@@ -154,10 +155,6 @@ struct plain_text_resource::_loader final
       -> valid_if_not_zero<identifier_t> final;
 
     void stream_data_appended(const msgbus::blob_stream_chunk&) noexcept final;
-
-    void set_status(resource_status status) noexcept {
-        resource()._private_set_status(status);
-    }
 };
 //------------------------------------------------------------------------------
 auto plain_text_resource::_loader::request_dependencies(
@@ -179,9 +176,11 @@ void plain_text_resource::_loader::stream_data_appended(
     }
 }
 //------------------------------------------------------------------------------
-auto plain_text_resource::make_loader(resource_request_params params) noexcept
+auto plain_text_resource::make_loader(
+  const shared_holder<loaded_resource_context>& ctx,
+  resource_request_params params) noexcept
   -> shared_holder<resource_interface::loader> {
-    return {hold<plain_text_resource::_loader>, *this, std::move(params)};
+    return {hold<plain_text_resource::_loader>, *this, ctx, std::move(params)};
 }
 //------------------------------------------------------------------------------
 // string_list_resource
@@ -201,10 +200,6 @@ struct string_list_resource::_loader final
     void stream_data_appended(const msgbus::blob_stream_chunk&) noexcept final;
 
     void stream_finished(identifier_t) noexcept final;
-
-    void set_status(resource_status status) noexcept {
-        resource()._private_set_status(status);
-    }
 
     std::string _chunk_line;
 };
@@ -230,9 +225,11 @@ void string_list_resource::_loader::stream_finished(
     base::stream_finished(request_id);
 }
 //------------------------------------------------------------------------------
-auto string_list_resource::make_loader(resource_request_params params) noexcept
+auto string_list_resource::make_loader(
+  const shared_holder<loaded_resource_context>& ctx,
+  resource_request_params params) noexcept
   -> shared_holder<resource_interface::loader> {
-    return {hold<string_list_resource::_loader>, *this, std::move(params)};
+    return {hold<string_list_resource::_loader>, *this, ctx, std::move(params)};
 }
 //------------------------------------------------------------------------------
 // url_list_resource
@@ -251,10 +248,6 @@ struct url_list_resource::_loader final : simple_loader_of<url_list_resource> {
     void stream_data_appended(const msgbus::blob_stream_chunk&) noexcept final;
 
     void stream_finished(identifier_t) noexcept final;
-
-    void set_status(resource_status status) noexcept {
-        resource()._private_set_status(status);
-    }
 
     std::string _chunk_line;
 };
@@ -284,9 +277,11 @@ void url_list_resource::_loader::stream_finished(
     base::stream_finished(request_id);
 }
 //------------------------------------------------------------------------------
-auto url_list_resource::make_loader(resource_request_params params) noexcept
+auto url_list_resource::make_loader(
+  const shared_holder<loaded_resource_context>& ctx,
+  resource_request_params params) noexcept
   -> shared_holder<resource_interface::loader> {
-    return {hold<url_list_resource::_loader>, *this, std::move(params)};
+    return {hold<url_list_resource::_loader>, *this, ctx, std::move(params)};
 }
 //------------------------------------------------------------------------------
 // valtree_float_vector_builder
@@ -370,26 +365,17 @@ auto float_list_resource::kind() const noexcept -> identifier {
 struct float_list_resource::_loader final
   : simple_loader_of<float_list_resource> {
     using base = simple_loader_of<float_list_resource>;
-
-    _loader(
-      resource_interface& resource,
-      resource_request_params params) noexcept
-      : base{resource, std::move(params)}
-      , _visit{
-          valtree::make_building_value_tree_visitor(
-            {hold<valtree_float_vector_builder>}),
-          64} {}
+    using base::base;
 
     auto request_dependencies(resource_loader& loader) noexcept
       -> valid_if_not_zero<identifier_t> final;
 
-    void set_status(resource_status status) noexcept {
-        resource()._private_set_status(status);
-    }
-
     void resource_loaded(const load_info&) noexcept final;
 
-    visited_valtree_resource _visit;
+    visited_valtree_resource _visit{
+      valtree::make_building_value_tree_visitor(
+        {hold<valtree_float_vector_builder>}),
+      64};
 };
 //------------------------------------------------------------------------------
 auto float_list_resource::_loader::request_dependencies(
@@ -407,9 +393,11 @@ void float_list_resource::_loader::resource_loaded(
     base::resource_loaded(info);
 }
 //------------------------------------------------------------------------------
-auto float_list_resource::make_loader(resource_request_params params) noexcept
+auto float_list_resource::make_loader(
+  const shared_holder<loaded_resource_context>& ctx,
+  resource_request_params params) noexcept
   -> shared_holder<resource_interface::loader> {
-    return {hold<float_list_resource::_loader>, *this, std::move(params)};
+    return {hold<float_list_resource::_loader>, *this, ctx, std::move(params)};
 }
 //------------------------------------------------------------------------------
 // valtree_vec3_vector_builder
@@ -515,26 +503,17 @@ auto vec3_list_resource::kind() const noexcept -> identifier {
 struct vec3_list_resource::_loader final
   : simple_loader_of<vec3_list_resource> {
     using base = simple_loader_of<vec3_list_resource>;
-
-    _loader(
-      resource_interface& resource,
-      resource_request_params params) noexcept
-      : base{resource, std::move(params)}
-      , _visit{
-          valtree::make_building_value_tree_visitor(
-            {hold<valtree_vec3_vector_builder>}),
-          64} {}
+    using base::base;
 
     auto request_dependencies(resource_loader& loader) noexcept
       -> valid_if_not_zero<identifier_t> final;
 
-    void set_status(resource_status status) noexcept {
-        resource()._private_set_status(status);
-    }
-
     void resource_loaded(const load_info&) noexcept final;
 
-    visited_valtree_resource _visit;
+    visited_valtree_resource _visit{
+      valtree::make_building_value_tree_visitor(
+        {hold<valtree_vec3_vector_builder>}),
+      64};
 };
 //------------------------------------------------------------------------------
 auto vec3_list_resource::_loader::request_dependencies(
@@ -552,9 +531,11 @@ void vec3_list_resource::_loader::resource_loaded(
     base::resource_loaded(info);
 }
 //------------------------------------------------------------------------------
-auto vec3_list_resource::make_loader(resource_request_params params) noexcept
+auto vec3_list_resource::make_loader(
+  const shared_holder<loaded_resource_context>& ctx,
+  resource_request_params params) noexcept
   -> shared_holder<resource_interface::loader> {
-    return {hold<vec3_list_resource::_loader>, *this, std::move(params)};
+    return {hold<vec3_list_resource::_loader>, *this, ctx, std::move(params)};
 }
 //------------------------------------------------------------------------------
 // valtree_mat4_vector_builder
@@ -726,26 +707,17 @@ auto mat4_list_resource::kind() const noexcept -> identifier {
 struct mat4_list_resource::_loader final
   : simple_loader_of<mat4_list_resource> {
     using base = simple_loader_of<mat4_list_resource>;
-
-    _loader(
-      resource_interface& resource,
-      resource_request_params params) noexcept
-      : base{resource, std::move(params)}
-      , _visit{
-          valtree::make_building_value_tree_visitor(
-            {hold<valtree_mat4_vector_builder>}),
-          64} {}
+    using base::base;
 
     auto request_dependencies(resource_loader& loader) noexcept
       -> valid_if_not_zero<identifier_t> final;
 
-    void set_status(resource_status status) noexcept {
-        resource()._private_set_status(status);
-    }
-
     void resource_loaded(const load_info&) noexcept final;
 
-    visited_valtree_resource _visit;
+    visited_valtree_resource _visit{
+      valtree::make_building_value_tree_visitor(
+        {hold<valtree_mat4_vector_builder>}),
+      64};
 };
 //------------------------------------------------------------------------------
 auto mat4_list_resource::_loader::request_dependencies(
@@ -763,9 +735,127 @@ void mat4_list_resource::_loader::resource_loaded(
     base::resource_loaded(info);
 }
 //------------------------------------------------------------------------------
-auto mat4_list_resource::make_loader(resource_request_params params) noexcept
+auto mat4_list_resource::make_loader(
+  const shared_holder<loaded_resource_context>& ctx,
+  resource_request_params params) noexcept
   -> shared_holder<resource_interface::loader> {
-    return {hold<mat4_list_resource::_loader>, *this, std::move(params)};
+    return {hold<mat4_list_resource::_loader>, *this, ctx, std::move(params)};
+}
+//------------------------------------------------------------------------------
+// smooth_float_curve_resource
+//------------------------------------------------------------------------------
+auto smooth_float_curve_resource::kind() const noexcept -> identifier {
+    return "FloatCurve";
+}
+//------------------------------------------------------------------------------
+struct smooth_float_curve_resource::_loader final
+  : simple_loader_of<smooth_float_curve_resource> {
+    using base = simple_loader_of<smooth_float_curve_resource>;
+    using base::base;
+
+    auto request_dependencies(resource_loader& loader) noexcept
+      -> valid_if_not_zero<identifier_t> final;
+
+    void resource_loaded(const load_info&) noexcept final;
+
+    float_list_resource _cps;
+};
+//------------------------------------------------------------------------------
+auto smooth_float_curve_resource::_loader::request_dependencies(
+  resource_loader& res_loader) noexcept -> valid_if_not_zero<identifier_t> {
+    return _add_single_dependency(
+      res_loader.load(_cps, parameters()), res_loader);
+}
+//------------------------------------------------------------------------------
+void smooth_float_curve_resource::_loader::resource_loaded(
+  const load_info& info) noexcept {
+    resource()._private_ref() = {std::move(_cps.release_resource())};
+    base::resource_loaded(info);
+}
+//------------------------------------------------------------------------------
+auto smooth_float_curve_resource::make_loader(
+  const shared_holder<loaded_resource_context>& ctx,
+  resource_request_params params) noexcept
+  -> shared_holder<resource_interface::loader> {
+    return {
+      hold<smooth_float_curve_resource::_loader>, *this, ctx, std::move(params)};
+}
+//------------------------------------------------------------------------------
+// smooth_vec3_curve_resource
+//------------------------------------------------------------------------------
+auto smooth_vec3_curve_resource::kind() const noexcept -> identifier {
+    return "Vec3Curve";
+}
+//------------------------------------------------------------------------------
+struct smooth_vec3_curve_resource::_loader final
+  : simple_loader_of<smooth_vec3_curve_resource> {
+    using base = simple_loader_of<smooth_vec3_curve_resource>;
+    using base::base;
+
+    auto request_dependencies(resource_loader& loader) noexcept
+      -> valid_if_not_zero<identifier_t> final;
+
+    void resource_loaded(const load_info&) noexcept final;
+
+    vec3_list_resource _cps;
+};
+//------------------------------------------------------------------------------
+auto smooth_vec3_curve_resource::_loader::request_dependencies(
+  resource_loader& res_loader) noexcept -> valid_if_not_zero<identifier_t> {
+    return _add_single_dependency(
+      res_loader.load(_cps, parameters()), res_loader);
+}
+//------------------------------------------------------------------------------
+void smooth_vec3_curve_resource::_loader::resource_loaded(
+  const load_info& info) noexcept {
+    resource()._private_ref() = {std::move(_cps.release_resource())};
+    base::resource_loaded(info);
+}
+//------------------------------------------------------------------------------
+auto smooth_vec3_curve_resource::make_loader(
+  const shared_holder<loaded_resource_context>& ctx,
+  resource_request_params params) noexcept
+  -> shared_holder<resource_interface::loader> {
+    return {
+      hold<smooth_vec3_curve_resource::_loader>, *this, ctx, std::move(params)};
+}
+//------------------------------------------------------------------------------
+// glsl_string_resource
+//------------------------------------------------------------------------------
+auto glsl_string_resource::kind() const noexcept -> identifier {
+    return "GLSLString";
+}
+//------------------------------------------------------------------------------
+struct glsl_string_resource::_loader final
+  : simple_loader_of<glsl_string_resource> {
+    using base = simple_loader_of<glsl_string_resource>;
+    using base::base;
+
+    auto request_dependencies(resource_loader& loader) noexcept
+      -> valid_if_not_zero<identifier_t> final;
+
+    void resource_loaded(const load_info&) noexcept final;
+
+    plain_text_resource _text;
+};
+//------------------------------------------------------------------------------
+auto glsl_string_resource::_loader::request_dependencies(
+  resource_loader& res_loader) noexcept -> valid_if_not_zero<identifier_t> {
+    return _add_single_dependency(
+      res_loader.load(_text, parameters()), res_loader);
+}
+//------------------------------------------------------------------------------
+void glsl_string_resource::_loader::resource_loaded(
+  const load_info& info) noexcept {
+    resource()._private_ref() = {std::move(_text.release_resource())};
+    base::resource_loaded(info);
+}
+//------------------------------------------------------------------------------
+auto glsl_string_resource::make_loader(
+  const shared_holder<loaded_resource_context>& ctx,
+  resource_request_params params) noexcept
+  -> shared_holder<resource_interface::loader> {
+    return {hold<glsl_string_resource::_loader>, *this, ctx, std::move(params)};
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app::exp

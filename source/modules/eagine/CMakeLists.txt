@@ -152,7 +152,8 @@ eagine_add_module(
 		eagine.core.runtime
 		eagine.core.progress
 		eagine.core.main_ctx
-		eagine.msgbus)
+		eagine.msgbus
+		eagine.oglplus)
 
 eagine_add_module(
 	eagine.app
@@ -360,6 +361,7 @@ eagine_embed_target_resources(
 		TestThdn2 "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_thdn2.json"
 		TestPath  "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_path.json"
 		TestMesh  "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_mesh.json"
+		TestFragS "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_frag.glsl"
 	PACKED ENABLE_SEARCH)
 
 set_tests_properties(execute-test.eagine.app.resource_loader PROPERTIES COST 10)
