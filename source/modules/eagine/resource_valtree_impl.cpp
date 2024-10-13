@@ -26,6 +26,61 @@ import eagine.msgbus;
 
 namespace eagine::app::exp {
 //------------------------------------------------------------------------------
+// valtree_resource
+//------------------------------------------------------------------------------
+auto valtree_resource::kind() const noexcept -> identifier {
+    return "ValueTree";
+}
+//------------------------------------------------------------------------------
+struct valtree_resource::_loader final : simple_loader_of<valtree_resource> {
+    using base = simple_loader_of<valtree_resource>;
+    using base::base;
+
+    auto request_dependencies(resource_loader& loader) noexcept
+      -> valid_if_not_zero<identifier_t> final;
+
+    void resource_loaded(const load_info&) noexcept final;
+
+    plain_text_resource _text;
+};
+//------------------------------------------------------------------------------
+auto valtree_resource::_loader::request_dependencies(
+  resource_loader& res_loader) noexcept -> valid_if_not_zero<identifier_t> {
+    return _add_single_dependency(
+      res_loader.load(_text, parameters()), res_loader);
+}
+//------------------------------------------------------------------------------
+void valtree_resource::_loader::resource_loaded(const load_info& info) noexcept {
+    if(info.locator.has_path_suffix(".json") or info.locator.has_scheme("json")) {
+        if(auto tree{valtree::from_json_text(_text.get(), main_ctx::get())}) {
+            resource()._private_ref() = tree;
+            base::resource_loaded(info);
+            return;
+        }
+    }
+    if(info.locator.has_path_suffix(".yaml") or info.locator.has_scheme("yaml")) {
+        if(auto tree{valtree::from_yaml_text(_text.get(), main_ctx::get())}) {
+            resource()._private_ref() = tree;
+            base::resource_loaded(info);
+            return;
+        }
+    }
+}
+//------------------------------------------------------------------------------
+auto valtree_resource::make_loader(
+  const shared_holder<loaded_resource_context>& ctx,
+  resource_request_params params) noexcept
+  -> shared_holder<resource_interface::loader> {
+    if(
+      params.locator.has_path_suffix(".json") or
+      params.locator.has_scheme("json") or
+      params.locator.has_path_suffix(".yaml") or
+      params.locator.has_scheme("yaml")) {
+        return {hold<valtree_resource::_loader>, *this, ctx, std::move(params)};
+    }
+    return {};
+}
+//------------------------------------------------------------------------------
 // visited_valtree_resource
 //------------------------------------------------------------------------------
 auto visited_valtree_resource::kind() const noexcept -> identifier {

@@ -482,13 +482,67 @@ struct test_request_glsl_string : eagitest::app_case {
     bool content_is_ok{false};
 };
 //------------------------------------------------------------------------------
+// valtree text
+//------------------------------------------------------------------------------
+struct test_request_valtree : eagitest::app_case {
+    using launcher = eagitest::launcher<test_request_valtree>;
+
+    test_request_valtree(auto& s, auto& ec)
+      : eagitest::app_case{s, ec, 8, "value tree"}
+      , loader{context().loader()} {
+        loader.resource_loaded.connect(
+          make_callable_ref<&test_request_valtree::on_loaded>(this));
+        too_long.reset();
+    }
+
+    void on_loaded(
+      const eagine::app::resource_interface::load_info& info) noexcept {
+        const auto p{[](eagine::string_view str) {
+            return eagine::basic_string_path{str};
+        }};
+        load_signal_received = true;
+        locator_is_ok = info.locator.has_scheme("json") and
+                        info.locator.has_path("/TestThdn2");
+        content_is_ok = true;
+        content_is_ok = tree->find(p("apex")) and content_is_ok;
+        content_is_ok = tree->find(p("apex/x")) and content_is_ok;
+        content_is_ok = tree->find(p("apex/y")) and content_is_ok;
+        content_is_ok = tree->find(p("apex/z")) and content_is_ok;
+        content_is_ok = tree->find(p("base")) and content_is_ok;
+    }
+
+    auto is_done() noexcept -> bool final {
+        return too_long or tree.is_loaded();
+    }
+
+    void update() noexcept final {
+        loader.load_if_needed(tree, [] -> eagine::app::resource_request_params {
+            return {eagine::url{"json:///TestThdn2"}};
+        });
+    }
+
+    void clean_up() noexcept final {
+        check(tree.is_loaded(), "value tree is loaded");
+        check(load_signal_received, "load signal received");
+        check(locator_is_ok, "locator is ok");
+        check(content_is_ok, "content is ok");
+    }
+
+    eagine::app::resource_loader& loader;
+    eagine::timeout too_long{std::chrono::seconds{10}};
+    eagine::app::exp::valtree_resource tree;
+    bool load_signal_received{false};
+    bool locator_is_ok{false};
+    bool content_is_ok{false};
+};
+//------------------------------------------------------------------------------
 // main
 //------------------------------------------------------------------------------
 auto test_main(eagine::test_ctx& ctx) -> int {
     enable_message_bus(ctx);
     ctx.preinitialize();
 
-    eagitest::app_suite test{ctx, "resource loader", 7};
+    eagitest::app_suite test{ctx, "resource loader", 8};
     test.once<test_request_plain_text>();
     test.once<test_request_string_list>();
     test.once<test_request_url_list>();
@@ -496,6 +550,7 @@ auto test_main(eagine::test_ctx& ctx) -> int {
     test.once<test_request_vec3_list>();
     test.once<test_request_mat4_list>();
     test.once<test_request_glsl_string>();
+    test.once<test_request_valtree>();
     return test.exit_code();
 }
 //------------------------------------------------------------------------------

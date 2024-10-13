@@ -27,7 +27,21 @@ import :resource_loader;
 
 namespace eagine::app::exp {
 //------------------------------------------------------------------------------
-// visited valtree resource
+// value tree resource
+//------------------------------------------------------------------------------
+export class valtree_resource final
+  : public simple_resource<valtree::compound> {
+public:
+    auto kind() const noexcept -> identifier final;
+
+    auto make_loader(
+      const shared_holder<loaded_resource_context>&,
+      resource_request_params params) noexcept -> shared_holder<loader> final;
+
+    struct _loader;
+};
+//------------------------------------------------------------------------------
+// visited value tree resource
 //------------------------------------------------------------------------------
 export class visited_valtree_resource final : public resource_interface {
 public:
