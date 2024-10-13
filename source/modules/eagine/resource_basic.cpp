@@ -22,6 +22,7 @@ import eagine.core.runtime;
 import eagine.core.progress;
 import eagine.core.main_ctx;
 import eagine.msgbus;
+import eagine.shapes;
 import eagine.oglplus;
 import :resource_loader;
 
@@ -143,6 +144,20 @@ public:
 //------------------------------------------------------------------------------
 export class glsl_string_resource final
   : public simple_resource<oglplus::glsl_string> {
+public:
+    auto kind() const noexcept -> identifier final;
+
+    auto make_loader(
+      const shared_holder<loaded_resource_context>&,
+      resource_request_params params) noexcept -> shared_holder<loader> final;
+
+    struct _loader;
+};
+//------------------------------------------------------------------------------
+// shape_generator_resource
+//------------------------------------------------------------------------------
+export class shape_generator_resource final
+  : public simple_resource<shared_holder<shapes::generator>> {
 public:
     auto kind() const noexcept -> identifier final;
 

@@ -171,6 +171,7 @@ eagine_add_module(
 		eagine.core.progress
 		eagine.core.main_ctx
 		eagine.msgbus
+		eagine.shapes
 		eagine.oglplus)
 
 eagine_add_module(

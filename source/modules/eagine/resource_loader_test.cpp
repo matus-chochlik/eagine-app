@@ -536,13 +536,76 @@ struct test_request_valtree : eagitest::app_case {
     bool content_is_ok{false};
 };
 //------------------------------------------------------------------------------
+// shape generator
+//------------------------------------------------------------------------------
+struct test_request_shape_generator : eagitest::app_case {
+    using launcher = eagitest::launcher<test_request_shape_generator>;
+
+    test_request_shape_generator(auto& s, auto& ec)
+      : eagitest::app_case{s, ec, 9, "shape generator"}
+      , loader{context().loader()} {
+        loader.resource_loaded.connect(
+          make_callable_ref<&test_request_shape_generator::on_loaded>(this));
+        too_long.reset();
+    }
+
+    void on_loaded(
+      const eagine::app::resource_interface::load_info& info) noexcept {
+        using eagine::shapes::vertex_attrib_kind;
+        load_signal_received = true;
+        locator_is_ok = info.locator.has_scheme("json") and
+                        info.locator.has_path("/TestMesh");
+        content_is_ok = true;
+        content_is_ok = content_is_ok and (mesh.get()->vertex_count() == 4);
+        content_is_ok = content_is_ok and (mesh.get()->index_count() == 12);
+        content_is_ok =
+          content_is_ok and (mesh.get()->index_type() ==
+                             eagine::shapes::index_data_type::unsigned_16);
+        content_is_ok = content_is_ok and
+                        (mesh.get()->has_variant(vertex_attrib_kind::position));
+        content_is_ok =
+          content_is_ok and
+          (mesh.get()->has_variant({vertex_attrib_kind::color, 0}));
+        content_is_ok =
+          content_is_ok and
+          (mesh.get()->has_variant({vertex_attrib_kind::color, 1}));
+        content_is_ok =
+          content_is_ok and
+          (mesh.get()->has_variant(vertex_attrib_kind::occlusion));
+    }
+
+    auto is_done() noexcept -> bool final {
+        return too_long or mesh.is_loaded();
+    }
+
+    void update() noexcept final {
+        loader.load_if_needed(mesh, [] -> eagine::app::resource_request_params {
+            return {eagine::url{"json:///TestMesh"}};
+        });
+    }
+
+    void clean_up() noexcept final {
+        check(mesh.is_loaded(), "mesh is loaded");
+        check(load_signal_received, "load signal received");
+        check(locator_is_ok, "locator is ok");
+        check(content_is_ok, "content is ok");
+    }
+
+    eagine::app::resource_loader& loader;
+    eagine::timeout too_long{std::chrono::seconds{10}};
+    eagine::app::exp::shape_generator_resource mesh;
+    bool load_signal_received{false};
+    bool locator_is_ok{false};
+    bool content_is_ok{false};
+};
+//------------------------------------------------------------------------------
 // main
 //------------------------------------------------------------------------------
 auto test_main(eagine::test_ctx& ctx) -> int {
     enable_message_bus(ctx);
     ctx.preinitialize();
 
-    eagitest::app_suite test{ctx, "resource loader", 8};
+    eagitest::app_suite test{ctx, "resource loader", 9};
     test.once<test_request_plain_text>();
     test.once<test_request_string_list>();
     test.once<test_request_url_list>();
@@ -551,6 +614,7 @@ auto test_main(eagine::test_ctx& ctx) -> int {
     test.once<test_request_mat4_list>();
     test.once<test_request_glsl_string>();
     test.once<test_request_valtree>();
+    test.once<test_request_shape_generator>();
     return test.exit_code();
 }
 //------------------------------------------------------------------------------

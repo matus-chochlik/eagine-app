@@ -73,10 +73,10 @@ public:
     struct loader : abstract<loader> {
         loader(
           resource_interface& resource,
-          shared_holder<loaded_resource_context> context,
+          const shared_holder<loaded_resource_context>& context,
           resource_request_params params) noexcept
           : _resource{resource}
-          , _context{std::move(context)}
+          , _context{context}
           , _params{std::move(params)} {}
 
         /// @brief Returns the resource_loader identifier for the associated request.
