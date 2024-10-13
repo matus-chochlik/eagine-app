@@ -18,6 +18,7 @@ export import :old_resource_loader;
 export import :resource_loader;
 export import :resource_valtree;
 export import :resource_basic;
+export import :resource_gl;
 export import :resource_mapped;
 export import :loaded_resource;
 export import :context;

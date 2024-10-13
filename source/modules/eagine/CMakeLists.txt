@@ -177,6 +177,25 @@ eagine_add_module(
 eagine_add_module(
 	eagine.app
 	COMPONENT app-dev
+	PARTITION resource_gl
+	IMPORTS
+		resource_loader
+		std
+		eagine.core.types
+		eagine.core.memory
+		eagine.core.string
+		eagine.core.identifier
+		eagine.core.utility
+		eagine.core.runtime
+		eagine.core.progress
+		eagine.core.main_ctx
+		eagine.msgbus
+		eagine.shapes
+		eagine.oglplus)
+
+eagine_add_module(
+	eagine.app
+	COMPONENT app-dev
 	PARTITION resource_mapped
 	IMPORTS
 		resource_loader
@@ -323,6 +342,7 @@ eagine_add_module(
 		resource_loader
 		resource_valtree
 		resource_basic
+		resource_gl
 		resource_builders
 		resource_gl_builders
 		context

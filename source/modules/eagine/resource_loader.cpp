@@ -30,9 +30,8 @@ import eagine.msgbus;
 
 namespace eagine {
 namespace app {
-namespace exp {
-//------------------------------------------------------------------------------
 export class loaded_resource_context;
+namespace exp {
 //------------------------------------------------------------------------------
 /// @brief Resource loading status.
 /// @see resource_loader
@@ -82,6 +81,12 @@ public:
         /// @brief Returns the resource_loader identifier for the associated request.
         auto request_id() const noexcept -> identifier_t {
             return _request_id;
+        }
+
+        /// @brief Returns a reference to the resource context (if any).
+        auto resource_context() const noexcept
+          -> optional_reference<loaded_resource_context> {
+            return _context.ref();
         }
 
         /// @brief Returns the associated resource request parameters.
