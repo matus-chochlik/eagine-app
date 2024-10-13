@@ -430,9 +430,12 @@ inline auto make_all_hmi_providers(main_ctx_parent parent)
 //------------------------------------------------------------------------------
 execution_context::execution_context(main_ctx_parent parent) noexcept
   : main_ctx_object("AppExecCtx", parent)
-  , _resource_context{
-      _registry.emplace<old_resource_loader>("ORsrLoadr"),
-      _registry.emplace<resource_loader>("RsrsLoadr")} {}
+  , _resource_manager{
+      default_selector,
+      shared_holder<loaded_resource_context>{
+        default_selector,
+        _registry.emplace<old_resource_loader>("ORsrLoadr"),
+        _registry.emplace<resource_loader>("RsrsLoadr")}} {}
 //------------------------------------------------------------------------------
 inline auto execution_context::_setup_providers() noexcept -> bool {
     const auto try_init{[&](auto provider) -> bool {
@@ -493,9 +496,14 @@ inline auto execution_context::_setup_providers() noexcept -> bool {
     return true;
 }
 //------------------------------------------------------------------------------
+auto execution_context::resources() noexcept -> resource_manager& {
+    assert(_resource_manager);
+    return *_resource_manager;
+}
+//------------------------------------------------------------------------------
 auto execution_context::resource_context() noexcept
   -> loaded_resource_context& {
-    return _resource_context;
+    return resources().resource_context();
 }
 //------------------------------------------------------------------------------
 auto execution_context::old_loader() noexcept -> old_resource_loader& {
@@ -544,8 +552,8 @@ auto execution_context::main_video() const noexcept -> video_context& {
 //------------------------------------------------------------------------------
 auto execution_context::gl_initialized(video_context& video) noexcept
   -> execution_context& {
-    if(not _resource_context.gl_context()) {
-        _resource_context.set(video.gl_context());
+    if(not resource_context().gl_context()) {
+        resource_context().set(video.gl_context());
     }
     return *this;
 }
@@ -570,8 +578,8 @@ auto execution_context::main_audio() const noexcept -> audio_context& {
 //------------------------------------------------------------------------------
 auto execution_context::al_initialized(audio_context& audio) noexcept
   -> execution_context& {
-    if(not _resource_context.al_context()) {
-        _resource_context.set(audio.al_context());
+    if(not resource_context().al_context()) {
+        resource_context().set(audio.al_context());
     }
     return *this;
 }
@@ -665,6 +673,7 @@ void execution_context::update() noexcept {
     static const auto exec_time_id{register_time_interval("appUpdate")};
     const auto exec_time{measure_time_interval(exec_time_id)};
     _registry.update_and_process();
+    _resource_manager->update();
     _state->update_activity();
     for(auto& provider : _hmi_providers) {
         provider->update(*this, *_app);

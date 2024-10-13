@@ -315,7 +315,7 @@ eagine_add_module(
 eagine_add_module(
 	eagine.app
 	COMPONENT app-dev
-	PARTITION resource_manager
+	PARTITION old_resource_manager
 	IMPORTS
 		std loaded_resource geometry
 		context old_resource_loader
@@ -326,6 +326,21 @@ eagine_add_module(
 		eagine.core.container
 		eagine.core.value_tree
 		eagine.oglplus)
+
+eagine_add_module(
+	eagine.app
+	COMPONENT app-dev
+	PARTITION resource_manager
+	IMPORTS
+		std context
+		resource_loader
+		resource_mapped
+		eagine.core.types
+		eagine.core.utility
+		eagine.core.runtime
+		eagine.core.container
+		eagine.core.identifier
+		eagine.core.main_ctx)
 
 eagine_add_module(
 	eagine.app
@@ -343,6 +358,7 @@ eagine_add_module(
 		resource_valtree
 		resource_basic
 		resource_gl_shader
+		resource_manager
 		resource_builders
 		resource_gl_builders
 		context
@@ -407,6 +423,14 @@ eagine_embed_target_resources(
 set_tests_properties(execute-test.eagine.app.resource_loader PROPERTIES COST 10)
 
 eagine_embed_target_resources(
+	TARGET test.eagine.app.resource_manager
+	RESOURCES
+		TestText  "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_text.txt"
+	PACKED ENABLE_SEARCH)
+
+set_tests_properties(execute-test.eagine.app.resource_manager PROPERTIES COST 10)
+
+eagine_embed_target_resources(
 	TARGET test.eagine.app.old_resource_loader
 	RESOURCES
 		TestText  "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_text.txt"
@@ -421,15 +445,6 @@ eagine_embed_target_resources(
 	PACKED ENABLE_SEARCH)
 
 set_tests_properties(execute-test.eagine.app.old_resource_loader PROPERTIES COST 10)
-
-eagine_embed_target_resources(
-	TARGET test.eagine.app.resource_manager
-	RESOURCES
-		TestThdn1 "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_thdn1.json"
-		TestThdn2 "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_thdn2.json"
-	PACKED ENABLE_SEARCH)
-
-set_tests_properties(execute-test.eagine.app.resource_manager PROPERTIES COST 10)
 
 add_subdirectory(resource_provider)
 

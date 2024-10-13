@@ -279,6 +279,11 @@ public:
     signal<void(const resource_interface::load_info&) noexcept>
       resource_cancelled;
 
+    auto load_any(
+      resource_interface& resource,
+      const shared_holder<loaded_resource_context>& context,
+      resource_request_params params) noexcept -> identifier_t;
+
     /// @brief Loads the specified resource in context with the specified parameters.
     /// @see load_if_needed
     /// @note The resource may not get destroyed while it is being loaded.
@@ -287,13 +292,7 @@ public:
       Resource& resource,
       const shared_holder<loaded_resource_context>& context,
       resource_request_params params) noexcept -> identifier_t {
-        if(auto loader{
-             resource.make_loader(as_parent(), context, std::move(params))}) {
-            if(const auto req_id{loader->request_dependencies(*this)}) {
-                return req_id.value_anyway();
-            }
-        }
-        return {};
+        return load_any(resource, context, std::move(params));
     }
 
     /// @brief Loads the specified resource with the specified parameters.

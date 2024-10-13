@@ -64,6 +64,7 @@ public:
       , _ec{ec} {}
 
     void on_video_resize() noexcept override {}
+    void update() noexcept override {}
 
     auto suite() const noexcept -> app_suite& {
         return _suite;

@@ -31,6 +31,11 @@ import :resource_loader;
 import :old_resource_loader;
 
 namespace eagine::app {
+namespace exp {
+export class resource_manager;
+} // namespace exp
+export using exp::resource_manager;
+//------------------------------------------------------------------------------
 export class video_context_state;
 //------------------------------------------------------------------------------
 /// @brief Class holding video rendering-related application support objects.
@@ -381,6 +386,9 @@ public:
     /// @brief Returns a reference to the resource loader.
     [[nodiscard]] auto loader() noexcept -> resource_loader&;
 
+    /// @brief Returns a reference to the resource manager.
+    [[nodiscard]] auto resources() noexcept -> resource_manager&;
+
     /// @brief Returns a references to a multi-purpose memory buffer.
     [[nodiscard]] auto buffer() const noexcept -> memory::buffer&;
 
@@ -691,10 +699,9 @@ private:
     int _exec_result{0};
     launch_options _options{*this};
     msgbus::registry _registry{*this};
+    shared_holder<resource_manager> _resource_manager;
     shared_holder<context_state> _state;
     unique_holder<application> _app;
-
-    loaded_resource_context _resource_context;
 
     std::vector<shared_holder<hmi_provider>> _hmi_providers;
     std::vector<shared_holder<input_provider>> _input_providers;
