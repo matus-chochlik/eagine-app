@@ -342,7 +342,7 @@ eagine_add_module(
 		resource_loader
 		resource_valtree
 		resource_basic
-		resource_gl
+		resource_gl_shader
 		resource_builders
 		resource_gl_builders
 		context

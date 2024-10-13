@@ -39,5 +39,21 @@ public:
     struct _loader;
 };
 //------------------------------------------------------------------------------
+// gl_shader_resource
+//------------------------------------------------------------------------------
+export class gl_shader_resource final
+  : public simple_resource<oglplus::owned_shader_name> {
+public:
+    auto kind() const noexcept -> identifier final;
+
+    auto make_loader(
+      const shared_holder<loaded_resource_context>&,
+      resource_request_params params) noexcept -> shared_holder<loader> final;
+
+    void clean_up(loaded_resource_context&) noexcept final;
+
+    struct _loader;
+};
+//------------------------------------------------------------------------------
 } // namespace eagine::app::exp
 
