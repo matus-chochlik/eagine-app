@@ -69,6 +69,7 @@ void valtree_resource::_loader::resource_loaded(const load_info& info) noexcept 
 }
 //------------------------------------------------------------------------------
 auto valtree_resource::make_loader(
+  main_ctx_parent parent,
   const shared_holder<loaded_resource_context>& ctx,
   resource_request_params params) noexcept
   -> shared_holder<resource_interface::loader> {
@@ -77,7 +78,12 @@ auto valtree_resource::make_loader(
       params.locator.has_scheme("json") or
       params.locator.has_path_suffix(".yaml") or
       params.locator.has_scheme("yaml")) {
-        return {hold<valtree_resource::_loader>, *this, ctx, std::move(params)};
+        return {
+          hold<valtree_resource::_loader>,
+          parent,
+          *this,
+          ctx,
+          std::move(params)};
     }
     return {};
 }
@@ -94,11 +100,12 @@ struct visited_valtree_resource::_loader final
     using base::base;
 
     _loader(
+      main_ctx_parent parent,
       resource_interface& resource,
       const shared_holder<loaded_resource_context>& context,
       resource_request_params params,
       valtree::value_tree_stream_input input) noexcept
-      : base{resource, context, std::move(params)}
+      : base{parent, resource, context, std::move(params)}
       , _input{std::move(input)} {}
 
     auto request_dependencies(resource_loader& loader) noexcept
@@ -140,6 +147,7 @@ void visited_valtree_resource::_loader::stream_finished(
 }
 //------------------------------------------------------------------------------
 auto visited_valtree_resource::make_loader(
+  main_ctx_parent parent,
   const shared_holder<loaded_resource_context>& context,
   resource_request_params params) noexcept
   -> shared_holder<resource_interface::loader> {
@@ -148,6 +156,7 @@ auto visited_valtree_resource::make_loader(
       params.locator.has_scheme("json")) {
         return {
           hold<visited_valtree_resource::_loader>,
+          parent,
           *this,
           context,
           std::move(params),
@@ -162,6 +171,7 @@ auto visited_valtree_resource::make_loader(
       params.locator.has_scheme("yaml")) {
         return {
           hold<visited_valtree_resource::_loader>,
+          parent,
           *this,
           context,
           std::move(params),

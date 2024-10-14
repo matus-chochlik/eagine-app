@@ -31,6 +31,7 @@ public:
     auto kind() const noexcept -> identifier final;
 
     auto make_loader(
+      main_ctx_parent,
       const shared_holder<loaded_resource_context>&,
       resource_request_params params) noexcept -> shared_holder<loader> final;
 
@@ -45,6 +46,7 @@ public:
     auto kind() const noexcept -> identifier final;
 
     auto make_loader(
+      main_ctx_parent,
       const shared_holder<loaded_resource_context>&,
       resource_request_params params) noexcept -> shared_holder<loader> final;
 
@@ -59,6 +61,7 @@ public:
     auto kind() const noexcept -> identifier final;
 
     auto make_loader(
+      main_ctx_parent,
       const shared_holder<loaded_resource_context>&,
       resource_request_params params) noexcept -> shared_holder<loader> final;
 
@@ -73,6 +76,7 @@ public:
     auto kind() const noexcept -> identifier final;
 
     auto make_loader(
+      main_ctx_parent,
       const shared_holder<loaded_resource_context>&,
       resource_request_params params) noexcept -> shared_holder<loader> final;
 
@@ -87,6 +91,7 @@ public:
     auto kind() const noexcept -> identifier final;
 
     auto make_loader(
+      main_ctx_parent,
       const shared_holder<loaded_resource_context>&,
       resource_request_params params) noexcept -> shared_holder<loader> final;
 
@@ -101,6 +106,7 @@ public:
     auto kind() const noexcept -> identifier final;
 
     auto make_loader(
+      main_ctx_parent,
       const shared_holder<loaded_resource_context>&,
       resource_request_params params) noexcept -> shared_holder<loader> final;
 
@@ -115,6 +121,7 @@ public:
     auto kind() const noexcept -> identifier final;
 
     auto make_loader(
+      main_ctx_parent,
       const shared_holder<loaded_resource_context>&,
       resource_request_params params) noexcept -> shared_holder<loader> final;
 
@@ -130,6 +137,7 @@ public:
     auto kind() const noexcept -> identifier final;
 
     auto make_loader(
+      main_ctx_parent,
       const shared_holder<loaded_resource_context>&,
       resource_request_params params) noexcept -> shared_holder<loader> final;
 
@@ -144,6 +152,7 @@ public:
     auto kind() const noexcept -> identifier final;
 
     auto make_loader(
+      main_ctx_parent,
       const shared_holder<loaded_resource_context>&,
       resource_request_params params) noexcept -> shared_holder<loader> final;
 
@@ -158,6 +167,7 @@ public:
     auto kind() const noexcept -> identifier final;
 
     auto make_loader(
+      main_ctx_parent,
       const shared_holder<loaded_resource_context>&,
       resource_request_params params) noexcept -> shared_holder<loader> final;
 

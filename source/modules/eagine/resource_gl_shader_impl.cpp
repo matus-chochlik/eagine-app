@@ -67,12 +67,14 @@ void gl_shader_include_resource::_loader::resource_loaded(
 }
 //------------------------------------------------------------------------------
 auto gl_shader_include_resource::make_loader(
+  main_ctx_parent parent,
   const shared_holder<loaded_resource_context>& context,
   resource_request_params params) noexcept
   -> shared_holder<resource_interface::loader> {
     if(context and context->gl_context()) {
         return {
           hold<gl_shader_include_resource::_loader>,
+          parent,
           *this,
           context,
           std::move(params)};
@@ -182,12 +184,17 @@ void gl_shader_resource::_loader::resource_loaded(
 }
 //------------------------------------------------------------------------------
 auto gl_shader_resource::make_loader(
+  main_ctx_parent parent,
   const shared_holder<loaded_resource_context>& context,
   resource_request_params params) noexcept
   -> shared_holder<resource_interface::loader> {
     if(context and context->gl_context()) {
         return {
-          hold<gl_shader_resource::_loader>, *this, context, std::move(params)};
+          hold<gl_shader_resource::_loader>,
+          parent,
+          *this,
+          context,
+          std::move(params)};
     }
     return {};
 }

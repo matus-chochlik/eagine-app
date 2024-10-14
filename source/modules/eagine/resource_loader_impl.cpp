@@ -33,6 +33,16 @@ void resource_interface::clean_up(loaded_resource_context&) noexcept {}
 //------------------------------------------------------------------------------
 // resource_interface::loader
 //------------------------------------------------------------------------------
+resource_interface::loader::loader(
+  main_ctx_parent parent,
+  resource_interface& resource,
+  const shared_holder<loaded_resource_context>& context,
+  resource_request_params params) noexcept
+  : main_ctx_object{"RsrcLoader", parent}
+  , _resource{resource}
+  , _context{context}
+  , _params{std::move(params)} {}
+//------------------------------------------------------------------------------
 void resource_interface::loader::stream_data_appended(
   const msgbus::blob_stream_chunk&) noexcept {}
 //------------------------------------------------------------------------------

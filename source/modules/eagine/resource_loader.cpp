@@ -69,14 +69,15 @@ public:
     /// @brief Base class for resource-specific temporary loader objects.
     /// @see make_loader
     /// @note Do not construct and use directly, use resource_loader instead.
-    struct loader : abstract<loader> {
+    struct loader
+      : abstract<loader>
+      , main_ctx_object {
+
         loader(
+          main_ctx_parent parent,
           resource_interface& resource,
           const shared_holder<loaded_resource_context>& context,
-          resource_request_params params) noexcept
-          : _resource{resource}
-          , _context{context}
-          , _params{std::move(params)} {}
+          resource_request_params params) noexcept;
 
         /// @brief Returns the resource_loader identifier for the associated request.
         auto request_id() const noexcept -> identifier_t {
@@ -181,6 +182,7 @@ public:
     /// @brief Constructs a temporary resource-specific loader object.
     /// @note Do not use directly, use resource_loader instead.
     virtual auto make_loader(
+      main_ctx_parent,
       const shared_holder<loaded_resource_context>&,
       resource_request_params params) noexcept -> shared_holder<loader> = 0;
 
@@ -285,7 +287,8 @@ public:
       Resource& resource,
       const shared_holder<loaded_resource_context>& context,
       resource_request_params params) noexcept -> identifier_t {
-        if(auto loader{resource.make_loader(context, std::move(params))}) {
+        if(auto loader{
+             resource.make_loader(as_parent(), context, std::move(params))}) {
             if(const auto req_id{loader->request_dependencies(*this)}) {
                 return req_id.value_anyway();
             }

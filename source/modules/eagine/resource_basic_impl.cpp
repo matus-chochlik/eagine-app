@@ -86,10 +86,12 @@ void plain_text_resource::_loader::stream_data_appended(
 }
 //------------------------------------------------------------------------------
 auto plain_text_resource::make_loader(
+  main_ctx_parent parent,
   const shared_holder<loaded_resource_context>& ctx,
   resource_request_params params) noexcept
   -> shared_holder<resource_interface::loader> {
-    return {hold<plain_text_resource::_loader>, *this, ctx, std::move(params)};
+    return {
+      hold<plain_text_resource::_loader>, parent, *this, ctx, std::move(params)};
 }
 //------------------------------------------------------------------------------
 // string_list_resource
@@ -135,10 +137,16 @@ void string_list_resource::_loader::stream_finished(
 }
 //------------------------------------------------------------------------------
 auto string_list_resource::make_loader(
+  main_ctx_parent parent,
   const shared_holder<loaded_resource_context>& ctx,
   resource_request_params params) noexcept
   -> shared_holder<resource_interface::loader> {
-    return {hold<string_list_resource::_loader>, *this, ctx, std::move(params)};
+    return {
+      hold<string_list_resource::_loader>,
+      parent,
+      *this,
+      ctx,
+      std::move(params)};
 }
 //------------------------------------------------------------------------------
 // url_list_resource
@@ -187,10 +195,12 @@ void url_list_resource::_loader::stream_finished(
 }
 //------------------------------------------------------------------------------
 auto url_list_resource::make_loader(
+  main_ctx_parent parent,
   const shared_holder<loaded_resource_context>& ctx,
   resource_request_params params) noexcept
   -> shared_holder<resource_interface::loader> {
-    return {hold<url_list_resource::_loader>, *this, ctx, std::move(params)};
+    return {
+      hold<url_list_resource::_loader>, parent, *this, ctx, std::move(params)};
 }
 //------------------------------------------------------------------------------
 // valtree_float_vector_builder
@@ -303,10 +313,12 @@ void float_list_resource::_loader::resource_loaded(
 }
 //------------------------------------------------------------------------------
 auto float_list_resource::make_loader(
+  main_ctx_parent parent,
   const shared_holder<loaded_resource_context>& ctx,
   resource_request_params params) noexcept
   -> shared_holder<resource_interface::loader> {
-    return {hold<float_list_resource::_loader>, *this, ctx, std::move(params)};
+    return {
+      hold<float_list_resource::_loader>, parent, *this, ctx, std::move(params)};
 }
 //------------------------------------------------------------------------------
 // valtree_vec3_vector_builder
@@ -441,10 +453,12 @@ void vec3_list_resource::_loader::resource_loaded(
 }
 //------------------------------------------------------------------------------
 auto vec3_list_resource::make_loader(
+  main_ctx_parent parent,
   const shared_holder<loaded_resource_context>& ctx,
   resource_request_params params) noexcept
   -> shared_holder<resource_interface::loader> {
-    return {hold<vec3_list_resource::_loader>, *this, ctx, std::move(params)};
+    return {
+      hold<vec3_list_resource::_loader>, parent, *this, ctx, std::move(params)};
 }
 //------------------------------------------------------------------------------
 // valtree_mat4_vector_builder
@@ -645,10 +659,12 @@ void mat4_list_resource::_loader::resource_loaded(
 }
 //------------------------------------------------------------------------------
 auto mat4_list_resource::make_loader(
+  main_ctx_parent parent,
   const shared_holder<loaded_resource_context>& ctx,
   resource_request_params params) noexcept
   -> shared_holder<resource_interface::loader> {
-    return {hold<mat4_list_resource::_loader>, *this, ctx, std::move(params)};
+    return {
+      hold<mat4_list_resource::_loader>, parent, *this, ctx, std::move(params)};
 }
 //------------------------------------------------------------------------------
 // smooth_float_curve_resource
@@ -683,11 +699,16 @@ void smooth_float_curve_resource::_loader::resource_loaded(
 }
 //------------------------------------------------------------------------------
 auto smooth_float_curve_resource::make_loader(
+  main_ctx_parent parent,
   const shared_holder<loaded_resource_context>& ctx,
   resource_request_params params) noexcept
   -> shared_holder<resource_interface::loader> {
     return {
-      hold<smooth_float_curve_resource::_loader>, *this, ctx, std::move(params)};
+      hold<smooth_float_curve_resource::_loader>,
+      parent,
+      *this,
+      ctx,
+      std::move(params)};
 }
 //------------------------------------------------------------------------------
 // smooth_vec3_curve_resource
@@ -722,11 +743,16 @@ void smooth_vec3_curve_resource::_loader::resource_loaded(
 }
 //------------------------------------------------------------------------------
 auto smooth_vec3_curve_resource::make_loader(
+  main_ctx_parent parent,
   const shared_holder<loaded_resource_context>& ctx,
   resource_request_params params) noexcept
   -> shared_holder<resource_interface::loader> {
     return {
-      hold<smooth_vec3_curve_resource::_loader>, *this, ctx, std::move(params)};
+      hold<smooth_vec3_curve_resource::_loader>,
+      parent,
+      *this,
+      ctx,
+      std::move(params)};
 }
 //------------------------------------------------------------------------------
 // glsl_string_resource
@@ -761,10 +787,16 @@ void glsl_string_resource::_loader::resource_loaded(
 }
 //------------------------------------------------------------------------------
 auto glsl_string_resource::make_loader(
+  main_ctx_parent parent,
   const shared_holder<loaded_resource_context>& ctx,
   resource_request_params params) noexcept
   -> shared_holder<resource_interface::loader> {
-    return {hold<glsl_string_resource::_loader>, *this, ctx, std::move(params)};
+    return {
+      hold<glsl_string_resource::_loader>,
+      parent,
+      *this,
+      ctx,
+      std::move(params)};
 }
 //------------------------------------------------------------------------------
 // shape_generator_resource
@@ -778,6 +810,7 @@ struct shape_generator_resource::_loader final
     using base = simple_loader_of<shape_generator_resource>;
 
     _loader(
+      main_ctx_parent,
       resource_interface& resource,
       const shared_holder<loaded_resource_context>& context,
       resource_request_params params) noexcept;
@@ -791,10 +824,11 @@ struct shape_generator_resource::_loader final
 };
 //------------------------------------------------------------------------------
 shape_generator_resource::_loader::_loader(
+  main_ctx_parent parent,
   resource_interface& resource,
   const shared_holder<loaded_resource_context>& context,
   resource_request_params params) noexcept
-  : base{resource, context, std::move(params)} {
+  : base{parent, resource, context, std::move(params)} {
     if(auto gen{shapes::shape_from(params.locator, main_ctx::get())}) {
         this->resource()._private_ref() = std::move(gen);
         this->resource()._private_set_status(resource_status::loaded);
@@ -822,11 +856,16 @@ void shape_generator_resource::_loader::resource_loaded(
 }
 //------------------------------------------------------------------------------
 auto shape_generator_resource::make_loader(
+  main_ctx_parent parent,
   const shared_holder<loaded_resource_context>& ctx,
   resource_request_params params) noexcept
   -> shared_holder<resource_interface::loader> {
     return {
-      hold<shape_generator_resource::_loader>, *this, ctx, std::move(params)};
+      hold<shape_generator_resource::_loader>,
+      parent,
+      *this,
+      ctx,
+      std::move(params)};
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app::exp
