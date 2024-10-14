@@ -29,7 +29,7 @@ private:
     void _on_tex_loaded(const gl_texture_resource::load_info&) noexcept;
 
     video_context& _video;
-    resource_manager _resources;
+    old_resource_manager _resources;
     managed_gl_program _prog;
     managed_gl_geometry_and_bindings _crate;
     managed_gl_texture _color_tex;

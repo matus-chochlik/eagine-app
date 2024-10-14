@@ -22,6 +22,7 @@ export import :resource_gl;
 export import :resource_mapped;
 export import :loaded_resource;
 export import :context;
+export import :old_resource_manager;
 export import :resource_manager;
 export import :main;
 export import :framebuffer;

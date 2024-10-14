@@ -87,6 +87,19 @@ resource_loader::resource_loader(msgbus::endpoint& bus)
       this, blob_stream_cancelled);
 }
 //------------------------------------------------------------------------------
+auto resource_loader::load_any(
+  resource_interface& resource,
+  const shared_holder<loaded_resource_context>& context,
+  resource_request_params params) noexcept -> identifier_t {
+    if(auto loader{
+         resource.make_loader(as_parent(), context, std::move(params))}) {
+        if(const auto req_id{loader->request_dependencies(*this)}) {
+            return req_id.value_anyway();
+        }
+    }
+    return {};
+}
+//------------------------------------------------------------------------------
 auto resource_loader::update_and_process_all() noexcept -> work_done {
     some_true something_done{base::update_and_process_all()};
 
