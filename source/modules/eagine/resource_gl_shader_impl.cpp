@@ -93,7 +93,7 @@ void gl_shader_include_resource::clean_up(
 // gl_shader_resource
 //------------------------------------------------------------------------------
 auto gl_shader_resource::kind() const noexcept -> identifier {
-    return "GLShdrIncl";
+    return "GLShader";
 }
 //------------------------------------------------------------------------------
 struct gl_shader_resource::_loader final

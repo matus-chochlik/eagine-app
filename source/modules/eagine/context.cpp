@@ -315,6 +315,17 @@ public:
         return _loader.get();
     }
 
+    /// @brief Optional reference to a resource's parent manager.
+    [[nodiscard]] auto manager() const noexcept
+      -> optional_reference<resource_manager> {
+        return _manager;
+    }
+
+    auto set(resource_manager& manager) noexcept -> loaded_resource_context& {
+        _manager = manager;
+        return *this;
+    }
+
     auto set(const oglplus::shared_gl_api_context& gl_context) noexcept
       -> loaded_resource_context& {
         _gl_context = gl_context;
@@ -352,6 +363,7 @@ public:
 private:
     std::reference_wrapper<old_resource_loader> _old_loader;
     std::reference_wrapper<resource_loader> _loader;
+    optional_reference<resource_manager> _manager;
     oglplus::shared_gl_api_context _gl_context;
     oalplus::shared_al_api_context _al_context;
 };

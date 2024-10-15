@@ -47,7 +47,10 @@ auto managed_resource_info::load_if_needed(
 //------------------------------------------------------------------------------
 resource_manager::resource_manager(
   shared_holder<loaded_resource_context> context) noexcept
-  : _context{std::move(context)} {}
+  : _context{std::move(context)} {
+    assert(_context);
+    _context->set(*this);
+}
 //------------------------------------------------------------------------------
 auto resource_manager::_ensure_info(resource_identifier res_id) noexcept
   -> const shared_holder<managed_resource_info>& {
