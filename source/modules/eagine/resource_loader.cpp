@@ -255,9 +255,6 @@ protected:
           resource_loader& res_loader) noexcept -> identifier_t;
 
         optional_reference<resource_loader> _res_loader;
-
-    private:
-        identifier_t _dep_req_id{0};
     };
 };
 //------------------------------------------------------------------------------
@@ -370,7 +367,6 @@ auto resource_interface::simple_loader_of<Resource>::_add_single_dependency(
     if(req_id > 0) {
         res_loader.add_consumer(req_id, this->shared_from_this());
         _res_loader = res_loader;
-        _dep_req_id = req_id;
         derived().set_status(resource_status::loading);
         return this->_set_request_id(res_loader.get_request_id());
     }
