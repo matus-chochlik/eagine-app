@@ -17,21 +17,26 @@ struct test_resource_manager_1 : eagitest::app_case {
     test_resource_manager_1(auto& s, auto& ec)
       : eagitest::app_case{s, ec, 1, "1"}
       , manager{context().resources()} {
-        manager.add_parameters("TestText", {eagine::url{"txt:///TestText"}});
+        manager.add_parameters("TestText1", {eagine::url{"txt:///TestText"}});
+        manager.add_parameters("TestText2", {eagine::url{"txt:///TestText"}});
         too_long.reset();
     }
 
     auto is_done() noexcept -> bool final {
-        return too_long or res.is_loaded();
+        return too_long or (res_1.is_loaded() and res_2.is_loaded());
     }
 
     void clean_up() noexcept final {
-        check(res.is_loaded(), "text is loaded");
+        check(res_1.is_loaded(), "plain text is loaded");
+        check(res_2.is_loaded(), "string list is loaded");
         bool content_is_ok{true};
-        if(auto text{res.ref()}) {
-            content_is_ok =
-              text->starts_with("Lorem ipsum dolor sit amet") and
-              text->ends_with("deserunt mollit anim id est laborum.");
+        if(const auto text{res_1.ref()}) {
+            if(const auto strings{res_2.ref()}) {
+                content_is_ok = text->starts_with(strings->front()) and
+                                text->ends_with(strings->back());
+            } else {
+                content_is_ok = false;
+            }
         } else {
             content_is_ok = false;
         }
@@ -40,9 +45,12 @@ struct test_resource_manager_1 : eagitest::app_case {
 
     eagine::timeout too_long{std::chrono::seconds{10}};
     eagine::app::resource_manager& manager;
-    eagine::app::managed_resource<eagine::app::exp::plain_text_resource> res{
+    eagine::app::managed_resource<eagine::app::exp::plain_text_resource> res_1{
       manager,
-      "TestText"};
+      "TestText1"};
+    eagine::app::managed_resource<eagine::app::exp::string_list_resource> res_2{
+      manager,
+      "TestText2"};
 };
 //------------------------------------------------------------------------------
 // main
