@@ -50,6 +50,37 @@ private:
     app_suite& _suite;
 };
 //------------------------------------------------------------------------------
+template <typename Case>
+class launcher_with_gl : public eagine::app::launchpad {
+public:
+    launcher_with_gl(app_suite& suite)
+      : _suite{suite} {}
+
+    auto setup(eagine::main_ctx&, eagine::app::launch_options& opts)
+      -> bool final {
+        opts.require_video().offscreen(true);
+        return true;
+    }
+
+    auto launch(
+      eagine::app::execution_context& ec,
+      const eagine::app::launch_options&)
+      -> eagine::unique_holder<eagine::app::application> final {
+        auto opt_vc{ec.video_ctx()};
+        if(opt_vc) {
+            auto& vc = *opt_vc;
+            vc.begin();
+            if(vc.init_gl_api(ec)) {
+                return {eagine::hold<Case>, _suite, ec};
+            }
+        }
+        return {};
+    }
+
+private:
+    app_suite& _suite;
+};
+//------------------------------------------------------------------------------
 class app_case
   : public eagine::app::application
   , public case_ {
