@@ -396,6 +396,7 @@ eagine_add_module_tests(
 	UNITS
 		old_resource_loader
 		resource_loader_basic
+		resource_loader_gl
 		resource_manager
 	IMPORTS
 		eagine.core
@@ -421,6 +422,18 @@ eagine_embed_target_resources(
 	PACKED ENABLE_SEARCH)
 
 set_tests_properties(execute-test.eagine.app.resource_loader_basic PROPERTIES COST 10)
+
+
+eagine_embed_target_resources(
+	TARGET test.eagine.app.resource_loader_gl
+	RESOURCES
+		TestCheckr "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_checker.glsl"
+		TestMndbrt "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_mandelbrot.glsl"
+		TestIncls  "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_includes.txt"
+	PACKED ENABLE_SEARCH)
+
+set_tests_properties(execute-test.eagine.app.resource_loader_gl PROPERTIES COST 10)
+
 
 eagine_embed_target_resources(
 	TARGET test.eagine.app.resource_manager

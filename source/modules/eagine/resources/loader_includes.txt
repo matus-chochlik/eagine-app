@@ -1,0 +1,2 @@
+glsl:///TestCheckr?path=%2Fchecker
+glsl:///TestMndbrt?path=%2Fmandelbrot

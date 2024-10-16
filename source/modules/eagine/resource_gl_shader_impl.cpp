@@ -107,6 +107,7 @@ struct gl_shader_includes_resource::_loader final
     void resource_loaded(const load_info&) noexcept final;
 
     identifier_t _urls_req_id{0};
+    identifier_t _req_id{0};
     url_list_resource _urls;
     std::vector<
       std::tuple<identifier_t, unique_keeper<gl_shader_include_resource>>>
@@ -115,9 +116,9 @@ struct gl_shader_includes_resource::_loader final
 //------------------------------------------------------------------------------
 auto gl_shader_includes_resource::_loader::request_dependencies(
   resource_loader& res_loader) noexcept -> valid_if_not_zero<identifier_t> {
-    _urls_req_id = _add_single_dependency(
-      res_loader.load(_urls, resource_context(), parameters()), res_loader);
-    return _urls_req_id;
+    _urls_req_id = res_loader.load(_urls, resource_context(), parameters());
+    _req_id = _add_single_dependency(_urls_req_id, res_loader);
+    return _req_id;
 }
 //------------------------------------------------------------------------------
 void gl_shader_includes_resource::_loader::resource_loaded(
@@ -129,6 +130,7 @@ void gl_shader_includes_resource::_loader::resource_loaded(
             auto& [request_id, shdr_incl]{_includes.back()};
             request_id = _res_loader->load(
               *shdr_incl, resource_context(), {.locator = std::move(locator)});
+            _res_loader->add_consumer(request_id, this->shared_from_this());
         }
         return;
     } else {
@@ -139,13 +141,17 @@ void gl_shader_includes_resource::_loader::resource_loaded(
                   std::move(shdr_incl->release_resource()));
                 _includes.erase(pos);
                 if(_includes.empty()) {
-                    base::resource_loaded(info);
+                    base::resource_loaded(
+                      {.locator = locator(),
+                       .request_id = _req_id,
+                       .kind = "GLShdrIncs"});
                 }
                 return;
             }
         }
     }
-    base::resource_cancelled(info);
+    base::resource_cancelled(
+      {.locator = locator(), .request_id = _req_id, .kind = "GLShdrIncs"});
 }
 //------------------------------------------------------------------------------
 auto gl_shader_includes_resource::make_loader(

@@ -631,7 +631,7 @@ auto test_main(eagine::test_ctx& ctx) -> int {
     enable_message_bus(ctx);
     ctx.preinitialize();
 
-    eagitest::app_suite test{ctx, "resource loader", 9};
+    eagitest::app_suite test{ctx, "resource loader basic", 9};
     test.once<test_request_plain_text>();
     test.once<test_request_string_list>();
     test.once<test_request_url_list>();
