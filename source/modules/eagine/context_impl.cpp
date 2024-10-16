@@ -660,6 +660,9 @@ void execution_context::clean_up() noexcept {
     for(auto& video : _video_contexts) {
         video->clean_up();
     }
+    for(auto& provider : _hmi_providers) {
+        provider->clean_up(*this);
+    }
 }
 //------------------------------------------------------------------------------
 auto execution_context::run() noexcept -> execution_context& {
