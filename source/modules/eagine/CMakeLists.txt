@@ -395,7 +395,7 @@ eagine_add_module_tests(
 	eagine.app
 	UNITS
 		old_resource_loader
-		resource_loader
+		resource_loader_basic
 		resource_manager
 	IMPORTS
 		eagine.core
@@ -406,7 +406,7 @@ eagine_add_module_tests(
 		EAGine::Deps::GLFW3)
 
 eagine_embed_target_resources(
-	TARGET test.eagine.app.resource_loader
+	TARGET test.eagine.app.resource_loader_basic
 	RESOURCES
 		TestText   "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_text.txt"
 		TestURLs   "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_urls.txt"
@@ -420,7 +420,7 @@ eagine_embed_target_resources(
 		TestFragS  "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_frag.glsl"
 	PACKED ENABLE_SEARCH)
 
-set_tests_properties(execute-test.eagine.app.resource_loader PROPERTIES COST 10)
+set_tests_properties(execute-test.eagine.app.resource_loader_basic PROPERTIES COST 10)
 
 eagine_embed_target_resources(
 	TARGET test.eagine.app.resource_manager

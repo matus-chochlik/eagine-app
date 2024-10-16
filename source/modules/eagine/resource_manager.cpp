@@ -24,7 +24,6 @@ export using resource_identifier = identifier;
 //------------------------------------------------------------------------------
 struct managed_resource_info {
     unique_holder<resource_interface> resource;
-    shared_holder<loaded_resource_context> context;
     resource_request_params params;
 
     template <std::derived_from<resource_interface> Resource>
@@ -54,7 +53,9 @@ struct managed_resource_info {
 
     auto should_be_loaded() const noexcept -> bool;
 
-    auto load_if_needed(resource_loader&) const noexcept -> bool;
+    auto load_if_needed(
+      resource_loader&,
+      const shared_holder<loaded_resource_context>&) const noexcept -> bool;
 };
 //------------------------------------------------------------------------------
 class managed_resource_base;

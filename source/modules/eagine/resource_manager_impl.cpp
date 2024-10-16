@@ -36,7 +36,9 @@ auto managed_resource_info::should_be_loaded() const noexcept -> bool {
 }
 //------------------------------------------------------------------------------
 auto managed_resource_info::load_if_needed(
-  resource_loader& loader) const noexcept -> bool {
+  resource_loader& loader,
+  const shared_holder<loaded_resource_context>& context) const noexcept
+  -> bool {
     if(should_be_loaded()) {
         return loader.load_any(*resource, context, params) > 0;
     }
@@ -89,7 +91,7 @@ auto resource_manager::update() noexcept -> work_done {
     auto& res_loader{loader()};
     for(const auto& entry : _resources) {
         if(const auto& info{std::get<1>(entry)}) {
-            something_done(info->load_if_needed(res_loader));
+            something_done(info->load_if_needed(res_loader, _context));
         }
     }
     return something_done;

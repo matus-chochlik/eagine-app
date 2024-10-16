@@ -40,6 +40,23 @@ public:
     struct _loader;
 };
 //------------------------------------------------------------------------------
+// gl_shader_includes_resource
+//------------------------------------------------------------------------------
+export class gl_shader_includes_resource final
+  : public simple_resource<std::vector<oglplus::shader_include>> {
+public:
+    auto kind() const noexcept -> identifier final;
+
+    auto make_loader(
+      main_ctx_parent,
+      const shared_holder<loaded_resource_context>&,
+      resource_request_params params) noexcept -> shared_holder<loader> final;
+
+    void clean_up(loaded_resource_context&) noexcept final;
+
+    struct _loader;
+};
+//------------------------------------------------------------------------------
 // gl_shader_resource
 //------------------------------------------------------------------------------
 export class gl_shader_resource final

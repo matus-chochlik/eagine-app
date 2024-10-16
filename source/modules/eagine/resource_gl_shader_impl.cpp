@@ -90,6 +90,89 @@ void gl_shader_include_resource::clean_up(
     }
 }
 //------------------------------------------------------------------------------
+// gl_shader_includes_resource
+//------------------------------------------------------------------------------
+auto gl_shader_includes_resource::kind() const noexcept -> identifier {
+    return "GLShdrIncs";
+}
+//------------------------------------------------------------------------------
+struct gl_shader_includes_resource::_loader final
+  : simple_loader_of<gl_shader_includes_resource> {
+    using base = simple_loader_of<gl_shader_includes_resource>;
+    using base::base;
+
+    auto request_dependencies(resource_loader& loader) noexcept
+      -> valid_if_not_zero<identifier_t> final;
+
+    void resource_loaded(const load_info&) noexcept final;
+
+    identifier_t _urls_req_id{0};
+    url_list_resource _urls;
+    std::vector<
+      std::tuple<identifier_t, unique_keeper<gl_shader_include_resource>>>
+      _includes;
+};
+//------------------------------------------------------------------------------
+auto gl_shader_includes_resource::_loader::request_dependencies(
+  resource_loader& res_loader) noexcept -> valid_if_not_zero<identifier_t> {
+    _urls_req_id =
+      _add_single_dependency(res_loader.load(_urls, parameters()), res_loader);
+    return _urls_req_id;
+}
+//------------------------------------------------------------------------------
+void gl_shader_includes_resource::_loader::resource_loaded(
+  const load_info& info) noexcept {
+    if(info.request_id == _urls_req_id) {
+        auto urls{_urls.release_resource()};
+        for(auto& locator : urls) {
+            _includes.emplace_back();
+            auto& [request_id, shdr_incl]{_includes.back()};
+            request_id =
+              _res_loader->load(*shdr_incl, {.locator = std::move(locator)});
+        }
+        return;
+    } else {
+        for(auto pos{_includes.begin()}; pos != _includes.end(); ++pos) {
+            auto& [request_id, shdr_incl]{*pos};
+            if(info.request_id == request_id) {
+                resource()._private_ref().emplace_back(
+                  std::move(shdr_incl->release_resource()));
+                _includes.erase(pos);
+                if(_includes.empty()) {
+                    base::resource_loaded(info);
+                }
+                return;
+            }
+        }
+    }
+    base::resource_cancelled(info);
+}
+//------------------------------------------------------------------------------
+auto gl_shader_includes_resource::make_loader(
+  main_ctx_parent parent,
+  const shared_holder<loaded_resource_context>& context,
+  resource_request_params params) noexcept
+  -> shared_holder<resource_interface::loader> {
+    if(context and context->gl_context()) {
+        return {
+          hold<gl_shader_includes_resource::_loader>,
+          parent,
+          *this,
+          context,
+          std::move(params)};
+    }
+    return {};
+}
+//------------------------------------------------------------------------------
+void gl_shader_includes_resource::clean_up(
+  loaded_resource_context& context) noexcept {
+    assert(context.gl_context());
+    auto incls{release_resource()};
+    for(auto& shdr_incl : incls) {
+        context.gl_api().clean_up(std::move(shdr_incl));
+    }
+}
+//------------------------------------------------------------------------------
 // gl_shader_resource
 //------------------------------------------------------------------------------
 auto gl_shader_resource::kind() const noexcept -> identifier {
