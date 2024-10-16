@@ -300,7 +300,7 @@ struct float_list_resource::_loader final
 auto float_list_resource::_loader::request_dependencies(
   resource_loader& res_loader) noexcept -> valid_if_not_zero<identifier_t> {
     return _add_single_dependency(
-      res_loader.load(_visit, parameters()), res_loader);
+      res_loader.load(_visit, resource_context(), parameters()), res_loader);
 }
 //------------------------------------------------------------------------------
 void float_list_resource::_loader::resource_loaded(
@@ -440,7 +440,7 @@ struct vec3_list_resource::_loader final
 auto vec3_list_resource::_loader::request_dependencies(
   resource_loader& res_loader) noexcept -> valid_if_not_zero<identifier_t> {
     return _add_single_dependency(
-      res_loader.load(_visit, parameters()), res_loader);
+      res_loader.load(_visit, resource_context(), parameters()), res_loader);
 }
 //------------------------------------------------------------------------------
 void vec3_list_resource::_loader::resource_loaded(
@@ -646,7 +646,7 @@ struct mat4_list_resource::_loader final
 auto mat4_list_resource::_loader::request_dependencies(
   resource_loader& res_loader) noexcept -> valid_if_not_zero<identifier_t> {
     return _add_single_dependency(
-      res_loader.load(_visit, parameters()), res_loader);
+      res_loader.load(_visit, resource_context(), parameters()), res_loader);
 }
 //------------------------------------------------------------------------------
 void mat4_list_resource::_loader::resource_loaded(
@@ -689,7 +689,7 @@ struct smooth_float_curve_resource::_loader final
 auto smooth_float_curve_resource::_loader::request_dependencies(
   resource_loader& res_loader) noexcept -> valid_if_not_zero<identifier_t> {
     return _add_single_dependency(
-      res_loader.load(_cps, parameters()), res_loader);
+      res_loader.load(_cps, resource_context(), parameters()), res_loader);
 }
 //------------------------------------------------------------------------------
 void smooth_float_curve_resource::_loader::resource_loaded(
@@ -733,7 +733,7 @@ struct smooth_vec3_curve_resource::_loader final
 auto smooth_vec3_curve_resource::_loader::request_dependencies(
   resource_loader& res_loader) noexcept -> valid_if_not_zero<identifier_t> {
     return _add_single_dependency(
-      res_loader.load(_cps, parameters()), res_loader);
+      res_loader.load(_cps, resource_context(), parameters()), res_loader);
 }
 //------------------------------------------------------------------------------
 void smooth_vec3_curve_resource::_loader::resource_loaded(
@@ -777,7 +777,7 @@ struct glsl_string_resource::_loader final
 auto glsl_string_resource::_loader::request_dependencies(
   resource_loader& res_loader) noexcept -> valid_if_not_zero<identifier_t> {
     return _add_single_dependency(
-      res_loader.load(_text, parameters()), res_loader);
+      res_loader.load(_text, resource_context(), parameters()), res_loader);
 }
 //------------------------------------------------------------------------------
 void glsl_string_resource::_loader::resource_loaded(
@@ -841,7 +841,7 @@ shape_generator_resource::_loader::_loader(
 auto shape_generator_resource::_loader::request_dependencies(
   resource_loader& res_loader) noexcept -> valid_if_not_zero<identifier_t> {
     return _add_single_dependency(
-      res_loader.load(_tree, parameters()), res_loader);
+      res_loader.load(_tree, resource_context(), parameters()), res_loader);
 }
 //------------------------------------------------------------------------------
 void shape_generator_resource::_loader::resource_loaded(

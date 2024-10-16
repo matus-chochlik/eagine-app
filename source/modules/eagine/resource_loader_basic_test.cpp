@@ -38,9 +38,12 @@ struct test_request_plain_text : eagitest::app_case {
     }
 
     void update() noexcept final {
-        loader.load_if_needed(text, [] -> eagine::app::resource_request_params {
-            return {eagine::url{"txt:///TestText"}};
-        });
+        loader.load_if_needed(
+          text,
+          context().shared_resource_context(),
+          [] -> eagine::app::resource_request_params {
+              return {eagine::url{"txt:///TestText"}};
+          });
     }
 
     void clean_up() noexcept final {
@@ -112,7 +115,9 @@ struct test_request_string_list : eagitest::app_case {
 
     void update() noexcept final {
         loader.load_if_needed(
-          strings, [] -> eagine::app::resource_request_params {
+          strings,
+          context().shared_resource_context(),
+          [] -> eagine::app::resource_request_params {
               return {eagine::url{"txt:///TestText"}};
           });
     }
@@ -172,9 +177,12 @@ struct test_request_url_list : eagitest::app_case {
     }
 
     void update() noexcept final {
-        loader.load_if_needed(urls, [] -> eagine::app::resource_request_params {
-            return {eagine::url{"txt:///TestURLs"}};
-        });
+        loader.load_if_needed(
+          urls,
+          context().shared_resource_context(),
+          [] -> eagine::app::resource_request_params {
+              return {eagine::url{"txt:///TestURLs"}};
+          });
     }
 
     void clean_up() noexcept final {
@@ -228,9 +236,12 @@ struct test_request_float_list : eagitest::app_case {
     }
 
     void update() noexcept final {
-        loader.load_if_needed(ints, [] -> eagine::app::resource_request_params {
-            return {eagine::url{"json:///TestInts"}};
-        });
+        loader.load_if_needed(
+          ints,
+          context().shared_resource_context(),
+          [] -> eagine::app::resource_request_params {
+              return {eagine::url{"json:///TestInts"}};
+          });
     }
 
     void clean_up() noexcept final {
@@ -290,9 +301,12 @@ struct test_request_vec3_list : eagitest::app_case {
     }
 
     void update() noexcept final {
-        loader.load_if_needed(vecs, [] -> eagine::app::resource_request_params {
-            return {eagine::url{"json:///TestVec3"}};
-        });
+        loader.load_if_needed(
+          vecs,
+          context().shared_resource_context(),
+          [] -> eagine::app::resource_request_params {
+              return {eagine::url{"json:///TestVec3"}};
+          });
     }
 
     void clean_up() noexcept final {
@@ -414,9 +428,12 @@ struct test_request_mat4_list : eagitest::app_case {
     }
 
     void update() noexcept final {
-        loader.load_if_needed(mats, [] -> eagine::app::resource_request_params {
-            return {eagine::url{"json:///TestMat4"}};
-        });
+        loader.load_if_needed(
+          mats,
+          context().shared_resource_context(),
+          [] -> eagine::app::resource_request_params {
+              return {eagine::url{"json:///TestMat4"}};
+          });
     }
 
     void clean_up() noexcept final {
@@ -462,9 +479,12 @@ struct test_request_glsl_string : eagitest::app_case {
     }
 
     void update() noexcept final {
-        loader.load_if_needed(glsl, [] -> eagine::app::resource_request_params {
-            return {eagine::url{"glsl:///TestFragS"}};
-        });
+        loader.load_if_needed(
+          glsl,
+          context().shared_resource_context(),
+          [] -> eagine::app::resource_request_params {
+              return {eagine::url{"glsl:///TestFragS"}};
+          });
     }
 
     void clean_up() noexcept final {
@@ -516,9 +536,12 @@ struct test_request_valtree : eagitest::app_case {
     }
 
     void update() noexcept final {
-        loader.load_if_needed(tree, [] -> eagine::app::resource_request_params {
-            return {eagine::url{"json:///TestThdn2"}};
-        });
+        loader.load_if_needed(
+          tree,
+          context().shared_resource_context(),
+          [] -> eagine::app::resource_request_params {
+              return {eagine::url{"json:///TestThdn2"}};
+          });
     }
 
     void clean_up() noexcept final {
@@ -579,9 +602,12 @@ struct test_request_shape_generator : eagitest::app_case {
     }
 
     void update() noexcept final {
-        loader.load_if_needed(mesh, [] -> eagine::app::resource_request_params {
-            return {eagine::url{"json:///TestMesh"}};
-        });
+        loader.load_if_needed(
+          mesh,
+          context().shared_resource_context(),
+          [] -> eagine::app::resource_request_params {
+              return {eagine::url{"json:///TestMesh"}};
+          });
     }
 
     void clean_up() noexcept final {

@@ -389,6 +389,10 @@ public:
         return _options;
     }
 
+    /// @brief Returns a shared pointer to the resource loading context
+    [[nodiscard]] auto shared_resource_context() noexcept
+      -> const shared_holder<loaded_resource_context>&;
+
     /// @brief Returns a reference to the resource loading context
     [[nodiscard]] auto resource_context() noexcept -> loaded_resource_context&;
 

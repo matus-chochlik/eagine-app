@@ -48,7 +48,7 @@ struct gl_shader_include_resource::_loader final
 auto gl_shader_include_resource::_loader::request_dependencies(
   resource_loader& res_loader) noexcept -> valid_if_not_zero<identifier_t> {
     return _add_single_dependency(
-      res_loader.load(_glsl, parameters()), res_loader);
+      res_loader.load(_glsl, resource_context(), parameters()), res_loader);
 }
 //------------------------------------------------------------------------------
 void gl_shader_include_resource::_loader::resource_loaded(
@@ -115,8 +115,8 @@ struct gl_shader_includes_resource::_loader final
 //------------------------------------------------------------------------------
 auto gl_shader_includes_resource::_loader::request_dependencies(
   resource_loader& res_loader) noexcept -> valid_if_not_zero<identifier_t> {
-    _urls_req_id =
-      _add_single_dependency(res_loader.load(_urls, parameters()), res_loader);
+    _urls_req_id = _add_single_dependency(
+      res_loader.load(_urls, resource_context(), parameters()), res_loader);
     return _urls_req_id;
 }
 //------------------------------------------------------------------------------
@@ -127,8 +127,8 @@ void gl_shader_includes_resource::_loader::resource_loaded(
         for(auto& locator : urls) {
             _includes.emplace_back();
             auto& [request_id, shdr_incl]{_includes.back()};
-            request_id =
-              _res_loader->load(*shdr_incl, {.locator = std::move(locator)});
+            request_id = _res_loader->load(
+              *shdr_incl, resource_context(), {.locator = std::move(locator)});
         }
         return;
     } else {
@@ -195,7 +195,7 @@ struct gl_shader_resource::_loader final
 auto gl_shader_resource::_loader::request_dependencies(
   resource_loader& res_loader) noexcept -> valid_if_not_zero<identifier_t> {
     return _add_single_dependency(
-      res_loader.load(_glsl, parameters()), res_loader);
+      res_loader.load(_glsl, resource_context(), parameters()), res_loader);
 }
 //------------------------------------------------------------------------------
 static auto shader_type_from(const url& locator, auto& glapi)

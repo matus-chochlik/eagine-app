@@ -61,13 +61,13 @@ auto resource_manager::_ensure_info(resource_identifier res_id) noexcept
     return info;
 }
 //------------------------------------------------------------------------------
-auto resource_manager::resource_context() noexcept -> loaded_resource_context& {
-    assert(_context);
-    return *_context;
+auto resource_manager::resource_context() const noexcept
+  -> const shared_holder<loaded_resource_context>& {
+    return _context;
 }
 //------------------------------------------------------------------------------
 auto resource_manager::loader() noexcept -> resource_loader& {
-    return resource_context().loader();
+    return _context->loader();
 }
 //------------------------------------------------------------------------------
 auto resource_manager::_ensure_parameters(

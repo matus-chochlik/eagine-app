@@ -47,7 +47,7 @@ struct valtree_resource::_loader final : simple_loader_of<valtree_resource> {
 auto valtree_resource::_loader::request_dependencies(
   resource_loader& res_loader) noexcept -> valid_if_not_zero<identifier_t> {
     return _add_single_dependency(
-      res_loader.load(_text, parameters()), res_loader);
+      res_loader.load(_text, resource_context(), parameters()), res_loader);
 }
 //------------------------------------------------------------------------------
 void valtree_resource::_loader::resource_loaded(const load_info& info) noexcept {

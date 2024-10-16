@@ -501,9 +501,14 @@ auto execution_context::resources() noexcept -> resource_manager& {
     return *_resource_manager;
 }
 //------------------------------------------------------------------------------
+auto execution_context::shared_resource_context() noexcept
+  -> const shared_holder<loaded_resource_context>& {
+    return resources().resource_context();
+}
+//------------------------------------------------------------------------------
 auto execution_context::resource_context() noexcept
   -> loaded_resource_context& {
-    return resources().resource_context();
+    return *(resources().resource_context());
 }
 //------------------------------------------------------------------------------
 auto execution_context::old_loader() noexcept -> old_resource_loader& {

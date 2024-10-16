@@ -86,8 +86,8 @@ public:
 
         /// @brief Returns a reference to the resource context (if any).
         auto resource_context() const noexcept
-          -> optional_reference<loaded_resource_context> {
-            return _context.ref();
+          -> const shared_holder<loaded_resource_context>& {
+            return _context;
         }
 
         /// @brief Returns the associated resource request parameters.
@@ -292,15 +292,6 @@ public:
         return load_any(resource, context, std::move(params));
     }
 
-    /// @brief Loads the specified resource with the specified parameters.
-    /// @see load_if_needed
-    /// @note The resource may not get destroyed while it is being loaded.
-    template <std::derived_from<resource_interface> Resource>
-    auto load(Resource& resource, resource_request_params params) noexcept
-      -> identifier_t {
-        return load(resource, {}, std::move(params));
-    }
-
     /// @brief Loads resource if necessary, using param_getter to get the load parameters.
     /// @see load
     /// @note The resource may not get destroyed while it is being loaded.
@@ -311,18 +302,6 @@ public:
       const Getter& param_getter) noexcept -> identifier_t {
         if(resource.should_be_loaded()) {
             return load(resource, context, param_getter());
-        }
-        return 0;
-    }
-
-    /// @brief Loads resource if necessary, using param_getter to get the load parameters.
-    /// @see load
-    /// @note The resource may not get destroyed while it is being loaded.
-    template <std::derived_from<resource_interface> Resource, typename Getter>
-    auto load_if_needed(Resource& resource, const Getter& param_getter) noexcept
-      -> identifier_t {
-        if(resource.should_be_loaded()) {
-            return load(resource, param_getter());
         }
         return 0;
     }

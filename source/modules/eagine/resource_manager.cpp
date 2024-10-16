@@ -64,7 +64,8 @@ export class resource_manager {
 public:
     resource_manager(shared_holder<loaded_resource_context>) noexcept;
 
-    [[nodiscard]] auto resource_context() noexcept -> loaded_resource_context&;
+    [[nodiscard]] auto resource_context() const noexcept
+      -> const shared_holder<loaded_resource_context>&;
 
     [[nodiscard]] auto loader() noexcept -> resource_loader&;
 
