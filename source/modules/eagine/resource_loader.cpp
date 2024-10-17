@@ -204,9 +204,9 @@ protected:
         }
     };
 
-    template <typename Resource>
+    template <typename Resource, typename Loader = typename Resource::_loader>
     class simple_loader_of
-      : public std::enable_shared_from_this<typename Resource::_loader>
+      : public std::enable_shared_from_this<Loader>
       , public loader_of<Resource> {
     public:
         using loader_of<Resource>::loader_of;
@@ -246,8 +246,8 @@ protected:
         }
 
     protected:
-        auto derived() noexcept -> typename Resource::_loader& {
-            return *static_cast<typename Resource::_loader*>(this);
+        auto derived() noexcept -> Loader& {
+            return *static_cast<Loader*>(this);
         }
 
         auto _add_single_dependency(
@@ -342,10 +342,11 @@ private:
     flat_map<identifier_t, shared_holder<resource_interface::loader>> _consumer;
 };
 //------------------------------------------------------------------------------
-template <typename Resource>
-auto resource_interface::simple_loader_of<Resource>::_add_single_dependency(
-  valid_if_not_zero<identifier_t> req_id,
-  resource_loader& res_loader) noexcept -> valid_if_not_zero<identifier_t> {
+template <typename Resource, typename Loader>
+auto resource_interface::simple_loader_of<Resource, Loader>::
+  _add_single_dependency(
+    valid_if_not_zero<identifier_t> req_id,
+    resource_loader& res_loader) noexcept -> valid_if_not_zero<identifier_t> {
     if(req_id) {
         res_loader.add_consumer(
           req_id.value_anyway(), this->shared_from_this());

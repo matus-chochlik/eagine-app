@@ -28,10 +28,6 @@ namespace eagine::app::exp {
 //------------------------------------------------------------------------------
 // gl_shader_include_resource
 //------------------------------------------------------------------------------
-auto gl_shader_include_resource::kind() const noexcept -> identifier {
-    return "GLShdrIncl";
-}
-//------------------------------------------------------------------------------
 struct gl_shader_include_resource::_loader final
   : simple_loader_of<gl_shader_include_resource> {
     using base = simple_loader_of<gl_shader_include_resource>;
@@ -66,6 +62,10 @@ void gl_shader_include_resource::_loader::resource_loaded(
     base::resource_cancelled(info);
 }
 //------------------------------------------------------------------------------
+auto gl_shader_include_resource::kind() const noexcept -> identifier {
+    return "GLShdrIncl";
+}
+//------------------------------------------------------------------------------
 auto gl_shader_include_resource::make_loader(
   main_ctx_parent parent,
   const shared_holder<loaded_resource_context>& context,
@@ -92,10 +92,6 @@ void gl_shader_include_resource::clean_up(
 //------------------------------------------------------------------------------
 // gl_shader_includes_resource
 //------------------------------------------------------------------------------
-auto gl_shader_includes_resource::kind() const noexcept -> identifier {
-    return "GLShdrIncs";
-}
-//------------------------------------------------------------------------------
 struct gl_shader_includes_resource::_loader final
   : simple_loader_of<gl_shader_includes_resource> {
     using base = simple_loader_of<gl_shader_includes_resource>;
@@ -116,10 +112,16 @@ struct gl_shader_includes_resource::_loader final
 //------------------------------------------------------------------------------
 auto gl_shader_includes_resource::_loader::request_dependencies(
   resource_loader& res_loader) noexcept -> valid_if_not_zero<identifier_t> {
-    _urls_req_id =
-      res_loader.load(_urls, resource_context(), parameters()).or_default();
-    _req_id = _add_single_dependency(_urls_req_id, res_loader).or_default();
-    return _req_id;
+    if(const auto req_id1{
+         res_loader.load(_urls, resource_context(), parameters())}) {
+        _urls_req_id = req_id1.value_anyway();
+        if(const auto req_id2{
+             _add_single_dependency(_urls_req_id, res_loader)}) {
+            _req_id = req_id2.value_anyway();
+            return {_req_id};
+        }
+    }
+    return {0};
 }
 //------------------------------------------------------------------------------
 void gl_shader_includes_resource::_loader::resource_loaded(
@@ -160,6 +162,10 @@ void gl_shader_includes_resource::_loader::resource_loaded(
     }
     base::resource_cancelled(
       {.locator = locator(), .request_id = _req_id, .kind = "GLShdrIncs"});
+}
+//------------------------------------------------------------------------------
+auto gl_shader_includes_resource::kind() const noexcept -> identifier {
+    return "GLShdrIncs";
 }
 //------------------------------------------------------------------------------
 auto gl_shader_includes_resource::make_loader(
