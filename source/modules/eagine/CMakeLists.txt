@@ -418,7 +418,7 @@ eagine_embed_target_resources(
 		TestThdn2  "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_thdn2.json"
 		TestPath   "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_path.json"
 		TestMesh   "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_mesh.json"
-		TestFragS  "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_frag.glsl"
+		TestFragS  "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_frag1.glsl"
 	PACKED ENABLE_SEARCH)
 
 set_tests_properties(execute-test.eagine.app.resource_loader_basic PROPERTIES COST 10)
@@ -430,6 +430,8 @@ eagine_embed_target_resources(
 		TestCheckr "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_checker.glsl"
 		TestMndbrt "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_mandelbrot.glsl"
 		TestIncls  "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_includes.txt"
+		TestFrag1  "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_frag1.glsl"
+		TestFrag2  "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_frag2.glsl"
 	PACKED ENABLE_SEARCH)
 
 set_tests_properties(execute-test.eagine.app.resource_loader_gl PROPERTIES COST 10)
