@@ -11,6 +11,7 @@ import std;
 import eagine.core.types;
 import eagine.core.utility;
 import eagine.core.runtime;
+import eagine.core.valid_if;
 import eagine.core.identifier;
 import eagine.core.container;
 import eagine.core.main_ctx;
@@ -55,7 +56,8 @@ struct managed_resource_info {
 
     auto load_if_needed(
       resource_loader&,
-      const shared_holder<loaded_resource_context>&) const noexcept -> bool;
+      const shared_holder<loaded_resource_context>&) const noexcept
+      -> valid_if_not_zero<identifier_t>;
 };
 //------------------------------------------------------------------------------
 class managed_resource_base;

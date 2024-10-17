@@ -17,6 +17,7 @@ import eagine.core.memory;
 import eagine.core.string;
 import eagine.core.math;
 import eagine.core.identifier;
+import eagine.core.valid_if;
 import eagine.core.container;
 import eagine.core.reflection;
 import eagine.core.value_tree;
@@ -90,12 +91,10 @@ resource_loader::resource_loader(msgbus::endpoint& bus)
 auto resource_loader::load_any(
   resource_interface& resource,
   const shared_holder<loaded_resource_context>& context,
-  resource_request_params params) noexcept -> identifier_t {
+  resource_request_params params) noexcept -> valid_if_not_zero<identifier_t> {
     if(auto loader{
          resource.make_loader(as_parent(), context, std::move(params))}) {
-        if(const auto req_id{loader->request_dependencies(*this)}) {
-            return req_id.value_anyway();
-        }
+        return loader->request_dependencies(*this);
     }
     return {};
 }

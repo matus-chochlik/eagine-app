@@ -251,8 +251,9 @@ protected:
         }
 
         auto _add_single_dependency(
-          identifier_t req_id,
-          resource_loader& res_loader) noexcept -> identifier_t;
+          valid_if_not_zero<identifier_t> req_id,
+          resource_loader& res_loader) noexcept
+          -> valid_if_not_zero<identifier_t>;
 
         optional_reference<resource_loader> _res_loader;
     };
@@ -279,7 +280,8 @@ public:
     auto load_any(
       resource_interface& resource,
       const shared_holder<loaded_resource_context>& context,
-      resource_request_params params) noexcept -> identifier_t;
+      resource_request_params params) noexcept
+      -> valid_if_not_zero<identifier_t>;
 
     /// @brief Loads the specified resource in context with the specified parameters.
     /// @see load_if_needed
@@ -288,7 +290,8 @@ public:
     auto load(
       Resource& resource,
       const shared_holder<loaded_resource_context>& context,
-      resource_request_params params) noexcept -> identifier_t {
+      resource_request_params params) noexcept
+      -> valid_if_not_zero<identifier_t> {
         return load_any(resource, context, std::move(params));
     }
 
@@ -299,11 +302,11 @@ public:
     auto load_if_needed(
       Resource& resource,
       const shared_holder<loaded_resource_context>& context,
-      const Getter& param_getter) noexcept -> identifier_t {
+      const Getter& param_getter) noexcept -> valid_if_not_zero<identifier_t> {
         if(resource.should_be_loaded()) {
             return load(resource, context, param_getter());
         }
-        return 0;
+        return {0};
     }
 
     /// @brief Indicates if the loader is currently loading any resources.
@@ -341,16 +344,17 @@ private:
 //------------------------------------------------------------------------------
 template <typename Resource>
 auto resource_interface::simple_loader_of<Resource>::_add_single_dependency(
-  identifier_t req_id,
-  resource_loader& res_loader) noexcept -> identifier_t {
-    if(req_id > 0) {
-        res_loader.add_consumer(req_id, this->shared_from_this());
+  valid_if_not_zero<identifier_t> req_id,
+  resource_loader& res_loader) noexcept -> valid_if_not_zero<identifier_t> {
+    if(req_id) {
+        res_loader.add_consumer(
+          req_id.value_anyway(), this->shared_from_this());
         _res_loader = res_loader;
         derived().set_status(resource_status::loading);
-        return this->_set_request_id(res_loader.get_request_id());
+        return {this->_set_request_id(res_loader.get_request_id())};
     }
     derived().set_status(resource_status::error);
-    return 0;
+    return {0};
 }
 //------------------------------------------------------------------------------
 template <typename T>

@@ -116,8 +116,9 @@ struct gl_shader_includes_resource::_loader final
 //------------------------------------------------------------------------------
 auto gl_shader_includes_resource::_loader::request_dependencies(
   resource_loader& res_loader) noexcept -> valid_if_not_zero<identifier_t> {
-    _urls_req_id = res_loader.load(_urls, resource_context(), parameters());
-    _req_id = _add_single_dependency(_urls_req_id, res_loader);
+    _urls_req_id =
+      res_loader.load(_urls, resource_context(), parameters()).or_default();
+    _req_id = _add_single_dependency(_urls_req_id, res_loader).or_default();
     return _req_id;
 }
 //------------------------------------------------------------------------------
@@ -128,9 +129,16 @@ void gl_shader_includes_resource::_loader::resource_loaded(
         for(auto& locator : urls) {
             _includes.emplace_back();
             auto& [request_id, shdr_incl]{_includes.back()};
-            request_id = _res_loader->load(
-              *shdr_incl, resource_context(), {.locator = std::move(locator)});
-            _res_loader->add_consumer(request_id, this->shared_from_this());
+            if(auto new_req_id{_res_loader->load(
+                 *shdr_incl,
+                 resource_context(),
+                 {.locator = std::move(locator)})}) {
+                request_id = new_req_id.value_anyway();
+                _res_loader->add_consumer(request_id, this->shared_from_this());
+            } else {
+                _includes.pop_back();
+                // TODO: log error
+            }
         }
         return;
     } else {

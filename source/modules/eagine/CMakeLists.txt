@@ -338,6 +338,7 @@ eagine_add_module(
 		eagine.core.types
 		eagine.core.utility
 		eagine.core.runtime
+		eagine.core.valid_if
 		eagine.core.container
 		eagine.core.identifier
 		eagine.core.main_ctx)

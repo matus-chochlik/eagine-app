@@ -15,6 +15,7 @@ import std;
 import eagine.core.types;
 import eagine.core.utility;
 import eagine.core.runtime;
+import eagine.core.valid_if;
 import eagine.core.container;
 import eagine.core.main_ctx;
 import :resource_loader;
@@ -38,11 +39,11 @@ auto managed_resource_info::should_be_loaded() const noexcept -> bool {
 auto managed_resource_info::load_if_needed(
   resource_loader& loader,
   const shared_holder<loaded_resource_context>& context) const noexcept
-  -> bool {
+  -> valid_if_not_zero<identifier_t> {
     if(should_be_loaded()) {
-        return loader.load_any(*resource, context, params) > 0;
+        return loader.load_any(*resource, context, params);
     }
-    return false;
+    return {0};
 }
 //------------------------------------------------------------------------------
 // resource_manager
@@ -91,7 +92,8 @@ auto resource_manager::update() noexcept -> work_done {
     auto& res_loader{loader()};
     for(const auto& entry : _resources) {
         if(const auto& info{std::get<1>(entry)}) {
-            something_done(info->load_if_needed(res_loader, _context));
+            something_done(
+              info->load_if_needed(res_loader, _context).has_value());
         }
     }
     return something_done;
