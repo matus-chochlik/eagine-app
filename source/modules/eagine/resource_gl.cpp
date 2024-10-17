@@ -71,7 +71,7 @@ public:
 
     void clean_up(loaded_resource_context&) noexcept final;
 
-    struct _loader;
+    struct _loader_glsl;
 };
 //------------------------------------------------------------------------------
 } // namespace eagine::app::exp

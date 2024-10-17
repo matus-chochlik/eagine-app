@@ -193,30 +193,7 @@ void gl_shader_includes_resource::clean_up(
     }
 }
 //------------------------------------------------------------------------------
-// gl_shader_resource
-//------------------------------------------------------------------------------
-auto gl_shader_resource::kind() const noexcept -> identifier {
-    return "GLShader";
-}
-//------------------------------------------------------------------------------
-struct gl_shader_resource::_loader final
-  : simple_loader_of<gl_shader_resource> {
-    using base = simple_loader_of<gl_shader_resource>;
-    using base::base;
-
-    auto request_dependencies(resource_loader& loader) noexcept
-      -> valid_if_not_zero<identifier_t> final;
-
-    void resource_loaded(const load_info&) noexcept final;
-
-    glsl_string_resource _glsl;
-};
-//------------------------------------------------------------------------------
-auto gl_shader_resource::_loader::request_dependencies(
-  resource_loader& res_loader) noexcept -> valid_if_not_zero<identifier_t> {
-    return _add_single_dependency(
-      res_loader.load(_glsl, resource_context(), parameters()), res_loader);
-}
+// shader_type_from
 //------------------------------------------------------------------------------
 static auto shader_type_from(const url& locator, auto& glapi)
   -> optionally_valid<oglplus::shader_type> {
@@ -265,7 +242,29 @@ static auto shader_type_from(const url& locator, auto& glapi)
     return {};
 }
 //------------------------------------------------------------------------------
-void gl_shader_resource::_loader::resource_loaded(
+// gl_shader_resource::_loader_glsl
+//------------------------------------------------------------------------------
+struct gl_shader_resource::_loader_glsl final
+  : simple_loader_of<gl_shader_resource, gl_shader_resource::_loader_glsl> {
+    using base =
+      simple_loader_of<gl_shader_resource, gl_shader_resource::_loader_glsl>;
+    using base::base;
+
+    auto request_dependencies(resource_loader& loader) noexcept
+      -> valid_if_not_zero<identifier_t> final;
+
+    void resource_loaded(const load_info&) noexcept final;
+
+    glsl_string_resource _glsl;
+};
+//------------------------------------------------------------------------------
+auto gl_shader_resource::_loader_glsl::request_dependencies(
+  resource_loader& res_loader) noexcept -> valid_if_not_zero<identifier_t> {
+    return _add_single_dependency(
+      res_loader.load(_glsl, resource_context(), parameters()), res_loader);
+}
+//------------------------------------------------------------------------------
+void gl_shader_resource::_loader_glsl::resource_loaded(
   const load_info& info) noexcept {
     if(auto res_ctx{resource_context()}) {
         auto& glapi{res_ctx->gl_api()};
@@ -286,6 +285,12 @@ void gl_shader_resource::_loader::resource_loaded(
     base::resource_cancelled(info);
 }
 //------------------------------------------------------------------------------
+// gl_shader_resource
+//------------------------------------------------------------------------------
+auto gl_shader_resource::kind() const noexcept -> identifier {
+    return "GLShader";
+}
+//------------------------------------------------------------------------------
 auto gl_shader_resource::make_loader(
   main_ctx_parent parent,
   const shared_holder<loaded_resource_context>& context,
@@ -293,7 +298,7 @@ auto gl_shader_resource::make_loader(
   -> shared_holder<resource_interface::loader> {
     if(context and context->gl_context()) {
         return {
-          hold<gl_shader_resource::_loader>,
+          hold<gl_shader_resource::_loader_glsl>,
           parent,
           *this,
           context,
