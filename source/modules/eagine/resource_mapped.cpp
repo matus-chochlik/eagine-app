@@ -95,8 +95,7 @@ public:
           parent,
           *this,
           std::move(params),
-          make_building_value_tree_visitor(
-            make_mapped_struct_builder(std::type_identity<Struct>{}))};
+          make_mapped_struct_builder(std::type_identity<Struct>{})};
     }
 
 private:
@@ -105,11 +104,9 @@ private:
         _loader(
           resource_interface& resource,
           resource_request_params params,
-          shared_holder<valtree::value_tree_visitor> visitor) noexcept
+          shared_holder<valtree::object_builder> builder) noexcept
           : loader_of<mapped_struct_resource>{resource, std::move(params)}
-          , _visit{
-              std::move(visitor),
-              max_identifier_length(this->resource()._object)} {}
+          , _visit{std::move(builder)} {}
 
         auto request_dependencies(resource_loader& res_loader) noexcept
           -> valid_if_not_zero<identifier_t> final {

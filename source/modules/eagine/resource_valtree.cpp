@@ -49,8 +49,12 @@ public:
     visited_valtree_resource(
       shared_holder<valtree::value_tree_visitor> visitor,
       span_size_t max_token_size) noexcept
-      : _visitor{std::move(visitor)}
-      , _max_token_size{max_token_size} {}
+      : _max_token_size{max_token_size}
+      , _visitor{std::move(visitor)} {}
+
+    visited_valtree_resource(shared_holder<valtree::object_builder> b) noexcept
+      : _max_token_size{b->max_token_size()}
+      , _visitor{valtree::make_building_value_tree_visitor(std::move(b))} {}
 
     auto kind() const noexcept -> identifier final;
 
@@ -86,8 +90,8 @@ public:
 private:
     friend struct _loader;
 
-    shared_holder<valtree::value_tree_visitor> _visitor;
     span_size_t _max_token_size;
+    shared_holder<valtree::value_tree_visitor> _visitor;
     resource_status _status{resource_status::created};
 };
 //------------------------------------------------------------------------------

@@ -291,10 +291,7 @@ struct float_list_resource::_loader final
 
     void resource_loaded(const load_info&) noexcept final;
 
-    visited_valtree_resource _visit{
-      valtree::make_building_value_tree_visitor(
-        {hold<valtree_float_vector_builder>}),
-      64};
+    visited_valtree_resource _visit{hold<valtree_float_vector_builder>};
 };
 //------------------------------------------------------------------------------
 auto float_list_resource::_loader::request_dependencies(
@@ -431,10 +428,7 @@ struct vec3_list_resource::_loader final
 
     void resource_loaded(const load_info&) noexcept final;
 
-    visited_valtree_resource _visit{
-      valtree::make_building_value_tree_visitor(
-        {hold<valtree_vec3_vector_builder>}),
-      64};
+    visited_valtree_resource _visit{hold<valtree_vec3_vector_builder>};
 };
 //------------------------------------------------------------------------------
 auto vec3_list_resource::_loader::request_dependencies(
@@ -637,10 +631,7 @@ struct mat4_list_resource::_loader final
 
     void resource_loaded(const load_info&) noexcept final;
 
-    visited_valtree_resource _visit{
-      valtree::make_building_value_tree_visitor(
-        {hold<valtree_mat4_vector_builder>}),
-      64};
+    visited_valtree_resource _visit{hold<valtree_mat4_vector_builder>};
 };
 //------------------------------------------------------------------------------
 auto mat4_list_resource::_loader::request_dependencies(
