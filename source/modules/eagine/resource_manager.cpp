@@ -80,12 +80,17 @@ public:
 private:
     friend class managed_resource_base;
 
+    static auto _res_id_from(const url&) noexcept -> resource_identifier;
+
     auto _ensure_info(resource_identifier res_id) noexcept
       -> const shared_holder<managed_resource_info>&;
 
     auto _ensure_parameters(
       resource_identifier res_id,
       resource_request_params) noexcept
+      -> const shared_holder<managed_resource_info>&;
+
+    auto _ensure_parameters(resource_request_params) noexcept
       -> const shared_holder<managed_resource_info>&;
 
     shared_holder<loaded_resource_context> _context;
@@ -101,6 +106,8 @@ public:
 
 protected:
     managed_resource_base(resource_manager&, resource_identifier);
+    managed_resource_base(resource_manager&, resource_request_params);
+
     managed_resource_base(
       resource_manager&,
       resource_identifier,
@@ -120,6 +127,14 @@ public:
       resource_manager& manager,
       resource_identifier res_id) noexcept
       : managed_resource_base{manager, res_id} {
+        this->_info->ensure(_rid());
+    }
+
+    managed_resource(
+      resource_manager& manager,
+      resource_identifier res_id,
+      url locator) noexcept
+      : managed_resource_base{manager, res_id, {.locator = std::move(locator)}} {
         this->_info->ensure(_rid());
     }
 

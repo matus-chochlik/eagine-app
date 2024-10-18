@@ -55,13 +55,6 @@ resource_manager::resource_manager(
     _context->set(*this);
 }
 //------------------------------------------------------------------------------
-auto resource_manager::_ensure_info(resource_identifier res_id) noexcept
-  -> const shared_holder<managed_resource_info>& {
-    auto& info{_resources[res_id]};
-    info.ensure();
-    return info;
-}
-//------------------------------------------------------------------------------
 auto resource_manager::resource_context() const noexcept
   -> const shared_holder<loaded_resource_context>& {
     return _context;
@@ -71,11 +64,34 @@ auto resource_manager::loader() noexcept -> resource_loader& {
     return _context->loader();
 }
 //------------------------------------------------------------------------------
+auto resource_manager::_res_id_from(const url& locator) noexcept
+  -> resource_identifier {
+    if(auto id{locator.query().arg_identifier("resource_id")}) {
+        return id;
+    }
+    return locator.path_identifier();
+}
+//------------------------------------------------------------------------------
+auto resource_manager::_ensure_info(resource_identifier res_id) noexcept
+  -> const shared_holder<managed_resource_info>& {
+    auto& info{_resources[res_id]};
+    info.ensure();
+    return info;
+}
+//------------------------------------------------------------------------------
 auto resource_manager::_ensure_parameters(
   resource_identifier res_id,
   resource_request_params params) noexcept
   -> const shared_holder<managed_resource_info>& {
     auto& info{_ensure_info(res_id)};
+    info->params = std::move(params);
+    return info;
+}
+//------------------------------------------------------------------------------
+auto resource_manager::_ensure_parameters(
+  resource_request_params params) noexcept
+  -> const shared_holder<managed_resource_info>& {
+    auto& info{_ensure_info(_res_id_from(params.locator))};
     info->params = std::move(params);
     return info;
 }
@@ -105,6 +121,11 @@ managed_resource_base::managed_resource_base(
   resource_manager& manager,
   resource_identifier res_id)
   : _info{manager._ensure_info(res_id)} {}
+//------------------------------------------------------------------------------
+managed_resource_base::managed_resource_base(
+  resource_manager& manager,
+  resource_request_params params)
+  : _info{manager._ensure_parameters(std::move(params))} {}
 //------------------------------------------------------------------------------
 managed_resource_base::managed_resource_base(
   resource_manager& manager,
