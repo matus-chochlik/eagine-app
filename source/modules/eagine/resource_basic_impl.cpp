@@ -789,6 +789,104 @@ auto glsl_string_resource::make_loader(
       std::move(params)};
 }
 //------------------------------------------------------------------------------
+// valtree_eagishdr_builder
+//------------------------------------------------------------------------------
+struct valtree_eagishdr_builder final
+  : valtree::object_builder_impl<valtree_eagishdr_builder> {
+    using base = valtree::object_builder_impl<valtree_eagishdr_builder>;
+
+    auto max_token_size() noexcept -> span_size_t final {
+        return 1024;
+    }
+
+    template <typename T>
+    void do_add(const basic_string_path&, span<const T>) noexcept {}
+
+    void do_add(
+      const basic_string_path& path,
+      span<const string_view> data) noexcept;
+
+    std::optional<url> source_url;
+    std::vector<url> include_urls;
+    std::vector<url> library_urls;
+};
+//------------------------------------------------------------------------------
+void valtree_eagishdr_builder::do_add(
+  const basic_string_path& path,
+  span<const string_view> data) noexcept {
+    if((path.has_size(1))) {
+        if(path.starts_with("source_url") and data.has_single_value()) {
+            if(url locator{to_string(*data)}) {
+                source_url = std::move(locator);
+            }
+        }
+    } else if(path.has_size(2)) {
+        if(path.ends_with("_")) {
+            for(const string_view inc_str : data) {
+                if(url locator{to_string(inc_str)}) {
+                    if(path.starts_with("includes")) {
+                        include_urls.emplace_back(std::move(locator));
+                    } else if(path.starts_with("libraries")) {
+                        library_urls.emplace_back(std::move(locator));
+                    }
+                }
+            }
+        }
+    }
+}
+//------------------------------------------------------------------------------
+// gl_shader_parameters_resource::_loader
+//------------------------------------------------------------------------------
+struct gl_shader_parameters_resource::_loader final
+  : simple_loader_of<gl_shader_parameters_resource> {
+    using base = simple_loader_of<gl_shader_parameters_resource>;
+    using base::base;
+
+    auto request_dependencies(resource_loader& loader) noexcept
+      -> valid_if_not_zero<identifier_t> final;
+
+    void resource_loaded(const load_info&) noexcept final;
+
+    visited_valtree_resource _visit{hold<valtree_eagishdr_builder>};
+};
+//------------------------------------------------------------------------------
+auto gl_shader_parameters_resource::_loader::request_dependencies(
+  resource_loader& res_loader) noexcept -> valid_if_not_zero<identifier_t> {
+    return _add_single_dependency(
+      res_loader.load(_visit, resource_context(), parameters()), res_loader);
+}
+//------------------------------------------------------------------------------
+void gl_shader_parameters_resource::_loader::resource_loaded(
+  const load_info& info) noexcept {
+    if(auto builder{_visit.builder_as<valtree_eagishdr_builder>()}) {
+        auto& res{resource()._private_ref()};
+        res.source_url = std::move(builder->source_url);
+        res.include_urls = std::move(builder->include_urls);
+        res.library_urls = std::move(builder->library_urls);
+        mark_loaded();
+        return;
+    }
+    mark_cancelled();
+}
+//------------------------------------------------------------------------------
+// gl_shader_parameters_resource
+//------------------------------------------------------------------------------
+auto gl_shader_parameters_resource::kind() const noexcept -> identifier {
+    return "GLShdrPara";
+}
+//------------------------------------------------------------------------------
+auto gl_shader_parameters_resource::make_loader(
+  main_ctx_parent parent,
+  const shared_holder<loaded_resource_context>& context,
+  resource_request_params params) noexcept -> shared_holder<loader> {
+    return {
+      hold<gl_shader_parameters_resource::_loader>,
+      parent,
+      *this,
+      context,
+      std::move(params)};
+}
+//------------------------------------------------------------------------------
 // shape_generator_resource
 //------------------------------------------------------------------------------
 auto shape_generator_resource::kind() const noexcept -> identifier {

@@ -159,6 +159,27 @@ public:
     struct _loader;
 };
 //------------------------------------------------------------------------------
+// gl_shader_parameters_resource
+//------------------------------------------------------------------------------
+struct gl_shader_parameters {
+    std::optional<url> source_url;
+    std::vector<url> include_urls;
+    std::vector<url> library_urls;
+};
+//------------------------------------------------------------------------------
+export class gl_shader_parameters_resource final
+  : public simple_resource<gl_shader_parameters> {
+public:
+    auto kind() const noexcept -> identifier final;
+
+    auto make_loader(
+      main_ctx_parent,
+      const shared_holder<loaded_resource_context>&,
+      resource_request_params params) noexcept -> shared_holder<loader> final;
+
+    struct _loader;
+};
+//------------------------------------------------------------------------------
 // shape_generator_resource
 //------------------------------------------------------------------------------
 export class shape_generator_resource final
