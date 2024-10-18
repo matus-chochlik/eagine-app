@@ -57,6 +57,9 @@ void resource_interface::loader::resource_loaded(
 void resource_interface::loader::resource_cancelled(
   const resource_interface::load_info&) noexcept {}
 //------------------------------------------------------------------------------
+void resource_interface::loader::resource_error(
+  const resource_interface::load_info&) noexcept {}
+//------------------------------------------------------------------------------
 auto resource_interface::loader::_set_request_id(identifier_t req_id) noexcept
   -> identifier_t {
     _request_id = req_id;
@@ -72,6 +75,13 @@ void resource_interface::loader::_notify_cancelled(
   resource_loader& res_loader) noexcept {
     res_loader._handle_resource_cancelled(
       _request_id, _params.locator, _resource);
+}
+//------------------------------------------------------------------------------
+void resource_interface::loader::_notify_error(
+  resource_loader& res_loader,
+  resource_status status) noexcept {
+    res_loader._handle_resource_error(
+      _request_id, _params.locator, _resource, status);
 }
 //------------------------------------------------------------------------------
 // resource_loader
@@ -151,11 +161,11 @@ void resource_loader::_handle_stream_cancelled(
 }
 //------------------------------------------------------------------------------
 void resource_loader::_handle_resource_loaded(
-  identifier_t request_id,
+  const identifier_t request_id,
   const url& locator,
   resource_interface& resource) noexcept {
     const resource_interface::load_info info{
-      locator, request_id, resource.kind()};
+      locator, request_id, resource.kind(), resource_status::loaded};
 
     if(const auto found{find(_consumer, request_id)}) {
         if(const auto& loader{*found}) {
@@ -166,11 +176,11 @@ void resource_loader::_handle_resource_loaded(
 }
 //------------------------------------------------------------------------------
 void resource_loader::_handle_resource_cancelled(
-  identifier_t request_id,
+  const identifier_t request_id,
   const url& locator,
   const resource_interface& resource) noexcept {
     const resource_interface::load_info info{
-      locator, request_id, resource.kind()};
+      locator, request_id, resource.kind(), resource_status::cancelled};
 
     if(const auto found{find(_consumer, request_id)}) {
         if(const auto& loader{*found}) {
@@ -178,6 +188,22 @@ void resource_loader::_handle_resource_cancelled(
         }
     }
     resource_cancelled(info);
+}
+//------------------------------------------------------------------------------
+void resource_loader::_handle_resource_error(
+  const identifier_t request_id,
+  const url& locator,
+  const resource_interface& resource,
+  const resource_status status) noexcept {
+    const resource_interface::load_info info{
+      locator, request_id, resource.kind(), status};
+
+    if(const auto found{find(_consumer, request_id)}) {
+        if(const auto& loader{*found}) {
+            loader->resource_error(info);
+        }
+    }
+    resource_error(info);
 }
 //------------------------------------------------------------------------------
 } // namespace eagine::app::exp

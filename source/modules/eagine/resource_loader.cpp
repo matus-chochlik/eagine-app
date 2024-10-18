@@ -64,6 +64,8 @@ public:
         identifier_t request_id{0};
         /// @brief The resource kind identifier.
         identifier kind{};
+        /// @brief The resource load status.
+        resource_status status{resource_status::created};
     };
 
     /// @brief Base class for resource-specific temporary loader objects.
@@ -125,11 +127,14 @@ public:
 
         virtual void resource_cancelled(const load_info&) noexcept;
 
+        virtual void resource_error(const load_info&) noexcept;
+
     protected:
         auto _set_request_id(identifier_t req_id) noexcept -> identifier_t;
 
         void _notify_loaded(resource_loader&) noexcept;
         void _notify_cancelled(resource_loader&) noexcept;
+        void _notify_error(resource_loader&, resource_status status) noexcept;
 
     private:
         identifier_t _request_id{0};
@@ -214,31 +219,23 @@ protected:
         using loader_of<Resource>::resource;
 
         void stream_finished(identifier_t) noexcept override {
-            derived().set_status(resource_status::loaded);
-            if(_res_loader) [[likely]] {
-                this->_notify_loaded(*_res_loader);
-            }
+            mark_loaded();
         }
 
         void stream_cancelled(identifier_t) noexcept override {
-            derived().set_status(resource_status::cancelled);
-            if(_res_loader) [[likely]] {
-                this->_notify_cancelled(*_res_loader);
-            }
+            mark_cancelled();
         }
 
         void resource_loaded(const load_info&) noexcept override {
-            derived().set_status(resource_status::loaded);
-            if(_res_loader) [[likely]] {
-                this->_notify_loaded(*_res_loader);
-            }
+            mark_loaded();
         }
 
         void resource_cancelled(const load_info&) noexcept override {
-            derived().set_status(resource_status::cancelled);
-            if(_res_loader) [[likely]] {
-                this->_notify_cancelled(*_res_loader);
-            }
+            mark_cancelled();
+        }
+
+        void resource_error(const load_info& info) noexcept override {
+            mark_error(info.status);
         }
 
         void set_status(resource_status status) noexcept {
@@ -248,6 +245,28 @@ protected:
     protected:
         auto derived() noexcept -> Loader& {
             return *static_cast<Loader*>(this);
+        }
+
+        void mark_loaded() noexcept {
+            derived().set_status(resource_status::loaded);
+            if(_res_loader) [[likely]] {
+                this->_notify_loaded(*_res_loader);
+            }
+        }
+
+        void mark_cancelled() noexcept {
+            derived().set_status(resource_status::cancelled);
+            if(_res_loader) [[likely]] {
+                this->_notify_cancelled(*_res_loader);
+            }
+        }
+
+        void mark_error(
+          resource_status status = resource_status::error) noexcept {
+            derived().set_status(status);
+            if(_res_loader) [[likely]] {
+                this->_notify_error(*_res_loader, status);
+            }
         }
 
         auto _add_single_dependency(
@@ -270,12 +289,19 @@ public:
 
     /// @brief Signal emitted when a resource is successfully loaded.
     /// @see resource_cancelled
+    /// @see resource_error
     signal<void(const resource_interface::load_info&) noexcept> resource_loaded;
 
     /// @brief Signal emitted when resource loading has been cancelled.
     /// @see resource_loaded
+    /// @see resource_error
     signal<void(const resource_interface::load_info&) noexcept>
       resource_cancelled;
+
+    /// @brief Signal emitted when resource loading encountered an error.
+    /// @see resource_loaded
+    /// @see resource_cancelled
+    signal<void(const resource_interface::load_info&) noexcept> resource_error;
 
     auto load_any(
       resource_interface& resource,
@@ -329,14 +355,20 @@ private:
     void _handle_stream_cancelled(identifier_t blob_id) noexcept;
 
     void _handle_resource_loaded(
-      identifier_t,
+      const identifier_t,
       const url&,
       resource_interface&) noexcept;
 
     void _handle_resource_cancelled(
-      identifier_t,
+      const identifier_t,
       const url&,
       const resource_interface&) noexcept;
+
+    void _handle_resource_error(
+      const identifier_t,
+      const url&,
+      const resource_interface&,
+      const resource_status status) noexcept;
 
     flat_map<identifier_t, shared_holder<resource_interface::loader>> _pending;
     flat_map<identifier_t, shared_holder<resource_interface::loader>> _consumer;

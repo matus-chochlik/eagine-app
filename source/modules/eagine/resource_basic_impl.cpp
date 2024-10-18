@@ -306,7 +306,7 @@ void float_list_resource::_loader::resource_loaded(
         using std::swap;
         swap(builder->_values, resource()._private_ref());
     }
-    base::resource_loaded(info);
+    mark_loaded();
 }
 //------------------------------------------------------------------------------
 auto float_list_resource::make_loader(
@@ -443,7 +443,7 @@ void vec3_list_resource::_loader::resource_loaded(
         using std::swap;
         swap(builder->_values, resource()._private_ref());
     }
-    base::resource_loaded(info);
+    mark_loaded();
 }
 //------------------------------------------------------------------------------
 auto vec3_list_resource::make_loader(
@@ -646,7 +646,7 @@ void mat4_list_resource::_loader::resource_loaded(
         using std::swap;
         swap(builder->_values, resource()._private_ref());
     }
-    base::resource_loaded(info);
+    mark_loaded();
 }
 //------------------------------------------------------------------------------
 auto mat4_list_resource::make_loader(
@@ -686,7 +686,7 @@ auto smooth_float_curve_resource::_loader::request_dependencies(
 void smooth_float_curve_resource::_loader::resource_loaded(
   const load_info& info) noexcept {
     resource()._private_ref() = {std::move(_cps.release_resource())};
-    base::resource_loaded(info);
+    mark_loaded();
 }
 //------------------------------------------------------------------------------
 auto smooth_float_curve_resource::make_loader(
@@ -730,7 +730,7 @@ auto smooth_vec3_curve_resource::_loader::request_dependencies(
 void smooth_vec3_curve_resource::_loader::resource_loaded(
   const load_info& info) noexcept {
     resource()._private_ref() = {std::move(_cps.release_resource())};
-    base::resource_loaded(info);
+    mark_loaded();
 }
 //------------------------------------------------------------------------------
 auto smooth_vec3_curve_resource::make_loader(
@@ -771,10 +771,9 @@ auto glsl_string_resource::_loader::request_dependencies(
       res_loader.load(_text, resource_context(), parameters()), res_loader);
 }
 //------------------------------------------------------------------------------
-void glsl_string_resource::_loader::resource_loaded(
-  const load_info& info) noexcept {
+void glsl_string_resource::_loader::resource_loaded(const load_info&) noexcept {
     resource()._private_ref() = {std::move(_text.release_resource())};
-    base::resource_loaded(info);
+    mark_loaded();
 }
 //------------------------------------------------------------------------------
 auto glsl_string_resource::make_loader(
@@ -840,10 +839,10 @@ void shape_generator_resource::_loader::resource_loaded(
     if(auto gen{
          shapes::from_value_tree(_tree.release_resource(), main_ctx::get())}) {
         resource()._private_ref() = std::move(gen);
-        base::resource_loaded(info);
+        mark_loaded();
         return;
     }
-    base::resource_cancelled(info);
+    mark_error();
 }
 //------------------------------------------------------------------------------
 auto shape_generator_resource::make_loader(

@@ -54,18 +54,18 @@ void valtree_resource::_loader::resource_loaded(const load_info& info) noexcept 
     if(info.locator.has_path_suffix(".json") or info.locator.has_scheme("json")) {
         if(auto tree{valtree::from_json_text(_text.get(), main_ctx::get())}) {
             resource()._private_ref() = std::move(tree);
-            base::resource_loaded(info);
+            mark_loaded();
             return;
         }
     }
     if(info.locator.has_path_suffix(".yaml") or info.locator.has_scheme("yaml")) {
         if(auto tree{valtree::from_yaml_text(_text.get(), main_ctx::get())}) {
             resource()._private_ref() = std::move(tree);
-            base::resource_loaded(info);
+            mark_loaded();
             return;
         }
     }
-    base::resource_cancelled(info);
+    mark_error();
 }
 //------------------------------------------------------------------------------
 auto valtree_resource::make_loader(

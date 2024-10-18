@@ -54,12 +54,12 @@ void gl_shader_include_resource::_loader::resource_loaded(
             auto& glapi{res_ctx->gl_api()};
             if(glapi.add_shader_include(*path, _glsl->storage())) {
                 resource()._private_ref() = {std::move(*path)};
-                base::resource_loaded(info);
+                mark_loaded();
                 return;
             }
         }
     }
-    base::resource_cancelled(info);
+    mark_error();
 }
 //------------------------------------------------------------------------------
 auto gl_shader_include_resource::kind() const noexcept -> identifier {
@@ -151,17 +151,13 @@ void gl_shader_includes_resource::_loader::resource_loaded(
                   std::move(shdr_incl->release_resource()));
                 _includes.erase(pos);
                 if(_includes.empty()) {
-                    base::resource_loaded(
-                      {.locator = locator(),
-                       .request_id = _req_id,
-                       .kind = "GLShdrIncs"});
+                    mark_loaded();
                 }
                 return;
             }
         }
     }
-    base::resource_cancelled(
-      {.locator = locator(), .request_id = _req_id, .kind = "GLShdrIncs"});
+    mark_error();
 }
 //------------------------------------------------------------------------------
 auto gl_shader_includes_resource::kind() const noexcept -> identifier {
@@ -275,14 +271,14 @@ void gl_shader_resource::_loader_glsl::resource_loaded(
                 if(glapi.shader_source(shdr, _glsl.get())) {
                     if(glapi.compile_shader(shdr)) {
                         resource()._private_ref() = std::move(shdr);
-                        base::resource_loaded(info);
+                        mark_loaded();
                         return;
                     }
                 }
             }
         }
     }
-    base::resource_cancelled(info);
+    mark_error();
 }
 //------------------------------------------------------------------------------
 // gl_shader_resource
