@@ -132,9 +132,16 @@ public:
 
     managed_resource(
       resource_manager& manager,
+      resource_request_params params) noexcept
+      : managed_resource_base{manager, std::move(params)} {
+        this->_info->ensure(_rid());
+    }
+
+    managed_resource(
+      resource_manager& manager,
       resource_identifier res_id,
-      url locator) noexcept
-      : managed_resource_base{manager, res_id, {.locator = std::move(locator)}} {
+      resource_request_params params) noexcept
+      : managed_resource_base{manager, res_id, std::move(params)} {
         this->_info->ensure(_rid());
     }
 

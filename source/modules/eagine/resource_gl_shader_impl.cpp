@@ -103,7 +103,6 @@ struct gl_shader_includes_resource::_loader final
     void resource_loaded(const load_info&) noexcept final;
 
     identifier_t _urls_req_id{0};
-    identifier_t _req_id{0};
     url_list_resource _urls;
     std::vector<
       std::tuple<identifier_t, unique_keeper<gl_shader_include_resource>>>
@@ -115,11 +114,7 @@ auto gl_shader_includes_resource::_loader::request_dependencies(
     if(const auto req_id1{
          res_loader.load(_urls, resource_context(), parameters())}) {
         _urls_req_id = req_id1.value_anyway();
-        if(const auto req_id2{
-             _add_single_dependency(_urls_req_id, res_loader)}) {
-            _req_id = req_id2.value_anyway();
-            return {_req_id};
-        }
+        return _add_single_dependency(_urls_req_id, res_loader);
     }
     return {0};
 }
