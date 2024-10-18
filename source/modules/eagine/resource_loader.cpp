@@ -66,6 +66,10 @@ public:
         identifier kind{};
         /// @brief The resource load status.
         resource_status status{resource_status::created};
+
+        auto has_request_id(identifier_t id) const noexcept -> bool {
+            return request_id == id;
+        }
     };
 
     /// @brief Base class for resource-specific temporary loader objects.
@@ -274,6 +278,12 @@ protected:
           resource_loader& res_loader) noexcept
           -> valid_if_not_zero<identifier_t>;
 
+        auto _add_single_dependency(
+          valid_if_not_zero<identifier_t> req_id,
+          identifier_t& req_id_dst,
+          resource_loader& res_loader) noexcept
+          -> valid_if_not_zero<identifier_t>;
+
         optional_reference<resource_loader> _res_loader;
     };
 };
@@ -386,6 +396,24 @@ auto resource_interface::simple_loader_of<Resource, Loader>::
         derived().set_status(resource_status::loading);
         return {this->_set_request_id(res_loader.get_request_id())};
     }
+    derived().set_status(resource_status::error);
+    return {0};
+}
+//------------------------------------------------------------------------------
+template <typename Resource, typename Loader>
+auto resource_interface::simple_loader_of<Resource, Loader>::
+  _add_single_dependency(
+    valid_if_not_zero<identifier_t> req_id,
+    identifier_t& req_id_dst,
+    resource_loader& res_loader) noexcept -> valid_if_not_zero<identifier_t> {
+    if(req_id) {
+        req_id_dst = req_id.value_anyway();
+        res_loader.add_consumer(req_id_dst, this->shared_from_this());
+        _res_loader = res_loader;
+        derived().set_status(resource_status::loading);
+        return {this->_set_request_id(res_loader.get_request_id())};
+    }
+    req_id_dst = 0;
     derived().set_status(resource_status::error);
     return {0};
 }

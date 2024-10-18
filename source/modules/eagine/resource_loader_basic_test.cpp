@@ -525,7 +525,7 @@ struct test_request_gl_shader_parameters : eagitest::app_case {
           (para->include_urls.size() == 2 and
            para->include_urls.front().has_scheme("glsl") and
            para->include_urls.back().has_scheme("glsl")) and
-          (para->source_url and para->source_url->has_path("TestFrag2"));
+          (para->source_url and para->source_url.has_path("TestFrag2"));
     }
 
     auto is_done() noexcept -> bool final {

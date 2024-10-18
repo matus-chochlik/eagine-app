@@ -162,7 +162,7 @@ public:
 // gl_shader_parameters_resource
 //------------------------------------------------------------------------------
 struct gl_shader_parameters {
-    std::optional<url> source_url;
+    url source_url;
     std::vector<url> include_urls;
     std::vector<url> library_urls;
 };

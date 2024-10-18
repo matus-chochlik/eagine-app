@@ -102,8 +102,9 @@ struct gl_shader_includes_resource::_loader final
 
     void resource_loaded(const load_info&) noexcept final;
 
-    identifier_t _urls_req_id{0};
     url_list_resource _urls;
+    identifier_t _urls_req_id{0};
+
     std::vector<
       std::tuple<identifier_t, unique_keeper<gl_shader_include_resource>>>
       _includes;
@@ -111,17 +112,15 @@ struct gl_shader_includes_resource::_loader final
 //------------------------------------------------------------------------------
 auto gl_shader_includes_resource::_loader::request_dependencies(
   resource_loader& res_loader) noexcept -> valid_if_not_zero<identifier_t> {
-    if(const auto req_id1{
-         res_loader.load(_urls, resource_context(), parameters())}) {
-        _urls_req_id = req_id1.value_anyway();
-        return _add_single_dependency(_urls_req_id, res_loader);
-    }
-    return {0};
+    return _add_single_dependency(
+      res_loader.load(_urls, resource_context(), parameters()),
+      _urls_req_id,
+      res_loader);
 }
 //------------------------------------------------------------------------------
 void gl_shader_includes_resource::_loader::resource_loaded(
   const load_info& info) noexcept {
-    if(info.request_id == _urls_req_id) {
+    if(info.has_request_id(_urls_req_id)) {
         auto urls{_urls.release_resource()};
         for(auto& locator : urls) {
             _includes.emplace_back();
@@ -141,7 +140,7 @@ void gl_shader_includes_resource::_loader::resource_loaded(
     } else {
         for(auto pos{_includes.begin()}; pos != _includes.end(); ++pos) {
             auto& [request_id, shdr_incl]{*pos};
-            if(info.request_id == request_id) {
+            if(info.has_request_id(request_id)) {
                 resource()._private_ref().emplace_back(
                   std::move(shdr_incl->release_resource()));
                 _includes.erase(pos);

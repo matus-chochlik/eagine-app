@@ -860,11 +860,13 @@ void gl_shader_parameters_resource::_loader::resource_loaded(
   const load_info& info) noexcept {
     if(auto builder{_visit.builder_as<valtree_eagishdr_builder>()}) {
         auto& res{resource()._private_ref()};
-        res.source_url = std::move(builder->source_url);
-        res.include_urls = std::move(builder->include_urls);
-        res.library_urls = std::move(builder->library_urls);
-        mark_loaded();
-        return;
+        if(builder->source_url) {
+            res.source_url = std::move(*(builder->source_url));
+            res.include_urls = std::move(builder->include_urls);
+            res.library_urls = std::move(builder->library_urls);
+            mark_loaded();
+            return;
+        }
     }
     mark_cancelled();
 }

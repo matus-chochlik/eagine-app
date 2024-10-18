@@ -137,6 +137,13 @@ public:
         this->_info->ensure(_rid());
     }
 
+    managed_resource(resource_manager& manager, url locator) noexcept
+      : managed_resource_base{
+          manager,
+          resource_request_params{.locator = std::move(locator)}} {
+        this->_info->ensure(_rid());
+    }
+
     managed_resource(
       resource_manager& manager,
       resource_identifier res_id,
