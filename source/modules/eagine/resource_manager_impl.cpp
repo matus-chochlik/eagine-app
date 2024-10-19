@@ -118,6 +118,31 @@ auto resource_manager::update() noexcept -> work_done {
 //------------------------------------------------------------------------------
 // managed_resource_base
 //------------------------------------------------------------------------------
+void managed_resource_base::_init(
+  resource_manager& manager,
+  resource_identifier res_id) noexcept {
+    _info = {manager._ensure_info(res_id)};
+}
+//------------------------------------------------------------------------------
+void managed_resource_base::_init(
+  resource_manager& manager,
+  resource_request_params params) noexcept {
+    _info = {manager._ensure_parameters(std::move(params))};
+}
+//------------------------------------------------------------------------------
+void managed_resource_base::_init(
+  resource_manager& manager,
+  resource_identifier res_id,
+  resource_request_params params) noexcept {
+    _info = {manager._ensure_parameters(res_id, std::move(params))};
+}
+//------------------------------------------------------------------------------
+void managed_resource_base::_add_parameters(
+  resource_request_params params) noexcept {
+    assert(_info);
+    _info->params = std::move(params);
+}
+//------------------------------------------------------------------------------
 managed_resource_base::managed_resource_base(
   resource_manager& manager,
   resource_identifier res_id)
@@ -134,8 +159,12 @@ managed_resource_base::managed_resource_base(
   resource_request_params params)
   : _info{manager._ensure_parameters(res_id, std::move(params))} {}
 //------------------------------------------------------------------------------
+auto managed_resource_base::has_storage() const noexcept -> bool {
+    return _info and _info->resource;
+}
+//------------------------------------------------------------------------------
 auto managed_resource_base::is_loaded() const noexcept -> bool {
-    return _info and _info->resource and _info->resource->is_loaded();
+    return has_storage() and _info->resource->is_loaded();
 }
 //------------------------------------------------------------------------------
 auto managed_resource_base::kind() const noexcept -> identifier {

@@ -15,10 +15,11 @@ struct test_resource_manager_1 : eagitest::app_case {
     using launcher = eagitest::launcher<test_resource_manager_1>;
 
     test_resource_manager_1(auto& s, auto& ec)
-      : eagitest::app_case{s, ec, 1, "1"}
-      , manager{context().resources()} {
-        manager.add_parameters("TestText1", {eagine::url{"txt:///TestText"}});
-        manager.add_parameters("TestText2", {eagine::url{"txt:///TestText"}});
+      : eagitest::app_case{s, ec, 1, "1"} {
+        res_1.init(context().resources(), "TestText1")
+          .add_parameters({eagine::url{"txt:///TestText"}});
+        res_2.init(context().resources(), "TestText2")
+          .add_parameters({eagine::url{"txt:///TestText"}});
         too_long.reset();
     }
 
@@ -44,13 +45,8 @@ struct test_resource_manager_1 : eagitest::app_case {
     }
 
     eagine::timeout too_long{std::chrono::seconds{10}};
-    eagine::app::resource_manager& manager;
-    eagine::app::managed_resource<eagine::app::exp::plain_text_resource> res_1{
-      manager,
-      "TestText1"};
-    eagine::app::managed_resource<eagine::app::exp::string_list_resource> res_2{
-      manager,
-      "TestText2"};
+    eagine::app::managed_resource<eagine::app::exp::plain_text_resource> res_1;
+    eagine::app::managed_resource<eagine::app::exp::string_list_resource> res_2;
 };
 //------------------------------------------------------------------------------
 struct test_resource_manager_2 : eagitest::app_case {

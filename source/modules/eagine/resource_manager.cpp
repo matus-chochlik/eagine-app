@@ -104,20 +104,33 @@ private:
 //------------------------------------------------------------------------------
 class managed_resource_base {
 public:
-    auto is_loaded() const noexcept -> bool;
+    [[nodiscard]] auto has_storage() const noexcept -> bool;
+
+    [[nodiscard]] auto is_loaded() const noexcept -> bool;
 
     explicit operator bool() const noexcept {
         return is_loaded();
     }
 
-    auto kind() const noexcept -> identifier;
+    [[nodiscard]] auto kind() const noexcept -> identifier;
 
-    auto has_parameters() const noexcept -> bool;
+    [[nodiscard]] auto has_parameters() const noexcept -> bool;
 
     auto load_if_needed(resource_manager&) const noexcept
       -> valid_if_not_zero<identifier_t>;
 
 protected:
+    managed_resource_base() noexcept = default;
+
+    void _init(resource_manager&, resource_identifier) noexcept;
+    void _init(resource_manager&, resource_request_params) noexcept;
+    void _init(
+      resource_manager&,
+      resource_identifier,
+      resource_request_params) noexcept;
+
+    void _add_parameters(resource_request_params) noexcept;
+
     managed_resource_base(resource_manager&, resource_identifier);
     managed_resource_base(resource_manager&, resource_request_params);
 
@@ -135,26 +148,32 @@ class managed_resource : public managed_resource_base {
         return {};
     }
 
+    void _ensure_storage() noexcept {
+        this->_info->ensure(_rid());
+    }
+
 public:
+    managed_resource() noexcept = default;
+
     managed_resource(
       resource_manager& manager,
       resource_identifier res_id) noexcept
       : managed_resource_base{manager, res_id} {
-        this->_info->ensure(_rid());
+        _ensure_storage();
     }
 
     managed_resource(
       resource_manager& manager,
       resource_request_params params) noexcept
       : managed_resource_base{manager, std::move(params)} {
-        this->_info->ensure(_rid());
+        _ensure_storage();
     }
 
     managed_resource(resource_manager& manager, url locator) noexcept
       : managed_resource_base{
           manager,
           resource_request_params{.locator = std::move(locator)}} {
-        this->_info->ensure(_rid());
+        _ensure_storage();
     }
 
     managed_resource(
@@ -162,7 +181,36 @@ public:
       resource_identifier res_id,
       resource_request_params params) noexcept
       : managed_resource_base{manager, res_id, std::move(params)} {
-        this->_info->ensure(_rid());
+        _ensure_storage();
+    }
+
+    auto init(resource_manager& manager, resource_identifier res_id) noexcept
+      -> managed_resource& {
+        this->_init(manager, res_id);
+        _ensure_storage();
+        return *this;
+    }
+
+    auto init(resource_manager& manager, resource_request_params params) noexcept
+      -> managed_resource& {
+        this->_init(manager, std::move(params));
+        _ensure_storage();
+        return *this;
+    }
+
+    auto init(
+      resource_manager& manager,
+      resource_identifier res_id,
+      resource_request_params params) noexcept -> managed_resource& {
+        this->_init(manager, res_id, std::move(params));
+        _ensure_storage();
+        return *this;
+    }
+
+    auto add_parameters(resource_request_params params) noexcept
+      -> managed_resource& {
+        this->_add_parameters(std::move(params));
+        return *this;
     }
 
     auto ref() const noexcept
