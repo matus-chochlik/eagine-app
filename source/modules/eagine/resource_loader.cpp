@@ -47,6 +47,7 @@ export enum class resource_status : std::uint8_t {
 };
 //------------------------------------------------------------------------------
 export class resource_loader;
+export class resource_manager;
 //------------------------------------------------------------------------------
 /// @brief Structure containing parameters for a resource request.
 /// @see resource_loader
@@ -91,10 +92,20 @@ public:
         }
 
         /// @brief Returns a reference to the resource context (if any).
+        /// @see parent_loader
+        /// @see parent_manager
         auto resource_context() const noexcept
           -> const shared_holder<loaded_resource_context>& {
             return _context;
         }
+
+        /// @brief Returns a reference to resource loader from the resource context.
+        /// @see resource_context
+        auto parent_loader() const noexcept -> resource_loader&;
+
+        /// @brief Returns a reference to resource manager from the resource context.
+        /// @see resource_context
+        auto parent_manager() const noexcept -> resource_manager&;
 
         /// @brief Returns the associated resource request parameters.
         auto parameters() const noexcept -> const resource_request_params& {

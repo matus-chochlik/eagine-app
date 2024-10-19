@@ -16,6 +16,7 @@ import eagine.core.types;
 import eagine.core.utility;
 import eagine.core.runtime;
 import eagine.core.valid_if;
+import eagine.core.identifier;
 import eagine.core.container;
 import eagine.core.main_ctx;
 import :resource_loader;
@@ -137,8 +138,24 @@ auto managed_resource_base::is_loaded() const noexcept -> bool {
     return _info and _info->resource and _info->resource->is_loaded();
 }
 //------------------------------------------------------------------------------
+auto managed_resource_base::kind() const noexcept -> identifier {
+    if(_info and _info->resource) {
+        return _info->resource->kind();
+    }
+    return {};
+}
+//------------------------------------------------------------------------------
 auto managed_resource_base::has_parameters() const noexcept -> bool {
     return _info and _info->has_parameters();
+}
+//------------------------------------------------------------------------------
+auto managed_resource_base::load_if_needed(
+  resource_manager& manager) const noexcept -> valid_if_not_zero<identifier_t> {
+    if(_info) {
+        return _info->load_if_needed(
+          manager.loader(), manager.resource_context());
+    }
+    return {0};
 }
 //------------------------------------------------------------------------------
 } // namespace exp

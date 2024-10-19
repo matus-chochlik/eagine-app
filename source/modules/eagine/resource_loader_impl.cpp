@@ -47,6 +47,18 @@ resource_interface::loader::loader(
 void resource_interface::loader::stream_data_appended(
   const msgbus::blob_stream_chunk&) noexcept {}
 //------------------------------------------------------------------------------
+auto resource_interface::loader::parent_loader() const noexcept
+  -> resource_loader& {
+    assert(_context);
+    return _context->loader();
+}
+//------------------------------------------------------------------------------
+auto resource_interface::loader::parent_manager() const noexcept
+  -> resource_manager& {
+    assert(_context);
+    return *(_context->manager());
+}
+//------------------------------------------------------------------------------
 void resource_interface::loader::stream_finished(identifier_t) noexcept {}
 //------------------------------------------------------------------------------
 void resource_interface::loader::stream_cancelled(identifier_t) noexcept {}

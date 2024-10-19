@@ -102,7 +102,16 @@ class managed_resource_base {
 public:
     auto is_loaded() const noexcept -> bool;
 
+    explicit operator bool() const noexcept {
+        return is_loaded();
+    }
+
+    auto kind() const noexcept -> identifier;
+
     auto has_parameters() const noexcept -> bool;
+
+    auto load_if_needed(resource_manager&) const noexcept
+      -> valid_if_not_zero<identifier_t>;
 
 protected:
     managed_resource_base(resource_manager&, resource_identifier);
