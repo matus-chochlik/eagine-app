@@ -5,6 +5,10 @@
 /// See accompanying file LICENSE_1_0.txt or copy at
 /// https://www.boost.org/LICENSE_1_0.txt
 ///
+module;
+
+#include <cassert>
+
 export module eagine.app:resource_manager;
 
 import std;
@@ -167,6 +171,20 @@ public:
             return this->_info->as_ref(_rid());
         }
         return {};
+    }
+
+    auto get() const noexcept
+      -> std::add_const_t<typename Resource::resource_type>& {
+        auto res_ref{ref()};
+        assert(res_ref);
+        return *res_ref;
+    }
+
+    auto operator->() const noexcept
+      -> std::add_const_t<typename Resource::resource_type>* {
+        auto res_ref{ref()};
+        assert(res_ref);
+        return res_ref.operator->();
     }
 };
 //------------------------------------------------------------------------------
