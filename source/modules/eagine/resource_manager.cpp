@@ -27,6 +27,8 @@ namespace exp {
 //------------------------------------------------------------------------------
 export using resource_identifier = identifier;
 //------------------------------------------------------------------------------
+// managed_resource_info
+//------------------------------------------------------------------------------
 struct managed_resource_info {
     unique_holder<resource_interface> resource;
     resource_request_params params;
@@ -64,8 +66,9 @@ struct managed_resource_info {
       -> valid_if_not_zero<identifier_t>;
 };
 //------------------------------------------------------------------------------
+// resource_manager
+//------------------------------------------------------------------------------
 class managed_resource_base;
-
 export class resource_manager {
 public:
     resource_manager(shared_holder<loaded_resource_context>) noexcept;
@@ -102,9 +105,11 @@ private:
       _resources;
 };
 //------------------------------------------------------------------------------
+// managed_resources_base
+//------------------------------------------------------------------------------
 class managed_resource_base {
 public:
-    [[nodiscard]] auto has_storage() const noexcept -> bool;
+    [[nodiscard]] auto is_setup() const noexcept -> bool;
 
     [[nodiscard]] auto is_loaded() const noexcept -> bool;
 
@@ -141,6 +146,8 @@ protected:
 
     shared_holder<managed_resource_info> _info;
 };
+//------------------------------------------------------------------------------
+// managed_resource
 //------------------------------------------------------------------------------
 export template <typename Resource>
 class managed_resource : public managed_resource_base {
@@ -184,21 +191,28 @@ public:
         _ensure_storage();
     }
 
-    auto init(resource_manager& manager, resource_identifier res_id) noexcept
+    auto setup(resource_manager& manager, resource_identifier res_id) noexcept
       -> managed_resource& {
         this->_init(manager, res_id);
         _ensure_storage();
         return *this;
     }
 
-    auto init(resource_manager& manager, resource_request_params params) noexcept
-      -> managed_resource& {
+    auto setup(
+      resource_manager& manager,
+      resource_request_params params) noexcept -> managed_resource& {
         this->_init(manager, std::move(params));
         _ensure_storage();
         return *this;
     }
 
-    auto init(
+    auto setup(resource_manager& manager, url locator) noexcept
+      -> managed_resource& {
+        return setup(
+          manager, resource_request_params{.locator = std::move(locator)});
+    }
+
+    auto setup(
       resource_manager& manager,
       resource_identifier res_id,
       resource_request_params params) noexcept -> managed_resource& {
@@ -234,6 +248,63 @@ public:
         assert(res_ref);
         return res_ref.operator->();
     }
+};
+//------------------------------------------------------------------------------
+// managed_resources
+//------------------------------------------------------------------------------
+export template <typename Resource>
+class managed_resources {
+    static constexpr auto _rid() noexcept -> std::type_identity<Resource> {
+        return {};
+    }
+
+public:
+    auto is_setup() const noexcept -> bool {
+        return not _resources.empty();
+    }
+
+    auto are_loaded() const noexcept -> bool {
+        for(const auto& res : _resources) {
+            if(not res.is_loaded()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    auto is_loaded() const noexcept -> bool {
+        return are_loaded();
+    }
+
+    explicit operator bool() const noexcept {
+        return is_loaded();
+    }
+
+    auto setup(
+      resource_manager& manager,
+      resource_request_params params) noexcept -> managed_resources& {
+        _resources.emplace_back();
+        _resources.back().setup(manager, std::move(params));
+        return *this;
+    }
+
+    auto setup(resource_manager& manager, url locator) noexcept
+      -> managed_resources& {
+        return setup(
+          manager, resource_request_params{.locator = std::move(locator)});
+    }
+
+    auto setup(
+      resource_manager& manager,
+      resource_identifier res_id,
+      resource_request_params params) noexcept -> managed_resources& {
+        _resources.emplace_back();
+        _resources.back().setup(manager, res_id, std::move(params));
+        return *this;
+    }
+
+private:
+    std::vector<managed_resource<Resource>> _resources;
 };
 //------------------------------------------------------------------------------
 } // namespace exp

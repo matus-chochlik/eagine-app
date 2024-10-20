@@ -36,7 +36,7 @@ struct valtree_resource::_loader final : simple_loader_of<valtree_resource> {
     using base = simple_loader_of<valtree_resource>;
     using base::base;
 
-    auto request_dependencies(resource_loader& loader) noexcept
+    auto request_dependencies() noexcept
       -> valid_if_not_zero<identifier_t> final;
 
     void resource_loaded(const load_info&) noexcept final;
@@ -44,10 +44,10 @@ struct valtree_resource::_loader final : simple_loader_of<valtree_resource> {
     plain_text_resource _text;
 };
 //------------------------------------------------------------------------------
-auto valtree_resource::_loader::request_dependencies(
-  resource_loader& res_loader) noexcept -> valid_if_not_zero<identifier_t> {
-    return _add_single_dependency(
-      res_loader.load(_text, resource_context(), parameters()), res_loader);
+auto valtree_resource::_loader::request_dependencies() noexcept
+  -> valid_if_not_zero<identifier_t> {
+    return add_single_dependency(
+      parent_loader().load(_text, resource_context(), parameters()));
 }
 //------------------------------------------------------------------------------
 void valtree_resource::_loader::resource_loaded(const load_info& info) noexcept {
@@ -108,7 +108,7 @@ struct visited_valtree_resource::_loader final
       : base{parent, resource, context, std::move(params)}
       , _input{std::move(input)} {}
 
-    auto request_dependencies(resource_loader& loader) noexcept
+    auto request_dependencies() noexcept
       -> valid_if_not_zero<identifier_t> final;
 
     void stream_data_appended(const msgbus::blob_stream_chunk&) noexcept final;
@@ -119,10 +119,10 @@ struct visited_valtree_resource::_loader final
     bool _finished{false};
 };
 //------------------------------------------------------------------------------
-auto visited_valtree_resource::_loader::request_dependencies(
-  resource_loader& res_loader) noexcept -> valid_if_not_zero<identifier_t> {
-    return _add_single_dependency(
-      res_loader.fetch_resource_chunks(parameters(), 1024).first, res_loader);
+auto visited_valtree_resource::_loader::request_dependencies() noexcept
+  -> valid_if_not_zero<identifier_t> {
+    return add_single_dependency(
+      parent_loader().fetch_resource_chunks(parameters(), 1024).first);
 }
 //------------------------------------------------------------------------------
 void visited_valtree_resource::_loader::stream_data_appended(

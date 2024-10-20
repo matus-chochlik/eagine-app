@@ -16,9 +16,9 @@ struct test_resource_manager_1 : eagitest::app_case {
 
     test_resource_manager_1(auto& s, auto& ec)
       : eagitest::app_case{s, ec, 1, "1"} {
-        res_1.init(context().resources(), "TestText1")
+        res_1.setup(context().resources(), "TestText1")
           .add_parameters({eagine::url{"txt:///TestText"}});
-        res_2.init(context().resources(), "TestText2")
+        res_2.setup(context().resources(), "TestText2")
           .add_parameters({eagine::url{"txt:///TestText"}});
         too_long.reset();
     }

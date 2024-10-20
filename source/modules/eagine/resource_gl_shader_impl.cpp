@@ -33,7 +33,7 @@ struct gl_shader_include_resource::_loader final
     using base = simple_loader_of<gl_shader_include_resource>;
     using base::base;
 
-    auto request_dependencies(resource_loader& loader) noexcept
+    auto request_dependencies() noexcept
       -> valid_if_not_zero<identifier_t> final;
 
     void resource_loaded(const load_info&) noexcept final;
@@ -41,10 +41,10 @@ struct gl_shader_include_resource::_loader final
     glsl_string_resource _glsl;
 };
 //------------------------------------------------------------------------------
-auto gl_shader_include_resource::_loader::request_dependencies(
-  resource_loader& res_loader) noexcept -> valid_if_not_zero<identifier_t> {
-    return _add_single_dependency(
-      res_loader.load(_glsl, resource_context(), parameters()), res_loader);
+auto gl_shader_include_resource::_loader::request_dependencies() noexcept
+  -> valid_if_not_zero<identifier_t> {
+    return add_single_dependency(
+      parent_loader().load(_glsl, resource_context(), parameters()));
 }
 //------------------------------------------------------------------------------
 void gl_shader_include_resource::_loader::resource_loaded(
@@ -97,7 +97,7 @@ struct gl_shader_includes_resource::_loader final
     using base = simple_loader_of<gl_shader_includes_resource>;
     using base::base;
 
-    auto request_dependencies(resource_loader& loader) noexcept
+    auto request_dependencies() noexcept
       -> valid_if_not_zero<identifier_t> final;
 
     void resource_loaded(const load_info&) noexcept final;
@@ -110,12 +110,11 @@ struct gl_shader_includes_resource::_loader final
       _includes;
 };
 //------------------------------------------------------------------------------
-auto gl_shader_includes_resource::_loader::request_dependencies(
-  resource_loader& res_loader) noexcept -> valid_if_not_zero<identifier_t> {
-    return _add_single_dependency(
-      res_loader.load(_urls, resource_context(), parameters()),
-      _urls_req_id,
-      res_loader);
+auto gl_shader_includes_resource::_loader::request_dependencies() noexcept
+  -> valid_if_not_zero<identifier_t> {
+    return add_single_dependency(
+      parent_loader().load(_urls, resource_context(), parameters()),
+      _urls_req_id);
 }
 //------------------------------------------------------------------------------
 void gl_shader_includes_resource::_loader::resource_loaded(
@@ -125,12 +124,12 @@ void gl_shader_includes_resource::_loader::resource_loaded(
         for(auto& locator : urls) {
             _includes.emplace_back();
             auto& [request_id, shdr_incl]{_includes.back()};
-            if(auto new_req_id{_res_loader->load(
+            if(auto new_req_id{parent_loader().load(
                  *shdr_incl,
                  resource_context(),
                  {.locator = std::move(locator)})}) {
                 request_id = new_req_id.value_anyway();
-                _res_loader->add_consumer(request_id, this->shared_from_this());
+                add_as_consumer_of(request_id);
             } else {
                 _includes.pop_back();
                 // TODO: log error
@@ -240,7 +239,7 @@ struct gl_shader_resource::_loader_glsl final
       simple_loader_of<gl_shader_resource, gl_shader_resource::_loader_glsl>;
     using base::base;
 
-    auto request_dependencies(resource_loader& loader) noexcept
+    auto request_dependencies() noexcept
       -> valid_if_not_zero<identifier_t> final;
 
     void resource_loaded(const load_info&) noexcept final;
@@ -248,10 +247,10 @@ struct gl_shader_resource::_loader_glsl final
     glsl_string_resource _glsl;
 };
 //------------------------------------------------------------------------------
-auto gl_shader_resource::_loader_glsl::request_dependencies(
-  resource_loader& res_loader) noexcept -> valid_if_not_zero<identifier_t> {
-    return _add_single_dependency(
-      res_loader.load(_glsl, resource_context(), parameters()), res_loader);
+auto gl_shader_resource::_loader_glsl::request_dependencies() noexcept
+  -> valid_if_not_zero<identifier_t> {
+    return add_single_dependency(
+      parent_loader().load(_glsl, resource_context(), parameters()));
 }
 //------------------------------------------------------------------------------
 void gl_shader_resource::_loader_glsl::resource_loaded(

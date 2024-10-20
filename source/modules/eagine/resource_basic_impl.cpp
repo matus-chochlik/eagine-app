@@ -60,16 +60,16 @@ struct plain_text_resource::_loader final
   : simple_loader_of<plain_text_resource> {
     using simple_loader_of<plain_text_resource>::simple_loader_of;
 
-    auto request_dependencies(resource_loader& loader) noexcept
+    auto request_dependencies() noexcept
       -> valid_if_not_zero<identifier_t> final;
 
     void stream_data_appended(const msgbus::blob_stream_chunk&) noexcept final;
 };
 //------------------------------------------------------------------------------
-auto plain_text_resource::_loader::request_dependencies(
-  resource_loader& res_loader) noexcept -> valid_if_not_zero<identifier_t> {
-    return _add_single_dependency(
-      res_loader.fetch_resource_chunks(parameters(), 1024).first, res_loader);
+auto plain_text_resource::_loader::request_dependencies() noexcept
+  -> valid_if_not_zero<identifier_t> {
+    return add_single_dependency(
+      parent_loader().fetch_resource_chunks(parameters(), 1024).first);
 }
 //------------------------------------------------------------------------------
 void plain_text_resource::_loader::stream_data_appended(
@@ -105,7 +105,7 @@ struct string_list_resource::_loader final
     using base = simple_loader_of<string_list_resource>;
     using base::base;
 
-    auto request_dependencies(resource_loader& loader) noexcept
+    auto request_dependencies() noexcept
       -> valid_if_not_zero<identifier_t> final;
 
     void stream_data_appended(const msgbus::blob_stream_chunk&) noexcept final;
@@ -115,10 +115,10 @@ struct string_list_resource::_loader final
     std::string _chunk_line;
 };
 //------------------------------------------------------------------------------
-auto string_list_resource::_loader::request_dependencies(
-  resource_loader& res_loader) noexcept -> valid_if_not_zero<identifier_t> {
-    return _add_single_dependency(
-      res_loader.fetch_resource_chunks(parameters(), 1024).first, res_loader);
+auto string_list_resource::_loader::request_dependencies() noexcept
+  -> valid_if_not_zero<identifier_t> {
+    return add_single_dependency(
+      parent_loader().fetch_resource_chunks(parameters(), 1024).first);
 }
 //------------------------------------------------------------------------------
 void string_list_resource::_loader::stream_data_appended(
@@ -159,7 +159,7 @@ struct url_list_resource::_loader final : simple_loader_of<url_list_resource> {
     using base = simple_loader_of<url_list_resource>;
     using base::base;
 
-    auto request_dependencies(resource_loader& loader) noexcept
+    auto request_dependencies() noexcept
       -> valid_if_not_zero<identifier_t> final;
 
     void stream_data_appended(const msgbus::blob_stream_chunk&) noexcept final;
@@ -169,10 +169,10 @@ struct url_list_resource::_loader final : simple_loader_of<url_list_resource> {
     std::string _chunk_line;
 };
 //------------------------------------------------------------------------------
-auto url_list_resource::_loader::request_dependencies(
-  resource_loader& res_loader) noexcept -> valid_if_not_zero<identifier_t> {
-    return _add_single_dependency(
-      res_loader.fetch_resource_chunks(parameters(), 1024).first, res_loader);
+auto url_list_resource::_loader::request_dependencies() noexcept
+  -> valid_if_not_zero<identifier_t> {
+    return add_single_dependency(
+      parent_loader().fetch_resource_chunks(parameters(), 1024).first);
 }
 //------------------------------------------------------------------------------
 void url_list_resource::_loader::stream_data_appended(
@@ -286,7 +286,7 @@ struct float_list_resource::_loader final
     using base = simple_loader_of<float_list_resource>;
     using base::base;
 
-    auto request_dependencies(resource_loader& loader) noexcept
+    auto request_dependencies() noexcept
       -> valid_if_not_zero<identifier_t> final;
 
     void resource_loaded(const load_info&) noexcept final;
@@ -294,10 +294,10 @@ struct float_list_resource::_loader final
     visited_valtree_resource _visit{hold<valtree_float_vector_builder>};
 };
 //------------------------------------------------------------------------------
-auto float_list_resource::_loader::request_dependencies(
-  resource_loader& res_loader) noexcept -> valid_if_not_zero<identifier_t> {
-    return _add_single_dependency(
-      res_loader.load(_visit, resource_context(), parameters()), res_loader);
+auto float_list_resource::_loader::request_dependencies() noexcept
+  -> valid_if_not_zero<identifier_t> {
+    return add_single_dependency(
+      parent_loader().load(_visit, resource_context(), parameters()));
 }
 //------------------------------------------------------------------------------
 void float_list_resource::_loader::resource_loaded(
@@ -423,7 +423,7 @@ struct vec3_list_resource::_loader final
     using base = simple_loader_of<vec3_list_resource>;
     using base::base;
 
-    auto request_dependencies(resource_loader& loader) noexcept
+    auto request_dependencies() noexcept
       -> valid_if_not_zero<identifier_t> final;
 
     void resource_loaded(const load_info&) noexcept final;
@@ -431,10 +431,10 @@ struct vec3_list_resource::_loader final
     visited_valtree_resource _visit{hold<valtree_vec3_vector_builder>};
 };
 //------------------------------------------------------------------------------
-auto vec3_list_resource::_loader::request_dependencies(
-  resource_loader& res_loader) noexcept -> valid_if_not_zero<identifier_t> {
-    return _add_single_dependency(
-      res_loader.load(_visit, resource_context(), parameters()), res_loader);
+auto vec3_list_resource::_loader::request_dependencies() noexcept
+  -> valid_if_not_zero<identifier_t> {
+    return add_single_dependency(
+      parent_loader().load(_visit, resource_context(), parameters()));
 }
 //------------------------------------------------------------------------------
 void vec3_list_resource::_loader::resource_loaded(
@@ -626,7 +626,7 @@ struct mat4_list_resource::_loader final
     using base = simple_loader_of<mat4_list_resource>;
     using base::base;
 
-    auto request_dependencies(resource_loader& loader) noexcept
+    auto request_dependencies() noexcept
       -> valid_if_not_zero<identifier_t> final;
 
     void resource_loaded(const load_info&) noexcept final;
@@ -634,10 +634,10 @@ struct mat4_list_resource::_loader final
     visited_valtree_resource _visit{hold<valtree_mat4_vector_builder>};
 };
 //------------------------------------------------------------------------------
-auto mat4_list_resource::_loader::request_dependencies(
-  resource_loader& res_loader) noexcept -> valid_if_not_zero<identifier_t> {
-    return _add_single_dependency(
-      res_loader.load(_visit, resource_context(), parameters()), res_loader);
+auto mat4_list_resource::_loader::request_dependencies() noexcept
+  -> valid_if_not_zero<identifier_t> {
+    return add_single_dependency(
+      parent_loader().load(_visit, resource_context(), parameters()));
 }
 //------------------------------------------------------------------------------
 void mat4_list_resource::_loader::resource_loaded(
@@ -669,7 +669,7 @@ struct smooth_float_curve_resource::_loader final
     using base = simple_loader_of<smooth_float_curve_resource>;
     using base::base;
 
-    auto request_dependencies(resource_loader& loader) noexcept
+    auto request_dependencies() noexcept
       -> valid_if_not_zero<identifier_t> final;
 
     void resource_loaded(const load_info&) noexcept final;
@@ -677,10 +677,10 @@ struct smooth_float_curve_resource::_loader final
     float_list_resource _cps;
 };
 //------------------------------------------------------------------------------
-auto smooth_float_curve_resource::_loader::request_dependencies(
-  resource_loader& res_loader) noexcept -> valid_if_not_zero<identifier_t> {
-    return _add_single_dependency(
-      res_loader.load(_cps, resource_context(), parameters()), res_loader);
+auto smooth_float_curve_resource::_loader::request_dependencies() noexcept
+  -> valid_if_not_zero<identifier_t> {
+    return add_single_dependency(
+      parent_loader().load(_cps, resource_context(), parameters()));
 }
 //------------------------------------------------------------------------------
 void smooth_float_curve_resource::_loader::resource_loaded(
@@ -713,7 +713,7 @@ struct smooth_vec3_curve_resource::_loader final
     using base = simple_loader_of<smooth_vec3_curve_resource>;
     using base::base;
 
-    auto request_dependencies(resource_loader& loader) noexcept
+    auto request_dependencies() noexcept
       -> valid_if_not_zero<identifier_t> final;
 
     void resource_loaded(const load_info&) noexcept final;
@@ -721,10 +721,10 @@ struct smooth_vec3_curve_resource::_loader final
     vec3_list_resource _cps;
 };
 //------------------------------------------------------------------------------
-auto smooth_vec3_curve_resource::_loader::request_dependencies(
-  resource_loader& res_loader) noexcept -> valid_if_not_zero<identifier_t> {
-    return _add_single_dependency(
-      res_loader.load(_cps, resource_context(), parameters()), res_loader);
+auto smooth_vec3_curve_resource::_loader::request_dependencies() noexcept
+  -> valid_if_not_zero<identifier_t> {
+    return add_single_dependency(
+      parent_loader().load(_cps, resource_context(), parameters()));
 }
 //------------------------------------------------------------------------------
 void smooth_vec3_curve_resource::_loader::resource_loaded(
@@ -757,7 +757,7 @@ struct glsl_string_resource::_loader final
     using base = simple_loader_of<glsl_string_resource>;
     using base::base;
 
-    auto request_dependencies(resource_loader& loader) noexcept
+    auto request_dependencies() noexcept
       -> valid_if_not_zero<identifier_t> final;
 
     void resource_loaded(const load_info&) noexcept final;
@@ -765,10 +765,10 @@ struct glsl_string_resource::_loader final
     plain_text_resource _text;
 };
 //------------------------------------------------------------------------------
-auto glsl_string_resource::_loader::request_dependencies(
-  resource_loader& res_loader) noexcept -> valid_if_not_zero<identifier_t> {
-    return _add_single_dependency(
-      res_loader.load(_text, resource_context(), parameters()), res_loader);
+auto glsl_string_resource::_loader::request_dependencies() noexcept
+  -> valid_if_not_zero<identifier_t> {
+    return add_single_dependency(
+      parent_loader().load(_text, resource_context(), parameters()));
 }
 //------------------------------------------------------------------------------
 void glsl_string_resource::_loader::resource_loaded(const load_info&) noexcept {
@@ -842,7 +842,7 @@ struct gl_shader_parameters_resource::_loader final
     using base = simple_loader_of<gl_shader_parameters_resource>;
     using base::base;
 
-    auto request_dependencies(resource_loader& loader) noexcept
+    auto request_dependencies() noexcept
       -> valid_if_not_zero<identifier_t> final;
 
     void resource_loaded(const load_info&) noexcept final;
@@ -850,10 +850,10 @@ struct gl_shader_parameters_resource::_loader final
     visited_valtree_resource _visit{hold<valtree_eagishdr_builder>};
 };
 //------------------------------------------------------------------------------
-auto gl_shader_parameters_resource::_loader::request_dependencies(
-  resource_loader& res_loader) noexcept -> valid_if_not_zero<identifier_t> {
-    return _add_single_dependency(
-      res_loader.load(_visit, resource_context(), parameters()), res_loader);
+auto gl_shader_parameters_resource::_loader::request_dependencies() noexcept
+  -> valid_if_not_zero<identifier_t> {
+    return add_single_dependency(
+      parent_loader().load(_visit, resource_context(), parameters()));
 }
 //------------------------------------------------------------------------------
 void gl_shader_parameters_resource::_loader::resource_loaded(
@@ -905,7 +905,7 @@ struct shape_generator_resource::_loader final
       const shared_holder<loaded_resource_context>& context,
       resource_request_params params) noexcept;
 
-    auto request_dependencies(resource_loader& loader) noexcept
+    auto request_dependencies() noexcept
       -> valid_if_not_zero<identifier_t> final;
 
     void resource_loaded(const load_info&) noexcept final;
@@ -922,16 +922,14 @@ shape_generator_resource::_loader::_loader(
     if(auto gen{shapes::shape_from(params.locator, main_ctx::get())}) {
         this->resource()._private_ref() = std::move(gen);
         this->resource()._private_set_status(resource_status::loaded);
-        if(_res_loader) [[likely]] {
-            this->_notify_loaded(*_res_loader);
-        }
+        mark_loaded();
     }
 }
 //------------------------------------------------------------------------------
-auto shape_generator_resource::_loader::request_dependencies(
-  resource_loader& res_loader) noexcept -> valid_if_not_zero<identifier_t> {
-    return _add_single_dependency(
-      res_loader.load(_tree, resource_context(), parameters()), res_loader);
+auto shape_generator_resource::_loader::request_dependencies() noexcept
+  -> valid_if_not_zero<identifier_t> {
+    return add_single_dependency(
+      parent_loader().load(_tree, resource_context(), parameters()));
 }
 //------------------------------------------------------------------------------
 void shape_generator_resource::_loader::resource_loaded(

@@ -159,12 +159,12 @@ managed_resource_base::managed_resource_base(
   resource_request_params params)
   : _info{manager._ensure_parameters(res_id, std::move(params))} {}
 //------------------------------------------------------------------------------
-auto managed_resource_base::has_storage() const noexcept -> bool {
+auto managed_resource_base::is_setup() const noexcept -> bool {
     return _info and _info->resource;
 }
 //------------------------------------------------------------------------------
 auto managed_resource_base::is_loaded() const noexcept -> bool {
-    return has_storage() and _info->resource->is_loaded();
+    return is_setup() and _info->resource->is_loaded();
 }
 //------------------------------------------------------------------------------
 auto managed_resource_base::kind() const noexcept -> identifier {

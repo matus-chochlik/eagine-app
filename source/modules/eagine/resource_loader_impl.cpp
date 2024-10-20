@@ -47,6 +47,11 @@ resource_interface::loader::loader(
 void resource_interface::loader::stream_data_appended(
   const msgbus::blob_stream_chunk&) noexcept {}
 //------------------------------------------------------------------------------
+auto resource_interface::loader::resource_context() const noexcept
+  -> const shared_holder<loaded_resource_context>& {
+    return _context;
+}
+//------------------------------------------------------------------------------
 auto resource_interface::loader::parent_loader() const noexcept
   -> resource_loader& {
     assert(_context);
@@ -59,23 +64,68 @@ auto resource_interface::loader::parent_manager() const noexcept
     return *(_context->manager());
 }
 //------------------------------------------------------------------------------
-void resource_interface::loader::stream_finished(identifier_t) noexcept {}
+void resource_interface::loader::set_status(resource_status status) noexcept {}
 //------------------------------------------------------------------------------
-void resource_interface::loader::stream_cancelled(identifier_t) noexcept {}
+void resource_interface::loader::stream_finished(identifier_t) noexcept {
+    mark_loaded();
+}
+//------------------------------------------------------------------------------
+void resource_interface::loader::stream_cancelled(identifier_t) noexcept {
+    mark_cancelled();
+}
 //------------------------------------------------------------------------------
 void resource_interface::loader::resource_loaded(
-  const resource_interface::load_info&) noexcept {}
+  const resource_interface::load_info&) noexcept {
+    mark_loaded();
+}
 //------------------------------------------------------------------------------
 void resource_interface::loader::resource_cancelled(
-  const resource_interface::load_info&) noexcept {}
+  const resource_interface::load_info&) noexcept {
+    mark_cancelled();
+}
 //------------------------------------------------------------------------------
 void resource_interface::loader::resource_error(
-  const resource_interface::load_info&) noexcept {}
+  const resource_interface::load_info& info) noexcept {
+    mark_error(info.status);
+}
 //------------------------------------------------------------------------------
-auto resource_interface::loader::_set_request_id(identifier_t req_id) noexcept
-  -> identifier_t {
-    _request_id = req_id;
+auto resource_interface::loader::acquire_request_id() noexcept -> identifier_t {
+    _request_id = parent_loader().get_request_id();
     return _request_id;
+}
+//------------------------------------------------------------------------------
+auto resource_interface::loader::add_as_consumer_of(
+  valid_if_not_zero<identifier_t> req_id) noexcept
+  -> valid_if_not_zero<identifier_t> {
+    if(req_id) {
+        parent_loader().add_consumer(
+          req_id.value_anyway(), this->shared_from_this());
+    }
+    return req_id;
+}
+//------------------------------------------------------------------------------
+auto resource_interface::loader::add_single_dependency(
+  valid_if_not_zero<identifier_t> req_id) noexcept
+  -> valid_if_not_zero<identifier_t> {
+    if(add_as_consumer_of(req_id)) {
+        set_status(resource_status::loading);
+        return {acquire_request_id()};
+    }
+    set_status(resource_status::error);
+    return {0};
+}
+//------------------------------------------------------------------------------
+auto resource_interface::loader::add_single_dependency(
+  valid_if_not_zero<identifier_t> req_id,
+  identifier_t& dst_req_id) noexcept -> valid_if_not_zero<identifier_t> {
+    if(add_as_consumer_of(req_id)) {
+        dst_req_id = req_id.value_anyway();
+        set_status(resource_status::loading);
+        return {acquire_request_id()};
+    }
+    dst_req_id = 0;
+    set_status(resource_status::error);
+    return {0};
 }
 //------------------------------------------------------------------------------
 void resource_interface::loader::_notify_loaded(
@@ -96,6 +146,21 @@ void resource_interface::loader::_notify_error(
       _request_id, _params.locator, _resource, status);
 }
 //------------------------------------------------------------------------------
+void resource_interface::loader::mark_loaded() noexcept {
+    set_status(resource_status::loaded);
+    _notify_loaded(parent_loader());
+}
+//------------------------------------------------------------------------------
+void resource_interface::loader::mark_cancelled() noexcept {
+    set_status(resource_status::cancelled);
+    _notify_loaded(parent_loader());
+}
+//------------------------------------------------------------------------------
+void resource_interface::loader::mark_error(resource_status status) noexcept {
+    set_status(status);
+    _notify_error(parent_loader(), status);
+}
+//------------------------------------------------------------------------------
 // resource_loader
 //------------------------------------------------------------------------------
 resource_loader::resource_loader(msgbus::endpoint& bus)
@@ -114,9 +179,11 @@ auto resource_loader::load_any(
   resource_interface& resource,
   const shared_holder<loaded_resource_context>& context,
   resource_request_params params) noexcept -> valid_if_not_zero<identifier_t> {
-    if(auto loader{
-         resource.make_loader(as_parent(), context, std::move(params))}) {
-        return loader->request_dependencies(*this);
+    if(context) {
+        if(auto loader{
+             resource.make_loader(as_parent(), context, std::move(params))}) {
+            return loader->request_dependencies();
+        }
     }
     return {};
 }

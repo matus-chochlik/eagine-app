@@ -53,6 +53,8 @@ export class resource_manager;
 /// @see resource_loader
 export using msgbus::resource_request_params;
 //------------------------------------------------------------------------------
+// resource_interface
+//------------------------------------------------------------------------------
 /// @brief Interface for resources loadable by the resource loader.
 /// @see resource_loader
 export class resource_interface : public interface<resource_interface> {
@@ -78,6 +80,7 @@ public:
     /// @note Do not construct and use directly, use resource_loader instead.
     struct loader
       : abstract<loader>
+      , std::enable_shared_from_this<loader>
       , main_ctx_object {
 
         loader(
@@ -95,9 +98,7 @@ public:
         /// @see parent_loader
         /// @see parent_manager
         auto resource_context() const noexcept
-          -> const shared_holder<loaded_resource_context>& {
-            return _context;
-        }
+          -> const shared_holder<loaded_resource_context>&;
 
         /// @brief Returns a reference to resource loader from the resource context.
         /// @see resource_context
@@ -127,8 +128,10 @@ public:
         /// @brief Returns the resource loading status.
         virtual auto status() const noexcept -> resource_status = 0;
 
+        virtual void set_status(resource_status status) noexcept;
+
         /// @brief Request resource-specific dependencies for associated loaded resource.
-        virtual auto request_dependencies(resource_loader&) noexcept
+        virtual auto request_dependencies() noexcept
           -> valid_if_not_zero<identifier_t> = 0;
 
         virtual void stream_data_appended(
@@ -145,11 +148,26 @@ public:
         virtual void resource_error(const load_info&) noexcept;
 
     protected:
-        auto _set_request_id(identifier_t req_id) noexcept -> identifier_t;
+        auto acquire_request_id() noexcept -> identifier_t;
+
+        auto add_as_consumer_of(valid_if_not_zero<identifier_t> req_id) noexcept
+          -> valid_if_not_zero<identifier_t>;
+
+        auto add_single_dependency(
+          valid_if_not_zero<identifier_t> req_id) noexcept
+          -> valid_if_not_zero<identifier_t>;
+
+        auto add_single_dependency(
+          valid_if_not_zero<identifier_t> req_id,
+          identifier_t& dst_req_id) noexcept -> valid_if_not_zero<identifier_t>;
 
         void _notify_loaded(resource_loader&) noexcept;
         void _notify_cancelled(resource_loader&) noexcept;
         void _notify_error(resource_loader&, resource_status status) noexcept;
+
+        void mark_loaded() noexcept;
+        void mark_cancelled() noexcept;
+        void mark_error(resource_status = resource_status::error) noexcept;
 
     private:
         identifier_t _request_id{0};
@@ -222,82 +240,26 @@ protected:
         auto status() const noexcept -> resource_status override {
             return resource().load_status();
         }
+
+        void set_status(resource_status status) noexcept override {
+            resource()._private_set_status(status);
+        }
     };
 
     template <typename Resource, typename Loader = typename Resource::_loader>
-    class simple_loader_of
-      : public std::enable_shared_from_this<Loader>
-      , public loader_of<Resource> {
+    class simple_loader_of : public loader_of<Resource> {
     public:
         using loader_of<Resource>::loader_of;
-
         using loader_of<Resource>::resource;
-
-        void stream_finished(identifier_t) noexcept override {
-            mark_loaded();
-        }
-
-        void stream_cancelled(identifier_t) noexcept override {
-            mark_cancelled();
-        }
-
-        void resource_loaded(const load_info&) noexcept override {
-            mark_loaded();
-        }
-
-        void resource_cancelled(const load_info&) noexcept override {
-            mark_cancelled();
-        }
-
-        void resource_error(const load_info& info) noexcept override {
-            mark_error(info.status);
-        }
-
-        void set_status(resource_status status) noexcept {
-            resource()._private_set_status(status);
-        }
 
     protected:
         auto derived() noexcept -> Loader& {
             return *static_cast<Loader*>(this);
         }
-
-        void mark_loaded() noexcept {
-            derived().set_status(resource_status::loaded);
-            if(_res_loader) [[likely]] {
-                this->_notify_loaded(*_res_loader);
-            }
-        }
-
-        void mark_cancelled() noexcept {
-            derived().set_status(resource_status::cancelled);
-            if(_res_loader) [[likely]] {
-                this->_notify_cancelled(*_res_loader);
-            }
-        }
-
-        void mark_error(
-          resource_status status = resource_status::error) noexcept {
-            derived().set_status(status);
-            if(_res_loader) [[likely]] {
-                this->_notify_error(*_res_loader, status);
-            }
-        }
-
-        auto _add_single_dependency(
-          valid_if_not_zero<identifier_t> req_id,
-          resource_loader& res_loader) noexcept
-          -> valid_if_not_zero<identifier_t>;
-
-        auto _add_single_dependency(
-          valid_if_not_zero<identifier_t> req_id,
-          identifier_t& req_id_dst,
-          resource_loader& res_loader) noexcept
-          -> valid_if_not_zero<identifier_t>;
-
-        optional_reference<resource_loader> _res_loader;
     };
 };
+//------------------------------------------------------------------------------
+// resource_loader
 //------------------------------------------------------------------------------
 /// @brief Loader of resources of various types.
 /// @see pending_resource_requests
@@ -395,39 +357,7 @@ private:
     flat_map<identifier_t, shared_holder<resource_interface::loader>> _consumer;
 };
 //------------------------------------------------------------------------------
-template <typename Resource, typename Loader>
-auto resource_interface::simple_loader_of<Resource, Loader>::
-  _add_single_dependency(
-    valid_if_not_zero<identifier_t> req_id,
-    resource_loader& res_loader) noexcept -> valid_if_not_zero<identifier_t> {
-    if(req_id) {
-        res_loader.add_consumer(
-          req_id.value_anyway(), this->shared_from_this());
-        _res_loader = res_loader;
-        derived().set_status(resource_status::loading);
-        return {this->_set_request_id(res_loader.get_request_id())};
-    }
-    derived().set_status(resource_status::error);
-    return {0};
-}
-//------------------------------------------------------------------------------
-template <typename Resource, typename Loader>
-auto resource_interface::simple_loader_of<Resource, Loader>::
-  _add_single_dependency(
-    valid_if_not_zero<identifier_t> req_id,
-    identifier_t& req_id_dst,
-    resource_loader& res_loader) noexcept -> valid_if_not_zero<identifier_t> {
-    if(req_id) {
-        req_id_dst = req_id.value_anyway();
-        res_loader.add_consumer(req_id_dst, this->shared_from_this());
-        _res_loader = res_loader;
-        derived().set_status(resource_status::loading);
-        return {this->_set_request_id(res_loader.get_request_id())};
-    }
-    req_id_dst = 0;
-    derived().set_status(resource_status::error);
-    return {0};
-}
+// simple_resource
 //------------------------------------------------------------------------------
 template <typename T>
 class simple_resource : public resource_interface {

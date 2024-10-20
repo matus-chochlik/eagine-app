@@ -108,16 +108,13 @@ private:
           : loader_of<mapped_struct_resource>{resource, std::move(params)}
           , _visit{std::move(builder)} {}
 
-        auto request_dependencies(resource_loader& res_loader) noexcept
+        auto request_dependencies() noexcept
           -> valid_if_not_zero<identifier_t> final {
-            _visit_req_id = res_loader.load(_visit, this->parameters());
-            if(_visit_req_id > 0) {
-                this->resource()._status = resource_status::loading;
-                return this->_set_request_id(res_loader.get_request_id());
-            }
-            this->resource()._status = resource_status::error;
-            return 0;
+            return this->add_single_dependency(
+              this->parent_loader().load(_visit, this->parameters()),
+              _visit_req_id);
         }
+
         visited_valtree_resource _visit;
         identifier_t _visit_req_id{0};
     };
