@@ -46,7 +46,7 @@ struct valtree_resource::_loader final : simple_loader_of<valtree_resource> {
 //------------------------------------------------------------------------------
 auto valtree_resource::_loader::request_dependencies() noexcept
   -> valid_if_not_zero<identifier_t> {
-    return add_single_dependency(
+    return add_single_loader_dependency(
       parent_loader().load(_text, resource_context(), parameters()));
 }
 //------------------------------------------------------------------------------
@@ -121,7 +121,7 @@ struct visited_valtree_resource::_loader final
 //------------------------------------------------------------------------------
 auto visited_valtree_resource::_loader::request_dependencies() noexcept
   -> valid_if_not_zero<identifier_t> {
-    return add_single_dependency(
+    return add_single_loader_dependency(
       parent_loader().fetch_resource_chunks(parameters(), 1024).first);
 }
 //------------------------------------------------------------------------------

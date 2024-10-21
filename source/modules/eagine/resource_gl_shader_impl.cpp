@@ -43,7 +43,7 @@ struct gl_shader_include_resource::_loader final
 //------------------------------------------------------------------------------
 auto gl_shader_include_resource::_loader::request_dependencies() noexcept
   -> valid_if_not_zero<identifier_t> {
-    return add_single_dependency(
+    return add_single_loader_dependency(
       parent_loader().load(_glsl, resource_context(), parameters()));
 }
 //------------------------------------------------------------------------------
@@ -112,7 +112,7 @@ struct gl_shader_includes_resource::_loader final
 //------------------------------------------------------------------------------
 auto gl_shader_includes_resource::_loader::request_dependencies() noexcept
   -> valid_if_not_zero<identifier_t> {
-    return add_single_dependency(
+    return add_single_loader_dependency(
       parent_loader().load(_urls, resource_context(), parameters()),
       _urls_req_id);
 }
@@ -129,7 +129,7 @@ void gl_shader_includes_resource::_loader::resource_loaded(
                  resource_context(),
                  {.locator = std::move(locator)})}) {
                 request_id = new_req_id.value_anyway();
-                add_as_consumer_of(request_id);
+                add_as_loader_consumer_of(request_id);
             } else {
                 _includes.pop_back();
                 // TODO: log error
@@ -249,7 +249,7 @@ struct gl_shader_resource::_loader_glsl final
 //------------------------------------------------------------------------------
 auto gl_shader_resource::_loader_glsl::request_dependencies() noexcept
   -> valid_if_not_zero<identifier_t> {
-    return add_single_dependency(
+    return add_single_loader_dependency(
       parent_loader().load(_glsl, resource_context(), parameters()));
 }
 //------------------------------------------------------------------------------

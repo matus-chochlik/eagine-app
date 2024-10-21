@@ -110,7 +110,7 @@ private:
 
         auto request_dependencies() noexcept
           -> valid_if_not_zero<identifier_t> final {
-            return this->add_single_dependency(
+            return this->add_single_loader_dependency(
               this->parent_loader().load(_visit, this->parameters()),
               _visit_req_id);
         }

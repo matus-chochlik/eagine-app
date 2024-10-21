@@ -94,7 +94,7 @@ auto resource_interface::loader::acquire_request_id() noexcept -> identifier_t {
     return _request_id;
 }
 //------------------------------------------------------------------------------
-auto resource_interface::loader::add_as_consumer_of(
+auto resource_interface::loader::add_as_loader_consumer_of(
   valid_if_not_zero<identifier_t> req_id) noexcept
   -> valid_if_not_zero<identifier_t> {
     if(req_id) {
@@ -104,10 +104,10 @@ auto resource_interface::loader::add_as_consumer_of(
     return req_id;
 }
 //------------------------------------------------------------------------------
-auto resource_interface::loader::add_single_dependency(
+auto resource_interface::loader::add_single_loader_dependency(
   valid_if_not_zero<identifier_t> req_id) noexcept
   -> valid_if_not_zero<identifier_t> {
-    if(add_as_consumer_of(req_id)) {
+    if(add_as_loader_consumer_of(req_id)) {
         set_status(resource_status::loading);
         return {acquire_request_id()};
     }
@@ -115,10 +115,10 @@ auto resource_interface::loader::add_single_dependency(
     return {0};
 }
 //------------------------------------------------------------------------------
-auto resource_interface::loader::add_single_dependency(
+auto resource_interface::loader::add_single_loader_dependency(
   valid_if_not_zero<identifier_t> req_id,
   identifier_t& dst_req_id) noexcept -> valid_if_not_zero<identifier_t> {
-    if(add_as_consumer_of(req_id)) {
+    if(add_as_loader_consumer_of(req_id)) {
         dst_req_id = req_id.value_anyway();
         set_status(resource_status::loading);
         return {acquire_request_id()};

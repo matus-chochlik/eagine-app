@@ -68,7 +68,7 @@ struct plain_text_resource::_loader final
 //------------------------------------------------------------------------------
 auto plain_text_resource::_loader::request_dependencies() noexcept
   -> valid_if_not_zero<identifier_t> {
-    return add_single_dependency(
+    return add_single_loader_dependency(
       parent_loader().fetch_resource_chunks(parameters(), 1024).first);
 }
 //------------------------------------------------------------------------------
@@ -117,7 +117,7 @@ struct string_list_resource::_loader final
 //------------------------------------------------------------------------------
 auto string_list_resource::_loader::request_dependencies() noexcept
   -> valid_if_not_zero<identifier_t> {
-    return add_single_dependency(
+    return add_single_loader_dependency(
       parent_loader().fetch_resource_chunks(parameters(), 1024).first);
 }
 //------------------------------------------------------------------------------
@@ -171,7 +171,7 @@ struct url_list_resource::_loader final : simple_loader_of<url_list_resource> {
 //------------------------------------------------------------------------------
 auto url_list_resource::_loader::request_dependencies() noexcept
   -> valid_if_not_zero<identifier_t> {
-    return add_single_dependency(
+    return add_single_loader_dependency(
       parent_loader().fetch_resource_chunks(parameters(), 1024).first);
 }
 //------------------------------------------------------------------------------
@@ -296,7 +296,7 @@ struct float_list_resource::_loader final
 //------------------------------------------------------------------------------
 auto float_list_resource::_loader::request_dependencies() noexcept
   -> valid_if_not_zero<identifier_t> {
-    return add_single_dependency(
+    return add_single_loader_dependency(
       parent_loader().load(_visit, resource_context(), parameters()));
 }
 //------------------------------------------------------------------------------
@@ -433,7 +433,7 @@ struct vec3_list_resource::_loader final
 //------------------------------------------------------------------------------
 auto vec3_list_resource::_loader::request_dependencies() noexcept
   -> valid_if_not_zero<identifier_t> {
-    return add_single_dependency(
+    return add_single_loader_dependency(
       parent_loader().load(_visit, resource_context(), parameters()));
 }
 //------------------------------------------------------------------------------
@@ -636,7 +636,7 @@ struct mat4_list_resource::_loader final
 //------------------------------------------------------------------------------
 auto mat4_list_resource::_loader::request_dependencies() noexcept
   -> valid_if_not_zero<identifier_t> {
-    return add_single_dependency(
+    return add_single_loader_dependency(
       parent_loader().load(_visit, resource_context(), parameters()));
 }
 //------------------------------------------------------------------------------
@@ -679,7 +679,7 @@ struct smooth_float_curve_resource::_loader final
 //------------------------------------------------------------------------------
 auto smooth_float_curve_resource::_loader::request_dependencies() noexcept
   -> valid_if_not_zero<identifier_t> {
-    return add_single_dependency(
+    return add_single_loader_dependency(
       parent_loader().load(_cps, resource_context(), parameters()));
 }
 //------------------------------------------------------------------------------
@@ -723,7 +723,7 @@ struct smooth_vec3_curve_resource::_loader final
 //------------------------------------------------------------------------------
 auto smooth_vec3_curve_resource::_loader::request_dependencies() noexcept
   -> valid_if_not_zero<identifier_t> {
-    return add_single_dependency(
+    return add_single_loader_dependency(
       parent_loader().load(_cps, resource_context(), parameters()));
 }
 //------------------------------------------------------------------------------
@@ -767,7 +767,7 @@ struct glsl_string_resource::_loader final
 //------------------------------------------------------------------------------
 auto glsl_string_resource::_loader::request_dependencies() noexcept
   -> valid_if_not_zero<identifier_t> {
-    return add_single_dependency(
+    return add_single_loader_dependency(
       parent_loader().load(_text, resource_context(), parameters()));
 }
 //------------------------------------------------------------------------------
@@ -852,7 +852,7 @@ struct gl_shader_parameters_resource::_loader final
 //------------------------------------------------------------------------------
 auto gl_shader_parameters_resource::_loader::request_dependencies() noexcept
   -> valid_if_not_zero<identifier_t> {
-    return add_single_dependency(
+    return add_single_loader_dependency(
       parent_loader().load(_visit, resource_context(), parameters()));
 }
 //------------------------------------------------------------------------------
@@ -928,7 +928,7 @@ shape_generator_resource::_loader::_loader(
 //------------------------------------------------------------------------------
 auto shape_generator_resource::_loader::request_dependencies() noexcept
   -> valid_if_not_zero<identifier_t> {
-    return add_single_dependency(
+    return add_single_loader_dependency(
       parent_loader().load(_tree, resource_context(), parameters()));
 }
 //------------------------------------------------------------------------------

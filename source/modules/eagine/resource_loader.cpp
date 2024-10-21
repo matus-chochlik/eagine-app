@@ -150,14 +150,15 @@ public:
     protected:
         auto acquire_request_id() noexcept -> identifier_t;
 
-        auto add_as_consumer_of(valid_if_not_zero<identifier_t> req_id) noexcept
-          -> valid_if_not_zero<identifier_t>;
-
-        auto add_single_dependency(
+        auto add_as_loader_consumer_of(
           valid_if_not_zero<identifier_t> req_id) noexcept
           -> valid_if_not_zero<identifier_t>;
 
-        auto add_single_dependency(
+        auto add_single_loader_dependency(
+          valid_if_not_zero<identifier_t> req_id) noexcept
+          -> valid_if_not_zero<identifier_t>;
+
+        auto add_single_loader_dependency(
           valid_if_not_zero<identifier_t> req_id,
           identifier_t& dst_req_id) noexcept -> valid_if_not_zero<identifier_t>;
 
