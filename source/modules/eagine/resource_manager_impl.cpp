@@ -33,18 +33,39 @@ auto managed_resource_info::has_parameters() const noexcept -> bool {
     return bool(params.locator);
 }
 //------------------------------------------------------------------------------
-auto managed_resource_info::should_be_loaded() const noexcept -> bool {
-    return resource and resource->should_be_loaded();
+auto managed_resource_info::is_loaded() const noexcept -> bool {
+    return resource and resource->is_loaded();
 }
 //------------------------------------------------------------------------------
-auto managed_resource_info::load_if_needed(
+auto managed_resource_info::load(
   resource_loader& loader,
   const shared_holder<loaded_resource_context>& context) const noexcept
   -> valid_if_not_zero<identifier_t> {
-    if(should_be_loaded()) {
+    if(resource and resource->can_be_loaded()) {
         return loader.load_any(*resource, context, params);
     }
     return {0};
+}
+//------------------------------------------------------------------------------
+void managed_resource_info::on_loaded(
+  const shared_holder<resource_interface::loader>& loader) noexcept {
+    if(loader and resource) [[likely]] {
+        const resource_interface::load_info info{
+          params.locator, 0, resource->kind(), resource_status::loaded};
+        loader->resource_loaded(info);
+    }
+}
+//------------------------------------------------------------------------------
+void managed_resource_info::on_loaded(
+  const std::vector<shared_holder<resource_interface::loader>>&
+    loaders) noexcept {
+    if(resource) [[likely]] {
+        const resource_interface::load_info info{
+          params.locator, 0, resource->kind(), resource_status::loaded};
+        for(auto& loader : loaders) {
+            loader->resource_loaded(info);
+        }
+    }
 }
 //------------------------------------------------------------------------------
 // resource_manager
@@ -75,9 +96,11 @@ auto resource_manager::_res_id_from(const url& locator) noexcept
 //------------------------------------------------------------------------------
 auto resource_manager::_ensure_info(resource_identifier res_id) noexcept
   -> const shared_holder<managed_resource_info>& {
-    auto& info{_resources[res_id]};
-    info.ensure();
-    return info;
+    if(auto found{find(_loaded, res_id)}) {
+        return found->ensure();
+    }
+    auto& info{_pending[res_id]};
+    return info.ensure();
 }
 //------------------------------------------------------------------------------
 auto resource_manager::_ensure_parameters(
@@ -104,13 +127,39 @@ auto resource_manager::add_parameters(
     return *this;
 }
 //------------------------------------------------------------------------------
+auto resource_manager::add_consumer(
+  resource_identifier res_id,
+  const std::shared_ptr<resource_interface::loader>& l) noexcept
+  -> resource_manager& {
+    if(auto found{find(_loaded, res_id)}) {
+        auto& info{*found};
+        assert(info);
+        info->on_loaded(l);
+    } else {
+        _consumers[res_id].emplace_back(l);
+    }
+    return *this;
+}
+//------------------------------------------------------------------------------
 auto resource_manager::update() noexcept -> work_done {
     some_true something_done;
     auto& res_loader{loader()};
-    for(const auto& entry : _resources) {
-        if(const auto& info{std::get<1>(entry)}) {
-            something_done(
-              info->load_if_needed(res_loader, _context).has_value());
+    auto pos{_pending.begin()};
+    while(pos != _pending.end()) {
+        const auto& [res_id, info]{*pos};
+        assert(info);
+        if(info->is_loaded()) {
+            if(const auto found{find(_consumers, res_id)}) {
+                info->on_loaded(*found);
+            }
+            _loaded[res_id] = std::move(info);
+            pos = _pending.erase(pos);
+            something_done();
+        } else if(auto req_id{info->load(res_loader, _context)}) {
+            something_done();
+            ++pos;
+        } else {
+            ++pos;
         }
     }
     return something_done;
@@ -181,8 +230,7 @@ auto managed_resource_base::has_parameters() const noexcept -> bool {
 auto managed_resource_base::load_if_needed(
   resource_manager& manager) const noexcept -> valid_if_not_zero<identifier_t> {
     if(_info) {
-        return _info->load_if_needed(
-          manager.loader(), manager.resource_context());
+        return _info->load(manager.loader(), manager.resource_context());
     }
     return {0};
 }

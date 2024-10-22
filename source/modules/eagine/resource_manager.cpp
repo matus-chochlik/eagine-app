@@ -25,8 +25,6 @@ import :resource_mapped;
 namespace eagine::app {
 namespace exp {
 //------------------------------------------------------------------------------
-export using resource_identifier = identifier;
-//------------------------------------------------------------------------------
 // managed_resource_info
 //------------------------------------------------------------------------------
 struct managed_resource_info {
@@ -58,12 +56,14 @@ struct managed_resource_info {
 
     auto has_parameters() const noexcept -> bool;
 
-    auto should_be_loaded() const noexcept -> bool;
+    auto is_loaded() const noexcept -> bool;
 
-    auto load_if_needed(
-      resource_loader&,
-      const shared_holder<loaded_resource_context>&) const noexcept
-      -> valid_if_not_zero<identifier_t>;
+    auto load(resource_loader&, const shared_holder<loaded_resource_context>&)
+      const noexcept -> valid_if_not_zero<identifier_t>;
+
+    void on_loaded(const shared_holder<resource_interface::loader>&) noexcept;
+    void on_loaded(
+      const std::vector<shared_holder<resource_interface::loader>>&) noexcept;
 };
 //------------------------------------------------------------------------------
 // resource_manager
@@ -81,6 +81,11 @@ public:
     auto add_parameters(
       resource_identifier res_id,
       resource_request_params) noexcept -> resource_manager&;
+
+    auto add_consumer(
+      resource_identifier res_id,
+      const std::shared_ptr<resource_interface::loader>& l) noexcept
+      -> resource_manager&;
 
     auto update() noexcept -> work_done;
 
@@ -101,8 +106,17 @@ private:
       -> const shared_holder<managed_resource_info>&;
 
     shared_holder<loaded_resource_context> _context;
+
     chunk_map<resource_identifier, shared_holder<managed_resource_info>, 4096>
-      _resources;
+      _loaded;
+    chunk_map<resource_identifier, shared_holder<managed_resource_info>, 4096>
+      _pending;
+
+    chunk_map<
+      resource_identifier,
+      std::vector<shared_holder<resource_interface::loader>>,
+      1024>
+      _consumers;
 };
 //------------------------------------------------------------------------------
 // managed_resources_base

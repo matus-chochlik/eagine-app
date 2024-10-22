@@ -98,10 +98,14 @@ auto resource_interface::loader::add_as_loader_consumer_of(
   valid_if_not_zero<identifier_t> req_id) noexcept
   -> valid_if_not_zero<identifier_t> {
     if(req_id) {
-        parent_loader().add_consumer(
-          req_id.value_anyway(), this->shared_from_this());
+        parent_loader().add_consumer(req_id.value_anyway(), shared_from_this());
     }
     return req_id;
+}
+//------------------------------------------------------------------------------
+void resource_interface::loader::add_as_manager_consumer_of(
+  resource_identifier res_id) noexcept {
+    parent_manager().add_consumer(res_id, shared_from_this());
 }
 //------------------------------------------------------------------------------
 auto resource_interface::loader::add_single_loader_dependency(

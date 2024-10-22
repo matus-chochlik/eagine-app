@@ -52,6 +52,11 @@ export class resource_manager;
 /// @brief Structure containing parameters for a resource request.
 /// @see resource_loader
 export using msgbus::resource_request_params;
+
+/// @brief Alias for unique resource identifier.
+/// @see resource_manager
+/// @see managed_resource
+export using resource_identifier = identifier;
 //------------------------------------------------------------------------------
 // resource_interface
 //------------------------------------------------------------------------------
@@ -153,6 +158,8 @@ public:
         auto add_as_loader_consumer_of(
           valid_if_not_zero<identifier_t> req_id) noexcept
           -> valid_if_not_zero<identifier_t>;
+
+        void add_as_manager_consumer_of(resource_identifier res_id) noexcept;
 
         auto add_single_loader_dependency(
           valid_if_not_zero<identifier_t> req_id) noexcept
