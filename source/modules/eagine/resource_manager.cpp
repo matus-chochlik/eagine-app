@@ -294,19 +294,19 @@ public:
     }
 
     explicit operator bool() const noexcept {
-        return is_loaded();
+        return are_loaded();
     }
 
     auto setup(
       resource_manager& manager,
-      resource_request_params params) noexcept -> managed_resources& {
+      resource_request_params params) noexcept -> managed_resource<Resource>& {
         _resources.emplace_back();
         _resources.back().setup(manager, std::move(params));
-        return *this;
+        return _resources.back();
     }
 
     auto setup(resource_manager& manager, url locator) noexcept
-      -> managed_resources& {
+      -> managed_resource<Resource>& {
         return setup(
           manager, resource_request_params{.locator = std::move(locator)});
     }
@@ -314,10 +314,10 @@ public:
     auto setup(
       resource_manager& manager,
       resource_identifier res_id,
-      resource_request_params params) noexcept -> managed_resources& {
+      resource_request_params params) noexcept -> managed_resource<Resource>& {
         _resources.emplace_back();
         _resources.back().setup(manager, res_id, std::move(params));
-        return *this;
+        return _resources.back();
     }
 
 private:

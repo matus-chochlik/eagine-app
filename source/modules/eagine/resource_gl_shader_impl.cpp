@@ -19,6 +19,7 @@ import eagine.core.identifier;
 import eagine.core.valid_if;
 import eagine.core.utility;
 import eagine.core.runtime;
+import eagine.core.value_tree;
 import eagine.core.main_ctx;
 import eagine.msgbus;
 import eagine.shapes;
@@ -182,9 +183,16 @@ void gl_shader_includes_resource::clean_up(
     }
 }
 //------------------------------------------------------------------------------
+static auto is_glsl_shader_locator(const url& locator) noexcept {
+    return locator.has_scheme("glsl") or locator.has_path_suffix(".glsl") or
+           locator.has_scheme("glsl_vert") or locator.has_scheme("glsl_teco") or
+           locator.has_scheme("glsl_teev") or locator.has_scheme("glsl_geom") or
+           locator.has_scheme("glsl_frag") or locator.has_scheme("glsl_comp");
+}
+//------------------------------------------------------------------------------
 // shader_type_from
 //------------------------------------------------------------------------------
-static auto shader_type_from(const url& locator, auto& glapi)
+static auto shader_type_from(const url& locator, auto& glapi) noexcept
   -> optionally_valid<oglplus::shader_type> {
     if(
       locator.has_scheme("glsl_vert") or
@@ -274,6 +282,75 @@ void gl_shader_resource::_loader_glsl::resource_loaded(
     mark_error();
 }
 //------------------------------------------------------------------------------
+// gl_shader_resource::_loader_eagishdr
+//------------------------------------------------------------------------------
+struct gl_shader_resource::_loader_eagishdr final
+  : simple_loader_of<gl_shader_resource, gl_shader_resource::_loader_eagishdr> {
+    using base =
+      simple_loader_of<gl_shader_resource, gl_shader_resource::_loader_eagishdr>;
+    using base::base;
+
+    auto request_dependencies() noexcept
+      -> valid_if_not_zero<identifier_t> final;
+
+    void resource_loaded(const load_info&) noexcept final;
+
+    managed_resource<gl_shader_parameters_resource> _param;
+    managed_resource<glsl_string_resource> _source;
+    managed_resources<gl_shader_include_resource> _includes;
+    managed_resources<gl_shader_includes_resource> _libraries;
+};
+//------------------------------------------------------------------------------
+auto gl_shader_resource::_loader_eagishdr::request_dependencies() noexcept
+  -> valid_if_not_zero<identifier_t> {
+    auto& manager{parent_manager()};
+    add_as_manager_consumer_of(_param.setup(manager, parameters()));
+    return {acquire_request_id()};
+}
+//------------------------------------------------------------------------------
+void gl_shader_resource::_loader_eagishdr::resource_loaded(
+  const load_info& info) noexcept {
+    if(_param) {
+        auto& manager{parent_manager()};
+        if(not _source.is_setup()) {
+            add_as_manager_consumer_of(
+              _source.setup(manager, _param->source_url));
+        }
+        if(not _includes.is_setup()) {
+            for(auto& locator : _param->include_urls) {
+                add_as_manager_consumer_of(
+                  _includes.setup(manager, std::move(locator)));
+            }
+        }
+        if(not _libraries.is_setup()) {
+            for(auto& locator : _param->library_urls) {
+                add_as_manager_consumer_of(
+                  _libraries.setup(manager, std::move(locator)));
+            }
+        }
+    }
+    if(_source and _includes and _libraries) {
+        if(auto res_ctx{resource_context()}) {
+            auto& glapi{res_ctx->gl_api()};
+            if(const auto shdr_type{
+                 shader_type_from(_param->source_url, glapi)}) {
+                oglplus::owned_shader_name shdr;
+                const auto cleanup_if_failed{glapi.delete_shader.raii(shdr)};
+                if(glapi.create_shader(*shdr_type).and_then(_1.move_to(shdr))) {
+                    if(glapi.shader_source(shdr, _source.get())) {
+                        if(glapi.compile_shader(shdr)) {
+                            resource()._private_ref() = std::move(shdr);
+                            mark_loaded();
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+        mark_error();
+    }
+}
+//------------------------------------------------------------------------------
 // gl_shader_resource
 //------------------------------------------------------------------------------
 auto gl_shader_resource::kind() const noexcept -> identifier {
@@ -286,8 +363,16 @@ auto gl_shader_resource::make_loader(
   resource_request_params params) noexcept
   -> shared_holder<resource_interface::loader> {
     if(context and context->gl_context()) {
+        if(is_glsl_shader_locator(params.locator)) {
+            return {
+              hold<gl_shader_resource::_loader_glsl>,
+              parent,
+              *this,
+              context,
+              std::move(params)};
+        }
         return {
-          hold<gl_shader_resource::_loader_glsl>,
+          hold<gl_shader_resource::_loader_eagishdr>,
           parent,
           *this,
           context,

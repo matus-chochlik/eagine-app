@@ -60,10 +60,12 @@ void managed_resource_info::on_loaded(
   const std::vector<shared_holder<resource_interface::loader>>&
     loaders) noexcept {
     if(resource) [[likely]] {
-        const resource_interface::load_info info{
-          params.locator, 0, resource->kind(), resource_status::loaded};
-        for(auto& loader : loaders) {
-            loader->resource_loaded(info);
+        if(not loaders.empty()) {
+            const resource_interface::load_info info{
+              params.locator, 0, resource->kind(), resource_status::loaded};
+            for(auto& loader : loaders) {
+                loader->resource_loaded(info);
+            }
         }
     }
 }
@@ -155,6 +157,7 @@ auto resource_manager::update() noexcept -> work_done {
         if(info->is_loaded()) {
             if(const auto found{find(_consumers, res_id)}) {
                 info->on_loaded(*found);
+                _consumers.erase(found.position());
             }
             _loaded[res_id] = std::move(info);
             pos = _pending.erase(pos);

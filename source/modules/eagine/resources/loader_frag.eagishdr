@@ -1,2 +1,2 @@
-{"includes":["glsl:///TestMndBrt", "glsl:///TestCheckr"]
+{"includes":["glsl:///TestMndbrt?path=%2Fmandelbrot", "glsl:///TestCheckr?path=%2Fchecker"]
 ,"source_url":"glsl:///TestFrag2?type=fragment"}
