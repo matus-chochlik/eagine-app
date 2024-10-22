@@ -48,6 +48,7 @@ export enum class resource_status : std::uint8_t {
 //------------------------------------------------------------------------------
 export class resource_loader;
 export class resource_manager;
+class managed_resource_base;
 //------------------------------------------------------------------------------
 /// @brief Structure containing parameters for a resource request.
 /// @see resource_loader
@@ -160,6 +161,7 @@ public:
           -> valid_if_not_zero<identifier_t>;
 
         void add_as_manager_consumer_of(resource_identifier res_id) noexcept;
+        void add_as_manager_consumer_of(const managed_resource_base&) noexcept;
 
         auto add_single_loader_dependency(
           valid_if_not_zero<identifier_t> req_id) noexcept

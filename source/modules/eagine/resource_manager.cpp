@@ -28,6 +28,7 @@ namespace exp {
 // managed_resource_info
 //------------------------------------------------------------------------------
 struct managed_resource_info {
+    resource_identifier resource_id;
     unique_holder<resource_interface> resource;
     resource_request_params params;
 
@@ -134,6 +135,8 @@ public:
     [[nodiscard]] auto kind() const noexcept -> identifier;
 
     [[nodiscard]] auto has_parameters() const noexcept -> bool;
+
+    [[nodiscard]] auto resource_id() const noexcept -> resource_identifier;
 
     auto load_if_needed(resource_manager&) const noexcept
       -> valid_if_not_zero<identifier_t>;

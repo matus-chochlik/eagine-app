@@ -29,12 +29,12 @@ namespace exp {
 //------------------------------------------------------------------------------
 // managed_resource_info
 //------------------------------------------------------------------------------
-auto managed_resource_info::has_parameters() const noexcept -> bool {
-    return bool(params.locator);
-}
-//------------------------------------------------------------------------------
 auto managed_resource_info::is_loaded() const noexcept -> bool {
     return resource and resource->is_loaded();
+}
+//------------------------------------------------------------------------------
+auto managed_resource_info::has_parameters() const noexcept -> bool {
+    return bool(params.locator);
 }
 //------------------------------------------------------------------------------
 auto managed_resource_info::load(
@@ -94,13 +94,17 @@ auto resource_manager::_res_id_from(const url& locator) noexcept
     return locator.path_identifier();
 }
 //------------------------------------------------------------------------------
-auto resource_manager::_ensure_info(resource_identifier res_id) noexcept
+auto resource_manager::_ensure_info(resource_identifier resource_id) noexcept
   -> const shared_holder<managed_resource_info>& {
-    if(auto found{find(_loaded, res_id)}) {
-        return found->ensure();
+    if(auto found{find(_loaded, resource_id)}) {
+        assert(*found);
+        return *found;
     }
-    auto& info{_pending[res_id]};
-    return info.ensure();
+    auto& info{_pending[resource_id]};
+    info.ensure();
+    info->resource_id = resource_id;
+
+    return info;
 }
 //------------------------------------------------------------------------------
 auto resource_manager::_ensure_parameters(
@@ -225,6 +229,14 @@ auto managed_resource_base::kind() const noexcept -> identifier {
 //------------------------------------------------------------------------------
 auto managed_resource_base::has_parameters() const noexcept -> bool {
     return _info and _info->has_parameters();
+}
+//------------------------------------------------------------------------------
+auto managed_resource_base::resource_id() const noexcept
+  -> resource_identifier {
+    if(_info) {
+        return _info->resource_id;
+    }
+    return {};
 }
 //------------------------------------------------------------------------------
 auto managed_resource_base::load_if_needed(
