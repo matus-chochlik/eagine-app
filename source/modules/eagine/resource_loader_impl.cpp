@@ -139,11 +139,19 @@ auto resource_interface::loader::add_single_loader_dependency(
 //------------------------------------------------------------------------------
 void resource_interface::loader::_notify_loaded(
   resource_loader& res_loader) noexcept {
+    log_info("resource ${kind} successfully loaded (request: ${reqId})")
+      .arg("reqId", _request_id)
+      .arg("kind", _resource.get().kind())
+      .arg("url", "URL", _params.locator.get_string());
     res_loader._handle_resource_loaded(_request_id, _params.locator, _resource);
 }
 //------------------------------------------------------------------------------
 void resource_interface::loader::_notify_cancelled(
   resource_loader& res_loader) noexcept {
+    log_warning("resource ${kind} load canceled (request: ${reqId})")
+      .arg("reqId", _request_id)
+      .arg("kind", _resource.get().kind())
+      .arg("url", "URL", _params.locator.get_string());
     res_loader._handle_resource_cancelled(
       _request_id, _params.locator, _resource);
 }
@@ -151,6 +159,11 @@ void resource_interface::loader::_notify_cancelled(
 void resource_interface::loader::_notify_error(
   resource_loader& res_loader,
   resource_status status) noexcept {
+    log_error("resource ${kind} load failed (request: ${reqId})")
+      .arg("reqId", _request_id)
+      .arg("kind", _resource.get().kind())
+      .arg("status", status)
+      .arg("url", "URL", _params.locator.get_string());
     res_loader._handle_resource_error(
       _request_id, _params.locator, _resource, status);
 }
@@ -189,10 +202,29 @@ auto resource_loader::load_any(
   const shared_holder<loaded_resource_context>& context,
   resource_request_params params) noexcept -> valid_if_not_zero<identifier_t> {
     if(context) {
+        const auto locator{params.locator.get_string()};
         if(auto loader{
              resource.make_loader(as_parent(), context, std::move(params))}) {
-            return loader->request_dependencies();
+            if(auto req_id{loader->request_dependencies()}) [[likely]] {
+                log_info("requesting resource ${kind} (request_id: ${reqId})")
+                  .arg("reqId", req_id.value_anyway())
+                  .arg("kind", resource.kind())
+                  .arg("url", "URL", locator);
+                return req_id;
+            } else {
+                log_error("failed to request resource dependencies")
+                  .arg("kind", resource.kind())
+                  .arg("url", "URL", locator);
+            }
+        } else {
+            log_error("failed to create resource loader")
+              .arg("kind", resource.kind())
+              .arg("url", "URL", locator);
         }
+    } else {
+        log_error("missing resource request context")
+          .arg("kind", resource.kind())
+          .arg("url", "URL", params.locator.get_string());
     }
     return {};
 }
