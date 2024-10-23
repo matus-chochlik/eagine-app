@@ -77,6 +77,7 @@ resource_manager::resource_manager(
   : _context{std::move(context)} {
     assert(_context);
     _context->set(*this);
+    _consumers.reserve(16);
 }
 //------------------------------------------------------------------------------
 auto resource_manager::resource_context() const noexcept
@@ -157,7 +158,9 @@ auto resource_manager::update() noexcept -> work_done {
         if(info->is_loaded()) {
             if(const auto found{find(_consumers, res_id)}) {
                 info->on_loaded(*found);
-                _consumers.erase(found.position());
+                // intentionally not using found.position() here because
+                // on_loaded call above can cause pointer invalidation
+                _consumers.erase(res_id);
             }
             _loaded[res_id] = std::move(info);
             pos = _pending.erase(pos);

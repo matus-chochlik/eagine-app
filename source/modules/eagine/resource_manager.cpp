@@ -108,12 +108,13 @@ private:
 
     shared_holder<loaded_resource_context> _context;
 
-    // TODO: replace with chunk_map
-    std::map<resource_identifier, shared_holder<managed_resource_info>> _loaded;
+    chunk_map<resource_identifier, shared_holder<managed_resource_info>, 4096>
+      _loaded;
 
+    // this has to be std::map for now, too many realocations happen when updating
     std::map<resource_identifier, shared_holder<managed_resource_info>> _pending;
 
-    std::map<
+    flat_map<
       resource_identifier,
       std::vector<shared_holder<resource_interface::loader>>>
       _consumers;
