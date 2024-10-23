@@ -216,17 +216,70 @@ struct test_request_gl_shader_2 : eagitest::app_case {
     bool content_is_ok{false};
 };
 //------------------------------------------------------------------------------
+// GL shader from EAGishdr with libraries
+//------------------------------------------------------------------------------
+struct test_request_gl_shader_3 : eagitest::app_case {
+    using launcher = eagitest::launcher_with_gl<test_request_gl_shader_3>;
+
+    test_request_gl_shader_3(auto& s, auto& ec)
+      : eagitest::app_case{s, ec, 5, "GL shader 3"}
+      , loader{context().loader()} {
+        loader.resource_loaded.connect(
+          make_callable_ref<&test_request_gl_shader_3::on_loaded>(this));
+        too_long.reset();
+    }
+
+    void on_loaded(
+      const eagine::app::resource_interface::load_info& info) noexcept {
+        if(
+          info.locator.has_scheme("json") and
+          info.locator.has_path("/TestFragE2")) {
+            load_signal_received = true;
+            locator_is_ok = true;
+            content_is_ok = shdr.get().has_value();
+        }
+    }
+
+    auto is_done() noexcept -> bool final {
+        return too_long or shdr.is_loaded();
+    }
+
+    void update() noexcept final {
+        loader.load_if_needed(
+          shdr,
+          context().shared_resource_context(),
+          [] -> eagine::app::resource_request_params {
+              return {eagine::url{"json:///TestFragE2"}};
+          });
+    }
+
+    void clean_up() noexcept final {
+        check(shdr.is_loaded(), "resource is loaded");
+        check(load_signal_received, "load signal received");
+        check(locator_is_ok, "locator is ok");
+        check(content_is_ok, "content is ok");
+    }
+
+    eagine::app::resource_loader& loader;
+    eagine::timeout too_long{std::chrono::seconds{15}};
+    eagine::app::exp::gl_shader_resource shdr;
+    bool load_signal_received{false};
+    bool locator_is_ok{false};
+    bool content_is_ok{false};
+};
+//------------------------------------------------------------------------------
 // main
 //------------------------------------------------------------------------------
 auto test_main(eagine::test_ctx& ctx) -> int {
     enable_message_bus(ctx);
     ctx.preinitialize();
 
-    eagitest::app_suite test{ctx, "resource loader GL", 4};
+    eagitest::app_suite test{ctx, "resource loader GL", 5};
     test.once<test_request_gl_shader_include>();
     test.once<test_request_gl_shader_includes>();
     test.once<test_request_gl_shader_1>();
     test.once<test_request_gl_shader_2>();
+    test.once<test_request_gl_shader_3>();
     return test.exit_code();
 }
 //------------------------------------------------------------------------------
