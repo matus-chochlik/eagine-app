@@ -108,15 +108,14 @@ private:
 
     shared_holder<loaded_resource_context> _context;
 
-    chunk_map<resource_identifier, shared_holder<managed_resource_info>, 4096>
-      _loaded;
-    chunk_map<resource_identifier, shared_holder<managed_resource_info>, 4096>
-      _pending;
+    // TODO: replace with chunk_map
+    std::map<resource_identifier, shared_holder<managed_resource_info>> _loaded;
 
-    chunk_map<
+    std::map<resource_identifier, shared_holder<managed_resource_info>> _pending;
+
+    std::map<
       resource_identifier,
-      std::vector<shared_holder<resource_interface::loader>>,
-      1024>
+      std::vector<shared_holder<resource_interface::loader>>>
       _consumers;
 };
 //------------------------------------------------------------------------------

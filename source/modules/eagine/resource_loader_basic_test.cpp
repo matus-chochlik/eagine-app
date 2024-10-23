@@ -504,14 +504,14 @@ struct test_request_glsl_string : eagitest::app_case {
 //------------------------------------------------------------------------------
 // GL shader parameters
 //------------------------------------------------------------------------------
-struct test_request_gl_shader_parameters : eagitest::app_case {
-    using launcher = eagitest::launcher<test_request_gl_shader_parameters>;
+struct test_request_gl_shader_parameters_1 : eagitest::app_case {
+    using launcher = eagitest::launcher<test_request_gl_shader_parameters_1>;
 
-    test_request_gl_shader_parameters(auto& s, auto& ec)
-      : eagitest::app_case{s, ec, 8, "GL shader parameters"}
+    test_request_gl_shader_parameters_1(auto& s, auto& ec)
+      : eagitest::app_case{s, ec, 8, "GL shader parameters includes"}
       , loader{context().loader()} {
         loader.resource_loaded.connect(
-          make_callable_ref<&test_request_gl_shader_parameters::on_loaded>(
+          make_callable_ref<&test_request_gl_shader_parameters_1::on_loaded>(
             this));
         too_long.reset();
     }
@@ -520,7 +520,7 @@ struct test_request_gl_shader_parameters : eagitest::app_case {
       const eagine::app::resource_interface::load_info& info) noexcept {
         load_signal_received = true;
         locator_is_ok = info.locator.has_scheme("json") and
-                        info.locator.has_path("/TestFragES");
+                        info.locator.has_path("/TestFragE1");
         content_is_ok =
           (para->include_urls.size() == 2 and
            para->include_urls.front().has_scheme("glsl") and
@@ -537,7 +537,61 @@ struct test_request_gl_shader_parameters : eagitest::app_case {
           para,
           context().shared_resource_context(),
           [] -> eagine::app::resource_request_params {
-              return {eagine::url{"json:///TestFragES"}};
+              return {eagine::url{"json:///TestFragE1"}};
+          });
+    }
+
+    void clean_up() noexcept final {
+        check(para.is_loaded(), "GL shader parameters are loaded");
+        check(load_signal_received, "load signal received");
+        check(locator_is_ok, "locator is ok");
+        check(content_is_ok, "content is ok");
+    }
+
+    eagine::app::resource_loader& loader;
+    eagine::timeout too_long{std::chrono::seconds{10}};
+    eagine::app::exp::gl_shader_parameters_resource para;
+    bool load_signal_received{false};
+    bool locator_is_ok{false};
+    bool content_is_ok{false};
+};
+//------------------------------------------------------------------------------
+// GL shader parameters
+//------------------------------------------------------------------------------
+struct test_request_gl_shader_parameters_2 : eagitest::app_case {
+    using launcher = eagitest::launcher<test_request_gl_shader_parameters_2>;
+
+    test_request_gl_shader_parameters_2(auto& s, auto& ec)
+      : eagitest::app_case{s, ec, 9, "GL shader parameters libraries"}
+      , loader{context().loader()} {
+        loader.resource_loaded.connect(
+          make_callable_ref<&test_request_gl_shader_parameters_2::on_loaded>(
+            this));
+        too_long.reset();
+    }
+
+    void on_loaded(
+      const eagine::app::resource_interface::load_info& info) noexcept {
+        load_signal_received = true;
+        locator_is_ok = info.locator.has_scheme("json") and
+                        info.locator.has_path("/TestFragE2");
+        content_is_ok =
+          (para->library_urls.size() == 1 and
+           para->library_urls.back().has_scheme("txt") and
+           para->library_urls.back().has_path("TestIncls")) and
+          (para->source_url and para->source_url.has_path("TestFrag2"));
+    }
+
+    auto is_done() noexcept -> bool final {
+        return too_long or para.is_loaded();
+    }
+
+    void update() noexcept final {
+        loader.load_if_needed(
+          para,
+          context().shared_resource_context(),
+          [] -> eagine::app::resource_request_params {
+              return {eagine::url{"json:///TestFragE2"}};
           });
     }
 
@@ -562,7 +616,7 @@ struct test_request_valtree : eagitest::app_case {
     using launcher = eagitest::launcher<test_request_valtree>;
 
     test_request_valtree(auto& s, auto& ec)
-      : eagitest::app_case{s, ec, 9, "value tree"}
+      : eagitest::app_case{s, ec, 10, "value tree"}
       , loader{context().loader()} {
         loader.resource_loaded.connect(
           make_callable_ref<&test_request_valtree::on_loaded>(this));
@@ -619,7 +673,7 @@ struct test_request_shape_generator : eagitest::app_case {
     using launcher = eagitest::launcher<test_request_shape_generator>;
 
     test_request_shape_generator(auto& s, auto& ec)
-      : eagitest::app_case{s, ec, 10, "shape generator"}
+      : eagitest::app_case{s, ec, 11, "shape generator"}
       , loader{context().loader()} {
         loader.resource_loaded.connect(
           make_callable_ref<&test_request_shape_generator::on_loaded>(this));
@@ -685,7 +739,7 @@ auto test_main(eagine::test_ctx& ctx) -> int {
     enable_message_bus(ctx);
     ctx.preinitialize();
 
-    eagitest::app_suite test{ctx, "resource loader basic", 10};
+    eagitest::app_suite test{ctx, "resource loader basic", 11};
     test.once<test_request_plain_text>();
     test.once<test_request_string_list>();
     test.once<test_request_url_list>();
@@ -693,7 +747,8 @@ auto test_main(eagine::test_ctx& ctx) -> int {
     test.once<test_request_vec3_list>();
     test.once<test_request_mat4_list>();
     test.once<test_request_glsl_string>();
-    test.once<test_request_gl_shader_parameters>();
+    test.once<test_request_gl_shader_parameters_1>();
+    test.once<test_request_gl_shader_parameters_2>();
     test.once<test_request_valtree>();
     test.once<test_request_shape_generator>();
     return test.exit_code();

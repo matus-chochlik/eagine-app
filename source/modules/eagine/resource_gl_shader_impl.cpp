@@ -303,6 +303,7 @@ struct gl_shader_resource::_loader_eagishdr final
 //------------------------------------------------------------------------------
 auto gl_shader_resource::_loader_eagishdr::request_dependencies() noexcept
   -> valid_if_not_zero<identifier_t> {
+    set_status(resource_status::loading);
     auto& manager{parent_manager()};
     add_as_manager_consumer_of(_param.setup(manager, parameters()));
     return {acquire_request_id()};
@@ -329,6 +330,7 @@ void gl_shader_resource::_loader_eagishdr::resource_loaded(
             }
         }
     }
+
     if(_source and _includes and _libraries) {
         if(auto res_ctx{resource_context()}) {
             auto& glapi{res_ctx->gl_api()};

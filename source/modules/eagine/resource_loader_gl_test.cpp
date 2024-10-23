@@ -164,7 +164,7 @@ struct test_request_gl_shader_1 : eagitest::app_case {
     bool content_is_ok{false};
 };
 //------------------------------------------------------------------------------
-// GL shader from EAGishdr
+// GL shader from EAGishdr with includes
 //------------------------------------------------------------------------------
 struct test_request_gl_shader_2 : eagitest::app_case {
     using launcher = eagitest::launcher_with_gl<test_request_gl_shader_2>;
@@ -181,7 +181,7 @@ struct test_request_gl_shader_2 : eagitest::app_case {
       const eagine::app::resource_interface::load_info& info) noexcept {
         if(
           info.locator.has_scheme("json") and
-          info.locator.has_path("/TestFragES")) {
+          info.locator.has_path("/TestFragE1")) {
             load_signal_received = true;
             locator_is_ok = true;
             content_is_ok = shdr.get().has_value();
@@ -197,7 +197,7 @@ struct test_request_gl_shader_2 : eagitest::app_case {
           shdr,
           context().shared_resource_context(),
           [] -> eagine::app::resource_request_params {
-              return {eagine::url{"json:///TestFragES"}};
+              return {eagine::url{"json:///TestFragE1"}};
           });
     }
 
