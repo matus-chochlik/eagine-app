@@ -410,18 +410,18 @@ eagine_add_module_tests(
 eagine_embed_target_resources(
 	TARGET test.eagine.app.resource_loader_basic
 	RESOURCES
-		TestText   "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_text.txt"
-		TestURLs   "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_urls.txt"
-		TestInts   "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_ints.json"
-		TestVec3   "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_vec3.json"
-		TestMat4   "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_mat4.json"
-		TestThdn1  "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_thdn1.json"
-		TestThdn2  "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_thdn2.json"
-		TestPath   "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_path.json"
-		TestMesh   "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_mesh.json"
-		TestFragS  "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_frag1.glsl"
-		TestFragE1 "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_frag1.eagishdr"
-		TestFragE2 "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_frag2.eagishdr"
+		TestText   "${CMAKE_CURRENT_SOURCE_DIR}/resources/test_text.txt"
+		TestURLs   "${CMAKE_CURRENT_SOURCE_DIR}/resources/test_urls.txt"
+		TestInts   "${CMAKE_CURRENT_SOURCE_DIR}/resources/test_ints.json"
+		TestVec3   "${CMAKE_CURRENT_SOURCE_DIR}/resources/test_vec3.json"
+		TestMat4   "${CMAKE_CURRENT_SOURCE_DIR}/resources/test_mat4.json"
+		TestThdn1  "${CMAKE_CURRENT_SOURCE_DIR}/resources/test_thdn1.json"
+		TestThdn2  "${CMAKE_CURRENT_SOURCE_DIR}/resources/test_thdn2.json"
+		TestPath   "${CMAKE_CURRENT_SOURCE_DIR}/resources/test_path.json"
+		TestMesh   "${CMAKE_CURRENT_SOURCE_DIR}/resources/test_mesh.json"
+		TestFragS  "${CMAKE_CURRENT_SOURCE_DIR}/resources/test_frag1.glsl"
+		TestFragE1 "${CMAKE_CURRENT_SOURCE_DIR}/resources/test_frag1.eagishdr"
+		TestFragE2 "${CMAKE_CURRENT_SOURCE_DIR}/resources/test_frag2.eagishdr"
 	PACKED ENABLE_SEARCH)
 
 set_tests_properties(execute-test.eagine.app.resource_loader_basic PROPERTIES COST 10)
@@ -430,13 +430,13 @@ set_tests_properties(execute-test.eagine.app.resource_loader_basic PROPERTIES CO
 eagine_embed_target_resources(
 	TARGET test.eagine.app.resource_loader_gl
 	RESOURCES
-		TestCheckr "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_checker.glsl"
-		TestMndbrt "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_mandelbrot.glsl"
-		TestIncls  "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_includes.txt"
-		TestFrag1  "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_frag1.glsl"
-		TestFrag2  "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_frag2.glsl"
-		TestFragE1 "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_frag1.eagishdr"
-		TestFragE2 "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_frag2.eagishdr"
+		TestCheckr "${CMAKE_CURRENT_SOURCE_DIR}/resources/test_checker.glsl"
+		TestMndbrt "${CMAKE_CURRENT_SOURCE_DIR}/resources/test_mandelbrot.glsl"
+		TestIncls  "${CMAKE_CURRENT_SOURCE_DIR}/resources/test_includes.txt"
+		TestFrag1  "${CMAKE_CURRENT_SOURCE_DIR}/resources/test_frag1.glsl"
+		TestFrag2  "${CMAKE_CURRENT_SOURCE_DIR}/resources/test_frag2.glsl"
+		TestFragE1 "${CMAKE_CURRENT_SOURCE_DIR}/resources/test_frag1.eagishdr"
+		TestFragE2 "${CMAKE_CURRENT_SOURCE_DIR}/resources/test_frag2.eagishdr"
 	PACKED ENABLE_SEARCH)
 
 set_tests_properties(execute-test.eagine.app.resource_loader_gl PROPERTIES COST 10)
@@ -445,7 +445,7 @@ set_tests_properties(execute-test.eagine.app.resource_loader_gl PROPERTIES COST 
 eagine_embed_target_resources(
 	TARGET test.eagine.app.resource_manager
 	RESOURCES
-		TestText   "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_text.txt"
+		TestText   "${CMAKE_CURRENT_SOURCE_DIR}/resources/test_text.txt"
 	PACKED ENABLE_SEARCH)
 
 set_tests_properties(execute-test.eagine.app.resource_manager PROPERTIES COST 10)
@@ -453,15 +453,15 @@ set_tests_properties(execute-test.eagine.app.resource_manager PROPERTIES COST 10
 eagine_embed_target_resources(
 	TARGET test.eagine.app.old_resource_loader
 	RESOURCES
-		TestText   "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_text.txt"
-		TestURLs   "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_urls.txt"
-		TestInts   "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_ints.json"
-		TestVec3   "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_vec3.json"
-		TestMat4   "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_mat4.json"
-		TestThdn1  "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_thdn1.json"
-		TestThdn2  "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_thdn2.json"
-		TestPath   "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_path.json"
-		TestMesh   "${CMAKE_CURRENT_SOURCE_DIR}/resources/loader_mesh.json"
+		TestText   "${CMAKE_CURRENT_SOURCE_DIR}/resources/test_text.txt"
+		TestURLs   "${CMAKE_CURRENT_SOURCE_DIR}/resources/test_urls.txt"
+		TestInts   "${CMAKE_CURRENT_SOURCE_DIR}/resources/test_ints.json"
+		TestVec3   "${CMAKE_CURRENT_SOURCE_DIR}/resources/test_vec3.json"
+		TestMat4   "${CMAKE_CURRENT_SOURCE_DIR}/resources/test_mat4.json"
+		TestThdn1  "${CMAKE_CURRENT_SOURCE_DIR}/resources/test_thdn1.json"
+		TestThdn2  "${CMAKE_CURRENT_SOURCE_DIR}/resources/test_thdn2.json"
+		TestPath   "${CMAKE_CURRENT_SOURCE_DIR}/resources/test_path.json"
+		TestMesh   "${CMAKE_CURRENT_SOURCE_DIR}/resources/test_mesh.json"
 	PACKED ENABLE_SEARCH)
 
 set_tests_properties(execute-test.eagine.app.old_resource_loader PROPERTIES COST 10)
